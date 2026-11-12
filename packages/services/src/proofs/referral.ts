@@ -8,8 +8,9 @@
  *
  * Pay the printed link with `pnpm ops pay-link <link> <dollars>`: the operator is a third-party customer there.
  */
-import { Operator } from "@tegata/core/near"
+
 import { newProofKey, randomHandle } from "@tegata/core/fixtures"
+import { Operator } from "@tegata/core/near"
 import { createDb, schema } from "@tegata/db"
 import { loadDotEnv, operatorKeys, serverEnv } from "@tegata/env"
 import { asc, eq } from "drizzle-orm"
@@ -55,10 +56,15 @@ if (command === "setup") {
   for (const account of opened.accounts) await setupAccount(db, operator, account.id)
   console.log(`Invited business: ${handle}.tegata.testnet (created on NEAR, registered on USDC)`)
 
-  await refused("Referring yourself", () => attachReferral(db, { refereeId: first.id, handle: first.handle ?? "", network: "testnet" }))
+  await refused("Referring yourself", () =>
+    attachReferral(db, { refereeId: first.id, handle: first.handle ?? "", network: "testnet" }),
+  )
   const [twin] = await db
     .insert(schema.users)
-    .values({ email: first.email?.replace("@", "+twin@") ?? "twin@proof.tegata.test", publicKey: null })
+    .values({
+      email: first.email?.replace("@", "+twin@") ?? "twin@proof.tegata.test",
+      publicKey: null,
+    })
     .returning()
   if (twin) {
     await refused("The same inbox under a +tag", () =>
@@ -67,7 +73,11 @@ if (command === "setup") {
     await db.delete(schema.users).where(eq(schema.users.id, twin.id))
   }
 
-  const referral = await attachReferral(db, { refereeId: user.id, handle: first.handle, network: "testnet" })
+  const referral = await attachReferral(db, {
+    refereeId: user.id,
+    handle: first.handle,
+    network: "testnet",
+  })
   console.log(`Referral ${referral?.id}: ${handle} invited by ${first.handle}`)
   const link = await createLink(db, {
     workspaceId: opened.workspace?.id ?? "",
