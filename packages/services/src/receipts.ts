@@ -4,7 +4,7 @@
 import { NETWORKS } from "@tegata/config"
 import type { DelegateDraft } from "@tegata/core/near"
 import { type Db, schema } from "@tegata/db"
-import { and, eq, like } from "drizzle-orm"
+import { and, eq, like, or } from "drizzle-orm"
 
 import { BUSINESS_HEADER, headerLogo } from "./payments.ts"
 
@@ -19,7 +19,9 @@ export async function sendReceipt(db: Db, id: string) {
     .select({ relay: relays, ...BUSINESS_HEADER })
     .from(relays)
     .innerJoin(workspaces, eq(workspaces.ownerId, relays.userId))
-    .where(and(eq(relays.id, id), like(relays.purpose, "send:%")))
+    .where(
+      and(eq(relays.id, id), or(like(relays.purpose, "send:%"), like(relays.purpose, "refund:%"))),
+    )
   if (!row || ["drafted", "failed", "expired"].includes(row.relay.status)) return undefined
   const call = (row.relay.draft as DelegateDraft).calls[0]
   if (call?.method !== "ft_transfer") return undefined
@@ -31,6 +33,7 @@ export async function sendReceipt(db: Db, id: string) {
     to: args.receiver_id,
     amount: BigInt(args.amount),
     settled: row.relay.status === "success",
+    refund: row.relay.purpose.startsWith("refund:"),
   }
 }
 

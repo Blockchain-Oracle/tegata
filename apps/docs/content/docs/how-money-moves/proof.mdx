@@ -21,6 +21,7 @@ icon: BadgeCheck
 | Autopilot: a business set 0.30 aside, then created a plan for three people, two gas-free actions signed together | <Tx hash="F74hZwjkPaGjMygCSCGpQ2S2i2k8SuAw7BkAPmeEeFXB" />, <Tx hash="Cz1131sSzL454dYYU6MdT4VU4eMZ1ByX4AgVPuGr2TfZ" /> |
 | Autopilot: once the payday passed, with nobody online, the keeper's one `run` paid all three 0.10 each, three `payout_paid` events | <Tx hash="DrvyRxFLWQjYRr9xMgbPXZ2qSW2hwrZNMLrShYUTvvUb" /> |
 | Autopilot: the business turned it off; the plan's storage went back to Tegata's operator | <Tx hash="HDWhmuhLR9JFvuDo3cueyed9LEFPDRjigFwtiPSn8tSn" /> |
+| Books: a customer's own NEAR account paid a link 0.20; the business refunded 0.05 to it, gas-free | <Tx hash="BvQCXLWPsDegHGEtrpv2khqboY4rgtvb7jjuSVcr8e2n" />, <Tx hash="BmQ3kF5UjvA1EkCvSwNYoUwW6gYfdbLfuDo1w3YRzu1Y" /> |
 
 ## Run them yourself
 
@@ -36,3 +37,4 @@ After [running Tegata yourself](/docs/build/self-host):
 | Payroll: three people (one from a CSV), a Tegata account and a NEAR account chosen, one run, a 24-hour change | `…/proofs/payroll.ts` |
 | Autopilot: a plan set minutes ahead pays three people with nobody online, then is turned off | `…/proofs/autopilot.ts` |
 | The autopilot contract's twelve tests on a local sandbox | `cd contracts && cargo test -p tegata-autopilot-harness` |
+| Books: a wallet payment, a partial refund, the month, the statement and reconciliation | `…/proofs/books.ts statement.pdf` (with the app running) |

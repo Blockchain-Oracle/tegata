@@ -1,3 +1,5 @@
+/** @jsxRuntime automatic */
+/** @jsxImportSource react */
 // Sends the emails in emails.tsx through Resend. Server only (the worker); the browser only previews templates.
 import { Resend } from "resend"
 

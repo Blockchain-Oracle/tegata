@@ -12,6 +12,7 @@ import {
   Gift,
   Home,
   Link2,
+  ListOrdered,
   LogOut,
   Moon,
   Palette,
@@ -20,6 +21,7 @@ import {
   Sun,
   Users,
   UsersRound,
+  Wallet,
 } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { Dialog } from "radix-ui"
@@ -124,6 +126,12 @@ export function CommandMenu({
                 </Item>
                 <Item icon={<Banknote />} onSelect={run(() => router.push("/app/payroll"))}>
                   Payroll
+                </Item>
+                <Item icon={<ListOrdered />} onSelect={run(() => router.push("/app/activity"))}>
+                  Activity
+                </Item>
+                <Item icon={<Wallet />} onSelect={run(() => router.push("/app/balance"))}>
+                  Balance
                 </Item>
                 <Item icon={<Gift />} onSelect={run(() => router.push("/app/refer"))}>
                   Refer a business

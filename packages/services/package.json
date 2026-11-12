@@ -18,6 +18,7 @@
     "zod": "catalog:"
   },
   "devDependencies": {
+    "@tegata/documents": "workspace:*",
     "@tegata/typescript-config": "workspace:*",
     "@types/node": "catalog:",
     "tsx": "catalog:",

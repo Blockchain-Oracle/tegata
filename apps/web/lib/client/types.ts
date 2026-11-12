@@ -524,3 +524,54 @@ export interface AutopilotPreview {
   total: string
   timezone: string
 }
+
+// --- books (plan 6.8 U–X) -------------------------------------------------------------------------------------------
+
+export type MovementKind =
+  | "payment_in"
+  | "payment_out"
+  | "send"
+  | "refund"
+  | "reward"
+  | "test_dollars"
+  | "payroll"
+  | "payslip"
+  | "autopilot_set_aside"
+  | "autopilot_back"
+
+export interface MovementView {
+  id: string
+  kind: MovementKind
+  direction: "in" | "out"
+  at: string
+  amount: string
+  title: string
+  counterparty: string | null
+  counterpartyAccount: string | null
+  status: "done" | "pending" | "failed"
+  txHash: string | null
+  explorerUrl: string | null
+  /** The page it opens. */
+  url: string | null
+  /** False for an autopilot payroll: shown, not totalled. */
+  counted: boolean
+  refunded: string
+  refundable: { paymentId: string; left: string; payer: string } | null
+}
+
+export interface BooksMonth {
+  month: string
+  label: string
+  timezone: string
+  moneyIn: string
+  moneyOut: string
+  net: string
+  movements: MovementView[]
+}
+
+export interface Reconciliation {
+  accountId: string
+  balance: string
+  checked: number
+  outside: { txHash: string; at: string; delta: string; other: string; explorerUrl: string }[]
+}

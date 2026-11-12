@@ -268,7 +268,15 @@ export function HomeView({
         )}
       >
         <section className="flex flex-col gap-3">
-          <h2 className="text-section-title font-semibold">Latest</h2>
+          <div className="flex items-center justify-between">
+            <h2 className="text-section-title font-semibold">Latest</h2>
+            <Link
+              href="/app/activity"
+              className="text-[15px] font-semibold text-shu-ink hover:underline"
+            >
+              All activity
+            </Link>
+          </div>
           {activity === undefined && !activityError ? (
             <div className="rounded-[20px] bg-card p-3">
               <LoadingShape shape="list" />

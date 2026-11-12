@@ -40,7 +40,7 @@ export async function sendReceiptView(id: string): Promise<ReceiptView | null> {
     number: null,
     business: row.business,
     logo: row.logo,
-    title: "One-off payment",
+    title: row.refund ? "Refund" : "One-off payment",
     amount: row.amount.toString(),
     method: "tegata",
     payer: relay.senderId,

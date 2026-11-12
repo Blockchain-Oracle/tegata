@@ -1,3 +1,5 @@
+/** @jsxRuntime automatic */
+/** @jsxImportSource react */
 // Emails (plan 6.8 K): the invoice and its reminders, built with react-email (sent by mailer.tsx through Resend). Plain,
 // light, one button, the business's name first; Tegata only signs the footer. Sent only when Resend and a verified
 // sender are configured (packages/env `emailConfigured`).

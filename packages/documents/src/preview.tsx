@@ -1,3 +1,5 @@
+/** @jsxRuntime automatic */
+/** @jsxImportSource react */
 // The invoice email as HTML, for the builder's Email preview tab (loaded on demand in the browser).
 import { render } from "@react-email/render"
 

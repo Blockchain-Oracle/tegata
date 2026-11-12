@@ -2,10 +2,12 @@
 import type {
   AutopilotPreview,
   AutopilotView,
+  BooksMonth,
   Customer,
   InvoiceDetail,
   InvoiceRow,
   LinkDetail,
+  MovementView,
   PayLink,
   PayRun,
   PayRunRow,
@@ -14,6 +16,7 @@ import type {
   PersonPage,
   PublicRequest,
   ReceiptView,
+  Reconciliation,
   TeamPerson,
 } from "@/lib/client/types"
 
@@ -657,4 +660,113 @@ export const SAMPLE_AUTOPILOT: Record<
     funds: { available: "2400000000", reserved: "0", inFlight: "0" },
     plan: null,
   },
+}
+
+// --- books --------------------------------------------------------------------------------------------------------
+
+const movement = (
+  over: Partial<MovementView> &
+    Pick<MovementView, "id" | "kind" | "direction" | "amount" | "title">,
+): MovementView => ({
+  at: "2026-11-12T16:00:00.000Z",
+  counterparty: null,
+  counterpartyAccount: null,
+  status: "done",
+  txHash: "7hEg9DgZdEaq7e4AHtY9FZ4ReB3sveq5XwewiEanCKFr",
+  explorerUrl: "https://testnet.nearblocks.io/txns/7hEg9DgZdEaq7e4AHtY9FZ4ReB3sveq5XwewiEanCKFr",
+  url: null,
+  counted: true,
+  refunded: "0",
+  refundable: null,
+  ...over,
+})
+
+export const SAMPLE_BOOKS: BooksMonth = {
+  month: "2026-11",
+  label: "November 2026",
+  timezone: "Africa/Lagos",
+  moneyIn: "4012500000",
+  moneyOut: "5740000000",
+  net: "-1727500000",
+  movements: [
+    movement({
+      id: "b0000000-0000-4000-8000-000000000001",
+      kind: "payment_in",
+      direction: "in",
+      amount: "1250000000",
+      title: "Invoice INV-0007",
+      counterpartyAccount: "northwind.testnet",
+      at: "2026-11-12T17:30:00.000Z",
+      url: "/dev/flows/pay",
+      refundable: { paymentId: "p1", left: "1250000000", payer: "northwind.testnet" },
+    }),
+    movement({
+      id: "b0000000-0000-4000-8000-000000000002",
+      kind: "payroll",
+      direction: "out",
+      amount: "5500000000",
+      title: "Payroll · Pay · 1–31 Oct 2026",
+      counterparty: "2 people",
+      at: "2026-11-12T14:00:00.000Z",
+      url: "/dev/flows/payroll",
+    }),
+    movement({
+      id: "b0000000-0000-4000-8000-000000000003",
+      kind: "autopilot_set_aside",
+      direction: "out",
+      amount: "11000000000",
+      title: "Set aside in autopilot",
+      counterparty: "Autopilot",
+      counterpartyAccount: "pay.tegata.testnet",
+      at: "2026-11-11T16:00:00.000Z",
+      status: "pending",
+      counted: true,
+    }),
+    movement({
+      id: "b0000000-0000-4000-8000-000000000004",
+      kind: "refund",
+      direction: "out",
+      amount: "240000000",
+      title: "Refund",
+      counterpartyAccount: "hikari.testnet",
+      at: "2026-11-11T15:00:00.000Z",
+    }),
+    movement({
+      id: "b0000000-0000-4000-8000-000000000005",
+      kind: "payment_in",
+      direction: "in",
+      amount: "2752500000",
+      title: "Logo design",
+      counterpartyAccount: "hikari.testnet",
+      at: "2026-11-11T14:00:00.000Z",
+      refunded: "240000000",
+      refundable: { paymentId: "p2", left: "2512500000", payer: "hikari.testnet" },
+    }),
+    movement({
+      id: "b0000000-0000-4000-8000-000000000006",
+      kind: "reward",
+      direction: "in",
+      amount: "10000000",
+      title: "Referral reward: you invited a business",
+      counterparty: "Tegata",
+      counterpartyAccount: "tegata.testnet",
+      at: "2026-11-10T16:00:00.000Z",
+    }),
+  ],
+}
+
+export const SAMPLE_RECONCILIATION: Reconciliation = {
+  accountId: SAMPLE_ACCOUNT,
+  balance: "5750000",
+  checked: 7,
+  outside: [
+    {
+      txHash: "AXFWZVcuwvJW4ceTxcTDYNUt82Ron9s7x3vjAYyS7G7M",
+      at: "2026-11-12T08:12:00.000Z",
+      delta: "20000000",
+      other: "641c8bb12ddfc8f0a1475ed00e84dade985d5f8e40c877f7958e1db0e96234a5",
+      explorerUrl:
+        "https://testnet.nearblocks.io/txns/AXFWZVcuwvJW4ceTxcTDYNUt82Ron9s7x3vjAYyS7G7M",
+    },
+  ],
 }

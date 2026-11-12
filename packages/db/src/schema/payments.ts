@@ -79,6 +79,8 @@ export const payments = pgTable(
     status: paymentStatus().notNull().default("awaiting"),
     /** USDC base units the business must receive. */
     amount: money().notNull(),
+    /** What the business has refunded to the payer so far (plan 6.8 X). */
+    refunded: money().notNull().default(sql`0`),
     /** The transfer memo that ties an on-chain transfer to this attempt: `tegata:pay:<id>`. */
     memo: text().notNull(),
     receiverId: text().notNull(),

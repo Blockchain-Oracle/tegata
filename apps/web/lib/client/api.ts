@@ -37,3 +37,25 @@ export async function api<T>(
   }
   return data as T
 }
+
+/** Download a file from our API as the signed-in person (a CSV or a PDF), saved under the name the server gives. */
+export async function download(path: string): Promise<void> {
+  const token = await getAccessToken()
+  const response = await fetch(path, { headers: token ? { authorization: `Bearer ${token}` } : {} })
+  if (!response.ok) {
+    const data = (await response.json().catch(() => null)) as { error?: { message: string } } | null
+    throw new ApiError(
+      response.status,
+      "download",
+      data?.error?.message ?? "Couldn't make the file",
+    )
+  }
+  const name =
+    /filename="([^"]+)"/.exec(response.headers.get("content-disposition") ?? "")?.[1] ?? "tegata"
+  const url = URL.createObjectURL(await response.blob())
+  const link = document.createElement("a")
+  link.href = url
+  link.download = name
+  link.click()
+  URL.revokeObjectURL(url)
+}

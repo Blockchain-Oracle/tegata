@@ -1,0 +1,1 @@
+ALTER TABLE "payments" ADD COLUMN "refunded" numeric(78, 0) DEFAULT 0 NOT NULL;

@@ -1,3 +1,5 @@
+/** @jsxRuntime automatic */
+/** @jsxImportSource react */
 // The invoice as an A4 PDF (plan 6.8 J–N): the same document the customer sees on the web, for the email attachment
 // and "Download PDF". Drawn with @react-pdf/renderer on the server; fonts are embedded (see fonts.ts).
 import {

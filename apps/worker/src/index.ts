@@ -30,6 +30,7 @@ import {
   settleAutopilotAction,
   settleAutopilotRelay,
   settlePayment,
+  settleRefund,
   settleRelayedPayment,
   settleRunRelay,
   setupAccount,
@@ -81,6 +82,11 @@ await boss.work(QUEUES.relaySend.name, async ([job]) => {
     const on = await settleAutopilotRelay(db, relay.id)
     await settleAutopilotAction(db, relay.id)
     console.log(`[autopilot] ${relay.purpose} ${relay.status} ${on}`)
+  }
+  // A refund: once it lands, it counts against the payment.
+  if (relay?.purpose.startsWith("refund:")) {
+    const payment = await settleRefund(db, relay.id)
+    if (payment) console.log(`[refund] ${payment.id} refunded ${payment.refunded}`)
   }
   // A payroll batch: its rows are paid only once the USDC events are read from NEAR.
   if (relay?.purpose.startsWith("run:")) {

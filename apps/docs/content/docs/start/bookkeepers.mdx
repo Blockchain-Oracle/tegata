@@ -28,7 +28,21 @@ says so, and it has no transaction.
 
 <Phone src="/shots/phone/receipt.webp" alt="Receipt No. 0003 from Abu Studio: $0.30 for invoice INV-0001, paid on the NEAR-wallet rail by tegata.testnet, settled 12 Nov 2026, 17:40 GMT+1, stamped PAID" caption="A real receipt: No. 0003, the second part of INV-0001." />
 
-<Callout title="Not in this build yet" type="info">
-The CSV export and the monthly statement come with Books, a later stage. Until then each receipt has **Save as
-PDF**.
-</Callout>
+## The month, for your books
+
+**Activity** shows one month at a time in the business's time zone, with money in, money out and net. Two exports:
+
+| Export | What's in it |
+| --- | --- |
+| **CSV** | One row per movement: Date, Time, Type, Description, Counterparty, Counterparty account, Money in, Money out, Currency (USD), Status, Receipt, NEAR transaction. Plain decimals; a cell that starts with = + - @ is prefixed with ' so a spreadsheet never runs it |
+| **Statement (PDF)** | The business header, money in, money out and net, every movement in order, and the balance on NEAR when it was made |
+
+An autopilot payroll is listed but not added to the month's money out: its dollars left when they were set aside,
+which is its own line.
+
+**Balance** checks the books against NEAR: every USDC transfer on the account, read from NearBlocks, matched by its
+transaction to what Tegata recorded. A transfer that came or went another way (a faucet, a wallet outside Tegata) is
+listed as "outside Tegata" and never matched automatically.
+
+A received payment can be **refunded**, all or part, back to the account that paid, in one gas-free transfer with its
+own receipt. A real one: <Tx hash="BvQCXLWPsDegHGEtrpv2khqboY4rgtvb7jjuSVcr8e2n" /> paid $0.20, <Tx hash="BmQ3kF5UjvA1EkCvSwNYoUwW6gYfdbLfuDo1w3YRzu1Y" /> refunded $0.05.

@@ -97,6 +97,12 @@ const CARDS = [
     field: "bg-sora",
   },
   {
+    href: "/dev/flows/books",
+    title: "Books",
+    note: "Activity by month, CSV and statement, refunds, Balance and reconciliation",
+    field: "bg-kin",
+  },
+  {
     href: "/dev/flows/business",
     title: "Business profile",
     note: "The receipt header, the seal that follows the name, every field",

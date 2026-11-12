@@ -461,6 +461,9 @@ importers:
         specifier: 'catalog:'
         version: 4.6.7
     devDependencies:
+      '@tegata/documents':
+        specifier: workspace:*
+        version: link:../documents
       '@tegata/typescript-config':
         specifier: workspace:*
         version: link:../typescript-config

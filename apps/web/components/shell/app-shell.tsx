@@ -13,6 +13,7 @@ import {
   Gift,
   Home,
   Link2,
+  ListOrdered,
   LogOut,
   Moon,
   Plus,
@@ -21,6 +22,7 @@ import {
   Sun,
   Users,
   UsersRound,
+  Wallet,
 } from "lucide-react"
 import { motion } from "motion/react"
 import Link from "next/link"
@@ -51,6 +53,8 @@ const PLACES: Place[] = [
   { kind: "link", href: "/app/people", label: "People", icon: <UsersRound /> },
   { kind: "link", href: "/app/payroll", label: "Payroll", icon: <Banknote /> },
   { kind: "link", href: "/app/send", label: "Send", icon: <ArrowUpRight /> },
+  { kind: "link", href: "/app/activity", label: "Activity", icon: <ListOrdered /> },
+  { kind: "link", href: "/app/balance", label: "Balance", icon: <Wallet /> },
   { kind: "link", href: "/app/refer", label: "Refer", icon: <Gift /> },
 ]
 
