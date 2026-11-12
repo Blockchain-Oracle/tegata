@@ -1,0 +1,41 @@
+---
+title: When is it paid?
+description: A payment on NEAR counts only when the final transaction holds a USDC transfer to the business, for the amount due, with that payment's own memo.
+icon: ShieldCheck
+---
+
+<Diagram name="payment" alt="One payment: the pay page starts an attempt with the memo tegata:pay:id; the customer pays from a Tegata balance (Tegata relays it and pays the fee) or a NEAR wallet; the worker reads the final transaction from NEAR, matches the USDC event's receiver, amount and memo, marks it paid and numbers the receipt" caption="One payment, from opening the link to the PAID seal." />
+
+## The check
+
+When the payer starts paying, the pay page opens an attempt with its own memo, `tegata:pay:<id>`. The transfer
+carries that memo whichever way it's paid. Then the worker:
+
+1. waits until the transaction is **final** on NEAR;
+2. reads the USDC contract's own `ft_transfer` event from it;
+3. checks the **receiver** is the business, the **amount** covers what's due, and the **memo** is this attempt's;
+4. only then marks the payment paid, updates the link or invoice, and numbers the receipt.
+
+Nothing the payer's browser says is believed: a NEAR wallet's transaction hash is only a hint of where to look.
+
+## What follows
+
+- **Part-payments.** An invoice that allows them takes any amount up to what's left; a payment above that is refused
+  before anything is sent. INV-0001 ($0.50) was paid $0.20, then refused at $0.40 ("The most left to pay is $0.30"),
+  then paid $0.30.
+- **Numbers.** Receipt numbers come from a per-business counter taken in the same database transaction as the
+  payment; invoice numbers come from one taken when the invoice is sent. Neither can repeat.
+- **By hand.** Money received outside NEAR can be marked paid by hand on the invoice. Its receipt says it isn't on
+  NEAR, and it never counts toward a referral.
+- **The seal.** The business's seal stamps the invoice and the receipt, and the `received` sound plays once per
+  payment.
+
+| Piece | Code |
+| --- | --- |
+| Reading USDC transfers from a final transaction | `packages/core/src/near/transfers.ts` (`readUsdcTransfers`, `matchingTransfer`) |
+| Settling a payment | `packages/services/src/payments.ts` (`settlePayment`, `applyPayment`) |
+| The worker | `apps/worker/src/index.ts`: `payment-verify` for NEAR-wallet payments, `relay-send` for Tegata-balance ones |
+
+<Callout title="Proof" type="success">
+INV-0001's two parts: <Tx hash="2q3MP2dbT2sMV5EXX6KpD9d4YUCMprcEKmjZXyWz8cVj" /> and <Tx hash="4DaV5LVezTYavbjzQdfsSUcMYL1Yiz59z5Z4TyFQCquE" />.
+</Callout>

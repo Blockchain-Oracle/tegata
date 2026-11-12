@@ -1,0 +1,41 @@
+---
+title: How money moves
+description: Every dollar is USDC on NEAR, every action is signed by its owner and relayed by Tegata, and every payment is checked on NEAR before it counts.
+icon: ArrowLeftRight
+---
+
+<Diagram name="system" alt="Tegata's parts: the owner and the customer use the web app; the web app stores requests, payments and receipts in Postgres and hands jobs to the worker; the worker, the only holder of operator keys, relays signed actions to NEAR and pays the fee, and reads the USDC event to mark a payment paid; live quotes come from NEAR Intents" caption="Who talks to whom. The worker is the only process holding Tegata's NEAR keys." />
+
+Three rules hold everything up:
+
+1. **Money is USDC on NEAR.** Circle's native USDC (NEP-141) holds every balance and settles every payment, send and
+   reward.
+2. **The owner signs; Tegata relays and pays.** Each action is a NEP-366 delegate action signed by the key from the
+   owner's email login; Tegata's worker sends it and pays the network fee. See
+   [Accounts without gas](/docs/how-money-moves/gas-free).
+3. **NEAR decides "paid".** A payment on NEAR counts only when the USDC contract's own transfer event, read from the
+   final transaction, matches it. Money received another way can be marked paid by hand, and its receipt says so.
+   See [When is it paid?](/docs/how-money-moves/paid)
+
+## Every movement carries a memo
+
+| Movement | Memo on the USDC transfer | Receipt |
+| --- | --- | --- |
+| A customer pays a link or an invoice | `tegata:pay:<payment id>` | Numbered, `/r/<token>` |
+| Tegata pays a referral reward | `tegata:referral:<referral id>` | `/r/reward/<id>` |
+| Tegata sends Sandbox test dollars | `tegata:test-dollars` | none (test money) |
+| You send dollars | `tegata:send` (or `tegata:<your note>`) | `/r/send/<id>` |
+| Money marked paid by hand | nothing on NEAR | Numbered, says "not on NEAR" |
+
+## A payment's life
+
+From a NEAR wallet: `awaiting` → `detected` → `succeeded` or `failed`. From a Tegata balance: `awaiting` →
+`succeeded` or `failed`. Only succeeded payments count toward a link or an invoice; a request is paid when they add
+up to its total.
+
+<Cards>
+  <Card icon={<Icon name="ShieldCheck" />} title="When is it paid?" href="/docs/how-money-moves/paid" description="The check that turns a transfer into a sealed receipt." />
+  <Card icon={<Icon name="KeyRound" />} title="Accounts without gas" href="/docs/how-money-moves/gas-free" description="Email sign-in, a NEAR account, and a relayer that pays the fee." />
+  <Card icon={<Icon name="Globe" />} title="Prices from other chains" href="/docs/how-money-moves/quotes" description="Live NEAR Intents quotes for exactly the amount owed." />
+  <Card icon={<Icon name="BadgeCheck" />} title="Proof on NEAR" href="/docs/how-money-moves/proof" description="Every claim here, as a transaction you can open." />
+</Cards>

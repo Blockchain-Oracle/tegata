@@ -1,0 +1,7 @@
+{
+  "title": "Build",
+  "description": "How it's built, and how to run it",
+  "icon": "Wrench",
+  "root": true,
+  "pages": ["index", "self-host", "limits"]
+}

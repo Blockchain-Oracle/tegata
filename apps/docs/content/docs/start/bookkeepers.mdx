@@ -1,0 +1,34 @@
+---
+title: If you keep the books
+description: Dollars, exact amounts, numbers in order, and a receipt for every movement that names who paid whom and links to the proof.
+icon: Calculator
+---
+
+- **Dollars, not coins.** Every amount is in USDC, a digital dollar issued by Circle. One USDC is one US dollar.
+- **Exact amounts.** An invoice for 1,250.00 is settled by exactly 1,250.00 reaching the business. Tegata takes no
+  cut.
+- **Numbers in order.** Invoices are numbered INV-0001, INV-0002… when they are sent; a voided invoice keeps its
+  number. Receipts for customer payments are numbered No. 0001, No. 0002… per business.
+- **A receipt for every movement**: customer payments, sends and referral rewards.
+
+## What a receipt says
+
+| Line | For example |
+| --- | --- |
+| Paid to | Abu Studio, `abu-studio.tegata.testnet` |
+| For | Invoice INV-0001 |
+| From | `tegata.testnet` |
+| Paid with | NEAR wallet, Tegata balance, or Marked paid by hand (not on NEAR) |
+| Settled | 12 Nov 2026, 17:40 GMT+1, in the reader's own time zone |
+| Network fee | Paid by Tegata, or Paid by the payer's wallet |
+| Transaction | `4DaV5L…FQCquE`, opening on the NEAR explorer |
+
+Money received another way (cash, a bank transfer) can be **marked paid by hand** on the invoice. Its receipt
+says so, and it has no transaction.
+
+<Phone src="/shots/phone/receipt.webp" alt="Receipt No. 0003 from Abu Studio: $0.30 for invoice INV-0001, paid on the NEAR-wallet rail by tegata.testnet, settled 12 Nov 2026, 17:40 GMT+1, stamped PAID" caption="A real receipt: No. 0003, the second part of INV-0001." />
+
+<Callout title="Not in this build yet" type="info">
+The CSV export and the monthly statement come with Books, a later stage. Until then each receipt has **Save as
+PDF**.
+</Callout>

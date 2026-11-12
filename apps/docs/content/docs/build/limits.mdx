@@ -1,0 +1,30 @@
+---
+title: Honest limits
+description: What this build doesn't do yet, said plainly, and what comes next.
+icon: TriangleExclamationPoint
+---
+
+- **Live isn't built yet.** Everything runs on NEAR testnet with test USDC. Live needs Tegata's `tegata.near`
+  operator and the mainnet side of the app.
+- **Paying from another chain stops at the quote.** NEAR Intents has no testnet, so the deposit address that turns a
+  payer's coin into USDC on NEAR is part of Live and isn't built yet. Today customers pay in USDC on NEAR.
+- **Emails are switched off on the live site** until a sending domain is set up, so invoice and reminder emails
+  don't go out. Sending an invoice still gives you its link to share.
+- **Not in this build yet:** payroll, CSV export and the monthly statement, refunds, and the scheduled-payroll
+  contract.
+- **The Sandbox stash is shared.** Add test dollars draws from Tegata's own test USDC and can run dry; Circle's faucet
+  is the fallback.
+- **Referrals don't yet flag two accounts opened from one device or network.**
+- **No outside businesses have used it yet.**
+
+## Next
+
+These are planned, in this order, and none of them is described anywhere in these docs as working:
+
+| Next | What it adds |
+| --- | --- |
+| Pay people | People, payroll in one all-or-nothing transaction, payslips |
+| Autopilot | A NEAR contract that pays a payroll schedule with nobody online |
+| Books | Activity with filters, CSV export, the monthly statement, refunds |
+| Developers | API keys, checkout sessions, signed webhooks, a counter mode |
+| Live | Real dollars on mainnet, and paying in from other chains through NEAR Intents |

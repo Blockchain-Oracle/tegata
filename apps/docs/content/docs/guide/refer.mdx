@@ -1,0 +1,49 @@
+---
+title: Referrals
+description: Invite a business you work with; once real customers have paid it, you both get a reward in USDC on NEAR.
+icon: Gift
+---
+
+<Phones>
+  <Phone src="/shots/phone/refer.webp" alt="The Refer page: you both get $1, with Abu Studio's join link and its QR code" caption="Your link and its QR code." eager />
+  <Phone src="/shots/phone/refer-invited.webp" alt="Businesses you invited: Proof ref-5310dd5d, Paid $1, with a Reward receipt link" caption="Each business you invited, and its reward receipt." eager />
+  <Phone src="/shots/phone/join.webp" alt="The join page: Abu Studio invited you to Tegata; you both get $1" caption="What the invited business sees." eager />
+</Phones>
+
+## The rule
+
+| | Sandbox | Live |
+| --- | --- | --- |
+| The invited business receives, from its customers, within 30 days | $5 | $50 |
+| Then you each get | $1 in test USDC | $10 in USDC |
+| Paid after a hold of | 10 minutes | 48 hours |
+| Rewards a year for each business that invites | 10 | 10 |
+
+The reward is its own NEAR transaction from Tegata, with its own [receipt](/docs/guide/receipts).
+
+## What doesn't count
+
+- Money from you, from them, or from anyone either of you sent money to.
+- A customer already counted for another invite: each paying customer counts toward one invite only.
+- Payments marked paid by hand.
+- A business inviting itself, or a second address of the same inbox.
+
+A business has one referrer. It can change or remove it until it is first paid; after that it's fixed. The worker checks every 5 minutes and pays rewards whose
+hold has passed.
+
+## How an invite works
+
+1. Share your link, `/join/<your-handle>`, or its QR code.
+2. The business opens it, sees your seal and the rule, and presses **Open your account**.
+3. Your invite rides along through sign-in; their welcome shows an "Invited by" chip they can remove.
+4. Until it qualifies, their Home shows the invite with progress toward the threshold.
+
+Someone who joined without the link can type your pay address under **Who invited you** on their Refer page.
+
+<Callout title="A real one" type="success">
+On NEAR testnet, a fresh customer account (made by the proof script and funded by Tegata's operator, never by
+either business) paid an invited business $5.00
+(<Tx hash="5rdLsxc1kMucKP2phfen3M5wwTgetLHYcg3u1fjPZqWs" />); after the 10-minute hold both businesses got $1.00
+(<Tx hash="GPweE94qUfz4EecjcKyyXpTRrkCkYpaaY4YZDtwhjB3U" />, <Tx hash="2REcTS4fZ6rqnWUEQBxZoe8VUgenN3aaUKcQ5ghqYtT9" />).
+An earlier payment from an account the inviting business had funded counted for nothing, as the rules say.
+</Callout>

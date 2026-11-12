@@ -1,0 +1,20 @@
+{
+  "title": "Guide",
+  "description": "Every screen in the app",
+  "icon": "BookOpen",
+  "root": true,
+  "pages": [
+    "index",
+    "---Get paid---",
+    "invoices",
+    "pay-links",
+    "pay-page",
+    "receipts",
+    "customers",
+    "---Your business---",
+    "send",
+    "refer",
+    "business",
+    "sandbox"
+  ]
+}

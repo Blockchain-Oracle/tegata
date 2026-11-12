@@ -1,0 +1,46 @@
+---
+title: Accounts without gas
+description: Sign in with email, get a named NEAR account holding only dollars, and let Tegata relay every action and pay its fee, exactly once.
+icon: KeyRound
+---
+
+## The account
+
+1. You sign in with your email (Privy). Your login holds an ed25519 key; nobody sees a wallet.
+2. Tegata's operator (`tegata.testnet`; `tegata.near` once Live is built) creates `your-name.tegata.testnet` with **your** key
+   as its only full-access key.
+3. The operator registers it on USDC (a 0.00125 NEAR storage deposit, paid by Tegata in its own transaction).
+
+Your account holds dollars and no NEAR.
+
+## Every action
+
+1. The server drafts the action list from its own records (for example, one USDC `ft_transfer` with 1 yoctoNEAR
+   attached).
+2. Your browser re-encodes the draft, checks it matches what you're approving, and your key signs it as a NEP-366
+   delegate action.
+3. The server checks the signature over exactly the bytes it drafted, and that the sender is your account.
+4. The worker wraps it in an operator transaction, pays the fee and the yoctoNEAR, and sends it.
+
+The relayer only sponsors action lists the server drafted itself. A signed action is valid for 120 blocks (a
+little over a minute on testnet today). Each person can have 30 sponsored actions an hour and 200 a day.
+
+## Exactly once
+
+The worker saves the signed transaction's bytes and hash **before** sending it. After a crash it never signs again:
+it re-sends the same bytes and reads the result by hash, so an action lands once and only once.
+`packages/services/src/proofs/recover.ts` proves this by stopping before and after sending; both land once, with the
+same hash.
+
+| Piece | Code |
+| --- | --- |
+| Accounts, USDC registration | `packages/core/src/near/accounts.ts`, `operator.ts` |
+| Drafting and checking delegate actions | `packages/core/src/near/delegate.ts` |
+| Relays: draft, signature, send | `packages/services/src/relays.ts`, `apps/worker` |
+
+<Callout title="Measured" type="success">
+An account holding 0 NEAR moved a token (0.001 wNEAR on `wrap.testnet`) while the operator paid 0.00029 NEAR in
+fees: <Tx hash="8oDoAfrPgHFRKW7jKKGzHmURxmErFTHYLVhByrzp9Bxk" />. A USDC send from the app cost the operator
+0.00033 NEAR:
+<Tx hash="4a5U9osgJrXKN5EDT3mvrWGT6NrFXoQXwH4bYZjqH6TX" />.
+</Callout>

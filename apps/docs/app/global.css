@@ -1,0 +1,180 @@
+@import "tailwindcss";
+@import "fumadocs-ui/css/neutral.css";
+@import "fumadocs-ui/css/preset.css";
+
+/* Tegata's design lock (DESIGN.md, plan section 6): quiet paper plates for the work, colour in a lit vermilion stage,
+   the seal and real marks; Archivo for everything, its condensed cut (width 62, weight 900) for titles and money;
+   DM Mono for accounts and hashes. The same tokens as apps/web/app/globals.css. */
+
+@source "../components/**/*.tsx";
+@source "../lib/**/*.tsx";
+@source "../content/**/*.mdx";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --font-sans: var(--font-archivo), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-archivo), ui-sans-serif, sans-serif;
+  --font-mono: var(--font-dm-mono), ui-monospace, "SFMono-Regular", monospace;
+
+  --color-shu: #ff4f00;
+  --color-shu-ink: var(--shu-ink);
+  --color-shu-wash: var(--shu-wash);
+  --color-stage-hot: #ff7a2e;
+  --color-stage-glow: #ffb38a;
+  --color-matcha: #c8f06a;
+  --color-sora: #a9d8ff;
+  --color-sakura: #ffc2d6;
+  --color-kin: #ffd23f;
+  --color-ai: #1b1f5e;
+  --color-up: var(--up);
+  --color-text-3: var(--text-3);
+}
+
+:root {
+  --page: #f5f5f5;
+  --card: #ffffff;
+  --plate: #ececec;
+  --pressed: #e2e2e2;
+  --ink: #000000;
+  --text-2: #666666;
+  --text-3: #6e6e6e;
+  --line: #e2e2e2;
+  --shu-ink: #b23700;
+  --shu-wash: #ffe9df;
+  --up: #2f7a00;
+  --fd-layout-width: 1400px;
+}
+
+.dark {
+  --page: #111111;
+  --card: #1c1c1c;
+  --plate: #292929;
+  --pressed: #363636;
+  --ink: #f5f5f5;
+  --text-2: #b8b8b8;
+  --text-3: #a0a0a0;
+  --line: #2f2f2f;
+  --shu-ink: #ff8a52;
+  --shu-wash: #3a2015;
+  --up: #b5f543;
+}
+
+/* Fumadocs' palette, mapped onto Tegata's tokens (which switch with the .dark class). */
+:root,
+.dark {
+  --color-fd-background: var(--page);
+  --color-fd-foreground: var(--ink);
+  --color-fd-muted: var(--plate);
+  --color-fd-muted-foreground: var(--text-2);
+  --color-fd-popover: var(--card);
+  --color-fd-popover-foreground: var(--ink);
+  --color-fd-card: var(--card);
+  --color-fd-card-foreground: var(--ink);
+  --color-fd-border: var(--line);
+  --color-fd-primary: #ff4f00;
+  --color-fd-primary-foreground: #000000;
+  --color-fd-secondary: var(--plate);
+  --color-fd-secondary-foreground: var(--ink);
+  --color-fd-accent: var(--plate);
+  --color-fd-accent-foreground: var(--ink);
+  --color-fd-ring: #ff4f00;
+}
+.dark #nd-sidebar {
+  --color-fd-muted: var(--plate);
+}
+
+body {
+  background: var(--color-fd-background);
+  font-variation-settings: "wdth" 100;
+  -webkit-font-smoothing: antialiased;
+}
+
+html {
+  scrollbar-gutter: stable;
+}
+
+::selection {
+  background: #ff4f00;
+  color: #000000;
+}
+
+/* Titles and money: the condensed cut, heavy, never shouting in capitals. */
+@utility display {
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-stretch: 62%;
+  font-variation-settings: "wdth" 62;
+  letter-spacing: -0.01em;
+}
+
+#nd-page h1 {
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-variation-settings: "wdth" 62;
+  font-size: clamp(2.4rem, 4.6vw, 3.4rem);
+  line-height: 0.98;
+  letter-spacing: -0.01em;
+}
+.prose h2,
+.prose h3 {
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-variation-settings: "wdth" 62;
+  letter-spacing: -0.005em;
+}
+.prose h2 {
+  font-size: 1.9rem;
+}
+.prose h3 {
+  font-size: 1.4rem;
+}
+.prose code {
+  font-family: var(--font-mono);
+}
+.prose a {
+  text-decoration-color: #ff4f00;
+}
+
+/* A soft vermilion light behind each page's title, fading into the page. */
+#nd-page {
+  position: relative;
+  isolation: isolate;
+}
+#nd-page::before {
+  content: "";
+  position: absolute;
+  inset: -6rem -4rem auto;
+  height: 20rem;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(
+      40% 60% at 16% 30%,
+      color-mix(in oklab, #ff4f00 14%, transparent),
+      transparent 70%
+    ),
+    radial-gradient(
+      34% 50% at 70% 10%,
+      color-mix(in oklab, #ffb38a 16%, transparent),
+      transparent 70%
+    );
+  filter: blur(8px);
+  mask-image: linear-gradient(to bottom, black, transparent);
+}
+
+/* The stage: the app's lit vermilion field (components/seal.tsx). It stays lit in dark mode. */
+.stage {
+  background-color: #ff4f00;
+  background-image:
+    radial-gradient(60% 55% at 16% 10%, #ff7a2e 0%, transparent 70%),
+    radial-gradient(70% 60% at 55% 105%, #ffb38a 0%, transparent 65%),
+    radial-gradient(40% 40% at 92% 30%, #ff3a00 0%, transparent 70%);
+}
+
+/* The logo row's endless drift (components/marks.tsx). */
+@keyframes marquee {
+  to {
+    transform: translateX(-50%);
+  }
+}

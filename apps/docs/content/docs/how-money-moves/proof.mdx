@@ -1,0 +1,29 @@
+---
+title: Proof on NEAR
+description: Every claim in these docs, as a transaction on NEAR testnet you can open, and the scripts that reproduce them.
+icon: BadgeCheck
+---
+
+| What happened | Transaction |
+| --- | --- |
+| An account holding 0 NEAR moved a token (0.001 wNEAR on `wrap.testnet`); Tegata's operator paid 0.00029 NEAR in fees | <Tx hash="8oDoAfrPgHFRKW7jKKGzHmURxmErFTHYLVhByrzp9Bxk" /> |
+| `abu-studio.tegata.testnet` sent 1.00 test USDC from the app; it still holds 0 NEAR | <Tx hash="4a5U9osgJrXKN5EDT3mvrWGT6NrFXoQXwH4bYZjqH6TX" /> |
+| A pay link for 0.25 was paid on the NEAR-wallet rail by `tegata.testnet` (`pnpm ops pay-link`) and marked paid from the USDC event | <Tx hash="4rs3uTXRaCnNCsMepj4tDiTsTZuootKSsW2QzqMkcaQ5" /> |
+| INV-0001 was paid 0.20 the same way… | <Tx hash="2q3MP2dbT2sMV5EXX6KpD9d4YUCMprcEKmjZXyWz8cVj" /> |
+| …then 0.30, after a 0.40 attempt was refused | <Tx hash="4DaV5LVezTYavbjzQdfsSUcMYL1Yiz59z5Z4TyFQCquE" /> |
+| Referral: a payment from an account the inviting business had sent money to; it didn't count | <Tx hash="8DY4WakUkhYHLPLsGd9rM2Y6dVgAL4YDFVa32XZSQauZ" /> |
+| Referral: a fresh customer account (made by the proof script and funded by Tegata's operator, never by either business) paid the invited business 5.00, which qualified the invite | <Tx hash="5rdLsxc1kMucKP2phfen3M5wwTgetLHYcg3u1fjPZqWs" /> |
+| Referral: 1.00 reward to the business that invited, after the 10-minute hold | <Tx hash="GPweE94qUfz4EecjcKyyXpTRrkCkYpaaY4YZDtwhjB3U" /> |
+| Referral: 1.00 reward to the business that joined | <Tx hash="2REcTS4fZ6rqnWUEQBxZoe8VUgenN3aaUKcQ5ghqYtT9" /> |
+
+## Run them yourself
+
+After [running Tegata yourself](/docs/build/self-host):
+
+| Proof | Command |
+| --- | --- |
+| A 0-NEAR account moves a token (wNEAR); the operator pays | `pnpm ops proof-relay` |
+| Many gas-free actions at once never collide or double-send | `pnpm ops proof-parallel` |
+| An action stopped before or after sending lands exactly once | `pnpm --filter @tegata/services exec tsx src/proofs/recover.ts` |
+| An invoice sent through the app's own services; pay it in parts with `pnpm ops pay-link <link> <dollars>` | `pnpm --filter @tegata/services exec tsx src/proofs/invoice.ts` |
+| A referral: self-referral refused, a funded payer ignored, both rewards paid | `…/proofs/referral.ts setup`, then `pay <link> <dollars>`, then `sweep` |

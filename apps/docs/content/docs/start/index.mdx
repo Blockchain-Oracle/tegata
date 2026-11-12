@@ -1,0 +1,54 @@
+---
+title: What Tegata is
+description: Invoices and pay links for small businesses, settled in exact dollars on NEAR, with no wallet and no fees to think about.
+icon: Flag
+---
+
+**Send an invoice. Get paid in exact dollars.** Tegata gives a small business invoices and pay links that settle
+in USDC on NEAR. The owner signs in with an email; Tegata opens a NEAR account named after the business and pays
+every network fee, so nobody buys NEAR or keeps a wallet. Every payment gets a sealed, numbered receipt that links
+to its transaction on NEAR.
+
+<Phones>
+  <Phone src="/shots/phone/home.webp" alt="Tegata Home: Abu Studio's $5.75 balance in USDC on NEAR and its latest payments" caption="Home: the balance, and every movement opening its receipt." eager />
+  <Phone src="/shots/phone/guest-invoice-preview.webp" alt="An invoice from Studio Kaze to Northwind Ltd in the builder's preview" caption="An invoice, built without an account." eager />
+  <Phone src="/shots/phone/receipt.webp" alt="Receipt No. 0003 from Abu Studio for $0.30, stamped PAID" caption="A receipt, stamped with the business's seal." eager />
+</Phones>
+
+## The problem
+
+A small design studio finishes a job for a client abroad and sends an invoice for $1,250.00.
+
+- **By card**, Stripe's published price (checked 12 Nov 2026) is 2.9% + 30¢, plus 1.5% for an international card and 1% when the
+  currency is converted: about $68 of the $1,250.
+- **By wire**, receiving US dollars into a Wise Business account costs $6.11, before whatever the client's bank
+  charges to send it.
+- **In stablecoins**, the studio has to ask which coin and chain the client holds, send an address for exactly
+  that chain, match each incoming transfer to an invoice by its amount, and buy that chain's own token before
+  the money can move again.
+
+## The idea
+
+The studio signs in with its email, and Tegata opens `studio.tegata.testnet` on NEAR for it. It
+sends the invoice. The client opens the link and pays in USDC on NEAR, from a Tegata balance or any
+NEAR wallet. The studio receives exactly $1,250.00. The invoice turns **Paid** when NEAR itself shows the
+transfer, the studio's seal is stamped on it, and both sides can open the receipt.
+
+<Diagram name="system" alt="Tegata's parts: the web app, Postgres, and the worker that alone holds the operator keys, relays signed actions to NEAR and reads USDC events; live quotes come from NEAR Intents" caption="The web app, the worker (the only holder of Tegata's NEAR keys) and Postgres." />
+
+## What works today
+
+| Part | What it does | Page |
+| --- | --- | --- |
+| Invoices | Customers, items, discount, tax, part-payments, repeat invoices, a PDF and a timeline | [Invoices](/docs/guide/invoices) |
+| Pay links | A link for a fixed or any amount, with a QR code | [Pay links](/docs/guide/pay-links) |
+| The pay page | Pay from a Tegata balance or a NEAR wallet; other chains show a live NEAR Intents price | [The pay page](/docs/guide/pay-page) |
+| Receipts | One for every movement: customer payments, sends and referral rewards | [Receipts](/docs/guide/receipts) |
+| Send | Dollars to any NEAR account that can hold USDC, in one hold; Tegata pays the fee | [Send](/docs/guide/send) |
+| Referrals | Invite a business; both get a reward once real customers pay it | [Referrals](/docs/guide/refer) |
+| Sandbox | The whole app on NEAR testnet with test USDC, free | [Sandbox and Live](/docs/guide/sandbox) |
+
+<Cards>
+  <Card icon={<Icon name="Play" />} title="Try it in five minutes" href="/docs/start/try-it" description="Eight steps on the live Sandbox, from email sign-in to a sealed receipt." />
+  <Card icon={<Icon name="ArrowLeftRight" />} title="How money moves" href="/docs/how-money-moves" description="Accounts without gas, and what makes a payment paid." />
+</Cards>

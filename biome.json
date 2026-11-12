@@ -21,7 +21,11 @@
       "!apps/web/public/marks",
       "!apps/web/lib/brand/glyphs.ts",
       "!**/.next-build",
-      "!apps/web/app/icon.svg"
+      "!apps/web/app/icon.svg",
+      "!apps/docs/public/marks",
+      "!apps/docs/public/seal.svg",
+      "!apps/docs/app/icon.svg",
+      "!apps/docs/.source"
     ]
   },
   "formatter": {

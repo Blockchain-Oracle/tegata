@@ -1,0 +1,36 @@
+---
+title: Prices from other chains
+description: NEAR Intents' 1Click API prices what a payer on another chain sends for the business to receive exactly the amount owed.
+icon: Globe
+---
+
+<Shot src="/shots/wide/landing.webp" alt="Tegata's landing page: Send an invoice. Get paid in exact dollars, beside the calculator showing what a payer sends for you to get $1,250" caption="The landing page's calculator, on live quotes." address="tegata.84.46.247.92.sslip.io" />
+
+A business is always paid an exact amount. So every price is an **exact-output** quote: the business receives
+exactly $1,250.00 in USDC on NEAR, and the payer's side carries the cost of the route.
+
+| Route | Coin |
+| --- | --- |
+| Tron | USDT |
+| Base | USDC |
+| Ethereum | USDT, ETH |
+| Solana | USDC, SOL |
+| Arbitrum | USDC |
+| Bitcoin | BTC |
+| BNB Chain | USDT |
+| Polygon | USDC |
+
+- The ten routes are fixed in code; each one's asset is looked up in 1Click's `/v0/tokens` (cached for 5
+  minutes).
+- Each price is a **dry** `EXACT_OUTPUT` quote, cached for 30 seconds. A dry quote never creates a deposit address.
+- You see them on the landing page's calculator and on the pay page under **Another chain**. When 1Click won't
+  route an amount, the box shows its reason, such as a $100 minimum.
+
+<Phone src="/shots/phone/pay-other-chain.webp" alt="The pay page with Another chain open on a $0.25 link: the coin grid, and the live quote box showing 1Click's $100 minimum" caption="On a $0.25 link, 1Click's live answer is its $100 minimum." />
+
+<Callout title="Where this stops today" type="warn">
+NEAR Intents has no testnet. In the Sandbox, paying from another chain stops at the price; the deposit address that
+turns a payer's coin into USDC on NEAR is part of Live, and isn't built yet.
+</Callout>
+
+Code: `apps/web/lib/server/oneclick.ts` and `GET /api/quote`.

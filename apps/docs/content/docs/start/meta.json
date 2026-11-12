@@ -1,0 +1,7 @@
+{
+  "title": "Start here",
+  "description": "What Tegata is, and a paid invoice in five minutes",
+  "icon": "Flag",
+  "root": true,
+  "pages": ["index", "try-it", "bookkeepers"]
+}

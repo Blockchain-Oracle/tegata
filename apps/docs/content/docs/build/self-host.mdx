@@ -1,0 +1,62 @@
+---
+title: Run it yourself
+description: Postgres in Docker, a free NEAR testnet account as your operator, a free Privy app, and two commands.
+icon: Terminal
+---
+
+You need Node 22.18 or newer, pnpm 11, Docker, and a free [Privy](https://dashboard.privy.io) app with email login.
+
+<Steps>
+<Step>
+
+### Install and configure
+
+```bash
+pnpm install
+cp .env.example .env          # fill in POSTGRES_PASSWORD, DATABASE_URL and the four PRIVY_ values
+pnpm services:up              # Postgres on 127.0.0.1:54330
+pnpm db:migrate
+```
+
+</Step>
+<Step>
+
+### Make your operator
+
+```bash
+node scripts/testnet-account.mjs my-studio.testnet   # a free testnet account
+```
+
+Set `NETWORKS.testnet.operator` in `packages/config/src/index.ts` to that account. It becomes the parent of every
+user account (`name.my-studio.testnet`). Then:
+
+```bash
+pnpm ops add-keys testnet 3   # writes OPERATOR_KEYS_TESTNET to .env
+```
+
+</Step>
+<Step>
+
+### Run
+
+```bash
+pnpm dev                      # the web app on :3100, the worker, and these docs on :3300
+```
+
+</Step>
+</Steps>
+
+For **Add test dollars**, send your operator some test USDC from [Circle's faucet](https://faucet.circle.com).
+`pnpm ci` runs Biome, the type checks, the tests and the build.
+
+## Environment
+
+| Name | For |
+| --- | --- |
+| `DATABASE_URL`, `POSTGRES_PASSWORD` | Postgres |
+| `APP_URL` | The web app's public address |
+| `PRIVY_APP_ID`, `PRIVY_APP_SECRET`, `PRIVY_VERIFICATION_KEY`, `NEXT_PUBLIC_PRIVY_APP_ID` | Email sign-in |
+| `OPERATOR_KEYS_TESTNET` | The worker only: the operator's keys |
+| `OPERATOR_KEYS_MAINNET`, `LIVE_ENABLED` | Reserved for Live, which isn't built yet |
+| `RESEND_API_KEY`, `EMAIL_FROM` | Invoice and reminder emails; leave empty to share links without email |
+| `ONECLICK_API_KEY` | Reserved for a 1Click partner key; not used yet |

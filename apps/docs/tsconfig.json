@@ -1,0 +1,11 @@
+{
+  "extends": "@tegata/typescript-config/nextjs.json",
+  "compilerOptions": {
+    "types": ["node"],
+    "paths": {
+      "@/*": ["./*"]
+    }
+  },
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", ".source/**/*.ts"],
+  "exclude": ["node_modules", "out"]
+}

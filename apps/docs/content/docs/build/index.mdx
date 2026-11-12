@@ -1,0 +1,60 @@
+---
+title: Architecture
+description: A Next.js app, a worker that alone holds the NEAR keys, Postgres, and NEAR underneath, in one pnpm workspace.
+icon: Server
+---
+
+<Diagram name="system" alt="Tegata's parts: the web app, Postgres, the worker that alone holds the operator keys and relays to NEAR, and live quotes from NEAR Intents" caption="The system." />
+
+## The parts
+
+| Part | What it does |
+| --- | --- |
+| `apps/web` | Next.js 16: the landing page, sign-in, the app, the public invoice, pay and receipt pages, the API, and `/dev` (every part of the design in every state) |
+| `apps/worker` | Background jobs on pg-boss. The only process that holds Tegata's NEAR keys; the web server never does |
+| `apps/docs` | These docs: Fumadocs, exported to static files |
+| Postgres 17 | The books: users, businesses, accounts, requests, payments, receipts, invoices, customers, referrals, relays |
+
+## The worker's jobs
+
+| Job | When |
+| --- | --- |
+| `relay-send` | Each signed action: send it to NEAR, exactly once. A Tegata-balance payment settles here |
+| `account-setup` | A new sign-up: create the NEAR account and register it on USDC |
+| `payment-verify` | A NEAR-wallet payment: read it from NEAR and settle it |
+| `test-dollars` | A Sandbox grant: send 5 test USDC |
+| `invoice-email` | An invoice or reminder email, when email is on |
+| `invoice-repeat` | Every 10 minutes: issue repeat invoices that are due |
+| `referral-sweep` | Every 5 minutes, and once at start: qualify invites, pay rewards past their hold |
+
+At start the worker also picks up any relay or payment it left halfway.
+
+## Built on
+
+| Piece | What it does in Tegata | Where |
+| --- | --- | --- |
+| NEAR named accounts | `name.tegata.testnet` for every business, created with the owner's own key | `packages/core/src/near/accounts.ts`, `operator.ts` |
+| Meta transactions (NEP-366) | The owner signs; the worker relays and pays the fee | `packages/core/src/near/delegate.ts`, `packages/services/src/relays.ts` |
+| USDC on NEAR (NEP-141) | Every balance and settlement; "paid" is read from its transfer event | `packages/core/src/near/usdc.ts`, `transfers.ts` |
+| NEAR Intents (1Click) | Live prices from other chains | `apps/web/lib/server/oneclick.ts` |
+| NEAR Connect | Customers pay from their own NEAR wallet | `apps/web/lib/client/near-wallet.ts` |
+| Privy | Email sign-in that gives each owner a NEAR key | `apps/web/app/providers.tsx` |
+| react-pdf, react-email, Resend | The invoice PDF, and the invoice and reminder emails | `packages/documents` |
+
+## The workspace
+
+```
+apps/web            Next.js: landing, sign-in, the app, public pages, API, /dev
+apps/worker         background jobs; the only process that holds operator keys
+apps/docs           these docs
+packages/config     constants: networks, gas, limits, referral rules
+packages/core       money and invoice maths, schedules; NEAR: accounts, USDC, delegate actions, the operator
+packages/db         Postgres schema and migrations (Drizzle)
+packages/documents  the invoice PDF and the emails
+packages/env        the only reader of server environment variables
+packages/jobs       queue definitions
+packages/services   database-aware logic shared by the web app and the worker
+```
+
+USDC contracts: `3e2210e1184b45b64c8a434c0a7e7b23cc04ea7eb7a6c3c32520d03d4afcb8af` on testnet,
+`17208628f84f5d6ad33f0da3bbbeb27ffcb398eac501a31bd6ad2011e36133a1` on mainnet.

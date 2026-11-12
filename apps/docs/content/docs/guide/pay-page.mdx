@@ -1,0 +1,47 @@
+---
+title: The pay page
+description: What your customer sees when they open a link or an invoice, designed for phones; two ways to pay, a live price from other chains, and paid only when NEAR says so.
+icon: CreditCard
+---
+
+<Phones>
+  <Phone src="/shots/phone/pay-link.webp" alt="The pay page: pay Abu Studio $0.25, with Tegata balance, NEAR wallet and Another chain" caption="Two ways to pay, and a price from other chains." eager />
+  <Phone src="/shots/phone/pay-other-chain.webp" alt="Another chain open on a $0.25 link: the coin grid, and the live quote box showing 1Click's $100 minimum" caption="Another chain: real coins and chains. For $0.25, 1Click's live answer is its $100 minimum." eager />
+  <Phone src="/shots/phone/pay-paid-invoice.webp" alt="The pay page for a paid invoice: Invoice INV-0001 is paid, $0.50, View invoice" caption="A paid invoice says so, and links back to it." eager />
+</Phones>
+
+The header shows your logo or seal, the amount, and "receives exactly this in USDC". For an invoice it shows the
+number, the due date and **View invoice**; with part-payments allowed the payer types any amount up to what's left.
+
+## Two ways to pay, and a price from other chains
+
+<Tabs items={["Tegata balance", "NEAR wallet", "Another chain"]}>
+<Tab value="Tegata balance">
+
+The payer signs in with their email and pays from their own Tegata dollars. Tegata pays the network fee. In the
+Sandbox, **Add $5.00 test dollars** appears there when your balance is short. They press and hold **Hold to pay**. You can't pay your own
+link from your own balance.
+
+</Tab>
+<Tab value="NEAR wallet">
+
+The payer connects a NEAR wallet through NEAR Connect (in the Sandbox, the wallets it lists for testnet, such as
+Meteor and Intear; HOT and MyNearWallet are mainnet-only) and approves one USDC transfer to your account carrying this payment's memo. Their wallet pays the network fee.
+
+</Tab>
+<Tab value="Another chain">
+
+Coins on Tron, Base, Ethereum, Solana, Arbitrum, Bitcoin, BNB Chain and Polygon, each with a live NEAR Intents
+price for exactly your amount, or the route's reason (such as a minimum). In the Sandbox this stops at the price: NEAR Intents has no testnet, so paying from
+another chain is part of Live.
+
+</Tab>
+</Tabs>
+
+## What happens next
+
+Live steps show the payment moving, then your seal stamps **PAID** and **View your receipt** opens it. The payment
+counts only when Tegata reads it from NEAR: see [When is it paid?](/docs/how-money-moves/paid)
+
+A link that is switched off says "This link isn't taking payments". A paid invoice says it is paid and links to
+the invoice, where its receipts are.

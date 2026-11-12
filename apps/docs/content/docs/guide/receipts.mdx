@@ -1,0 +1,25 @@
+---
+title: Receipts
+description: A sealed receipt for every movement, customer payments, sends and referral rewards, each saying who paid whom and linking to its NEAR transaction.
+icon: ReceiptText
+---
+
+<Phones>
+  <Phone src="/shots/phone/receipt.webp" alt="Receipt No. 0003 from Abu Studio: $0.30 for invoice INV-0001, stamped PAID" caption="A customer payment: numbered, stamped PAID." eager />
+  <Phone src="/shots/phone/receipt-send.webp" alt="A receipt from Abu Studio stamped SENT: $15.00 to tegata.testnet, fee paid by Tegata" caption="A send: stamped SENT." eager />
+  <Phone src="/shots/phone/receipt-reward.webp" alt="A receipt from Tegata under Tegata's seal: a $1.00 referral reward to Abu Studio" caption="A referral reward: under Tegata's own seal." eager />
+</Phones>
+
+Every row on Home opens its receipt first; the receipt then links to the transaction on NEAR. Receipts are public
+pages: share one with the person you paid, or the one who paid you.
+
+| Kind | Address | Numbered | Stamp |
+| --- | --- | --- | --- |
+| Customer payment | `/r/<token>` | Yes, No. 0001… per business | Your seal, PAID |
+| Send | `/r/send/<id>` | No | Your seal, SENT |
+| Referral reward | `/r/reward/<id>` | No | Tegata's seal |
+
+Each one shows **Paid to**, **For**, **From**, **Paid with**, **Settled** (in the reader's own time zone, named),
+**Network fee** and **Transaction**,
+then **Share**, **Save as PDF** and **See it on NEAR**. A send that hasn't settled shows "Settling" and no stamp;
+a failed send moved no money and has no receipt.
