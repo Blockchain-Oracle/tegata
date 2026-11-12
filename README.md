@@ -27,9 +27,18 @@ The foundation, on NEAR testnet:
 | Many gas-free actions at once never collide or double-send                         | `pnpm ops proof-parallel`                                       |
 | An action interrupted mid-send lands exactly once after a restart                  | `pnpm --filter @tegata/services exec tsx src/proofs/recover.ts` |
 
-In the app (Sandbox): sign in with an emailed code, name the business, get `name.tegata.testnet`
-created and registered for USDC, and send test dollars with no NEAR in the account. A recorded send of
-1.00 test USDC from `abu-studio.tegata.testnet`:
+In the app (Sandbox), live at **https://tegata.84.46.247.92.sslip.io**:
+
+| Do this | See this |
+| --- | --- |
+| Open `/` and change the amount or the coin in the calculator | A live NEAR Intents quote: what a customer on Tron, Base, Bitcoin… sends so you receive exactly that many dollars |
+| Sign in with your email | A six-digit code inside the page; the cells turn vermilion and Tegata's seal presses when it is accepted |
+| Name your business and pick your pay address | `name.tegata.testnet` is created on NEAR and registered for USDC while you watch, then your business's own seal is stamped |
+| On Home, press Get paid | Your NEAR pay address as a QR, ready to share |
+| Send test dollars to another NEAR account | Hold to send, live steps, and a sealed receipt linked to NEAR. Your account never holds NEAR; Tegata pays the fee |
+| Open `/dev` | Every part of the design in every state: the seal, colour, type, components, loading and error states, motion and sound |
+
+A recorded send of 1.00 test USDC from `abu-studio.tegata.testnet`:
 [transaction](https://testnet.nearblocks.io/txns/4a5U9osgJrXKN5EDT3mvrWGT6NrFXoQXwH4bYZjqH6TX).
 
 A recorded run of the first proof: account `proof-f4b082b1.tegata.testnet` held 0 NEAR before and after;
@@ -71,6 +80,7 @@ The operator account name is set in `packages/config/src/index.ts` (`NETWORKS.te
 ## Layout
 
 ```
+apps/web           Next.js: landing, sign-in, the app, public pages, API, and /dev (the design review)
 apps/worker        background jobs; the only process that holds operator keys
 packages/config    constants: networks, gas, limits
 packages/core      money maths; NEAR: accounts, USDC, gas-free actions, the operator
@@ -83,8 +93,17 @@ packages/services  database-aware logic shared by the web app and the worker
 ## Reused work
 
 Allowed by the hackathon rules (Q-005) and listed here as they require. From the author's earlier
-projects: the pnpm and turbo workspace setup, the testnet account script and the Postgres compose file.
-Everything else in this repository was written during the hackathon.
+projects (Kawase, Senryo, Mamori):
+
+- the pnpm and turbo workspace setup, the testnet account script and the Postgres compose file;
+- the design grammar and several web components first sourced from 21st.dev: hold to confirm, segmented
+  control, task steps, text shimmer, the sound-feedback module and the rail and dock layout (each file says
+  where it came from);
+- the interface and money sound cues: SND's sound kits (snd.dev, free for use inside a service), processed
+  in Kawase.
+
+Chain and coin logos come from the NEAR Intents swap widget (MIT) and the brands' own kits; see
+`apps/web/public/marks/PROVENANCE.md`. Everything else in this repository was written during the hackathon.
 
 ## Licence
 
