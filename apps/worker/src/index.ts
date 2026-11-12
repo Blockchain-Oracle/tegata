@@ -8,6 +8,8 @@ import {
   accountsNotReady,
   paymentsToVerify,
   processRelay,
+  queuedTestDollars,
+  sendTestDollars,
   settlePayment,
   settleRelayedPayment,
   setupAccount,
@@ -72,11 +74,23 @@ await boss.work(QUEUES.paymentVerify.name, async ([job]) => {
   if (settled === "pending") throw new Error("Transaction not final yet")
 })
 
+await boss.work(QUEUES.testDollars.name, async ([job]) => {
+  if (!job) return
+  const { grantId } = QUEUES.testDollars.payload.parse(job.data)
+  const operator = operators.get("testnet")
+  if (!operator) return
+  const status = await sendTestDollars(db, operator, grantId)
+  console.log(`[test-dollars] ${grantId} ${status}`)
+})
+
 // Anything approved or mid-send when the last worker stopped is picked up again.
 const leftover = await unfinishedRelays(db)
 for (const relay of leftover) await enqueue(boss, "relaySend", { relayId: relay.id }, relay.id)
 for (const payment of await paymentsToVerify(db)) {
   await enqueue(boss, "paymentVerify", { paymentId: payment.id }, payment.id)
+}
+for (const grant of await queuedTestDollars(db)) {
+  await enqueue(boss, "testDollars", { grantId: grant.id }, grant.id)
 }
 for (const account of await accountsNotReady(db)) {
   if (operators.has(account.network)) {

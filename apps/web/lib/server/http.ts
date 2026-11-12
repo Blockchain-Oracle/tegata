@@ -1,4 +1,4 @@
-import { OnboardError, PaymentError, RelayError } from "@tegata/services"
+import { OnboardError, PaymentError, RelayError, SandboxError } from "@tegata/services"
 import { ZodError } from "zod"
 
 const STATUS = {
@@ -56,6 +56,12 @@ function toResponse(error: unknown): Response {
           ? STATUS.badRequest
           : STATUS.conflict
     return Response.json({ error: { code: error.code, message: error.message } }, { status })
+  }
+  if (error instanceof SandboxError) {
+    return Response.json(
+      { error: { code: error.code, message: error.message } },
+      { status: STATUS.conflict },
+    )
   }
   if (error instanceof OnboardError) {
     return Response.json(

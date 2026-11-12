@@ -22,6 +22,13 @@ export const QUEUES = {
     payload: z.object({ paymentId: z.uuid() }),
     options: { retryLimit: 20, retryDelay: 3, retryBackoff: true, expireInSeconds: 120 },
   },
+  /** Sandbox: send a person today's test dollars from the operator. Never retried by the queue; the sweep at
+   * start checks a grant whose transfer was already signed. */
+  testDollars: {
+    name: "test-dollars",
+    payload: z.object({ grantId: z.uuid() }),
+    options: { retryLimit: 0, expireInSeconds: 180 },
+  },
   /** Create a user's NEAR account and register it on USDC. Safe to repeat. */
   accountSetup: {
     name: "account-setup",

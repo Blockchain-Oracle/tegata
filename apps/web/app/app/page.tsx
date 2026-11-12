@@ -6,6 +6,7 @@ import { NETWORKS } from "@tegata/config"
 import { HomeView } from "@/components/home/home-view"
 import { useShell } from "@/components/shell/shell-context"
 import { useProfile } from "@/hooks/use-profile"
+import { useTestDollars } from "@/hooks/use-test-dollars"
 import { api } from "@/lib/client/api"
 import type { ActivityItem } from "@/lib/client/types"
 
@@ -14,6 +15,7 @@ const ACTIVITY_POLL_MS = 10_000
 export default function HomePage() {
   const { profile } = useProfile()
   const { openReceive } = useShell()
+  const testDollars = useTestDollars()
   const activity = useQuery({
     queryKey: ["activity"],
     queryFn: () => api<{ items: ActivityItem[] }>("/api/activity"),
@@ -32,6 +34,8 @@ export default function HomePage() {
       activityError={activity.isError}
       onReceive={openReceive}
       onRetryActivity={() => void activity.refetch()}
+      testDollars={account.network === "testnet" ? testDollars : undefined}
+      onAddTestDollars={testDollars.add}
     />
   )
 }

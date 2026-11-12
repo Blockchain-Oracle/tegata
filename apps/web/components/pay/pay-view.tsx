@@ -10,6 +10,7 @@ import {
   ExternalLink,
   KeyRound,
   Lock,
+  Plus,
   Radio,
   ReceiptText,
   Wallet,
@@ -25,6 +26,7 @@ import { Paper, Stage } from "@/components/kit/stage"
 import { ErrorState, Skeleton, TextShimmer, WaitingText } from "@/components/kit/states"
 import { TaskSteps } from "@/components/kit/task-steps"
 import { Mark, type MarkId, MarkStack } from "@/components/marks/mark"
+import type { TestDollars } from "@/hooks/use-test-dollars"
 import type { AttemptView, PaymentRail, PublicRequest } from "@/lib/client/types"
 import { fire } from "@/lib/feedback"
 import { cn } from "@/lib/utils"
@@ -81,6 +83,9 @@ export interface PayViewProps {
   startedAt: number
   attempt: AttemptView | null
   onTryAgain: () => void
+  /** Sandbox only: today's test dollars, offered when the balance is short. */
+  testDollars?: TestDollars
+  onAddTestDollars?: () => void
 }
 
 const TEGATA_STEPS = [
@@ -442,8 +447,19 @@ function TegataPanel(p: PanelProps) {
       />
       {short ? (
         <p className="text-[15px] font-medium text-warn">
-          You have ${t.balance.toFixed(2)}. Add dollars to your Tegata account first.
+          {p.testDollars?.state === "failed" && p.testDollars.error
+            ? p.testDollars.error
+            : `You have $${t.balance.toFixed(2)}. Add dollars to your Tegata account first.`}
         </p>
+      ) : null}
+      {short && p.testDollars && p.onAddTestDollars && p.testDollars.state !== "sent" ? (
+        <Button
+          variant="secondary"
+          onClick={p.onAddTestDollars}
+          busy={p.testDollars.state === "sending"}
+        >
+          <Plus /> Add $5.00 test dollars
+        </Button>
       ) : null}
       <Problem text={p.problem} />
       <HoldButton

@@ -100,6 +100,9 @@ export const RESERVED_HANDLES: readonly string[] = [
   "docs",
 ]
 
+/** Sandbox only: test dollars the operator sends a person, once per UTC day (Circle testnet USDC). */
+export const TEST_DOLLARS = { units: 5_000_000n, memo: "tegata:test-dollars" } as const
+
 export const TIMEOUTS = {
   rpcMs: 15_000,
   /** How long to wait for a relayed transaction to reach finality before reporting "unknown". */

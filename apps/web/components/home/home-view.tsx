@@ -3,16 +3,27 @@
 // Home (plan 6.8 C): the balance on a stage tile with four actions, the pay address as a sealed card, the latest
 // movements as rows with real marks, and colour-field first steps for a new account. Separate from its data so
 // /dev/flows can show every state.
-import { ArrowDownLeft, ArrowUpRight, Check, Copy, ExternalLink, Link2, Send } from "lucide-react"
+import {
+  ArrowDownLeft,
+  ArrowUpRight,
+  Check,
+  Copy,
+  ExternalLink,
+  Link2,
+  Plus,
+  Send,
+} from "lucide-react"
 import { motion, useReducedMotion } from "motion/react"
 import Link from "next/link"
 import { useState } from "react"
 
 import { BusinessSeal } from "@/components/brand/seal"
+import { Spinner } from "@/components/kit/button"
 import { Figure, viewDollars } from "@/components/kit/figure"
 import { Paper, Stage, StageAction, StageObject } from "@/components/kit/stage"
 import { LoadingShape, StatusPill } from "@/components/kit/states"
 import { Mark, MarkStack } from "@/components/marks/mark"
+import type { TestDollars } from "@/hooks/use-test-dollars"
 import type { ActivityItem } from "@/lib/client/types"
 import { fire } from "@/lib/feedback"
 import { cn } from "@/lib/utils"
@@ -29,6 +40,9 @@ export interface HomeViewProps {
   activityError: boolean
   onReceive: () => void
   onRetryActivity: () => void
+  /** Sandbox only: today's test dollars from the operator. */
+  testDollars?: TestDollars
+  onAddTestDollars?: () => void
 }
 
 export function HomeView({
@@ -40,6 +54,8 @@ export function HomeView({
   activityError,
   onReceive,
   onRetryActivity,
+  testDollars,
+  onAddTestDollars,
 }: HomeViewProps) {
   const [copied, setCopied] = useState(false)
   const reduce = useReducedMotion()
@@ -161,9 +177,28 @@ export function HomeView({
               href="/app/links?new=1"
               icon={<Link2 />}
             />
-            {funded ? (
+            {testDollars && onAddTestDollars ? (
               <Tile
                 field="bg-kin"
+                title={testDollars.state === "sent" ? "Test dollars added" : "Add test dollars"}
+                detail={
+                  testDollars.state === "sending"
+                    ? "Sending $5.00 from the Sandbox stash…"
+                    : testDollars.state === "sent"
+                      ? "$5.00 of test USDC is in your balance. More tomorrow."
+                      : testDollars.state === "failed"
+                        ? (testDollars.error ?? "That didn't work. Try again.")
+                        : "$5.00 of test USDC, so you can try paying a link. Once a day."
+                }
+                onClick={onAddTestDollars}
+                disabled={testDollars.state === "sending" || testDollars.state === "sent"}
+                busy={testDollars.state === "sending"}
+                icon={testDollars.state === "sent" ? <Check /> : <Plus />}
+              />
+            ) : null}
+            {funded ? (
+              <Tile
+                field="bg-matcha"
                 title="Send dollars"
                 detail="To any NEAR account. No fees, no gas."
                 href="/app/send"
@@ -290,6 +325,8 @@ function Tile({
   onClick,
   href,
   external,
+  disabled,
+  busy,
 }: {
   field: string
   title: string
@@ -298,11 +335,13 @@ function Tile({
   onClick?: () => void
   href?: string
   external?: boolean
+  disabled?: boolean
+  busy?: boolean
 }) {
   const body = (
     <>
       <span className="grid size-11 place-items-center rounded-full bg-black/10 [&_svg]:size-5">
-        {icon}
+        {busy ? <Spinner /> : icon}
       </span>
       <span className="flex flex-col gap-1">
         <span className="display text-[24px] leading-none">{title}</span>
@@ -325,7 +364,13 @@ function Tile({
       </Link>
     )
   return (
-    <button type="button" onClick={onClick} className={cls}>
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      aria-busy={busy || undefined}
+      className={cn(cls, "disabled:cursor-default")}
+    >
       {body}
     </button>
   )

@@ -17,6 +17,7 @@ import { viewDollars } from "@/components/kit/figure"
 import { type PayRoute, type PayStep, PayView, type TegataState } from "@/components/pay/pay-view"
 import { useNearKey } from "@/hooks/use-near-key"
 import { useProfile } from "@/hooks/use-profile"
+import { useTestDollars } from "@/hooks/use-test-dollars"
 import { ApiError, api } from "@/lib/client/api"
 import { rememberNext } from "@/lib/client/next-path"
 import type {
@@ -123,6 +124,7 @@ export function PayClient({
   const { ready, authenticated } = usePrivy()
   const { profile } = useProfile()
   const key = useNearKey()
+  const testDollars = useTestDollars()
   const network = initial.network
 
   const [rail, setRail] = useState<PaymentRail | null>(network === "testnet" ? "tegata" : null)
@@ -379,6 +381,8 @@ export function PayClient({
       progress={progress}
       startedAt={startedAt}
       attempt={attempt.data ?? null}
+      testDollars={network === "testnet" ? testDollars : undefined}
+      onAddTestDollars={testDollars.add}
       onTryAgain={() => {
         setProblem(null)
         setAttemptId(null)
