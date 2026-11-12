@@ -294,7 +294,7 @@ export function BusinessView(p: BusinessViewProps) {
               ))}
             </select>
             <span className="text-detail text-muted-foreground">
-              Due dates and payroll run on this clock.
+              Due dates, reminders and repeat invoices run on this clock.
             </span>
           </div>
 

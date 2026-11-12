@@ -3,12 +3,13 @@ import { ImageResponse } from "next/og"
 
 import { SEAL_FACES } from "@/lib/brand/glyphs"
 
-export const alt = "Tegata: get paid and pay your people in dollars, from any chain, on NEAR"
+export const alt =
+  "Tegata. Send an invoice. Get paid in exact dollars. Invoices and pay links, settled in USDC on NEAR."
 export const size = { width: 1200, height: 630 }
 export const contentType = "image/png"
 
-const HEADLINE = "Get paid and pay your people in dollars."
-const SUB = "From any chain, settled on NEAR."
+const HEADLINE = "Send an invoice. Get paid in exact dollars."
+const SUB = "Invoices and pay links, settled in USDC on NEAR."
 
 /** Archivo at width 62, weight 900, subset to exactly the characters drawn (Google Fonts returns a TTF). */
 async function archivo(text: string): Promise<ArrayBuffer> {

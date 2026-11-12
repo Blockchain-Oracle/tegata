@@ -1,7 +1,8 @@
 "use client"
 
-// A receipt (plan 6.8 E): a numbered paper slip on the stage, stamped PAID with the business seal, with the amount,
-// who paid whom, how, when, and the NEAR transaction that proves it. Share it, save it as a PDF, or open it on NEAR.
+// A receipt (plan 6.8 E, rule R1): a paper slip on the stage for every money movement, a customer payment (numbered,
+// stamped PAID with the business seal), a send (stamped SENT) or a referral reward (Tegata's own seal), with the
+// amount, who paid whom, how, when, and the NEAR transaction that proves it. Share it, save it as a PDF, then NEAR.
 import { Check, ExternalLink, Printer, Share2 } from "lucide-react"
 import Link from "next/link"
 import { useState } from "react"
@@ -16,16 +17,25 @@ import { fire } from "@/lib/feedback"
 
 const COPIED_MS = 1500
 
-const RAIL_WORD = {
+const METHOD_WORD = {
   tegata: "Tegata balance",
   near_wallet: "NEAR wallet",
   oneclick: "Another chain (NEAR Intents)",
   manual: "Marked paid by hand (not on NEAR)",
+  reward: "Tegata referral rewards",
 } as const
+
+const FEE_WORD = { tegata: "Paid by Tegata", payer: "Paid by the payer's wallet" } as const
 
 export function ReceiptView({ receipt, token }: { receipt: Receipt; token: string }) {
   const [copied, setCopied] = useState(false)
-  const number = `No. ${String(receipt.number).padStart(4, "0")}`
+  const number =
+    receipt.number !== null
+      ? `No. ${String(receipt.number).padStart(4, "0")}`
+      : receipt.kind === "send"
+        ? "Sent"
+        : "Reward"
+  const tegata = receipt.kind === "reward"
   const settled = receipt.settledAt
     ? new Date(receipt.settledAt).toLocaleString("en-GB", {
         day: "numeric",
@@ -33,6 +43,8 @@ export function ReceiptView({ receipt, token }: { receipt: Receipt; token: strin
         year: "numeric",
         hour: "2-digit",
         minute: "2-digit",
+        // The reader's own clock, so it says which one: "12 Nov 2026, 17:40 GMT+1".
+        timeZoneName: "short",
       })
     : "Settling"
   const sandbox = receipt.network === "testnet"
@@ -62,6 +74,8 @@ export function ReceiptView({ receipt, token }: { receipt: Receipt; token: strin
           <span className="grid size-12 place-items-center overflow-hidden rounded-full bg-white shadow-object">
             {receipt.logo ? (
               <img src={receipt.logo} alt="" className="size-full object-cover" />
+            ) : tegata ? (
+              <TegataSeal size={34} tilt={-4} />
             ) : (
               <BusinessSeal name={receipt.business} size={42} tilt={-4} />
             )}
@@ -91,26 +105,23 @@ export function ReceiptView({ receipt, token }: { receipt: Receipt; token: strin
             </div>
             <dl className="flex flex-col gap-3 p-6 pt-3 text-[14px]">
               <Row label="Paid to">
-                <span className="flex flex-col items-end">
-                  <span>{receipt.business}</span>
-                  <span className="font-mono text-[12px] font-medium text-[#666]">
-                    {receipt.receiverId}
-                  </span>
-                </span>
+                <Party name={receipt.receiverName} account={receipt.receiverId} />
               </Row>
               <Row label="For">{receipt.title}</Row>
               <Row label="From">
-                <span className="font-mono text-[13px]">{receipt.payer ?? "A payer"}</span>
+                <Party name={receipt.payerName} account={receipt.payer ?? "A payer"} />
               </Row>
               <Row label="Paid with">
                 <span className="inline-flex items-center gap-1.5">
-                  <RailMark rail={receipt.rail} size={18} /> {RAIL_WORD[receipt.rail]}
+                  <RailMark
+                    rail={receipt.method === "reward" ? "tegata" : receipt.method}
+                    size={18}
+                  />{" "}
+                  {METHOD_WORD[receipt.method]}
                 </span>
               </Row>
               <Row label="Settled">{settled}</Row>
-              <Row label="Network fee">
-                {receipt.rail === "tegata" ? "Paid by Tegata" : "Paid by the payer's wallet"}
-              </Row>
+              {receipt.feeBy ? <Row label="Network fee">{FEE_WORD[receipt.feeBy]}</Row> : null}
               {receipt.txHash ? (
                 <Row label="Transaction">
                   <span className="font-mono text-[13px]">
@@ -127,14 +138,24 @@ export function ReceiptView({ receipt, token }: { receipt: Receipt; token: strin
                 <Mark id="circle" size={14} /> USDC by Circle
               </span>
             </div>
-            <div className="absolute top-4 right-4">
-              <SealPress
-                delay={0.45}
-                onLanded={() => fire("filled", { cue: "stamp", identity: `receipt:${token}` })}
-              >
-                <BusinessSeal name={receipt.business} band="Paid" size={100} />
-              </SealPress>
-            </div>
+            {receipt.settledAt ? (
+              <div className="absolute top-4 right-4">
+                <SealPress
+                  delay={0.45}
+                  onLanded={() => fire("filled", { cue: "stamp", identity: `receipt:${token}` })}
+                >
+                  {tegata ? (
+                    <TegataSeal size={84} tilt={-8} />
+                  ) : (
+                    <BusinessSeal
+                      name={receipt.business}
+                      band={receipt.kind === "send" ? "Sent" : "Paid"}
+                      size={100}
+                    />
+                  )}
+                </SealPress>
+              </div>
+            ) : null}
           </article>
         </StageObject>
 
@@ -168,6 +189,17 @@ export function ReceiptView({ receipt, token }: { receipt: Receipt; token: strin
         </Link>
       </Stage>
     </div>
+  )
+}
+
+/** A name over its NEAR account, or the account alone when that is all there is. */
+function Party({ name, account }: { name: string | null; account: string }) {
+  if (!name || name === account) return <span className="font-mono text-[13px]">{account}</span>
+  return (
+    <span className="flex flex-col items-end">
+      <span>{name}</span>
+      <span className="font-mono text-[12px] font-medium text-[#666]">{account}</span>
+    </span>
   )
 }
 

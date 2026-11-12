@@ -1,8 +1,8 @@
 "use client"
 
 // Home (plan 6.8 C): the balance on a stage tile with four actions, the pay address as a sealed card, the latest
-// movements as rows with real marks, and colour-field first steps for a new account. Separate from its data so
-// /dev/flows can show every state.
+// movements as rows that open their receipts, and colour-field first steps that retire as each is done. Separate
+// from its data so /dev/flows can show every state.
 import {
   ArrowDownLeft,
   ArrowUpRight,
@@ -12,7 +12,6 @@ import {
   FileText,
   Link2,
   Plus,
-  Send,
 } from "lucide-react"
 import { motion, useReducedMotion } from "motion/react"
 import Link from "next/link"
@@ -30,6 +29,8 @@ import { fire } from "@/lib/feedback"
 import { cn } from "@/lib/utils"
 
 const COPIED_MS = 1500
+/** USDC base units: below this, Sandbox test dollars are still worth suggesting. */
+const ONE_DOLLAR = 1_000_000n
 
 export interface HomeViewProps {
   businessName: string
@@ -49,6 +50,8 @@ export interface HomeViewProps {
     reward: bigint
     qualified: boolean
   } | null
+  /** First steps already taken; each retires its tile. Undefined while loading (no tiles flash in and out). */
+  steps?: { invoiceSent: boolean; linkMade: boolean }
   /** Sandbox only: today's test dollars from the operator. */
   testDollars?: TestDollars
   onAddTestDollars?: () => void
@@ -66,6 +69,7 @@ export function HomeView({
   testDollars,
   onAddTestDollars,
   invite,
+  steps,
 }: HomeViewProps) {
   const [copied, setCopied] = useState(false)
   const reduce = useReducedMotion()
@@ -75,8 +79,54 @@ export function HomeView({
     setCopied(true)
     setTimeout(() => setCopied(false), COPIED_MS)
   }
-  const fresh = balance === 0n && (activity?.length ?? 0) === 0
-  const funded = balance !== null && balance > 0n
+  // First steps retire once done: the invoice and link tiles after the first of each, test dollars once the balance
+  // can pay something (or while this session's grant is on its way). With none left, Latest takes the full width.
+  const wantsTestDollars =
+    testDollars !== undefined &&
+    onAddTestDollars !== undefined &&
+    (testDollars.state !== "idle" || (balance !== null && balance < ONE_DOLLAR))
+  const nextTiles = [
+    steps && !steps.invoiceSent ? (
+      <Tile
+        key="invoice"
+        field="bg-sakura"
+        title="Send your first invoice"
+        detail="Bill a customer. They pay in dollars; you get the exact amount in USDC."
+        href="/app/invoices/new"
+        icon={<FileText />}
+      />
+    ) : null,
+    steps && !steps.linkMade ? (
+      <Tile
+        key="link"
+        field="bg-sora"
+        title="Create your first pay link"
+        detail="One link anyone can pay, from an email sign-in or a NEAR wallet."
+        href="/app/links?new=1"
+        icon={<Link2 />}
+      />
+    ) : null,
+    wantsTestDollars ? (
+      <Tile
+        key="test-dollars"
+        field="bg-kin"
+        title={testDollars.state === "sent" ? "Test dollars added" : "Add test dollars"}
+        detail={
+          testDollars.state === "sending"
+            ? "Sending $5.00 from the Sandbox stash…"
+            : testDollars.state === "sent"
+              ? "$5.00 of test USDC is in your balance. More tomorrow."
+              : testDollars.state === "failed"
+                ? (testDollars.error ?? "That didn't work. Try again.")
+                : "$5.00 of test USDC, so you can try paying a link. Once a day."
+        }
+        onClick={onAddTestDollars}
+        disabled={testDollars.state === "sending" || testDollars.state === "sent"}
+        busy={testDollars.state === "sending"}
+        icon={testDollars.state === "sent" ? <Check /> : <Plus />}
+      />
+    ) : null,
+  ].filter(Boolean)
 
   return (
     <div className="flex flex-col gap-8">
@@ -174,7 +224,13 @@ export function HomeView({
         </Link>
       ) : null}
 
-      <div className="grid gap-6 lg:grid-cols-[1.5fr_1fr]">
+      <div
+        className={cn(
+          // minmax(0, …): a long row title truncates instead of widening the column past the screen.
+          "grid grid-cols-1 gap-6",
+          nextTiles.length > 0 && "lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]",
+        )}
+      >
         <section className="flex flex-col gap-3">
           <h2 className="text-section-title font-semibold">Latest</h2>
           {activity === undefined && !activityError ? (
@@ -207,62 +263,12 @@ export function HomeView({
           )}
         </section>
 
-        <section className="flex flex-col gap-3">
-          <h2 className="text-section-title font-semibold">{fresh ? "Get started" : "Next"}</h2>
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
-            <Tile
-              field="bg-sakura"
-              title={fresh ? "Send your first invoice" : "Send an invoice"}
-              detail="Bill a customer. They pay in dollars from any wallet; you get exact USDC."
-              href="/app/invoices/new"
-              icon={<FileText />}
-            />
-            <Tile
-              field="bg-sora"
-              title={fresh ? "Create your first pay link" : "Create a pay link"}
-              detail="One link anyone can pay, from an email sign-in or a NEAR wallet."
-              href="/app/links?new=1"
-              icon={<Link2 />}
-            />
-            {testDollars && onAddTestDollars ? (
-              <Tile
-                field="bg-kin"
-                title={testDollars.state === "sent" ? "Test dollars added" : "Add test dollars"}
-                detail={
-                  testDollars.state === "sending"
-                    ? "Sending $5.00 from the Sandbox stash…"
-                    : testDollars.state === "sent"
-                      ? "$5.00 of test USDC is in your balance. More tomorrow."
-                      : testDollars.state === "failed"
-                        ? (testDollars.error ?? "That didn't work. Try again.")
-                        : "$5.00 of test USDC, so you can try paying a link. Once a day."
-                }
-                onClick={onAddTestDollars}
-                disabled={testDollars.state === "sending" || testDollars.state === "sent"}
-                busy={testDollars.state === "sending"}
-                icon={testDollars.state === "sent" ? <Check /> : <Plus />}
-              />
-            ) : null}
-            {funded ? (
-              <Tile
-                field="bg-matcha"
-                title="Send dollars"
-                detail="To any NEAR account. No fees, no gas."
-                href="/app/send"
-                icon={<Send />}
-              />
-            ) : (
-              <Tile
-                field="bg-matcha"
-                title="See your account on NEAR"
-                detail="Created and registered for USDC by Tegata."
-                href={explorerUrl}
-                external
-                icon={<ExternalLink />}
-              />
-            )}
-          </div>
-        </section>
+        {nextTiles.length > 0 ? (
+          <section className="flex flex-col gap-3">
+            <h2 className="text-section-title font-semibold">Get started</h2>
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">{nextTiles}</div>
+          </section>
+        ) : null}
       </div>
     </div>
   )
@@ -286,7 +292,7 @@ const STATUS_WORD: Record<ActivityItem["status"], string> = {
 const DONE: ActivityItem["status"][] = ["success", "succeeded"]
 const BAD: ActivityItem["status"][] = ["failed", "expired", "refunded"]
 
-/** One movement: what happened, with whom, when, and the signed amount. A payment opens its receipt. */
+/** One movement: what happened, with whom, when, and the signed amount. It opens its receipt, never NEAR first. */
 function ActivityRow({
   item,
   index,
@@ -311,7 +317,7 @@ function ActivityRow({
       : item.kind === "paid" && item.title
         ? `${item.title} · ${timeAgo(item.at)}`
         : timeAgo(item.at)
-  const receipt = item.receiptToken ? `/r/${item.receiptToken}` : null
+  const receipt = item.receiptUrl
   const body = (
     <>
       <Mark id="usdc" chain="near" size={40} />
@@ -335,24 +341,18 @@ function ActivityRow({
     animate: { opacity: 1, y: 0 },
     transition: { delay: index * 0.04, duration: 0.32, ease: [0.2, 0.8, 0.2, 1] as const },
   }
-  if (receipt)
-    return (
-      <motion.div {...motionProps}>
+  return (
+    <motion.div {...motionProps}>
+      {receipt ? (
         <Link href={receipt} className={cls}>
           {body}
         </Link>
-      </motion.div>
-    )
-  return (
-    <motion.a
-      href={item.explorerUrl ?? undefined}
-      target="_blank"
-      rel="noreferrer"
-      className={cls}
-      {...motionProps}
-    >
-      {body}
-    </motion.a>
+      ) : (
+        <div className={cn(cls, "cursor-default hover:bg-transparent active:scale-100")}>
+          {body}
+        </div>
+      )}
+    </motion.div>
   )
 }
 

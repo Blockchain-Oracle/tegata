@@ -139,15 +139,18 @@ export async function publicRequest(db: Db, token: string) {
 }
 
 /** What a public page's header shows about the business: its name and, if it has one, its logo. */
-const BUSINESS_HEADER = {
+export const BUSINESS_HEADER = {
   business: workspaces.name,
   workspaceId: workspaces.id,
   hasLogo: sql<boolean>`${workspaces.logoUrl} is not null`,
   workspaceUpdatedAt: workspaces.updatedAt,
 }
 
-const headerLogo = (row: { workspaceId: string; hasLogo: boolean; workspaceUpdatedAt: Date }) =>
-  row.hasLogo ? `/api/logo/${row.workspaceId}?v=${row.workspaceUpdatedAt.getTime()}` : null
+export const headerLogo = (row: {
+  workspaceId: string
+  hasLogo: boolean
+  workspaceUpdatedAt: Date
+}) => (row.hasLogo ? `/api/logo/${row.workspaceId}?v=${row.workspaceUpdatedAt.getTime()}` : null)
 
 /** What an invoice payment may be: what is left, or less when the business allows part-payments. */
 async function invoiceAmount(

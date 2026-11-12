@@ -111,7 +111,7 @@ export default function GuestInvoicePage() {
               taxId: null,
             },
             logo: null,
-            payAddress: "your-name.tegata.near",
+            payAddress: "your-name.tegata.testnet",
             sandbox: true,
           }}
           onCreateCustomer={(input, then) => {

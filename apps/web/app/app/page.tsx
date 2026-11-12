@@ -26,6 +26,11 @@ export default function HomePage() {
     queryFn: () => api<ReferralsView>("/api/referrals"),
     staleTime: 60_000,
   })
+  const steps = useQuery({
+    queryKey: ["steps"],
+    queryFn: () => api<{ invoiceSent: boolean; linkMade: boolean }>("/api/steps"),
+    staleTime: 60_000,
+  })
   const by = referrals.data?.referredBy
   const account = profile?.accounts.find((entry) => entry.network === "testnet")
   if (!profile || !account) return null
@@ -42,6 +47,7 @@ export default function HomePage() {
       onRetryActivity={() => void activity.refetch()}
       testDollars={account.network === "testnet" ? testDollars : undefined}
       onAddTestDollars={testDollars.add}
+      steps={steps.data}
       invite={
         by && referrals.data && (by.status === "open" || by.status === "qualified")
           ? {

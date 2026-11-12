@@ -155,7 +155,7 @@ export function WelcomeView(p: WelcomeViewProps) {
                 Your pay address.
               </h1>
               <p className="text-[17px] text-muted-foreground">
-                A name on NEAR anyone can pay, from any chain.
+                A name on NEAR your customers pay.
               </p>
             </div>
             <Field
@@ -221,8 +221,8 @@ export function WelcomeView(p: WelcomeViewProps) {
                 Your account is open.
               </h1>
               <p className="text-[17px] text-muted-foreground">
-                <span className="font-semibold text-foreground">{p.name.trim()}</span> can now get
-                paid from any chain.
+                <span className="font-semibold text-foreground">{p.name.trim()}</span> can now send
+                invoices and get paid in dollars.
               </p>
             </div>
             <Button cue="tap" onClick={p.onDone}>

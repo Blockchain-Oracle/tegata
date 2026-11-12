@@ -3,7 +3,7 @@
 // Send (plan 6.8, Kawase's money lifecycle): one big amount and a NEAR name; a review card that says the fee is paid
 // by Tegata; hold to send (the Privy key signs underneath); live steps; a receipt slip that lands when NEAR settles,
 // or a failure card that says no money moved. Separate from its logic so /dev/flows can show every state.
-import { ArrowLeft, ArrowRight, ExternalLink, KeyRound, Radio } from "lucide-react"
+import { ArrowLeft, ArrowRight, ExternalLink, KeyRound, Radio, ReceiptText } from "lucide-react"
 import { AnimatePresence, motion, useReducedMotion } from "motion/react"
 import Link from "next/link"
 
@@ -307,16 +307,26 @@ function Receipt({
           <span className="text-[#666]">Network fee</span>
           <span className="font-semibold">Paid by Tegata</span>
         </div>
-        {explorerUrl ? (
-          <a
-            href={explorerUrl}
-            target="_blank"
-            rel="noreferrer"
-            className="mt-1 inline-flex items-center gap-1.5 self-start font-semibold text-[#B23700] hover:underline"
-          >
-            See it on NEAR <ExternalLink className="size-3.5" />
-          </a>
-        ) : null}
+        <span className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-2">
+          {relayId ? (
+            <Link
+              href={`/r/send/${relayId}`}
+              className="inline-flex items-center gap-1.5 font-semibold text-[#B23700] hover:underline"
+            >
+              <ReceiptText className="size-3.5" /> Open receipt
+            </Link>
+          ) : null}
+          {explorerUrl ? (
+            <a
+              href={explorerUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-1.5 font-semibold text-[#B23700] hover:underline"
+            >
+              See it on NEAR <ExternalLink className="size-3.5" />
+            </a>
+          ) : null}
+        </span>
       </div>
       <div className="absolute top-4 right-4">
         <SealPress

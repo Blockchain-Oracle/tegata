@@ -905,3 +905,22 @@ export async function invoiceToken(db: Db, invoiceId: string) {
     .where(eq(invoices.id, invoiceId))
   return row
 }
+
+// --- first steps (Home) -------------------------------------------------------------------------------------------
+
+/** Which first steps a business has taken, so Home stops suggesting what it has already done. */
+export async function firstSteps(db: Db, workspaceId: string) {
+  const [[invoice], [link]] = await Promise.all([
+    db
+      .select({ id: invoices.id })
+      .from(invoices)
+      .where(and(eq(invoices.workspaceId, workspaceId), sql`${invoices.number} is not null`))
+      .limit(1),
+    db
+      .select({ id: requests.id })
+      .from(requests)
+      .where(and(eq(requests.workspaceId, workspaceId), eq(requests.kind, "link")))
+      .limit(1),
+  ])
+  return { invoiceSent: invoice !== undefined, linkMade: link !== undefined }
+}

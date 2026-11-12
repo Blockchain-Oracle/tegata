@@ -71,8 +71,8 @@ export interface ActivityItem {
   /** USDC base units as a string. */
   amount: string
   status: RelayStatus["status"] | PaymentStatus
-  receiptToken: string | null
-  explorerUrl: string | null
+  /** Its receipt: every movement opens one first, and the receipt links to NEAR. Null until there is one. */
+  receiptUrl: string | null
   at: string
 }
 
@@ -161,17 +161,27 @@ export interface WalletAttempt {
   memo: string
 }
 
+/** A receipt for any money movement: a customer payment (numbered), a send, or a referral reward. */
 export interface ReceiptView {
-  number: number
+  kind: "payment" | "send" | "reward"
+  /** The business's receipt number; only customer payments are numbered. */
+  number: number | null
+  /** Whose receipt this is: the header and the seal (Tegata's own for a reward). */
   business: string
   logo: string | null
   title: string
   amount: string
-  rail: PaymentRail
+  /** How the money moved. */
+  method: PaymentRail | "reward"
   payer: string | null
+  payerName: string | null
+  receiverName: string
   receiverId: string
   network: NetworkId
+  /** Null while NEAR hasn't settled it yet. */
   settledAt: string | null
+  /** Who paid the network fee; null when nothing ran on NEAR (marked paid by hand). */
+  feeBy: "tegata" | "payer" | null
   txHash: string | null
   explorerUrl: string | null
 }
@@ -324,6 +334,7 @@ export interface ReferralRow {
   voidReason: string | null
   createdAt: string
   payout: {
+    id: string
     status: "queued" | "sent" | "failed"
     txHash: string | null
     error: string | null

@@ -118,18 +118,49 @@ export const SAMPLE_REQUEST: PublicRequest = {
 }
 
 export const SAMPLE_RECEIPT: ReceiptView = {
+  kind: "payment",
   number: 7,
   business: SAMPLE_BUSINESS,
   logo: null,
   title: "Logo design",
   amount: "1250000000",
-  rail: "tegata",
+  method: "tegata",
   payer: "northwind.tegata.testnet",
+  payerName: null,
+  receiverName: SAMPLE_BUSINESS,
   receiverId: SAMPLE_ACCOUNT,
   network: "testnet",
   settledAt: ago(2 * HOUR),
+  feeBy: "tegata",
   txHash: "4a5U9osgJrXKN5EDT3mvrWGT6NrFXoQXwH4bYZjqH6TX",
   explorerUrl: "https://testnet.nearblocks.io/txns/4a5U9osgJrXKN5EDT3mvrWGT6NrFXoQXwH4bYZjqH6TX",
+}
+
+/** A send's receipt: stamped SENT with the business seal, the fee paid by Tegata. */
+export const SAMPLE_SEND_RECEIPT: ReceiptView = {
+  ...SAMPLE_RECEIPT,
+  kind: "send",
+  number: null,
+  title: "One-off payment",
+  amount: "240000000",
+  payer: SAMPLE_ACCOUNT,
+  payerName: SAMPLE_BUSINESS,
+  receiverName: "kofi.tegata.testnet",
+  receiverId: "kofi.tegata.testnet",
+}
+
+/** A referral reward's receipt: from Tegata, under Tegata's own seal. */
+export const SAMPLE_REWARD_RECEIPT: ReceiptView = {
+  ...SAMPLE_RECEIPT,
+  kind: "reward",
+  number: null,
+  business: "Tegata",
+  title: "Referral reward for inviting Northwind Ltd",
+  amount: "10000000",
+  method: "reward",
+  payer: "tegata.testnet",
+  payerName: "Tegata",
+  receiverName: SAMPLE_BUSINESS,
 }
 
 export const SAMPLE_ROUTES = [

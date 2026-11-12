@@ -26,7 +26,8 @@ const dmMono = DM_Mono({
 
 export const metadata: Metadata = {
   title: { default: "Tegata", template: "%s · Tegata" },
-  description: "Get paid and pay your people in dollars, from any chain, on NEAR.",
+  description:
+    "Invoices and pay links for small businesses, settled in USDC on NEAR: sign in with email, Tegata pays every network fee, and every payment gets a sealed receipt.",
 }
 
 export const viewport: Viewport = {

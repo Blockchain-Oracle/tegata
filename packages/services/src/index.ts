@@ -1,6 +1,7 @@
 export * from "./business.ts"
 export * from "./invoices.ts"
 export * from "./payments.ts"
+export * from "./receipts.ts"
 export * from "./referrals.ts"
 export * from "./relays.ts"
 export * from "./sandbox.ts"

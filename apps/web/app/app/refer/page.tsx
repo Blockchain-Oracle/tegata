@@ -1,7 +1,6 @@
 "use client"
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { NETWORKS } from "@tegata/config"
 import { useEffect, useState } from "react"
 
 import { ReferView } from "@/components/referrals/refer-view"
@@ -39,7 +38,6 @@ export default function ReferPage() {
   })
 
   const handle = data.data?.handle
-  const network = data.data?.network ?? "testnet"
   return (
     <ReferView
       data={data.data}
@@ -47,7 +45,6 @@ export default function ReferPage() {
       onRetry={() => void data.refetch()}
       url={origin && handle ? `${origin}/join/${handle}` : null}
       businessName={profile?.workspace?.name ?? "Your business"}
-      explorer={(hash) => `${NETWORKS[network].explorer}/txns/${hash}`}
       saving={referrer.isPending}
       problem={
         referrer.error

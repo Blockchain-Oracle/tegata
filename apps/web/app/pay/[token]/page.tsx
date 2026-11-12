@@ -50,7 +50,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!request) return { title: "Pay link not found", robots: { index: false } }
   return {
     title: `Pay ${request.business}`,
-    description: `${request.title}. Pay in dollars from any chain; ${request.business} receives USDC on NEAR.`,
+    description: `${request.title}. Pay in dollars; ${request.business} receives USDC on NEAR.`,
     robots: { index: false, follow: false },
   }
 }

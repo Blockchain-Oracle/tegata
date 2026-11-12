@@ -42,10 +42,10 @@ export function JoinView(p: JoinViewProps) {
               <span className="display text-[44px] leading-none text-white">Tegata</span>
             </div>
             <p className="max-w-sm text-[16px] text-white/90">
-              Get paid and pay your people in dollars. Customers pay from any chain; you receive
-              exact USDC on NEAR.
+              Send invoices and pay links, and get paid in exact dollars on NEAR. Sign in with
+              email; Tegata pays every network fee.
             </p>
-            <MarkStack ids={["usdc", "near", "eth", "sol", "btc"]} size={28} />
+            <MarkStack ids={["usdc", "near"]} size={28} />
           </div>
         </Stage>
 

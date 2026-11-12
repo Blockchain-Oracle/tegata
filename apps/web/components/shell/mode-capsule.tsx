@@ -1,9 +1,12 @@
 "use client"
 
-// The Sandbox / Live capsule (21st haydenbleasel/pill 1600 on Senryo's spec): said in words and a dashed rim, never a
-// hue. One tap opens the mode sheet; Live names what it needs until the operator account on mainnet exists.
-import { FlaskConical, Radio } from "lucide-react"
-import { useState } from "react"
+// The Sandbox / Live switch (plan feature 22: "one tap, like dark mode"): a two-position track whose selected side
+// slides across. Sandbox is said in words and a dashed rim, never a hue. In the compact rail it shows the two icons
+// only, and on a phone only the current mode is in words, so it always fits. Live carries a lock until the operator account on mainnet exists; tapping it then opens
+// the sheet that says what Live is and what it waits for.
+import { FlaskConical, Lock, Radio } from "lucide-react"
+import { motion } from "motion/react"
+import { useId, useState } from "react"
 
 import { Mark } from "@/components/marks/mark"
 import { fire } from "@/lib/feedback"
@@ -11,36 +14,95 @@ import { cn } from "@/lib/utils"
 
 import { Sheet } from "./sheet"
 
+type Mode = "sandbox" | "live"
+
+const MODES = [
+  { id: "sandbox", label: "Sandbox", Icon: FlaskConical },
+  { id: "live", label: "Live", Icon: Radio },
+] as const
+
 export function ModeCapsule({
   live,
   liveAvailable,
+  rail = false,
   className,
 }: {
   live: boolean
   liveAvailable: boolean
+  /** In the desktop rail: full width beside the words, icons only when the rail is compact. */
+  rail?: boolean
   className?: string
 }) {
   const [open, setOpen] = useState(false)
+  const pillId = useId()
+  const current: Mode = live ? "live" : "sandbox"
+
+  const pick = (next: Mode) => {
+    if (next === current) return
+    fire("tick", { cue: "toggle" })
+    // Switching itself arrives with Live; until then the locked side explains what it waits for.
+    setOpen(true)
+  }
+
   return (
     <>
-      <button
-        type="button"
-        onClick={() => {
-          fire("tick", { cue: "toggle" })
-          setOpen(true)
-        }}
+      <fieldset
         className={cn(
-          "press inline-flex h-8 items-center gap-1.5 rounded-full px-3 text-[13px] font-semibold",
-          live
-            ? "bg-foreground text-background"
-            : "border-[1.5px] border-dashed border-text-3 text-foreground",
+          "relative m-0 flex h-9 min-w-0 shrink-0 items-center rounded-full border-0 bg-secondary p-1",
+          rail && "xl:h-10 xl:w-full",
           className,
         )}
       >
-        {live ? <Radio className="size-3.5" /> : <FlaskConical className="size-3.5" />}
-        {live ? "Live" : "Sandbox"}
-      </button>
-      <Sheet open={open} onOpenChange={setOpen} title="Mode">
+        <legend className="sr-only">Mode</legend>
+        {MODES.map(({ id, label, Icon }) => {
+          const on = id === current
+          const locked = id === "live" && !liveAvailable
+          return (
+            <button
+              key={id}
+              type="button"
+              aria-pressed={on}
+              aria-label={locked ? `${label} (not open yet)` : label}
+              title={locked ? "Live isn't open yet" : label}
+              onClick={() => pick(id)}
+              className={cn(
+                "relative z-10 flex h-full items-center justify-center gap-1.5 rounded-full px-3 text-[13px] font-semibold transition-colors",
+                rail && "max-xl:w-7 max-xl:px-0 xl:flex-1",
+                on
+                  ? id === "live"
+                    ? "text-background"
+                    : "text-foreground"
+                  : "text-muted-foreground hover:text-foreground",
+              )}
+            >
+              {on ? (
+                <motion.span
+                  layoutId={`mode-${pillId}`}
+                  transition={{ type: "spring", stiffness: 500, damping: 36 }}
+                  className={cn(
+                    "absolute inset-0 -z-10 rounded-full",
+                    id === "live"
+                      ? "bg-foreground"
+                      : "border-[1.5px] border-dashed border-text-3 bg-card",
+                  )}
+                />
+              ) : null}
+              <Icon className="size-3.5 shrink-0" />
+              {/* On a phone the bar is tight: the mode you're in is in words, the other is its icon. */}
+              <span className={cn(rail ? "max-xl:hidden" : !on && "max-sm:hidden")}>{label}</span>
+              {locked ? (
+                <Lock
+                  className={cn(
+                    "size-3 shrink-0 opacity-60",
+                    rail ? "max-xl:hidden" : "max-sm:hidden",
+                  )}
+                />
+              ) : null}
+            </button>
+          )
+        })}
+      </fieldset>
+      <Sheet open={open} onOpenChange={setOpen} title="Sandbox and Live">
         <div className="flex flex-col gap-3">
           <div
             className={cn(
@@ -54,7 +116,7 @@ export function ModeCapsule({
             <div className="flex flex-col gap-1">
               <span className="text-[17px] font-semibold">Sandbox {!live ? "· on" : ""}</span>
               <span className="text-[15px] text-muted-foreground">
-                Test dollars on NEAR testnet. Every screen works the same, nothing costs real money.
+                Test dollars on NEAR testnet, free. Nothing here costs real money.
               </span>
             </div>
           </div>
@@ -70,14 +132,20 @@ export function ModeCapsule({
             </span>
             <div className="flex flex-col gap-1">
               <span className="text-[17px] font-semibold">Live {live ? "· on" : ""}</span>
-              <span className="inline-flex flex-wrap items-center gap-1.5 text-[15px] text-muted-foreground">
-                Real dollars on <Mark id="near" size={16} /> NEAR mainnet, paid in from any chain
-                through
-                <Mark id="intents" size={16} /> NEAR Intents.
+              <span className="text-[15px] text-muted-foreground">
+                Real dollars on{" "}
+                <span className="inline-block align-[-3px]">
+                  <Mark id="near" size={16} />
+                </span>{" "}
+                NEAR mainnet, paid in from any chain through{" "}
+                <span className="inline-block align-[-3px]">
+                  <Mark id="intents" size={16} />
+                </span>{" "}
+                NEAR Intents.
               </span>
               {!liveAvailable ? (
-                <span className="text-detail font-semibold text-warn">
-                  Opens once tegata.near is funded.
+                <span className="inline-flex items-center gap-1.5 text-detail font-semibold text-warn">
+                  <Lock className="size-3.5" /> Not open yet: Live is still being built.
                 </span>
               ) : null}
             </div>

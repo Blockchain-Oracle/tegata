@@ -40,7 +40,7 @@ const serverSchema = z.object({
   /** Tells the web server Live is on, without giving it the mainnet keys. */
   LIVE_ENABLED: optional(z.enum(["true", "false"])),
 
-  /** Resend (https://resend.com): invoice, receipt and reminder emails. Both unset: Tegata issues links only. */
+  /** Resend (https://resend.com): invoice and reminder emails. Both unset: Tegata issues links only. */
   RESEND_API_KEY: optional(z.string()),
   /** A sender on a domain verified in Resend, e.g. `Tegata <invoices@tegata.xyz>`. */
   EMAIL_FROM: optional(z.string()),

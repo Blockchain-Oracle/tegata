@@ -5,6 +5,7 @@ import { Command } from "cmdk"
 import {
   ArrowDownLeft,
   ArrowUpRight,
+  BookOpen,
   Copy,
   FileText,
   Gift,
@@ -22,6 +23,7 @@ import { useRouter } from "next/navigation"
 import { Dialog } from "radix-ui"
 import { useEffect } from "react"
 import { fire } from "@/lib/feedback"
+import { LINKS } from "@/lib/links"
 import { useTheme } from "@/lib/theme"
 
 export function CommandMenu({
@@ -117,6 +119,9 @@ export function CommandMenu({
                 </Item>
                 <Item icon={<Palette />} onSelect={run(() => router.push("/dev"))}>
                   Design review
+                </Item>
+                <Item icon={<BookOpen />} onSelect={run(() => window.open(LINKS.docs, "_blank"))}>
+                  Docs
                 </Item>
               </Group>
               <Group heading="You">

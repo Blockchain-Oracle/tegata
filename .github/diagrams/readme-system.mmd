@@ -1,0 +1,15 @@
+flowchart LR
+  owner["Business owner<br/>email sign-in (Privy)"] --> web
+  payer["Customer<br/>Tegata balance or NEAR wallet"] --> web
+  subgraph tegata["Tegata"]
+    web["Web app (Next.js)<br/>invoices, pay links, pay page,<br/>receipts, API"]
+    db[("Postgres<br/>requests, payments,<br/>receipts, invoices")]
+    worker["Worker (pg-boss)<br/>the only holder of<br/>operator keys"]
+    web --> db
+    web -- "jobs" --> worker
+    worker --> db
+  end
+  web -- "live quotes" --> intents["NEAR Intents<br/>1Click API"]
+  worker -- "relays signed actions<br/>(NEP-366, pays the fee)" --> near["NEAR<br/>USDC (NEP-141)<br/>name.tegata.testnet"]
+  payer -- "ft_transfer with memo" --> near
+  worker -- "reads the USDC event<br/>to mark it paid" --> near

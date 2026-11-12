@@ -57,6 +57,7 @@ const MIX: ReferralsView = {
       status: "paid",
       paidAt: at(-86_400_000),
       payout: {
+        id: "00000000-0000-4000-8000-000000000001",
         status: "sent",
         txHash: "4a5U9osgJrXKN5EDT3mvrWGT6NrFXoQXwH4bYZjqH6TX",
         error: null,
@@ -102,7 +103,6 @@ export default function ReferFlow() {
           onRetry={() => setState("mix")}
           url="https://tegata.84.46.247.92.sslip.io/join/studio-kaze"
           businessName={SAMPLE_BUSINESS}
-          explorer={(hash) => `https://testnet.nearblocks.io/txns/${hash}`}
           saving={false}
           problem={null}
           onSetReferrer={() => undefined}

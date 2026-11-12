@@ -6,6 +6,7 @@
 import {
   ArrowDownLeft,
   ArrowUpRight,
+  BookOpen,
   Command as CommandIcon,
   FileText,
   Gift,
@@ -26,6 +27,7 @@ import { DropdownMenu } from "radix-ui"
 import { useState } from "react"
 import { BusinessSeal, Lockup, TegataSeal } from "@/components/brand/seal"
 import { fire } from "@/lib/feedback"
+import { LINKS } from "@/lib/links"
 import { useTheme } from "@/lib/theme"
 import { cn } from "@/lib/utils"
 
@@ -110,6 +112,16 @@ export function AppShell({
               <Settings className="size-4" /> Business profile
             </Link>
           </DropdownMenu.Item>
+          <DropdownMenu.Item asChild>
+            <a
+              href={LINKS.docs}
+              target="_blank"
+              rel="noreferrer"
+              className="flex h-11 cursor-pointer items-center gap-3 rounded-[10px] px-3 text-[15px] font-medium outline-none data-[highlighted]:bg-secondary"
+            >
+              <BookOpen className="size-4" /> Docs
+            </a>
+          </DropdownMenu.Item>
           <DropdownMenu.Item
             onSelect={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
             className="flex h-11 cursor-pointer items-center gap-3 rounded-[10px] px-3 text-[15px] font-medium outline-none data-[highlighted]:bg-secondary"
@@ -147,7 +159,8 @@ export function AppShell({
             <ModeCapsule
               live={live}
               liveAvailable={liveAvailable}
-              className="self-start max-xl:mx-auto"
+              rail
+              className="max-xl:mx-auto"
             />
           </div>
           <button

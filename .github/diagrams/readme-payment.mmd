@@ -1,0 +1,21 @@
+sequenceDiagram
+  autonumber
+  participant C as Customer
+  participant P as Pay page
+  participant N as NEAR (USDC contract)
+  participant W as Tegata worker
+  participant B as Business
+  C->>P: opens the invoice or pay link
+  P->>P: starts an attempt, memo tegata:pay:<id>
+  alt Tegata balance
+    C->>P: approves (email sign-in key signs)
+    P->>W: signed action
+    W->>N: relays it, Tegata pays the fee
+  else NEAR wallet
+    C->>N: ft_transfer(business, amount, memo)
+    P->>W: transaction hash
+  end
+  W->>N: reads the transaction when final
+  N-->>W: USDC event: to business, amount, memo
+  W->>W: matches all three, marks paid, numbers the receipt
+  W-->>B: Paid, with the PAID seal and the NEAR link

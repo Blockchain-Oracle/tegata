@@ -3,7 +3,8 @@
 // Refer (plan 6.8 H; Wise's invite screens, Copperx's stablecoin referral panel): your join link and its QR on the
 // stage, what you've earned, a tracker for each business you invited with its progress to the threshold, who invited
 // you, and the terms in five lines. Separate from its logic so /dev/flows can show every state.
-import { Check, Copy, ExternalLink, Gift, Share2, Users } from "lucide-react"
+import { Check, Copy, ExternalLink, Gift, ReceiptText, Share2, Users } from "lucide-react"
+import Link from "next/link"
 import { QRCodeSVG } from "qrcode.react"
 import { useState } from "react"
 
@@ -13,6 +14,7 @@ import { Field } from "@/components/kit/field"
 import { Figure, viewDollars } from "@/components/kit/figure"
 import { Paper, Stage, StageAction } from "@/components/kit/stage"
 import { EmptyState, ErrorState, Skeleton, StatusPill } from "@/components/kit/states"
+import { useNow } from "@/hooks/use-now"
 import type { ReferralRow, ReferralRules, ReferralsView } from "@/lib/client/types"
 import { fire } from "@/lib/feedback"
 import { cn } from "@/lib/utils"
@@ -22,9 +24,10 @@ const YEAR_MS = 365 * 86_400_000
 
 const dollars = (units: string | bigint, digits = 2) => `$${viewDollars(units).toFixed(digits)}`
 
-function minutesLeft(iso: string | null): string {
+function minutesLeft(iso: string | null, now: number | null): string {
   if (!iso) return ""
-  const ms = Date.parse(iso) - Date.now()
+  if (now === null) return "Qualified"
+  const ms = Date.parse(iso) - now
   if (ms <= 0) return "paying now"
   const min = Math.ceil(ms / 60_000)
   return min >= 120 ? `pays in ${Math.round(min / 60)} h` : `pays in ${min} min`
@@ -37,7 +40,6 @@ export interface ReferViewProps {
   /** The join link's full URL. */
   url: string | null
   businessName: string
-  explorer: (txHash: string) => string
   saving: boolean
   problem: string | null
   onSetReferrer: (handle: string) => void
@@ -81,7 +83,7 @@ export function ReferView(p: ReferViewProps) {
       await navigator
         .share({
           title: `Join ${p.businessName} on Tegata`,
-          text: `Get paid in dollars from any chain. We both get ${reward}.`,
+          text: `Invoices and pay links, settled in dollars on NEAR. We both get ${reward}.`,
           url: p.url,
         })
         .catch(() => undefined)
@@ -173,7 +175,7 @@ export function ReferView(p: ReferViewProps) {
         ) : (
           <div className="flex flex-col rounded-[20px] bg-card p-2">
             {invited.map((row) => (
-              <InvitedRow key={row.id} row={row} rules={rules} explorer={p.explorer} />
+              <InvitedRow key={row.id} row={row} rules={rules} />
             ))}
           </div>
         )}
@@ -183,7 +185,7 @@ export function ReferView(p: ReferViewProps) {
         <h2 className="text-section-title font-semibold">Who invited you</h2>
         {referredBy ? (
           <div className="flex flex-col gap-3 rounded-[20px] bg-card p-4">
-            <InvitedRow row={referredBy} rules={rules} explorer={p.explorer} you />
+            <InvitedRow row={referredBy} rules={rules} you />
             {!referredBy.lockedAt && referredBy.status === "open" ? (
               <Button
                 variant="ghost"
@@ -211,7 +213,11 @@ export function ReferView(p: ReferViewProps) {
                 placeholder="their-name"
                 value={handle}
                 onChange={(e) => setHandle(e.target.value.trim().toLowerCase())}
-                trailing={<span className="font-mono text-[15px] text-text-3">.tegata.near</span>}
+                trailing={
+                  <span className="font-mono text-[15px] text-text-3">
+                    {sandbox ? ".tegata.testnet" : ".tegata.near"}
+                  </span>
+                }
                 className="font-mono"
                 status={p.problem ? { kind: "bad", text: p.problem } : { kind: "none" }}
               />
@@ -233,11 +239,11 @@ export function ReferView(p: ReferViewProps) {
           · Each paying customer counts toward one invite only. Payments marked paid by hand don't
           count.
         </span>
-        <span>· A business can have one referrer, set until it is first paid.</span>
+        <span>· A business has one referrer; it can change it until it is first paid.</span>
         <span>
           · Rewards are paid{" "}
           {sandbox ? `${rules.holdMinutes} minutes` : `${Math.round(rules.holdMinutes / 60)} hours`}{" "}
-          after the invite qualifies; a refund in that time cancels it.
+          after the invite qualifies, after one last check of these rules.
         </span>
         <span>· Up to {rules.yearlyCap} rewards a year for each business that invites.</span>
       </section>
@@ -257,14 +263,13 @@ function Fact({ label, children }: { label: string; children: React.ReactNode })
 export function InvitedRow({
   row,
   rules,
-  explorer,
   you,
 }: {
   row: ReferralRow
   rules: ReferralRules
-  explorer: (txHash: string) => string
   you?: boolean
 }) {
+  const now = useNow()
   const received = BigInt(row.received)
   const threshold = BigInt(rules.threshold)
   const progress = threshold > 0n ? Math.min(100, Number((received * 100n) / threshold)) : 0
@@ -272,7 +277,7 @@ export function InvitedRow({
     row.status === "paid" ? (
       <StatusPill tone="up">Paid {dollars(rules.reward, 0)}</StatusPill>
     ) : row.status === "qualified" ? (
-      <StatusPill tone="wait">{minutesLeft(row.payoutAfter)}</StatusPill>
+      <StatusPill tone="wait">{minutesLeft(row.payoutAfter, now)}</StatusPill>
     ) : row.status === "void" ? (
       <StatusPill tone="quiet">Not counted</StatusPill>
     ) : (
@@ -289,15 +294,13 @@ export function InvitedRow({
         </span>
         {row.status === "void" ? (
           <span className="text-detail text-muted-foreground">{row.voidReason}</span>
-        ) : row.status === "paid" && row.payout?.txHash ? (
-          <a
-            href={explorer(row.payout.txHash)}
-            target="_blank"
-            rel="noreferrer"
+        ) : row.status === "paid" && row.payout?.status === "sent" ? (
+          <Link
+            href={`/r/reward/${row.payout.id}`}
             className="inline-flex items-center gap-1 self-start text-detail font-semibold text-shu-ink hover:underline"
           >
-            Reward sent on NEAR <ExternalLink className="size-3" />
-          </a>
+            <ReceiptText className="size-3.5" /> Reward receipt
+          </Link>
         ) : (
           <>
             <span className="h-1.5 overflow-hidden rounded-full bg-secondary" aria-hidden>

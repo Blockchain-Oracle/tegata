@@ -69,7 +69,7 @@ const CARDS = [
   {
     href: "/dev/flows/pay",
     title: "Pay page & receipt",
-    note: "Three ways to pay, live steps, the paid seal, the slip",
+    note: "Two ways to pay, other chains' prices, live steps, the paid seal, the slip",
     field: "bg-sakura",
   },
   {

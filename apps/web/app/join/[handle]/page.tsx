@@ -20,7 +20,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!referrer) return { title: "Invite not found", robots: { index: false } }
   return {
     title: `${referrer.business} invited you`,
-    description: `${referrer.business} uses Tegata to get paid in dollars from any chain. Join and you both get a reward.`,
+    description: `${referrer.business} uses Tegata to get paid in exact dollars. Join and you both get a reward.`,
     robots: { index: false, follow: false },
   }
 }

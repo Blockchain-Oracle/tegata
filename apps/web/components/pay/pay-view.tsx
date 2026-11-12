@@ -1,6 +1,6 @@
 "use client"
 
-// The pay page (plan 6.8 D and D′), phone first: the business and the amount on the stage, then three ways to pay
+// The pay page (plan 6.8 D and D′), phone first: the business and the amount on the stage, then two ways to pay and a price from other chains
 // as large rows with real marks (Tegata balance, a NEAR wallet, another chain through NEAR Intents), then live steps
 // and a sealed slip once NEAR has settled it. No app chrome: the business's seal at the top, NEAR at the foot.
 // Separate from its logic so /dev/flows can show every state.
@@ -118,14 +118,34 @@ const WALLET_STEPS = [
 export function PayView(p: PayViewProps) {
   const reduce = useReducedMotion()
   const invoice = p.request.invoice
-  const fixed = invoice ? !invoice.allowPartial : p.request.amount !== null
-  const dollars =
-    invoice && fixed
+  const open = p.request.status === "open"
+  // A paid or cancelled invoice shows what it was for, not the $0.00 left on it.
+  const closedInvoice = invoice !== null && !open
+  const fixed = invoice ? !invoice.allowPartial || closedInvoice : p.request.amount !== null
+  const dollars = closedInvoice
+    ? viewDollars(p.request.amount ?? "0")
+    : invoice && fixed
       ? viewDollars(invoice.remaining)
       : fixed
         ? viewDollars(p.request.amount!)
         : Number.parseFloat(p.amount || "0") || 0
-  const open = p.request.status === "open"
+  const closed = invoice
+    ? p.request.status === "paid"
+      ? {
+          title: `Invoice ${invoice.number} is paid`,
+          detail: "Nothing is left to pay. Its receipts are on the invoice.",
+        }
+      : {
+          title: "This invoice was cancelled",
+          detail: `Ask ${p.request.business} if you still owe them.`,
+        }
+    : {
+        title:
+          p.request.status === "paid"
+            ? "This link has been paid"
+            : "This link isn't taking payments",
+        detail: `Ask ${p.request.business} for a new link if you still owe them.`,
+      }
   const sandbox = p.request.network === "testnet"
   const slide = {
     initial: reduce ? { opacity: 0 } : { opacity: 0, y: 12 },
@@ -194,7 +214,7 @@ export function PayView(p: PayViewProps) {
                     year: "numeric",
                   })}
                 </span>
-                {invoice.allowPartial && p.step === "choose" ? (
+                {invoice.allowPartial && open && p.step === "choose" ? (
                   <span>· up to ${viewDollars(invoice.remaining).toFixed(2)}</span>
                 ) : null}
                 <Link
@@ -221,14 +241,15 @@ export function PayView(p: PayViewProps) {
                 <span className="grid size-14 place-items-center rounded-full bg-[#F5F5F5]">
                   <Lock className="size-6" />
                 </span>
-                <span className="text-[18px] font-semibold">
-                  {p.request.status === "paid"
-                    ? "This link has been paid"
-                    : "This link isn't taking payments"}
-                </span>
-                <span className="text-[15px] text-[#666]">
-                  Ask {p.request.business} for a new link if you still owe them.
-                </span>
+                <span className="text-[18px] font-semibold">{closed.title}</span>
+                <span className="text-[15px] text-[#666]">{closed.detail}</span>
+                {invoice ? (
+                  <Button asChild variant="secondary" className="mt-2">
+                    <Link href={`/i/${p.request.token}`}>
+                      <ReceiptText /> View invoice
+                    </Link>
+                  </Button>
+                ) : null}
               </Paper>
             </motion.div>
           ) : p.step === "choose" ? (
@@ -253,7 +274,8 @@ export function PayView(p: PayViewProps) {
                 onSelect={() => p.onRail(p.rail === "near_wallet" ? null : "near_wallet")}
                 art={<Mark id="near" size={48} />}
                 title="NEAR wallet"
-                detail="HOT, Meteor, MyNearWallet, Intear"
+                // NEAR Connect lists the wallets that support the network: HOT and MyNearWallet are mainnet-only.
+                detail={sandbox ? "Meteor, Intear and more" : "HOT, Meteor, MyNearWallet, Intear"}
               >
                 <WalletPanel {...p} dollars={dollars} />
               </RailRow>
@@ -262,7 +284,7 @@ export function PayView(p: PayViewProps) {
                 onSelect={() => p.onRail(p.rail === "oneclick" ? null : "oneclick")}
                 art={<MarkStack ids={["eth", "sol", "btc"]} size={30} />}
                 title="Another chain"
-                detail="USDT, USDC, BTC, ETH… on 10 chains"
+                detail={`USDT, USDC, BTC, ETH… on ${new Set(p.routes.map((r) => r.chain)).size} chains`}
               >
                 <ChainPanel {...p} dollars={dollars} />
               </RailRow>

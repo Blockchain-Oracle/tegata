@@ -8,7 +8,13 @@ import { Segmented } from "@/components/kit/segmented"
 import { type PayStep, PayView, type TegataState } from "@/components/pay/pay-view"
 import { ReceiptView } from "@/components/receipt/receipt-view"
 import type { PaymentRail } from "@/lib/client/types"
-import { SAMPLE_RECEIPT, SAMPLE_REQUEST, SAMPLE_ROUTES } from "@/lib/dev/sample"
+import {
+  SAMPLE_RECEIPT,
+  SAMPLE_REQUEST,
+  SAMPLE_REWARD_RECEIPT,
+  SAMPLE_ROUTES,
+  SAMPLE_SEND_RECEIPT,
+} from "@/lib/dev/sample"
 
 type Payer = "signed_out" | "ready" | "short" | "own" | "wallet" | "chain" | "any"
 type Step = PayStep | "closed"
@@ -138,9 +144,24 @@ export default function PayFlow() {
         />
       </div>
 
-      <span className="display pt-8 text-[30px]">Receipt</span>
-      <div className="overflow-hidden rounded-[24px]">
-        <ReceiptView receipt={SAMPLE_RECEIPT} token="sampleReceipt01" />
+      <span className="display pt-8 text-[30px]">Receipts</span>
+      <div className="grid gap-4 xl:grid-cols-3">
+        {[
+          {
+            label: "A customer payment (numbered)",
+            receipt: SAMPLE_RECEIPT,
+            token: "sampleReceipt01",
+          },
+          { label: "A send", receipt: SAMPLE_SEND_RECEIPT, token: "send:sample" },
+          { label: "A referral reward", receipt: SAMPLE_REWARD_RECEIPT, token: "reward:sample" },
+        ].map((r) => (
+          <div key={r.token} className="flex flex-col gap-2">
+            <span className="text-detail font-semibold text-muted-foreground">{r.label}</span>
+            <div className="overflow-hidden rounded-[24px]">
+              <ReceiptView receipt={r.receipt} token={r.token} />
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   )

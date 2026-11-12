@@ -9,13 +9,14 @@ import { buttonVariants } from "@/components/kit/button-variants"
 import { Paper, Stage } from "@/components/kit/stage"
 import { Calculator } from "@/components/landing/calculator"
 import { Mark, MarkStack } from "@/components/marks/mark"
+import { LINKS } from "@/lib/links"
 import { PAYER_ROUTES } from "@/lib/server/oneclick"
 import { cn } from "@/lib/utils"
 
 export const metadata: Metadata = {
-  title: "Tegata · Get paid and pay your people in dollars",
+  title: { absolute: "Tegata · Send an invoice. Get paid in exact dollars." },
   description:
-    "Invoices, pay links and payroll for small businesses. Customers pay from any chain; you receive exact dollars on NEAR.",
+    "Invoices and pay links for small businesses, settled in USDC on NEAR: sign in with email, Tegata pays every network fee, and every payment gets a sealed receipt.",
 }
 
 const ROUTES = PAYER_ROUTES.map(({ id, symbol, chain, coin, chainMark }) => ({
@@ -25,20 +26,8 @@ const ROUTES = PAYER_ROUTES.map(({ id, symbol, chain, coin, chainMark }) => ({
   coin,
   chainMark,
 }))
-const CHAINS = [
-  "eth",
-  "base",
-  "sol",
-  "btc",
-  "tron",
-  "arb",
-  "bnb",
-  "pol",
-  "op",
-  "avax",
-  "ton",
-  "near",
-] as const
+/** The chains the calculator's routes come from (lib/server/oneclick.ts PAYER_ROUTES), and no others. */
+const CHAINS = ["eth", "base", "sol", "btc", "tron", "arb", "bnb", "pol"] as const
 
 export default function Landing() {
   return (
@@ -53,6 +42,7 @@ export default function Landing() {
               ["How it works", "#how"],
               ["Built on NEAR", "#near"],
               ["Who it's for", "#who"],
+              ["Docs", LINKS.docs],
             ].map(([label, href]) => (
               <a
                 key={href}
@@ -81,12 +71,12 @@ export default function Landing() {
       <section className="mx-auto grid max-w-[1240px] gap-8 px-5 pt-6 pb-16 sm:px-8 lg:grid-cols-[1fr_1.05fr] lg:items-stretch lg:gap-10 lg:pt-10">
         <div className="flex flex-col justify-center gap-7 lg:py-10">
           <h1 className="display text-[52px] leading-[0.92] sm:text-[72px] lg:text-[80px]">
-            Get paid and pay your people in dollars.
-            <span className="block text-text-3">From any chain, on NEAR.</span>
+            Send an invoice.
+            <span className="block text-text-3">Get paid in exact dollars.</span>
           </h1>
           <p className="max-w-[46ch] text-[18px] text-muted-foreground">
-            Invoices, pay links and payroll for small businesses. Your customer pays with the coin
-            they hold. You receive exact dollars, with a sealed receipt for every payment.
+            Invoices and pay links for small businesses, settled in USDC on NEAR: sign in with
+            email, Tegata pays every network fee, and every payment gets a sealed receipt.
           </p>
           <div className="flex flex-wrap gap-2">
             <Link href="/signin" className={buttonVariants({ size: "lg" })}>
@@ -100,7 +90,9 @@ export default function Landing() {
             </Link>
           </div>
           <div className="flex flex-col gap-2.5 pt-2">
-            <span className="text-detail font-semibold text-text-3">Customers pay from</span>
+            <span className="text-detail font-semibold text-text-3">
+              Live NEAR Intents prices from
+            </span>
             <MarkStack ids={CHAINS} size={34} />
           </div>
         </div>
@@ -113,7 +105,7 @@ export default function Landing() {
               <span className="text-[12px] font-semibold text-[#666]">Receipt · Paid</span>
               <p className="figure mt-1 text-[30px]">$480.00</p>
               <span className="mt-1 inline-flex items-center gap-1.5 text-[12px] font-semibold text-[#2F7A00]">
-                <Mark id="usdt" chain="tron" size={18} /> From Tron
+                <Mark id="usdc" chain="near" size={18} /> USDC on NEAR
               </span>
             </Paper>
           </div>
@@ -135,7 +127,7 @@ export default function Landing() {
           <Step
             n="1"
             title="Send a link or an invoice"
-            detail="By email, chat or QR. One link takes any coin."
+            detail="By email, chat or QR. Customers open it on any phone."
           >
             <Paper className="w-[230px] p-4">
               <span className="inline-flex items-center gap-1.5 text-[12px] font-semibold text-[#666]">
@@ -149,11 +141,11 @@ export default function Landing() {
           </Step>
           <Step
             n="2"
-            title="They pay from any chain"
-            detail="NEAR Intents turns their coin into dollars on the way."
+            title="They pay in dollars"
+            detail="From a Tegata balance or any NEAR wallet. Tegata checks NEAR before it says paid."
           >
             <div className="flex flex-col items-center gap-3">
-              <MarkStack ids={["usdt", "eth", "sol", "btc", "usdc"]} size={40} />
+              <MarkStack ids={["usdc", "near"]} size={40} />
               <ArrowRight className="size-6 rotate-90 text-white" />
               <span className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-2 text-[14px] font-semibold text-black shadow-object">
                 <Mark id="usdc" chain="near" size={24} /> $1,250.00 on NEAR
@@ -191,12 +183,12 @@ export default function Landing() {
             <NearTile
               mark="near"
               title="A name, not an address"
-              detail="Every business gets name.tegata.near to be paid at."
+              detail="Every business gets its own name on NEAR to be paid at."
             />
             <NearTile
               mark="intents"
-              title="Any chain in and out"
-              detail="NEAR Intents takes the payer's coin and delivers dollars."
+              title="Exact prices from other chains"
+              detail="NEAR Intents quotes what a payer on another chain sends for you to get the exact amount."
             />
             <NearTile
               mark="usdc"
@@ -222,13 +214,13 @@ export default function Landing() {
             field="bg-sora"
             icon={<Link2 />}
             title="Freelancers"
-            detail="Send an invoice. Clients pay with whatever they hold."
+            detail="Send an invoice. Get the exact amount, with a receipt."
           />
           <UseCase
             field="bg-matcha"
             icon={<UsersRound />}
             title="Remote teams"
-            detail="Pay everyone in one approval, each where they want it."
+            detail="Send dollars to anyone on NEAR in one hold. Tegata pays the fee."
           />
           <UseCase
             field="bg-sakura"
@@ -240,7 +232,7 @@ export default function Landing() {
             field="bg-kin"
             icon={<Stamp />}
             title="Agencies"
-            detail="Sealed receipts and a CSV your accountant understands."
+            detail="Numbered invoices, part-payments and sealed receipts."
           />
         </div>
       </section>
@@ -272,8 +264,11 @@ export default function Landing() {
             Settled on <Mark id="near" size={18} /> NEAR
           </span>
           <span className="inline-flex items-center gap-1.5">
-            Routed by <Mark id="intents" size={18} /> NEAR Intents
+            Priced by <Mark id="intents" size={18} /> NEAR Intents
           </span>
+          <a href={LINKS.docs} className="font-semibold text-foreground hover:underline">
+            Docs
+          </a>
           <Link href="/signin" className="font-semibold text-foreground hover:underline">
             Sign in
           </Link>

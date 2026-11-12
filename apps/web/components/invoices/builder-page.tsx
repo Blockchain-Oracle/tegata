@@ -208,7 +208,7 @@ export function BuilderPage({ initial, invoiceId }: { initial?: DraftForm; invoi
                     ? "This customer has no email, so you'll copy the link and send it yourself."
                     : profile?.emailEnabled
                       ? `We email it to ${reviewCustomer.email} with a PDF${review.reminders ? ", and remind them around the due date" : ""}.`
-                      : `Email isn't set up on this server yet, so you'll copy the link and send it to ${reviewCustomer.email} yourself.`}
+                      : `Email isn't set up on this server yet, so you'll copy the link and send it to ${reviewCustomer.email} yourself${review.reminders ? "; reminders won't go out either" : ""}.`}
                 </span>
               </li>
             </ul>

@@ -1,4 +1,3 @@
-import { explorerTx } from "@tegata/core/near"
 import { listPaymentsIn, listPaymentsOut, listSends, rewardsFor } from "@tegata/services"
 
 import { requireUser, workspaceOf } from "@/lib/server/auth.ts"
@@ -7,9 +6,13 @@ import { route } from "@/lib/server/http.ts"
 
 const LATEST = 20
 
+/** A send has a receipt once it's signed; one that failed or was never approved moved no money. */
+const SEND_HAS_RECEIPT = new Set(["signed", "sent", "unknown", "success"])
+
 /**
- * The person's latest money movements: payments into their pay links, links they paid, and their one-off sends,
- * newest first. The full ledger with filters arrives with Books (S06).
+ * The person's latest money movements: payments into their pay links and invoices, links they paid, their one-off
+ * sends and their referral rewards, newest first. Each opens its receipt, which then links to NEAR. The full ledger
+ * with filters arrives with Books (S06).
  */
 export const GET = route(async (request) => {
   const user = await requireUser(request)
@@ -29,8 +32,7 @@ export const GET = route(async (request) => {
       title: null,
       amount: send.amount,
       status: send.status,
-      receiptToken: null,
-      explorerUrl: send.txHash ? explorerTx(send.network, send.txHash) : null,
+      receiptUrl: SEND_HAS_RECEIPT.has(send.status) ? `/r/send/${send.id}` : null,
       at: send.createdAt.toISOString(),
     })),
     ...paidOut.map(({ payment, title, business, receiptToken }) => ({
@@ -41,8 +43,7 @@ export const GET = route(async (request) => {
       title,
       amount: payment.amount,
       status: payment.status,
-      receiptToken,
-      explorerUrl: payment.txHash ? explorerTx(payment.network, payment.txHash) : null,
+      receiptUrl: receiptToken ? `/r/${receiptToken}` : null,
       at: (payment.settledAt ?? payment.createdAt).toISOString(),
     })),
     ...paidIn.map(({ payment, title, receiptToken }) => ({
@@ -53,8 +54,7 @@ export const GET = route(async (request) => {
       title,
       amount: payment.amount,
       status: payment.status,
-      receiptToken,
-      explorerUrl: payment.txHash ? explorerTx(payment.network, payment.txHash) : null,
+      receiptUrl: receiptToken ? `/r/${receiptToken}` : null,
       at: (payment.settledAt ?? payment.createdAt).toISOString(),
     })),
     ...rewards.map(({ payout, network }) => ({
@@ -68,8 +68,7 @@ export const GET = route(async (request) => {
           : "Referral reward: you joined by invite",
       amount: payout.amount,
       status: "succeeded" as const,
-      receiptToken: null,
-      explorerUrl: payout.txHash ? explorerTx(network, payout.txHash) : null,
+      receiptUrl: `/r/reward/${payout.id}`,
       at: payout.updatedAt.toISOString(),
     })),
   ]

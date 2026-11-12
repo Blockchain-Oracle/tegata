@@ -4,7 +4,7 @@
  * and keep its key in the standard keychain ~/.near-credentials/testnet/.
  * The private key is written to that file only (mode 600) and never printed.
  *
- *   node contracts/scripts/testnet-account.mjs mamori.testnet
+ *   node scripts/testnet-account.mjs my-studio.testnet
  *
  * Same faucet service near-cli uses for `create-account --useFaucet`.
  */

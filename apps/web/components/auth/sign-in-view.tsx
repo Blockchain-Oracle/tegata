@@ -80,7 +80,7 @@ export function SignInView({
           >
             <div className="flex flex-col gap-3">
               <h1 className="display text-[44px] leading-[0.95] sm:text-[56px]">
-                Get paid in dollars from any chain.
+                Get paid in exact dollars.
               </h1>
               <p className="text-[17px] text-muted-foreground">
                 Sign in or open a business account with your email.

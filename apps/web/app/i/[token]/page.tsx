@@ -15,7 +15,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!data) return { title: "Invoice not found", robots: { index: false } }
   return {
     title: `${data.number} from ${data.from.name}`,
-    description: `Invoice ${data.number} from ${data.from.name}. Pay in dollars from any chain; settled on NEAR.`,
+    description: `Invoice ${data.number} from ${data.from.name}. Pay in dollars, settled in USDC on NEAR.`,
     robots: { index: false, follow: false },
   }
 }

@@ -16,9 +16,9 @@ import { cn } from "@/lib/utils"
 
 const DWELL_MS = 5600
 
+// The payroll scene rejoins the pager when payroll ships (plan S04); it stays below, exported, until then.
 const SCENES = [
-  { key: "link", title: "Send a link. Get paid from any chain." },
-  { key: "payroll", title: "Pay your whole team in one approval." },
+  { key: "link", title: "Send a link. Get paid in exact dollars." },
   { key: "address", title: "No wallet. No fees to think about." },
   { key: "receipt", title: "Every payment gets a sealed receipt." },
 ] as const
@@ -79,15 +79,7 @@ export function StoryStage({ sealed = false }: { sealed?: boolean }) {
           >
             <div className="absolute inset-x-0 top-14 bottom-[150px] grid place-items-center sm:top-12 sm:bottom-40 lg:top-10 lg:bottom-44">
               <div className="origin-center scale-[0.8] sm:scale-90 lg:scale-100">
-                {index === 0 ? (
-                  <LinkScene />
-                ) : index === 1 ? (
-                  <PayrollScene />
-                ) : index === 2 ? (
-                  <AddressScene />
-                ) : (
-                  <ReceiptScene />
-                )}
+                {index === 0 ? <LinkScene /> : index === 1 ? <AddressScene /> : <ReceiptScene />}
               </div>
             </div>
           </motion.div>
@@ -198,13 +190,7 @@ function LinkScene() {
         >
           <motion.div
             style={{ marginLeft: m.x - 28, marginTop: m.y - 28 }}
-            animate={
-              paid && m.chain === "base"
-                ? { scale: 1.25 }
-                : paid
-                  ? { opacity: 0.55, scale: 0.9 }
-                  : {}
-            }
+            animate={paid ? { opacity: 0.55, scale: 0.9 } : {}}
             transition={{ type: "spring", stiffness: 300, damping: 20 }}
             className="w-max rounded-full bg-white p-1.5 shadow-object"
           >
@@ -225,13 +211,13 @@ function LinkScene() {
           <div className="mt-3 flex h-9 items-center gap-2 rounded-[12px] bg-[#F5F5F5] px-3 text-[14px] font-semibold">
             {paid ? (
               <>
-                <Mark id="usdc" chain="base" size={22} />
-                <span className="text-[#2F7A00]">Paid from Base</span>
+                <Mark id="usdc" chain="near" size={22} />
+                <span className="text-[#2F7A00]">Paid in USDC on NEAR</span>
               </>
             ) : (
               <>
                 <span className="size-2 animate-pulse rounded-full bg-shu" />
-                <span className="text-[#666]">Any coin, any chain</span>
+                <span className="text-[#666]">Waiting for payment</span>
               </>
             )}
           </div>
@@ -255,7 +241,7 @@ const TEAM: { name: string; tone: string; to: MarkId; chain?: MarkId; amount: nu
   { name: "Diego", tone: "bg-kin", to: "usdc", chain: "sol", amount: 2400 },
 ]
 
-function PayrollScene() {
+export function PayrollScene() {
   const beat = useBeats(PAYROLL_BEATS)
   const held = beat >= 1
   const paidRows = Math.max(0, beat - 2)
