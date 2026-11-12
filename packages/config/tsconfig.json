@@ -1,0 +1,5 @@
+{
+  "extends": "@tegata/typescript-config/base.json",
+  "compilerOptions": { "allowImportingTsExtensions": true, "noEmit": true, "types": ["node"] },
+  "include": ["src/**/*.ts"]
+}

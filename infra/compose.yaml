@@ -1,0 +1,21 @@
+# Local development services. `pnpm services:up` / `pnpm services:down`.
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: tegata-pg
+    environment:
+      POSTGRES_USER: tegata
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: tegata
+    ports:
+      - "127.0.0.1:54330:5432"
+    volumes:
+      - tegata-pg:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U tegata -d tegata"]
+      interval: 2s
+      timeout: 3s
+      retries: 20
+
+volumes:
+  tegata-pg:

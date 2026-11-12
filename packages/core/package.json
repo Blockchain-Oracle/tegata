@@ -1,0 +1,29 @@
+{
+  "name": "@tegata/core",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./near": "./src/near/index.ts",
+    "./money": "./src/money/index.ts",
+    "./fixtures": "./src/ops/fixtures.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "tsx --test 'src/**/*.test.ts'"
+  },
+  "dependencies": {
+    "@noble/hashes": "catalog:",
+    "@scure/base": "catalog:",
+    "@tegata/config": "workspace:*",
+    "near-api-js": "catalog:",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@tegata/typescript-config": "workspace:*",
+    "@types/node": "catalog:",
+    "tsx": "catalog:",
+    "typescript": "catalog:"
+  }
+}

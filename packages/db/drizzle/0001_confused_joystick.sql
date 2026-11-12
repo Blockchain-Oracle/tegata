@@ -1,0 +1,1 @@
+ALTER TABLE "relays" ADD COLUMN "tx_bytes" text;

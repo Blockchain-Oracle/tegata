@@ -1,0 +1,108 @@
+/**
+ * Constants only. Nothing in this package reads the environment.
+ * Every limit, gas figure and network id used anywhere in Tegata is named here.
+ */
+
+export type NetworkId = "mainnet" | "testnet"
+
+/** What the app calls each network. */
+export const MODE_LABEL: Record<NetworkId, string> = {
+  mainnet: "Live",
+  testnet: "Sandbox",
+}
+
+export interface NetworkConfig {
+  id: NetworkId
+  /** Tried in order; the next one is used when a call fails. */
+  rpcUrls: readonly string[]
+  /** Native USDC issued by Circle (NEP-141). */
+  usdc: string
+  /** wNEAR, used only by operator tooling. */
+  wnear: string
+  /** The operator: pays gas, creates user accounts. Parent of every user account. */
+  operator: string
+  /** The autopilot payroll contract. */
+  autopilot: string
+  /** The registrar contract that creates top-level names. */
+  registrar: string
+  explorer: string
+}
+
+export const NETWORKS: Record<NetworkId, NetworkConfig> = {
+  mainnet: {
+    id: "mainnet",
+    rpcUrls: ["https://free.rpc.fastnear.com", "https://rpc.mainnet.fastnear.com"],
+    usdc: "17208628f84f5d6ad33f0da3bbbeb27ffcb398eac501a31bd6ad2011e36133a1",
+    wnear: "wrap.near",
+    operator: "tegata.near",
+    autopilot: "pay.tegata.near",
+    registrar: "near",
+    explorer: "https://nearblocks.io",
+  },
+  testnet: {
+    id: "testnet",
+    rpcUrls: ["https://test.rpc.fastnear.com", "https://rpc.testnet.fastnear.com"],
+    usdc: "3e2210e1184b45b64c8a434c0a7e7b23cc04ea7eb7a6c3c32520d03d4afcb8af",
+    wnear: "wrap.testnet",
+    operator: "tegata.testnet",
+    autopilot: "pay.tegata.testnet",
+    registrar: "testnet",
+    explorer: "https://testnet.nearblocks.io",
+  },
+}
+
+export const USDC_DECIMALS = 6
+export const NEAR_DECIMALS = 24
+
+/** 1 Tgas in gas units. */
+export const TGAS = 1_000_000_000_000n
+/** 1 yoctoNEAR, the deposit NEP-141 transfers require. */
+export const ONE_YOCTO = 1n
+
+/** Gas attached to each action the relayer sponsors. */
+export const GAS = {
+  /** One `ft_transfer` on USDC. Measured burn is about 2.2 Tgas. */
+  ftTransfer: 10n * TGAS,
+  /** `ft_transfer_call` into the autopilot contract. */
+  ftTransferCall: 100n * TGAS,
+  /** `storage_deposit` on a token. */
+  storageDeposit: 10n * TGAS,
+  /** Wrapping NEAR (operator tooling only). */
+  nearDeposit: 10n * TGAS,
+} as const
+
+/** NEP-145 registration on USDC: min = max on both networks (read from `storage_balance_bounds`). */
+export const USDC_STORAGE_YOCTO = 1_250_000_000_000_000_000_000n
+
+export const LIMITS = {
+  /** `ft_transfer` actions in one sponsored batch. The protocol allows 100 actions per receipt. */
+  maxRowsPerBatch: 50,
+  /** Blocks a signed delegate action stays valid (about two minutes). */
+  delegateTtlBlocks: 120,
+  /** Sponsored actions per user. */
+  relaysPerHour: 30,
+  relaysPerDay: 200,
+  handleMinLength: 2,
+  handleMaxLength: 32,
+} as const
+
+/** Names a user may not take as `name.tegata.near`. */
+export const RESERVED_HANDLES: readonly string[] = [
+  "pay",
+  "app",
+  "api",
+  "www",
+  "admin",
+  "relay",
+  "operator",
+  "tegata",
+  "support",
+  "docs",
+]
+
+export const TIMEOUTS = {
+  rpcMs: 15_000,
+  /** How long to wait for a relayed transaction to reach finality before reporting "unknown". */
+  relayFinalityMs: 60_000,
+  relayPollMs: 1_000,
+} as const

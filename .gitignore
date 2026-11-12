@@ -1,0 +1,25 @@
+# Rust
+contracts/target/
+**/*.rs.bk
+
+# Node
+node_modules/
+.next/
+.next-build/
+.turbo/
+dist/
+out/
+*.tsbuildinfo
+
+# Env and secrets
+.env
+.env.*
+!.env.example
+*.pem
+.keys/
+
+# OS / editors
+.DS_Store
+.idea/
+.vscode/
+.claude/

@@ -1,0 +1,27 @@
+{
+  "name": "@tegata/worker",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch --clear-screen=false src/index.ts",
+    "start": "tsx src/index.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@tegata/config": "workspace:*",
+    "@tegata/core": "workspace:*",
+    "@tegata/db": "workspace:*",
+    "@tegata/env": "workspace:*",
+    "@tegata/jobs": "workspace:*",
+    "@tegata/services": "workspace:*",
+    "drizzle-orm": "catalog:",
+    "pg-boss": "catalog:",
+    "tsx": "catalog:"
+  },
+  "devDependencies": {
+    "@tegata/typescript-config": "workspace:*",
+    "@types/node": "catalog:",
+    "typescript": "catalog:"
+  }
+}

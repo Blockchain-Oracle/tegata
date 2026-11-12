@@ -1,0 +1,26 @@
+{
+  "name": "@tegata/db",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./schema": "./src/schema/index.ts",
+    "./migrate": "./src/migrate.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "generate": "drizzle-kit generate",
+    "migrate": "drizzle-kit migrate"
+  },
+  "dependencies": {
+    "drizzle-orm": "catalog:",
+    "postgres": "catalog:"
+  },
+  "devDependencies": {
+    "@tegata/typescript-config": "workspace:*",
+    "@types/node": "catalog:",
+    "drizzle-kit": "0.31.11",
+    "typescript": "catalog:"
+  }
+}
