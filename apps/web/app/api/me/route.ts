@@ -1,5 +1,5 @@
 import { usdcBalance } from "@tegata/core/near"
-import { getProfile } from "@tegata/services"
+import { getProfile, logoPath } from "@tegata/services"
 
 import { requireUser } from "@/lib/server/auth.ts"
 import { activeNetworks, db } from "@/lib/server/context.ts"
@@ -16,5 +16,20 @@ export const GET = route(async (request) => {
       balance: account.readyAt ? await usdcBalance(account.network, account.accountId) : 0n,
     })),
   )
-  return { ...profile, accounts, networks: activeNetworks() }
+  const { workspace } = profile
+  return {
+    ...profile,
+    // The logo itself is served from its own cached URL, never inside this frequently polled response.
+    workspace: workspace && {
+      id: workspace.id,
+      name: workspace.name,
+      timezone: workspace.timezone,
+      address: workspace.address,
+      taxId: workspace.taxId,
+      email: workspace.email,
+      logo: logoPath(workspace),
+    },
+    accounts,
+    networks: activeNetworks(),
+  }
 })

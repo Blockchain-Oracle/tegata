@@ -12,6 +12,7 @@ import {
   Moon,
   Palette,
   Plus,
+  Settings,
   Sun,
 } from "lucide-react"
 import { useRouter } from "next/navigation"
@@ -95,6 +96,9 @@ export function CommandMenu({
                 </Item>
                 <Item icon={<Link2 />} onSelect={run(() => router.push("/app/links"))}>
                   Pay links
+                </Item>
+                <Item icon={<Settings />} onSelect={run(() => router.push("/app/settings"))}>
+                  Business profile
                 </Item>
                 <Item icon={<Palette />} onSelect={run(() => router.push("/dev"))}>
                   Design review

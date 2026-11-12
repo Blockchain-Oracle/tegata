@@ -133,8 +133,12 @@ export function PayView(p: PayViewProps) {
       <div className="mx-auto flex w-full max-w-[520px] flex-col gap-5 px-4 pt-4 pb-10 sm:pt-10">
         <Stage className="px-5 pt-5 pb-7 sm:px-7">
           <div className="flex items-center gap-3">
-            <span className="grid size-14 shrink-0 place-items-center rounded-full bg-white shadow-object">
-              <BusinessSeal name={p.request.business} size={50} tilt={-4} />
+            <span className="grid size-14 shrink-0 place-items-center overflow-hidden rounded-full bg-white shadow-object">
+              {p.request.logo ? (
+                <img src={p.request.logo} alt="" className="size-full object-cover" />
+              ) : (
+                <BusinessSeal name={p.request.business} size={50} tilt={-4} />
+              )}
             </span>
             <span className="flex min-w-0 flex-col">
               <span className="text-[14px] font-medium text-white/85">Pay</span>

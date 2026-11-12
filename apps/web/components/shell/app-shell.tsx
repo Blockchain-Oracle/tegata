@@ -12,6 +12,7 @@ import {
   LogOut,
   Moon,
   Search,
+  Settings,
   Sun,
 } from "lucide-react"
 import { motion } from "motion/react"
@@ -94,6 +95,14 @@ export function AppShell({
           sideOffset={8}
           className="z-50 min-w-56 rounded-[16px] bg-popover p-1.5 shadow-float data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95"
         >
+          <DropdownMenu.Item asChild>
+            <Link
+              href="/app/settings"
+              className="flex h-11 cursor-pointer items-center gap-3 rounded-[10px] px-3 text-[15px] font-medium outline-none data-[highlighted]:bg-secondary"
+            >
+              <Settings className="size-4" /> Business profile
+            </Link>
+          </DropdownMenu.Item>
           <DropdownMenu.Item
             onSelect={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
             className="flex h-11 cursor-pointer items-center gap-3 rounded-[10px] px-3 text-[15px] font-medium outline-none data-[highlighted]:bg-secondary"
@@ -193,6 +202,20 @@ export function AppShell({
             })}
           </nav>
           <div className="flex-1" />
+          <Link
+            href="/app/settings"
+            title="Business"
+            aria-current={pathname.startsWith("/app/settings") ? "page" : undefined}
+            className={cn(
+              "press flex h-12 items-center gap-3 rounded-[14px] px-3 text-[16px] font-medium transition-colors max-xl:justify-center",
+              pathname.startsWith("/app/settings")
+                ? "bg-secondary font-semibold text-foreground"
+                : "text-muted-foreground hover:bg-secondary/60 hover:text-foreground",
+            )}
+          >
+            <Settings className="size-5" />
+            <span className="max-xl:hidden">Business</span>
+          </Link>
           {account}
         </aside>
 

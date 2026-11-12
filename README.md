@@ -40,6 +40,8 @@ In the app (Sandbox), live at **https://tegata.84.46.247.92.sslip.io**:
 | Open the link as a payer | Pay from a Tegata balance (email sign-in, no fees) or a NEAR testnet wallet. Paying from another chain shows a live NEAR Intents price and says it runs in Live, because NEAR Intents has no testnet |
 | Pay it | Live steps, then the business's seal stamps PAID. The link's page shows the payment the moment NEAR settles it |
 | Open the receipt | A numbered receipt with who paid whom, how, when, and the NEAR transaction. Share it or save it as a PDF |
+| On Home, press Add test dollars | 5 test USDC from Tegata's Sandbox stash, once a day, so you can pay a link without a wallet |
+| Open Business | Your logo, address, tax ID and time zone, with a live preview of the header every receipt carries; your seal follows your name |
 | Open `/dev` | Every part of the design in every state: the seal, colour, type, components, loading and error states, motion and sound |
 
 A payment is marked paid only when Tegata reads, from NEAR itself, a USDC transfer to the business for the full

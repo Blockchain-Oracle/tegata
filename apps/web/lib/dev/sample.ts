@@ -98,6 +98,7 @@ export const SAMPLE_DETAIL: LinkDetail = {
 export const SAMPLE_REQUEST: PublicRequest = {
   token: "h7Kq2mPx9cRt",
   business: SAMPLE_BUSINESS,
+  logo: null,
   title: "Logo design",
   note: "Final files are in the shared folder. Thank you!",
   amount: "1250000000",
@@ -110,6 +111,7 @@ export const SAMPLE_REQUEST: PublicRequest = {
 export const SAMPLE_RECEIPT: ReceiptView = {
   number: 7,
   business: SAMPLE_BUSINESS,
+  logo: null,
   title: "Logo design",
   amount: "1250000000",
   rail: "tegata",

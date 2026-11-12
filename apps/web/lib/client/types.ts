@@ -16,7 +16,16 @@ export interface AccountView {
 
 export interface Profile {
   user: { id: string; email: string | null; handle: string | null; publicKey: string | null }
-  workspace?: { id: string; name: string; timezone: string }
+  workspace?: {
+    id: string
+    name: string
+    timezone: string
+    address: string | null
+    taxId: string | null
+    email: string | null
+    /** Where the logo is served, or null. */
+    logo: string | null
+  }
   accounts: AccountView[]
   networks: NetworkId[]
 }
@@ -104,6 +113,8 @@ export interface LinkDetail {
 export interface PublicRequest {
   token: string
   business: string
+  /** The business's logo URL, or null (the seal stands in). */
+  logo: string | null
   title: string
   note: string | null
   amount: string | null
@@ -143,6 +154,7 @@ export interface WalletAttempt {
 export interface ReceiptView {
   number: number
   business: string
+  logo: string | null
   title: string
   amount: string
   rail: PaymentRail

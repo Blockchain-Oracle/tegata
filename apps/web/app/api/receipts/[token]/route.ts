@@ -9,10 +9,11 @@ export const GET = route(async (_request, context: { params: Promise<{ token: st
   const { token } = await context.params
   const row = await receiptByToken(db(), token)
   if (!row) throw notFound("That receipt doesn't exist")
-  const { receipt, payment, request, business } = row
+  const { receipt, payment, request, business, logo } = row
   return {
     number: receipt.number,
     business,
+    logo,
     title: request.title,
     amount: payment.amount,
     rail: payment.rail,

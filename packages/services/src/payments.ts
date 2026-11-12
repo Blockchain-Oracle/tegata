@@ -114,12 +114,23 @@ export async function setLinkOpen(db: Db, workspaceId: string, id: string, open:
 
 export async function publicRequest(db: Db, token: string) {
   const [row] = await db
-    .select({ request: requests, business: workspaces.name })
+    .select({ request: requests, ...BUSINESS_HEADER })
     .from(requests)
     .innerJoin(workspaces, eq(workspaces.id, requests.workspaceId))
     .where(eq(requests.token, token))
-  return row
+  return row && { ...row, logo: headerLogo(row) }
 }
+
+/** What a public page's header shows about the business: its name and, if it has one, its logo. */
+const BUSINESS_HEADER = {
+  business: workspaces.name,
+  workspaceId: workspaces.id,
+  hasLogo: sql<boolean>`${workspaces.logoUrl} is not null`,
+  workspaceUpdatedAt: workspaces.updatedAt,
+}
+
+const headerLogo = (row: { workspaceId: string; hasLogo: boolean; workspaceUpdatedAt: Date }) =>
+  row.hasLogo ? `/api/logo/${row.workspaceId}?v=${row.workspaceUpdatedAt.getTime()}` : null
 
 /** Start an attempt. The amount is the request's, or the payer's own for an open-amount link. */
 export async function startAttempt(
@@ -354,13 +365,13 @@ export async function attemptStatus(db: Db, paymentId: string) {
 
 export async function receiptByToken(db: Db, token: string) {
   const [row] = await db
-    .select({ receipt: receipts, payment: payments, request: requests, business: workspaces.name })
+    .select({ receipt: receipts, payment: payments, request: requests, ...BUSINESS_HEADER })
     .from(receipts)
     .innerJoin(payments, eq(payments.id, receipts.paymentId))
     .innerJoin(requests, eq(requests.id, payments.requestId))
     .innerJoin(workspaces, eq(workspaces.id, receipts.workspaceId))
     .where(eq(receipts.token, token))
-  return row
+  return row && { ...row, logo: headerLogo(row) }
 }
 
 /** Links this person paid from their Tegata balance (money out, beside their sends). */

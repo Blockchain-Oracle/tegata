@@ -72,6 +72,12 @@ const CARDS = [
     note: "Three ways to pay, live steps, the paid seal, the slip",
     field: "bg-sakura",
   },
+  {
+    href: "/dev/flows/business",
+    title: "Business profile",
+    note: "The receipt header, the seal that follows the name, every field",
+    field: "bg-kin",
+  },
 ] as const
 
 export default function DevIndex() {

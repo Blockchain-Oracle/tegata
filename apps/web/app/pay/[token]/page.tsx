@@ -18,10 +18,11 @@ type Props = { params: Promise<{ token: string }> }
 async function load(token: string): Promise<PublicRequest | null> {
   const found = await publicRequest(db(), token)
   if (!found) return null
-  const { request, business } = found
+  const { request, business, logo } = found
   return {
     token: request.token,
     business,
+    logo,
     title: request.title,
     note: request.note,
     amount: request.amount === null ? null : request.amount.toString(),

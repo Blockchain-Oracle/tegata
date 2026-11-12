@@ -15,10 +15,11 @@ type Props = { params: Promise<{ token: string }> }
 async function load(token: string): Promise<Receipt | null> {
   const row = await receiptByToken(db(), token)
   if (!row) return null
-  const { receipt, payment, request, business } = row
+  const { receipt, payment, request, business, logo } = row
   return {
     number: receipt.number,
     business,
+    logo,
     title: request.title,
     amount: payment.amount.toString(),
     rail: payment.rail,

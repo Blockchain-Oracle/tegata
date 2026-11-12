@@ -58,8 +58,12 @@ export function ReceiptView({ receipt, token }: { receipt: Receipt; token: strin
         inner="flex flex-col items-center gap-6 px-4 py-8 sm:py-14"
       >
         <div className="flex items-center gap-3 print:hidden">
-          <span className="grid size-12 place-items-center rounded-full bg-white shadow-object">
-            <BusinessSeal name={receipt.business} size={42} tilt={-4} />
+          <span className="grid size-12 place-items-center overflow-hidden rounded-full bg-white shadow-object">
+            {receipt.logo ? (
+              <img src={receipt.logo} alt="" className="size-full object-cover" />
+            ) : (
+              <BusinessSeal name={receipt.business} size={42} tilt={-4} />
+            )}
           </span>
           <span className="flex flex-col">
             <span className="text-[14px] font-medium text-white/85">Receipt from</span>

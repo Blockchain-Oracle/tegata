@@ -9,10 +9,11 @@ export const GET = route(async (_request, context: { params: Promise<{ token: st
   const { token } = await context.params
   const found = await publicRequest(db(), token)
   if (!found) throw notFound("This pay link doesn't exist")
-  const { request, business } = found
+  const { request, business, logo } = found
   return {
     token: request.token,
     business,
+    logo,
     title: request.title,
     note: request.note,
     amount: request.amount,
