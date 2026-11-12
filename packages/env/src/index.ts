@@ -40,6 +40,11 @@ const serverSchema = z.object({
   /** Tells the web server Live is on, without giving it the mainnet keys. */
   LIVE_ENABLED: optional(z.enum(["true", "false"])),
 
+  /** Resend (https://resend.com): invoice, receipt and reminder emails. Both unset: Tegata issues links only. */
+  RESEND_API_KEY: optional(z.string()),
+  /** A sender on a domain verified in Resend, e.g. `Tegata <invoices@tegata.xyz>`. */
+  EMAIL_FROM: optional(z.string()),
+
   PRIVY_APP_ID: optional(z.string()),
   PRIVY_APP_SECRET: optional(z.string()),
   /** From the Privy dashboard; lets the server verify tokens without a network call. */
@@ -47,9 +52,6 @@ const serverSchema = z.object({
 
   /** Optional 1Click partner key; without it 1Click adds its own small fee. */
   ONECLICK_API_KEY: optional(z.string()),
-
-  RESEND_API_KEY: optional(z.string()),
-  EMAIL_FROM: optional(z.string()),
 })
 
 export type ServerEnv = z.infer<typeof serverSchema>
@@ -82,6 +84,11 @@ export function loadDotEnv(path: string): void {
 /** True when Live (mainnet) can be offered. */
 export function liveEnabled(env: ServerEnv = serverEnv()): boolean {
   return env.LIVE_ENABLED === "true" || (env.OPERATOR_KEYS_MAINNET?.length ?? 0) > 0
+}
+
+/** Email goes out only when Resend and a verified sender are both set. */
+export function emailConfigured(env: ServerEnv = serverEnv()): boolean {
+  return Boolean(env.RESEND_API_KEY && env.EMAIL_FROM)
 }
 
 /** The operator keys for a network, for the worker and operator tools. Throws when they are missing. */

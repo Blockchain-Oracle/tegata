@@ -73,6 +73,12 @@ const CARDS = [
     field: "bg-sakura",
   },
   {
+    href: "/dev/flows/invoices",
+    title: "Invoices",
+    note: "List, builder with live preview, the invoice, what the customer opens",
+    field: "bg-matcha",
+  },
+  {
     href: "/dev/flows/business",
     title: "Business profile",
     note: "The receipt header, the seal that follows the name, every field",

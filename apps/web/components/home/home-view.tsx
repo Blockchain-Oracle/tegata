@@ -9,6 +9,7 @@ import {
   Check,
   Copy,
   ExternalLink,
+  FileText,
   Link2,
   Plus,
   Send,
@@ -170,6 +171,13 @@ export function HomeView({
         <section className="flex flex-col gap-3">
           <h2 className="text-section-title font-semibold">{fresh ? "Get started" : "Next"}</h2>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
+            <Tile
+              field="bg-sakura"
+              title={fresh ? "Send your first invoice" : "Send an invoice"}
+              detail="Bill a customer. They pay in dollars from any wallet; you get exact USDC."
+              href="/app/invoices/new"
+              icon={<FileText />}
+            />
             <Tile
               field="bg-sora"
               title={fresh ? "Create your first pay link" : "Create a pay link"}

@@ -1,4 +1,5 @@
 import { usdcBalance } from "@tegata/core/near"
+import { emailConfigured } from "@tegata/env"
 import { getProfile, logoPath } from "@tegata/services"
 
 import { requireUser } from "@/lib/server/auth.ts"
@@ -31,5 +32,6 @@ export const GET = route(async (request) => {
     },
     accounts,
     networks: activeNetworks(),
+    emailEnabled: emailConfigured(),
   }
 })

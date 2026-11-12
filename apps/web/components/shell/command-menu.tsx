@@ -6,6 +6,7 @@ import {
   ArrowDownLeft,
   ArrowUpRight,
   Copy,
+  FileText,
   Home,
   Link2,
   LogOut,
@@ -14,6 +15,7 @@ import {
   Plus,
   Settings,
   Sun,
+  Users,
 } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { Dialog } from "radix-ui"
@@ -80,6 +82,9 @@ export function CommandMenu({
                 <Item icon={<ArrowDownLeft />} onSelect={run(onReceive)}>
                   Get paid
                 </Item>
+                <Item icon={<FileText />} onSelect={run(() => router.push("/app/invoices/new"))}>
+                  New invoice
+                </Item>
                 <Item icon={<Plus />} onSelect={run(() => router.push("/app/links?new=1"))}>
                   New pay link
                 </Item>
@@ -94,8 +99,14 @@ export function CommandMenu({
                 <Item icon={<Home />} onSelect={run(() => router.push("/app"))}>
                   Home
                 </Item>
+                <Item icon={<FileText />} onSelect={run(() => router.push("/app/invoices"))}>
+                  Invoices
+                </Item>
                 <Item icon={<Link2 />} onSelect={run(() => router.push("/app/links"))}>
                   Pay links
+                </Item>
+                <Item icon={<Users />} onSelect={run(() => router.push("/app/customers"))}>
+                  Customers
                 </Item>
                 <Item icon={<Settings />} onSelect={run(() => router.push("/app/settings"))}>
                   Business profile

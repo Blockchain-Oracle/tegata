@@ -12,6 +12,7 @@
     "@tegata/config": "workspace:*",
     "@tegata/core": "workspace:*",
     "@tegata/db": "workspace:*",
+    "@tegata/documents": "workspace:*",
     "@tegata/env": "workspace:*",
     "@tegata/jobs": "workspace:*",
     "@tegata/services": "workspace:*",

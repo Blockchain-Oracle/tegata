@@ -40,6 +40,10 @@ In the app (Sandbox), live at **https://tegata.84.46.247.92.sslip.io**:
 | Open the link as a payer | Pay from a Tegata balance (email sign-in, no fees) or a NEAR testnet wallet. Paying from another chain shows a live NEAR Intents price and says it runs in Live, because NEAR Intents has no testnet |
 | Pay it | Live steps, then the business's seal stamps PAID. The link's page shows the payment the moment NEAR settles it |
 | Open the receipt | A numbered receipt with who paid whom, how, when, and the NEAR transaction. Share it or save it as a PDF |
+| Open Invoices, press New invoice | Pick or add a customer, add items, a discount and tax; the invoice, its pay page and its email preview update as you type |
+| Send it | It gets the next number (INV-0001…) and a link. Open the link as the customer: the invoice, a Pay button for what is left, and a PDF |
+| Allow part-payments and pay part of it | The invoice turns Partly paid, shows what is left, and turns Paid with the business's seal when the rest arrives. Every step is on its timeline |
+| Mark one paid by hand, duplicate one, void one | A receipt that says it isn't on NEAR; a fresh draft; a cancelled invoice whose link stops taking payments |
 | On Home, press Add test dollars | 5 test USDC from Tegata's Sandbox stash, once a day, so you can pay a link without a wallet |
 | Open Business | Your logo, address, tax ID and time zone, with a live preview of the header every receipt carries; your seal follows your name |
 | Open `/dev` | Every part of the design in every state: the seal, colour, type, components, loading and error states, motion and sound |
@@ -49,6 +53,11 @@ amount carrying that payment's own memo (`tegata:pay:<id>`). Nothing the payer's
 
 A recorded send of 1.00 test USDC from `abu-studio.tegata.testnet`:
 [transaction](https://testnet.nearblocks.io/txns/4a5U9osgJrXKN5EDT3mvrWGT6NrFXoQXwH4bYZjqH6TX).
+
+A recorded part-paid invoice: INV-0001 for 0.50 test USDC, paid 0.20
+([transaction](https://testnet.nearblocks.io/txns/2q3MP2dbT2sMV5EXX6KpD9d4YUCMprcEKmjZXyWz8cVj)) then 0.30
+([transaction](https://testnet.nearblocks.io/txns/4DaV5LVezTYavbjzQdfsSUcMYL1Yiz59z5Z4TyFQCquE)); an attempt to pay 0.40
+was refused because only 0.30 was left.
 
 A recorded pay-link payment of 0.25 test USDC to `abu-studio.tegata.testnet`, made with
 `pnpm ops pay-link <link>` (the operator account paying the way a NEAR wallet does):
@@ -60,7 +69,7 @@ the operator `tegata.testnet` paid 0.00029 NEAR in fees.
 
 ## What is being built
 
-Invoices and a developer checkout, paid through the same pay page; people and payroll; scheduled
+Invoice email (it waits for a Resend key) and a developer checkout; people and payroll; scheduled
 payroll held in a contract; receipts, activity and exports. This list moves up into "What works today" as
 each part ships.
 

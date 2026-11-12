@@ -1,11 +1,16 @@
 import { NETWORKS, type NetworkId } from "@tegata/config"
+import { formatUsd } from "@tegata/core/money"
 import { ftTransfer, matchingTransfer, readUsdcTransfers } from "@tegata/core/near"
 import { type Db, schema } from "@tegata/db"
-import { and, desc, eq, inArray, max, sql } from "drizzle-orm"
+import { and, desc, eq, inArray, sql } from "drizzle-orm"
 
 import { createRelayDraft } from "./relays.ts"
 
-const { requests, payments, receipts, workspaces, accounts, relays } = schema
+const { requests, payments, receipts, workspaces, accounts, relays, invoices, invoiceEvents } =
+  schema
+
+/** A database transaction, for steps that must happen together. */
+export type Tx = Parameters<Parameters<Db["transaction"]>[0]>[0]
 
 const TOKEN_ALPHABET = "23456789abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ"
 const LINK_TOKEN_LENGTH = 12
@@ -118,7 +123,19 @@ export async function publicRequest(db: Db, token: string) {
     .from(requests)
     .innerJoin(workspaces, eq(workspaces.id, requests.workspaceId))
     .where(eq(requests.token, token))
-  return row && { ...row, logo: headerLogo(row) }
+  if (!row) return undefined
+  const [invoice] =
+    row.request.kind === "invoice"
+      ? await db
+          .select({
+            number: invoices.number,
+            allowPartial: invoices.allowPartial,
+            dueDate: invoices.dueDate,
+          })
+          .from(invoices)
+          .where(eq(invoices.requestId, row.request.id))
+      : []
+  return { ...row, logo: headerLogo(row), invoice: invoice ?? null }
 }
 
 /** What a public page's header shows about the business: its name and, if it has one, its logo. */
@@ -131,6 +148,26 @@ const BUSINESS_HEADER = {
 
 const headerLogo = (row: { workspaceId: string; hasLogo: boolean; workspaceUpdatedAt: Date }) =>
   row.hasLogo ? `/api/logo/${row.workspaceId}?v=${row.workspaceUpdatedAt.getTime()}` : null
+
+/** What an invoice payment may be: what is left, or less when the business allows part-payments. */
+async function invoiceAmount(
+  db: Db,
+  request: typeof requests.$inferSelect,
+  asked: bigint | undefined,
+): Promise<bigint> {
+  const [invoice] = await db
+    .select({ status: invoices.status, allowPartial: invoices.allowPartial })
+    .from(invoices)
+    .where(eq(invoices.requestId, request.id))
+  if (invoice?.status !== "open")
+    throw new PaymentError("closed", "This invoice isn't taking payments")
+  const remaining = (request.amount ?? 0n) - request.paidTotal
+  if (remaining <= 0n) throw new PaymentError("closed", "This invoice is already paid")
+  if (!invoice.allowPartial || asked === undefined) return remaining
+  if (asked > remaining)
+    throw new PaymentError("bad_amount", `The most left to pay is $${formatUsd(remaining)}`)
+  return asked
+}
 
 /** Start an attempt. The amount is the request's, or the payer's own for an open-amount link. */
 export async function startAttempt(
@@ -148,7 +185,10 @@ export async function startAttempt(
   const { request } = found
   if (request.status !== "open")
     throw new PaymentError("closed", "This pay link is no longer taking payments")
-  const amount = request.amount ?? input.amount
+  const amount =
+    request.kind === "invoice"
+      ? await invoiceAmount(db, request, input.amount)
+      : (request.amount ?? input.amount)
   if (!amount || amount < LINK_LIMITS.minUnits || amount > LINK_LIMITS.maxUnits) {
     throw new PaymentError("bad_amount", "Enter an amount between $0.01 and $1,000,000")
   }
@@ -288,31 +328,67 @@ export async function settlePayment(
       )
       .returning()
     if (!settled) return
-    const [request] = await tx
-      .update(requests)
-      .set({
-        paidCount: sql`${requests.paidCount} + 1`,
-        paidTotal: sql`${requests.paidTotal} + ${payment.amount.toString()}`,
-      })
-      .where(eq(requests.id, payment.requestId))
-      .returning()
-    if (!request) return
-    if (!request.reusable && request.amount !== null && request.paidTotal >= request.amount) {
-      await tx.update(requests).set({ status: "paid" }).where(eq(requests.id, request.id))
-    }
-    // Numbered per business; the unique index makes a race retry rather than duplicate.
-    const [last] = await tx
-      .select({ n: max(receipts.number) })
-      .from(receipts)
-      .where(eq(receipts.workspaceId, request.workspaceId))
-    await tx.insert(receipts).values({
-      paymentId: payment.id,
-      workspaceId: request.workspaceId,
-      token: publicToken(RECEIPT_TOKEN_LENGTH),
-      number: (last?.n ?? 0) + 1,
-    })
+    await applyPayment(tx, settled)
   })
   return "succeeded"
+}
+
+/**
+ * Inside the settling transaction: count the payment on its request, give it the business's next receipt number
+ * (one atomic counter, so two payments at once never share a number), and move an invoice to Paid when the full
+ * amount is in. Used for payments read from NEAR and for payments a business marks paid by hand.
+ */
+export async function applyPayment(
+  tx: Tx,
+  payment: { id: string; requestId: string; amount: bigint; rail: string },
+) {
+  const [request] = await tx
+    .update(requests)
+    .set({
+      paidCount: sql`${requests.paidCount} + 1`,
+      paidTotal: sql`${requests.paidTotal} + ${payment.amount.toString()}`,
+    })
+    .where(eq(requests.id, payment.requestId))
+    .returning()
+  if (!request) return
+  const full = request.amount !== null && request.paidTotal >= request.amount
+  if (!request.reusable && full) {
+    await tx.update(requests).set({ status: "paid" }).where(eq(requests.id, request.id))
+  }
+  const [counter] = await tx
+    .update(workspaces)
+    .set({
+      nextReceiptNumber: sql`${workspaces.nextReceiptNumber} + 1`,
+      // A new receipt number isn't a profile change: keep the logo's cache version.
+      updatedAt: sql`${workspaces.updatedAt}`,
+    })
+    .where(eq(workspaces.id, request.workspaceId))
+    .returning({ next: workspaces.nextReceiptNumber })
+  if (!counter) throw new Error("The business for this payment is missing")
+  await tx.insert(receipts).values({
+    paymentId: payment.id,
+    workspaceId: request.workspaceId,
+    token: publicToken(RECEIPT_TOKEN_LENGTH),
+    number: counter.next - 1,
+  })
+  if (request.kind !== "invoice") return
+  const [invoice] = await tx
+    .select({ id: invoices.id, status: invoices.status })
+    .from(invoices)
+    .where(eq(invoices.requestId, request.id))
+  if (!invoice) return
+  await tx.insert(invoiceEvents).values({
+    invoiceId: invoice.id,
+    kind: "payment",
+    detail: { paymentId: payment.id, amount: payment.amount.toString(), rail: payment.rail },
+  })
+  if (full && invoice.status === "open") {
+    await tx
+      .update(invoices)
+      .set({ status: "paid", paidAt: new Date() })
+      .where(and(eq(invoices.id, invoice.id), eq(invoices.status, "open")))
+    await tx.insert(invoiceEvents).values({ invoiceId: invoice.id, kind: "paid" })
+  }
 }
 
 /** After a relay lands, settle the payment it carried (the Tegata rail). */

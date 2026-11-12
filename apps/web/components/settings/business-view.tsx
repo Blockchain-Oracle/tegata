@@ -16,6 +16,8 @@ import { cn } from "@/lib/utils"
 
 const LOGO_EDGE = 256
 const LOGO_QUALITY = 0.9
+/** About 200 KB once decoded. */
+const LOGO_MAX_CHARS = 266_000
 const COPIED_MS = 1500
 
 export type BusinessFieldName = "name" | "address" | "taxId" | "email" | "timezone" | "logo"
@@ -47,7 +49,9 @@ async function shrink(file: File): Promise<string> {
   canvas.width = Math.round(bitmap.width * scale)
   canvas.height = Math.round(bitmap.height * scale)
   canvas.getContext("2d")?.drawImage(bitmap, 0, 0, canvas.width, canvas.height)
-  return canvas.toDataURL("image/webp", LOGO_QUALITY)
+  // PNG keeps transparency and embeds in PDFs (which take PNG and JPEG only); a photo too big for it goes JPEG.
+  const png = canvas.toDataURL("image/png")
+  return png.length < LOGO_MAX_CHARS ? png : canvas.toDataURL("image/jpeg", LOGO_QUALITY)
 }
 
 function zones(): string[] {

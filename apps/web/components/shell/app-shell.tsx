@@ -7,13 +7,16 @@ import {
   ArrowDownLeft,
   ArrowUpRight,
   Command as CommandIcon,
+  FileText,
   Home,
   Link2,
   LogOut,
   Moon,
+  Plus,
   Search,
   Settings,
   Sun,
+  Users,
 } from "lucide-react"
 import { motion } from "motion/react"
 import Link from "next/link"
@@ -37,7 +40,9 @@ type Place =
 const PLACES: Place[] = [
   { kind: "link", href: "/app", label: "Home", icon: <Home /> },
   { kind: "action", id: "receive", label: "Get paid", icon: <ArrowDownLeft /> },
+  { kind: "link", href: "/app/invoices", label: "Invoices", icon: <FileText /> },
   { kind: "link", href: "/app/links", label: "Pay links", icon: <Link2 /> },
+  { kind: "link", href: "/app/customers", label: "Customers", icon: <Users /> },
   { kind: "link", href: "/app/send", label: "Send", icon: <ArrowUpRight /> },
 ]
 
@@ -240,50 +245,76 @@ export function AppShell({
           className="fixed inset-x-0 bottom-0 z-40 flex justify-center px-6 pb-[max(12px,env(safe-area-inset-bottom))] lg:hidden"
         >
           <div className="flex h-[60px] items-center gap-1 rounded-[40px] bg-card px-2 shadow-float">
-            {PLACES.map((place) => {
-              const active = place.kind === "link" && place.href === activeHref
-              const content = (
-                <>
-                  {active ? (
-                    <motion.span
-                      layoutId="dock-bubble"
-                      transition={{ type: "spring", stiffness: 420, damping: 30 }}
-                      className="absolute inset-0 rounded-[24px] bg-secondary"
-                    />
-                  ) : null}
-                  <span
-                    className={cn(
-                      "relative [&_svg]:size-6",
-                      active ? "text-foreground [&_svg]:stroke-[2.4]" : "text-text-3",
-                    )}
-                  >
-                    {place.icon}
-                  </span>
-                </>
-              )
-              const cls = "press relative grid h-11 w-[52px] place-items-center"
-              return place.kind === "link" ? (
-                <Link
-                  key={place.href}
-                  href={place.href}
-                  aria-label={place.label}
-                  aria-current={active ? "page" : undefined}
-                  className={cls}
-                >
-                  {content}
-                </Link>
-              ) : (
+            <DockLink href="/app" label="Home" icon={<Home />} active={activeHref === "/app"} />
+            <DockLink
+              href="/app/invoices"
+              label="Invoices"
+              icon={<FileText />}
+              active={activeHref === "/app/invoices"}
+            />
+            <DropdownMenu.Root
+              onOpenChange={(open) => fire("tick", { cue: open ? "sheetOpen" : "sheetClose" })}
+            >
+              <DropdownMenu.Trigger asChild>
                 <button
-                  key={place.id}
                   type="button"
-                  aria-label={place.label}
-                  className={cls}
-                  onClick={() => setReceive(true)}
+                  aria-label="Create"
+                  className="press grid size-12 place-items-center rounded-full bg-shu text-white shadow-object [&_svg]:size-6 [&_svg]:stroke-[2.4] data-[state=open]:[&_svg]:rotate-45 [&_svg]:transition-transform"
                 >
-                  {content}
+                  <Plus />
                 </button>
-              )
-            })}
+              </DropdownMenu.Trigger>
+              <DropdownMenu.Portal>
+                <DropdownMenu.Content
+                  side="top"
+                  align="center"
+                  sideOffset={14}
+                  className="z-50 grid w-[min(340px,calc(100vw-32px))] grid-cols-2 gap-2 rounded-[24px] bg-popover p-2 shadow-float data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:slide-in-from-bottom-2"
+                >
+                  {[
+                    {
+                      href: "/app/invoices/new",
+                      label: "New invoice",
+                      icon: <FileText />,
+                      field: "bg-matcha",
+                    },
+                    {
+                      href: "/app/links?new=1",
+                      label: "New pay link",
+                      icon: <Link2 />,
+                      field: "bg-sora",
+                    },
+                    { href: "/app/send", label: "Send", icon: <ArrowUpRight />, field: "bg-kin" },
+                  ].map((item) => (
+                    <DropdownMenu.Item key={item.href} asChild>
+                      <Link
+                        href={item.href}
+                        className={cn(
+                          "flex h-24 flex-col justify-between rounded-[18px] p-3 text-[15px] font-semibold text-black outline-none data-[highlighted]:brightness-95 [&_svg]:size-5",
+                          item.field,
+                        )}
+                      >
+                        {item.icon}
+                        {item.label}
+                      </Link>
+                    </DropdownMenu.Item>
+                  ))}
+                  <DropdownMenu.Item
+                    onSelect={() => setReceive(true)}
+                    className="flex h-24 cursor-pointer flex-col justify-between rounded-[18px] bg-sakura p-3 text-[15px] font-semibold text-black outline-none data-[highlighted]:brightness-95 [&_svg]:size-5"
+                  >
+                    <ArrowDownLeft />
+                    Get paid (QR)
+                  </DropdownMenu.Item>
+                </DropdownMenu.Content>
+              </DropdownMenu.Portal>
+            </DropdownMenu.Root>
+            <DockLink
+              href="/app/links"
+              label="Pay links"
+              icon={<Link2 />}
+              active={activeHref === "/app/links"}
+            />
             <button
               type="button"
               aria-label="Search"
@@ -311,5 +342,42 @@ export function AppShell({
         onSignOut={onSignOut}
       />
     </ShellContext.Provider>
+  )
+}
+
+function DockLink({
+  href,
+  label,
+  icon,
+  active,
+}: {
+  href: string
+  label: string
+  icon: React.ReactNode
+  active: boolean
+}) {
+  return (
+    <Link
+      href={href}
+      aria-label={label}
+      aria-current={active ? "page" : undefined}
+      className="press relative grid h-11 w-[52px] place-items-center"
+    >
+      {active ? (
+        <motion.span
+          layoutId="dock-bubble"
+          transition={{ type: "spring", stiffness: 420, damping: 30 }}
+          className="absolute inset-0 rounded-[24px] bg-secondary"
+        />
+      ) : null}
+      <span
+        className={cn(
+          "relative [&_svg]:size-6",
+          active ? "text-foreground [&_svg]:stroke-[2.4]" : "text-text-3",
+        )}
+      >
+        {icon}
+      </span>
+    </Link>
   )
 }

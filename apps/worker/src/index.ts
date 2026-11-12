@@ -2,13 +2,20 @@ import type { NetworkId } from "@tegata/config"
 import { Operator } from "@tegata/core/near"
 import { createDb } from "@tegata/db"
 import { migrateDb } from "@tegata/db/migrate"
-import { loadDotEnv, operatorKeys, serverEnv } from "@tegata/env"
+import { renderInvoicePdf, resendMailer } from "@tegata/documents"
+import { emailConfigured, loadDotEnv, operatorKeys, serverEnv } from "@tegata/env"
 import { enqueue, QUEUES, startBoss } from "@tegata/jobs"
 import {
   accountsNotReady,
+  invoiceDocuments,
+  invoiceToken,
+  logInvoiceEvent,
   paymentsToVerify,
   processRelay,
   queuedTestDollars,
+  reminderTarget,
+  reminderTimes,
+  runDueSchedules,
   sendTestDollars,
   settlePayment,
   settleRelayedPayment,
@@ -81,6 +88,63 @@ await boss.work(QUEUES.testDollars.name, async ([job]) => {
   if (!operator) return
   const status = await sendTestDollars(db, operator, grantId)
   console.log(`[test-dollars] ${grantId} ${status}`)
+})
+
+/** Email goes out only when Resend and a verified sender are set; otherwise invoices are shared by link. */
+const mailer =
+  emailConfigured(env) && env.RESEND_API_KEY && env.EMAIL_FROM
+    ? resendMailer(env.RESEND_API_KEY, env.EMAIL_FROM)
+    : null
+
+await boss.work(QUEUES.invoiceEmail.name, async ([job]) => {
+  if (!job || !mailer) return
+  const { invoiceId, kind, offset } = QUEUES.invoiceEmail.payload.parse(job.data)
+  const sent = await invoiceToken(db, invoiceId)
+  if (!sent) return
+  if (kind === "reminder" && !(await reminderTarget(db, invoiceId))) return
+  const docs = await invoiceDocuments(db, sent.token, env.APP_URL)
+  if (!docs?.to || docs.document.status !== "open") return
+  if (kind === "invoice") {
+    const pdf = await renderInvoicePdf(docs.document)
+    await mailer.invoice({ to: docs.to, data: docs.email, pdf, key: `${invoiceId}:invoice` })
+    await logInvoiceEvent(db, invoiceId, "emailed", { to: docs.to })
+  } else {
+    await mailer.reminder({
+      to: docs.to,
+      data: docs.email,
+      offset: offset ?? 0,
+      key: `${invoiceId}:remind:${offset}`,
+    })
+    await logInvoiceEvent(db, invoiceId, "reminder", { to: docs.to, offset: offset ?? 0 })
+  }
+  console.log(`[email] ${kind} for ${docs.document.number} sent`)
+})
+
+/** Repeating invoices: every ten minutes, issue and send those that are due. */
+const REPEAT_CRON = "*/10 * * * *"
+await boss.schedule(QUEUES.invoiceRepeat.name, REPEAT_CRON, {})
+await boss.work(QUEUES.invoiceRepeat.name, async () => {
+  for (const issued of await runDueSchedules(db)) {
+    console.log(`[repeat] issued ${issued.invoiceId}`)
+    if (!mailer) continue
+    await enqueue(
+      boss,
+      "invoiceEmail",
+      { invoiceId: issued.invoiceId, kind: "invoice" },
+      `${issued.invoiceId}:invoice`,
+    )
+    const sent = await invoiceToken(db, issued.invoiceId)
+    if (!sent?.reminders) continue
+    for (const { offset, at } of reminderTimes(sent.dueDate, issued.timezone)) {
+      await enqueue(
+        boss,
+        "invoiceEmail",
+        { invoiceId: issued.invoiceId, kind: "reminder", offset },
+        `${issued.invoiceId}:remind:${offset}`,
+        { startAfter: at },
+      )
+    }
+  }
 })
 
 // Anything approved or mid-send when the last worker stopped is picked up again.

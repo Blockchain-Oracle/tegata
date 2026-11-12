@@ -20,6 +20,7 @@ const RAIL_WORD = {
   tegata: "Tegata balance",
   near_wallet: "NEAR wallet",
   oneclick: "Another chain (NEAR Intents)",
+  manual: "Marked paid by hand (not on NEAR)",
 } as const
 
 export function ReceiptView({ receipt, token }: { receipt: Receipt; token: string }) {

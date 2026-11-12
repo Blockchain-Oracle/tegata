@@ -1,5 +1,6 @@
 import {
   index,
+  integer,
   jsonb,
   pgEnum,
   pgTable,
@@ -45,6 +46,9 @@ export const workspaces = pgTable("workspaces", {
   address: text(),
   taxId: text(),
   email: text(),
+  /** The next invoice and receipt numbers. Taken with one atomic UPDATE … RETURNING, so two at once never collide. */
+  nextInvoiceNumber: integer().notNull().default(1),
+  nextReceiptNumber: integer().notNull().default(1),
   createdAt: createdAt(),
   updatedAt: updatedAt(),
 })

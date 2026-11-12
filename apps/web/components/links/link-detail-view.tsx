@@ -228,6 +228,7 @@ const RAIL: Record<LinkPayment["rail"], string> = {
   tegata: "Tegata balance",
   near_wallet: "NEAR wallet",
   oneclick: "Another chain",
+  manual: "Paid by hand",
 }
 
 const PAYMENT_WORD: Record<LinkPayment["status"], string> = {
@@ -248,6 +249,17 @@ export function RailMark({ rail, size = 40 }: { rail: LinkPayment["rail"]; size?
         style={{ width: size, height: size }}
       >
         <TegataSeal size={Math.round(size * 0.62)} textured={false} tilt={0} />
+      </span>
+    )
+  if (rail === "manual")
+    return (
+      <span
+        className="grid shrink-0 place-items-center rounded-full bg-secondary text-[11px] font-bold text-muted-foreground"
+        style={{ width: size, height: size }}
+        role="img"
+        aria-label="Paid by hand"
+      >
+        $
       </span>
     )
   return <Mark id={rail === "near_wallet" ? "near" : "intents"} size={size} />

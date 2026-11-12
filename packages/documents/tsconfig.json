@@ -1,0 +1,10 @@
+{
+  "extends": "@tegata/typescript-config/base.json",
+  "compilerOptions": {
+    "allowImportingTsExtensions": true,
+    "noEmit": true,
+    "jsx": "react-jsx",
+    "types": ["node"]
+  },
+  "include": ["src/**/*.ts", "src/**/*.tsx"]
+}

@@ -117,8 +117,14 @@ const WALLET_STEPS = [
 
 export function PayView(p: PayViewProps) {
   const reduce = useReducedMotion()
-  const fixed = p.request.amount !== null
-  const dollars = fixed ? viewDollars(p.request.amount!) : Number.parseFloat(p.amount || "0") || 0
+  const invoice = p.request.invoice
+  const fixed = invoice ? !invoice.allowPartial : p.request.amount !== null
+  const dollars =
+    invoice && fixed
+      ? viewDollars(invoice.remaining)
+      : fixed
+        ? viewDollars(p.request.amount!)
+        : Number.parseFloat(p.amount || "0") || 0
   const open = p.request.status === "open"
   const sandbox = p.request.network === "testnet"
   const slide = {
@@ -153,7 +159,9 @@ export function PayView(p: PayViewProps) {
             ) : null}
           </div>
           <div className="mt-7 flex flex-col items-center gap-1.5 text-center">
-            <span className="text-[16px] font-medium text-white/90">{p.request.title}</span>
+            <span className="text-[16px] font-medium text-white/90">
+              {invoice ? `Invoice ${invoice.number}` : p.request.title}
+            </span>
             {fixed || p.step !== "choose" ? (
               <Figure value={dollars} className="text-[64px] text-white sm:text-[76px]" />
             ) : (
@@ -176,7 +184,27 @@ export function PayView(p: PayViewProps) {
                 />
               </label>
             )}
-            {p.request.note ? (
+            {invoice ? (
+              <span className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-[14px] text-white/85">
+                <span>
+                  Due{" "}
+                  {new Date(`${invoice.dueDate}T12:00:00Z`).toLocaleDateString("en-GB", {
+                    day: "numeric",
+                    month: "short",
+                    year: "numeric",
+                  })}
+                </span>
+                {invoice.allowPartial && p.step === "choose" ? (
+                  <span>· up to ${viewDollars(invoice.remaining).toFixed(2)}</span>
+                ) : null}
+                <Link
+                  href={`/i/${p.request.token}`}
+                  className="font-semibold text-white underline-offset-2 hover:underline"
+                >
+                  View invoice
+                </Link>
+              </span>
+            ) : p.request.note ? (
               <p className="max-w-sm text-[14px] text-white/85">{p.request.note}</p>
             ) : null}
             <span className="mt-2 inline-flex items-center gap-2 rounded-full bg-white/18 py-1 pr-3 pl-1.5 text-[13px] font-medium text-white">

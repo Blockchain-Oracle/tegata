@@ -28,6 +28,8 @@ export interface Profile {
   }
   accounts: AccountView[]
   networks: NetworkId[]
+  /** Whether this server can email invoices and receipts (Resend configured). */
+  emailEnabled?: boolean
 }
 
 export interface RelayStatus {
@@ -55,7 +57,7 @@ export type PaymentStatus =
   | "failed"
   | "expired"
 
-export type PaymentRail = "tegata" | "near_wallet" | "oneclick"
+export type PaymentRail = "tegata" | "near_wallet" | "oneclick" | "manual"
 
 export interface ActivityItem {
   id: string
@@ -122,6 +124,14 @@ export interface PublicRequest {
   network: NetworkId
   receiverId: string
   usdc: string
+  /** Set when this is an invoice's pay page. */
+  invoice: {
+    number: string
+    allowPartial: boolean
+    dueDate: string
+    /** USDC base units still to pay. */
+    remaining: string
+  } | null
 }
 
 export interface AttemptView {
@@ -164,4 +174,138 @@ export interface ReceiptView {
   settledAt: string | null
   txHash: string | null
   explorerUrl: string | null
+}
+
+export interface Customer {
+  id: string
+  name: string
+  email: string | null
+  address: string | null
+  taxId: string | null
+  invoices?: number
+  /** USDC base units. */
+  invoiced?: string
+  paid?: string
+  outstanding?: string
+}
+
+export type InvoiceStatus =
+  | "draft"
+  | "sent"
+  | "viewed"
+  | "partly_paid"
+  | "overdue"
+  | "paid"
+  | "void"
+
+export interface InvoiceRow {
+  id: string
+  number: number | null
+  customer: string | null
+  customerId: string | null
+  issueDate: string
+  dueDate: string
+  total: string
+  paid: string
+  remaining: string
+  status: InvoiceStatus
+  token: string | null
+  paidAt: string | null
+  createdAt: string
+}
+
+/** The builder's form, exactly as typed; the server does the maths again. */
+export interface DraftForm {
+  customerId: string | null
+  issueDate: string
+  dueDate: string
+  notes: string
+  discount: { kind: "percent" | "fixed"; value: string } | null
+  taxRate: string
+  allowPartial: boolean
+  reminders: boolean
+  repeat: "weekly" | "monthly" | null
+  lines: { description: string; quantity: string; unitPrice: string }[]
+}
+
+export interface InvoiceEvent {
+  id: string
+  kind:
+    | "created"
+    | "sent"
+    | "emailed"
+    | "email_failed"
+    | "viewed"
+    | "payment"
+    | "reminder"
+    | "marked_paid"
+    | "paid"
+    | "voided"
+  detail: Record<string, string | number | null> | null
+  createdAt: string
+}
+
+export interface InvoiceDetail {
+  invoice: {
+    id: string
+    number: number | null
+    status: "draft" | "open" | "paid" | "void"
+    network: NetworkId
+    issueDate: string
+    dueDate: string
+    notes: string | null
+    discountKind: "percent" | "fixed" | null
+    discountValue: string | null
+    taxBp: number
+    subtotal: string
+    discount: string
+    tax: string
+    total: string
+    allowPartial: boolean
+    reminders: boolean
+    repeat: "weekly" | "monthly" | null
+    billFrom: {
+      name: string
+      email: string | null
+      address: string | null
+      taxId: string | null
+    } | null
+    billTo: {
+      name: string
+      email: string | null
+      address: string | null
+      taxId: string | null
+    } | null
+    sentAt: string | null
+    viewedAt: string | null
+    paidAt: string | null
+    voidedAt: string | null
+    scheduleId: string | null
+  }
+  lines: {
+    id: string
+    description: string
+    quantityMilli: string
+    unitPrice: string
+    amount: string
+  }[]
+  events: InvoiceEvent[]
+  customer: Customer | null
+  payments: LinkPayment[]
+  token: string | null
+  paidTotal: string
+  remaining: string
+  status: InvoiceStatus
+  draft: {
+    customerId: string | null
+    issueDate: string
+    dueDate: string
+    notes: string | null
+    discount: { kind: "percent"; bp: number } | { kind: "fixed"; amount: string } | null
+    taxBp: number
+    allowPartial: boolean
+    reminders: boolean
+    repeat: "weekly" | "monthly" | null
+    lines: { description: string; quantityMilli: string; unitPrice: string }[]
+  } | null
 }

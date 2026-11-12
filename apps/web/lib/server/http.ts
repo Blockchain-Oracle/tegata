@@ -1,5 +1,6 @@
 import {
   BusinessError,
+  InvoiceError,
   OnboardError,
   PaymentError,
   RelayError,
@@ -62,6 +63,18 @@ function toResponse(error: unknown): Response {
           ? STATUS.badRequest
           : STATUS.conflict
     return Response.json({ error: { code: error.code, message: error.message } }, { status })
+  }
+  if (error instanceof InvoiceError) {
+    const status =
+      error.code === "not_found"
+        ? STATUS.notFound
+        : error.code === "invalid"
+          ? STATUS.badRequest
+          : STATUS.conflict
+    return Response.json(
+      { error: { code: error.field ?? error.code, message: error.message } },
+      { status },
+    )
   }
   if (error instanceof BusinessError) {
     return Response.json(

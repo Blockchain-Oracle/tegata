@@ -7,7 +7,8 @@
     ".": "./src/index.ts",
     "./near": "./src/near/index.ts",
     "./money": "./src/money/index.ts",
-    "./fixtures": "./src/ops/fixtures.ts"
+    "./fixtures": "./src/ops/fixtures.ts",
+    "./invoices": "./src/invoices/index.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",

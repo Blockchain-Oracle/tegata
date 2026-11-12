@@ -29,6 +29,22 @@ export const QUEUES = {
     payload: z.object({ grantId: z.uuid() }),
     options: { retryLimit: 0, expireInSeconds: 180 },
   },
+  /** Email an invoice when it is sent, or a reminder (days from the due date). Reminders wait with `startAfter`. */
+  invoiceEmail: {
+    name: "invoice-email",
+    payload: z.object({
+      invoiceId: z.uuid(),
+      kind: z.enum(["invoice", "reminder"]),
+      offset: z.number().int().optional(),
+    }),
+    options: { retryLimit: 3, retryDelay: 30, retryBackoff: true, expireInSeconds: 120 },
+  },
+  /** Every few minutes: issue the repeating invoices that are due. */
+  invoiceRepeat: {
+    name: "invoice-repeat",
+    payload: z.object({}),
+    options: { retryLimit: 0, expireInSeconds: 300 },
+  },
   /** Create a user's NEAR account and register it on USDC. Safe to repeat. */
   accountSetup: {
     name: "account-setup",
@@ -68,13 +84,13 @@ export async function enqueue<K extends QueueKey>(
   queue: K,
   payload: Payload<K>,
   key?: string,
+  when?: { startAfter: Date },
 ) {
   const definition = QUEUES[queue]
-  return boss.send(
-    definition.name,
-    definition.payload.parse(payload) as object,
-    key ? { singletonKey: key } : {},
-  )
+  return boss.send(definition.name, definition.payload.parse(payload) as object, {
+    ...(key ? { singletonKey: key } : {}),
+    ...(when ? { startAfter: when.startAfter } : {}),
+  })
 }
 
 export type { PgBoss }

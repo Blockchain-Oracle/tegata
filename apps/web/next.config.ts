@@ -18,12 +18,13 @@ const config: NextConfig = {
     "@tegata/config",
     "@tegata/core",
     "@tegata/db",
+    "@tegata/documents",
     "@tegata/env",
     "@tegata/jobs",
     "@tegata/services",
   ],
   // Node-only packages stay external to the server bundle.
-  serverExternalPackages: ["postgres", "pg-boss"],
+  serverExternalPackages: ["postgres", "pg-boss", "@react-pdf/renderer"],
   poweredByHeader: false,
 }
 

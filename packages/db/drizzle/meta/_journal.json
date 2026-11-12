@@ -29,6 +29,13 @@
       "when": 1794499797756,
       "tag": "0003_test_dollars",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1794500974784,
+      "tag": "0004_invoices",
+      "breakpoints": true
     }
   ]
 }

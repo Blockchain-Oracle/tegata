@@ -1,6 +1,7 @@
 // The public pay page. The server reads the link straight from the database, so the first paint already shows who
 // is asking and how much; the client takes it from there. Not indexed: a pay link is shared, not searched.
 import { NETWORKS } from "@tegata/config"
+import { invoiceNumber } from "@tegata/core/invoices"
 import { publicRequest } from "@tegata/services"
 import type { Metadata } from "next"
 import { notFound } from "next/navigation"
@@ -18,7 +19,7 @@ type Props = { params: Promise<{ token: string }> }
 async function load(token: string): Promise<PublicRequest | null> {
   const found = await publicRequest(db(), token)
   if (!found) return null
-  const { request, business, logo } = found
+  const { request, business, logo, invoice } = found
   return {
     token: request.token,
     business,
@@ -30,6 +31,17 @@ async function load(token: string): Promise<PublicRequest | null> {
     network: request.network,
     receiverId: request.receiverId,
     usdc: NETWORKS[request.network].usdc,
+    invoice: invoice
+      ? {
+          number: invoiceNumber(invoice.number ?? 0),
+          allowPartial: invoice.allowPartial,
+          dueDate: invoice.dueDate,
+          remaining: (request.amount !== null && request.amount > request.paidTotal
+            ? request.amount - request.paidTotal
+            : 0n
+          ).toString(),
+        }
+      : null,
   }
 }
 

@@ -128,7 +128,9 @@ export function PayClient({
   const network = initial.network
 
   const [rail, setRail] = useState<PaymentRail | null>(network === "testnet" ? "tegata" : null)
-  const [amount, setAmount] = useState("")
+  const [amount, setAmount] = useState(() =>
+    initial.invoice?.allowPartial ? viewDollars(initial.invoice.remaining).toFixed(2) : "",
+  )
   const [step, setStep] = useState<PayStep>("choose")
   const [usedRail, setUsedRail] = useState<PaymentRail | null>(null)
   const [attemptId, setAttemptId] = useState<string | null>(null)
@@ -146,7 +148,15 @@ export function PayClient({
     staleTime: 30_000,
   }).data
 
-  const due = request.amount !== null ? BigInt(request.amount) : units(amount)
+  const invoice = request.invoice
+  const typed = invoice ? invoice.allowPartial : request.amount === null
+  const due = invoice
+    ? invoice.allowPartial
+      ? units(amount)
+      : BigInt(invoice.remaining)
+    : request.amount !== null
+      ? BigInt(request.amount)
+      : units(amount)
 
   // A wallet the payer already connected on this site, without asking.
   useEffect(() => {
@@ -222,7 +232,7 @@ export function PayClient({
     setProblem(null)
     try {
       const res = await api<TegataAttempt>(`/api/pay/${request.token}/attempts`, {
-        body: { rail: "tegata", amount: request.amount === null ? amount : undefined },
+        body: { rail: "tegata", amount: typed ? amount : undefined },
       })
       // Check the transfer is exactly this link's before the key signs it.
       const { draftMatchesHash } = await import("@tegata/core/near")
@@ -261,7 +271,7 @@ export function PayClient({
       const res = await api<WalletAttempt>(`/api/pay/${request.token}/attempts`, {
         body: {
           rail: "near_wallet",
-          amount: request.amount === null ? amount : undefined,
+          amount: typed ? amount : undefined,
           payer: walletAccount,
         },
       })
