@@ -95,6 +95,7 @@ export function InvoiceBuilder({
   problem,
   onSave,
   onSend,
+  onChange,
 }: {
   title: string
   initial: DraftForm
@@ -107,11 +108,17 @@ export function InvoiceBuilder({
   problem: BuilderProblem | null
   onSave: (form: DraftForm) => void
   onSend: (form: DraftForm) => void
+  /** Called on every edit (guest mode keeps the draft on the device as you type). */
+  onChange?: (form: DraftForm) => void
 }) {
   const [form, setForm] = useState(initial)
   const [preview, setPreview] = useState<"invoice" | "pay" | "email">("invoice")
   const [phoneView, setPhoneView] = useState<"edit" | "preview">("edit")
   const totals = useMemo(() => draftTotals(form), [form])
+  // biome-ignore lint/correctness/useExhaustiveDependencies: report edits only, not a new callback identity.
+  useEffect(() => {
+    onChange?.(form)
+  }, [form])
   const customer = customers?.find((c) => c.id === form.customerId) ?? null
   const terms = daysBetween(form.issueDate, form.dueDate)
   const termsValue = [0, 7, 14, 30].includes(terms) ? String(terms) : "date"

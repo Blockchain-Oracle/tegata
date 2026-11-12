@@ -40,6 +40,7 @@ In the app (Sandbox), live at **https://tegata.84.46.247.92.sslip.io**:
 | Open the link as a payer | Pay from a Tegata balance (email sign-in, no fees) or a NEAR testnet wallet. Paying from another chain shows a live NEAR Intents price and says it runs in Live, because NEAR Intents has no testnet |
 | Pay it | Live steps, then the business's seal stamps PAID. The link's page shows the payment the moment NEAR settles it |
 | Open the receipt | A numbered receipt with who paid whom, how, when, and the NEAR transaction. Share it or save it as a PDF |
+| On `/`, press Try an invoice, no sign-up | Build an invoice before having an account; it stays on your device and opens in your account when you sign in to send it |
 | Open Invoices, press New invoice | Pick or add a customer, add items, a discount and tax; the invoice, its pay page and its email preview update as you type |
 | Send it | It gets the next number (INV-0001…) and a link. Open the link as the customer: the invoice, a Pay button for what is left, and a PDF |
 | Allow part-payments and pay part of it | The invoice turns Partly paid, shows what is left, and turns Paid with the business's seal when the rest arrives. Every step is on its timeline |

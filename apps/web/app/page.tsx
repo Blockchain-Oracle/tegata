@@ -92,9 +92,12 @@ export default function Landing() {
             <Link href="/signin" className={buttonVariants({ size: "lg" })}>
               Open an account <ArrowRight />
             </Link>
-            <a href="#how" className={buttonVariants({ variant: "secondary", size: "lg" })}>
-              See how it works
-            </a>
+            <Link
+              href="/invoice/new"
+              className={buttonVariants({ variant: "secondary", size: "lg" })}
+            >
+              Try an invoice, no sign-up
+            </Link>
           </div>
           <div className="flex flex-col gap-2.5 pt-2">
             <span className="text-detail font-semibold text-text-3">Customers pay from</span>
