@@ -60,6 +60,18 @@ const CARDS = [
     note: "Balance stage, activity, hold to send, receipt",
     field: "bg-sora",
   },
+  {
+    href: "/dev/flows/links",
+    title: "Pay links",
+    note: "List, new link, the link with its QR and payments",
+    field: "bg-matcha",
+  },
+  {
+    href: "/dev/flows/pay",
+    title: "Pay page & receipt",
+    note: "Three ways to pay, live steps, the paid seal, the slip",
+    field: "bg-sakura",
+  },
 ] as const
 
 export default function DevIndex() {

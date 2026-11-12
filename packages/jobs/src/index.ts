@@ -13,6 +13,15 @@ export const QUEUES = {
     payload: z.object({ relayId: z.uuid() }),
     options: { retryLimit: 0, expireInSeconds: 180 },
   },
+  /**
+   * Check a wallet payment on NEAR until its transaction is final, then settle it. Reading is safe to repeat, so a
+   * transaction NEAR doesn't know yet is retried with backoff.
+   */
+  paymentVerify: {
+    name: "payment-verify",
+    payload: z.object({ paymentId: z.uuid() }),
+    options: { retryLimit: 20, retryDelay: 3, retryBackoff: true, expireInSeconds: 120 },
+  },
   /** Create a user's NEAR account and register it on USDC. Safe to repeat. */
   accountSetup: {
     name: "account-setup",

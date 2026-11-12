@@ -13,6 +13,7 @@ import { setupSteps, toHandle } from "@/components/onboarding/setup"
 import { WelcomeView } from "@/components/onboarding/welcome-view"
 import { useProfile } from "@/hooks/use-profile"
 import { ApiError, api } from "@/lib/client/api"
+import { takeNext } from "@/lib/client/next-path"
 import { fire } from "@/lib/feedback"
 
 const DEBOUNCE_MS = 350
@@ -79,7 +80,7 @@ export default function WelcomePage() {
 
   // A returning visit with everything done goes straight in; a fresh opening stays for the seal.
   useEffect(() => {
-    if (allReady && !openedHere) router.replace("/app")
+    if (allReady && !openedHere) router.replace(takeNext())
   }, [allReady, openedHere, router])
 
   useEffect(() => {
@@ -148,7 +149,7 @@ export default function WelcomePage() {
         setStartedAt(Date.now())
         void refetch()
       }}
-      onDone={() => router.replace("/app")}
+      onDone={() => router.replace(takeNext())}
     />
   )
 }

@@ -8,6 +8,7 @@ import {
   ArrowUpRight,
   Command as CommandIcon,
   Home,
+  Link2,
   LogOut,
   Moon,
   Search,
@@ -35,6 +36,7 @@ type Place =
 const PLACES: Place[] = [
   { kind: "link", href: "/app", label: "Home", icon: <Home /> },
   { kind: "action", id: "receive", label: "Get paid", icon: <ArrowDownLeft /> },
+  { kind: "link", href: "/app/links", label: "Pay links", icon: <Link2 /> },
   { kind: "link", href: "/app/send", label: "Send", icon: <ArrowUpRight /> },
 ]
 

@@ -10,8 +10,22 @@ import type { ActivityItem } from "@/lib/client/types"
 
 const ACTIVITY: ActivityItem[] = [
   {
+    id: "0",
+    kind: "received",
+    network: "testnet",
+    counterparty: "northwind.tegata.testnet",
+    title: "Logo design",
+    amount: "1250000000",
+    status: "succeeded",
+    receiptToken: null,
+    explorerUrl: null,
+    at: new Date(Date.now() - 90_000).toISOString(),
+  },
+  {
     id: "1",
     kind: "send",
+    title: null,
+    receiptToken: null,
     network: "testnet",
     counterparty: "kofi.tegata.testnet",
     amount: "2400000000",
@@ -22,6 +36,8 @@ const ACTIVITY: ActivityItem[] = [
   {
     id: "2",
     kind: "send",
+    title: null,
+    receiptToken: null,
     network: "testnet",
     counterparty: "mei.tegata.testnet",
     amount: "480000000",
@@ -32,6 +48,8 @@ const ACTIVITY: ActivityItem[] = [
   {
     id: "3",
     kind: "send",
+    title: null,
+    receiptToken: null,
     network: "testnet",
     counterparty: "sara.tegata.testnet",
     amount: "125000000",

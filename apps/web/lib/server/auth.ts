@@ -58,6 +58,23 @@ export async function requireUser(request: Request) {
   return user
 }
 
+/** The business a user owns, if they have named one. */
+export async function workspaceOf(userId: string) {
+  const [workspace] = await db()
+    .select()
+    .from(schema.workspaces)
+    .where(eq(schema.workspaces.ownerId, userId))
+  return workspace
+}
+
+/** The signed-in user and their business, or a 401 / 404. */
+export async function requireOwner(request: Request) {
+  const user = await requireUser(request)
+  const workspace = await workspaceOf(user.id)
+  if (!workspace) throw new HttpError(404, "no_business", "Name your business first")
+  return { user, workspace }
+}
+
 /** A Privy NEAR wallet address is the 32-byte ed25519 public key in hex. */
 export function publicKeyFromNearAddress(address: string): string | null {
   if (!new RegExp(`^[0-9a-f]{${ED25519_KEY_HEX_LENGTH}}$`, "i").test(address)) return null

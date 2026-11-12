@@ -36,10 +36,21 @@ In the app (Sandbox), live at **https://tegata.84.46.247.92.sslip.io**:
 | Name your business and pick your pay address | `name.tegata.testnet` is created on NEAR and registered for USDC while you watch, then your business's own seal is stamped |
 | On Home, press Get paid | Your NEAR pay address as a QR, ready to share |
 | Send test dollars to another NEAR account | Hold to send, live steps, and a sealed receipt linked to NEAR. Your account never holds NEAR; Tegata pays the fee |
+| Open Pay links and make one (a fixed amount or "any amount") | The link card and its QR, with Copy, Share and Open |
+| Open the link as a payer | Pay from a Tegata balance (email sign-in, no fees) or a NEAR testnet wallet. Paying from another chain shows a live NEAR Intents price and says it runs in Live, because NEAR Intents has no testnet |
+| Pay it | Live steps, then the business's seal stamps PAID. The link's page shows the payment the moment NEAR settles it |
+| Open the receipt | A numbered receipt with who paid whom, how, when, and the NEAR transaction. Share it or save it as a PDF |
 | Open `/dev` | Every part of the design in every state: the seal, colour, type, components, loading and error states, motion and sound |
+
+A payment is marked paid only when Tegata reads, from NEAR itself, a USDC transfer to the business for the full
+amount carrying that payment's own memo (`tegata:pay:<id>`). Nothing the payer's browser says is believed.
 
 A recorded send of 1.00 test USDC from `abu-studio.tegata.testnet`:
 [transaction](https://testnet.nearblocks.io/txns/4a5U9osgJrXKN5EDT3mvrWGT6NrFXoQXwH4bYZjqH6TX).
+
+A recorded pay-link payment of 0.25 test USDC to `abu-studio.tegata.testnet`, made with
+`pnpm ops pay-link <link>` (the operator account paying the way a NEAR wallet does):
+[transaction](https://testnet.nearblocks.io/txns/4rs3uTXRaCnNCsMepj4tDiTsTZuootKSsW2QzqMkcaQ5).
 
 A recorded run of the first proof: account `proof-f4b082b1.tegata.testnet` held 0 NEAR before and after;
 the operator `tegata.testnet` paid 0.00029 NEAR in fees.
@@ -47,7 +58,7 @@ the operator `tegata.testnet` paid 0.00029 NEAR in fees.
 
 ## What is being built
 
-Invoices, pay links and a developer checkout, all paid through one page; people and payroll; scheduled
+Invoices and a developer checkout, paid through the same pay page; people and payroll; scheduled
 payroll held in a contract; receipts, activity and exports. This list moves up into "What works today" as
 each part ships.
 

@@ -4,7 +4,9 @@
 // Privy's "luminous interface stage", in seal ink. Used on sign-in, onboarding, the landing hero, the Home balance
 // tile and the pay page header. It stays lit in dark mode.
 import { motion, useReducedMotion } from "motion/react"
+import Link from "next/link"
 
+import { fire } from "@/lib/feedback"
 import { cn } from "@/lib/utils"
 
 const GRAIN =
@@ -127,5 +129,52 @@ export function Paper({ children, className }: { children: React.ReactNode; clas
     <div className={cn("rounded-[20px] bg-white text-black shadow-object", className)}>
       {children}
     </div>
+  )
+}
+
+/** A white action circle with its label, for actions that sit on the stage (Home, a pay link). */
+export function StageAction({
+  label,
+  icon,
+  onClick,
+  href,
+  external,
+}: {
+  label: string
+  icon: React.ReactNode
+  onClick?: () => void
+  href?: string
+  external?: boolean
+}) {
+  const circle = (
+    <>
+      <span className="grid size-14 place-items-center rounded-full bg-white text-black shadow-object transition-transform group-active:scale-95 [&_svg]:size-6">
+        {icon}
+      </span>
+      <span className="text-[14px] font-semibold text-white">{label}</span>
+    </>
+  )
+  const cls = "group press flex w-16 flex-col items-center gap-2"
+  if (href)
+    return external ? (
+      <a href={href} target="_blank" rel="noreferrer" className={cls} onClick={() => fire("tick")}>
+        {circle}
+      </a>
+    ) : (
+      <Link href={href} className={cls} onClick={() => fire("tick")}>
+        {circle}
+      </Link>
+    )
+  return (
+    <button
+      type="button"
+      className={cls}
+      onClick={() => {
+        fire("tick")
+        onClick?.()
+      }}
+    >
+      {circle}
+    </button>
   )
 }

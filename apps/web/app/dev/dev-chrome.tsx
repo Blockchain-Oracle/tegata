@@ -20,6 +20,8 @@ export const DEV_PAGES = [
   { href: "/dev/flows/signin", label: "Sign-in" },
   { href: "/dev/flows/welcome", label: "Welcome" },
   { href: "/dev/flows/home", label: "Home & Send" },
+  { href: "/dev/flows/links", label: "Pay links" },
+  { href: "/dev/flows/pay", label: "Pay & receipt" },
 ] as const
 
 type Network = "testnet" | "mainnet"

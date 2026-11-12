@@ -8,6 +8,7 @@ import { useEffect, useState } from "react"
 
 import { type SignInStep, SignInView } from "@/components/auth/sign-in-view"
 import type { CodeState } from "@/components/kit/code-field"
+import { takeNext } from "@/lib/client/next-path"
 import { fire } from "@/lib/feedback"
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
@@ -32,7 +33,7 @@ export default function SignInPage() {
 
   // Already signed in (a returning visit): go straight in.
   useEffect(() => {
-    if (ready && authenticated && !sealed) router.replace("/app")
+    if (ready && authenticated && !sealed) router.replace(takeNext())
   }, [ready, authenticated, sealed, router])
 
   useEffect(() => {
@@ -73,7 +74,7 @@ export default function SignInPage() {
       setCodeState("accepted")
       fire("filled", { cue: "confirmed" })
       setSealed(true)
-      setTimeout(() => router.replace("/app"), AFTER_SEAL_MS)
+      setTimeout(() => router.replace(takeNext()), AFTER_SEAL_MS)
     } catch (error) {
       setCodeState("wrong")
       fire("fail", { cue: "error" })

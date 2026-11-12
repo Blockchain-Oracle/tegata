@@ -2,7 +2,18 @@
 
 // ⌘K (21st 27378 on cmdk): every action and every place, typed. Opens with ⌘K / Ctrl K or the rail's search row.
 import { Command } from "cmdk"
-import { ArrowDownLeft, ArrowUpRight, Copy, Home, LogOut, Moon, Palette, Sun } from "lucide-react"
+import {
+  ArrowDownLeft,
+  ArrowUpRight,
+  Copy,
+  Home,
+  Link2,
+  LogOut,
+  Moon,
+  Palette,
+  Plus,
+  Sun,
+} from "lucide-react"
 import { useRouter } from "next/navigation"
 import { Dialog } from "radix-ui"
 import { useEffect } from "react"
@@ -68,6 +79,9 @@ export function CommandMenu({
                 <Item icon={<ArrowDownLeft />} onSelect={run(onReceive)}>
                   Get paid
                 </Item>
+                <Item icon={<Plus />} onSelect={run(() => router.push("/app/links?new=1"))}>
+                  New pay link
+                </Item>
                 <Item icon={<ArrowUpRight />} onSelect={run(() => router.push("/app/send"))}>
                   Send dollars
                 </Item>
@@ -78,6 +92,9 @@ export function CommandMenu({
               <Group heading="Go to">
                 <Item icon={<Home />} onSelect={run(() => router.push("/app"))}>
                   Home
+                </Item>
+                <Item icon={<Link2 />} onSelect={run(() => router.push("/app/links"))}>
+                  Pay links
                 </Item>
                 <Item icon={<Palette />} onSelect={run(() => router.push("/dev"))}>
                   Design review

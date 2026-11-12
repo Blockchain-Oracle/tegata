@@ -4,7 +4,15 @@ import { createDb } from "@tegata/db"
 import { migrateDb } from "@tegata/db/migrate"
 import { loadDotEnv, operatorKeys, serverEnv } from "@tegata/env"
 import { enqueue, QUEUES, startBoss } from "@tegata/jobs"
-import { accountsNotReady, processRelay, setupAccount, unfinishedRelays } from "@tegata/services"
+import {
+  accountsNotReady,
+  paymentsToVerify,
+  processRelay,
+  settlePayment,
+  settleRelayedPayment,
+  setupAccount,
+  unfinishedRelays,
+} from "@tegata/services"
 
 loadDotEnv(new URL("../../../.env", import.meta.url).pathname)
 const env = serverEnv()
@@ -34,6 +42,11 @@ await boss.work(QUEUES.relaySend.name, async ([job]) => {
   if (!operator) return
   const relay = await processRelay(db, operator, relayId)
   if (relay) console.log(`[relay] ${relay.purpose} ${relay.status} ${relay.txHash ?? ""}`)
+  // A payment from a Tegata balance settles as soon as its relay lands.
+  if (relay?.purpose.startsWith("pay:")) {
+    const settled = await settleRelayedPayment(db, relay.id, operator.accountId)
+    console.log(`[payment] ${relay.purpose} ${settled}`)
+  }
 })
 
 await boss.work(QUEUES.accountSetup.name, async ([job]) => {
@@ -48,9 +61,23 @@ await boss.work(QUEUES.accountSetup.name, async ([job]) => {
   if (ready) console.log(`[account] ${ready.accountId} ready`)
 })
 
+await boss.work(QUEUES.paymentVerify.name, async ([job]) => {
+  if (!job) return
+  const { paymentId } = QUEUES.paymentVerify.payload.parse(job.data)
+  const [payment] = (await paymentsToVerify(db)).filter((p) => p.id === paymentId)
+  if (!payment?.txHash || !payment.payer) return
+  const settled = await settlePayment(db, payment.id, payment.txHash, payment.payer)
+  console.log(`[payment] ${payment.id} ${settled}`)
+  // Not final yet: throw so the queue tries again with backoff.
+  if (settled === "pending") throw new Error("Transaction not final yet")
+})
+
 // Anything approved or mid-send when the last worker stopped is picked up again.
 const leftover = await unfinishedRelays(db)
 for (const relay of leftover) await enqueue(boss, "relaySend", { relayId: relay.id }, relay.id)
+for (const payment of await paymentsToVerify(db)) {
+  await enqueue(boss, "paymentVerify", { paymentId: payment.id }, payment.id)
+}
 for (const account of await accountsNotReady(db)) {
   if (operators.has(account.network)) {
     await enqueue(boss, "accountSetup", { accountRowId: account.id }, account.id)

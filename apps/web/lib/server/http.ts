@@ -1,4 +1,4 @@
-import { OnboardError, RelayError } from "@tegata/services"
+import { OnboardError, PaymentError, RelayError } from "@tegata/services"
 import { ZodError } from "zod"
 
 const STATUS = {
@@ -45,6 +45,15 @@ function toResponse(error: unknown): Response {
         ? STATUS.tooMany
         : error.code === "not_found"
           ? STATUS.notFound
+          : STATUS.conflict
+    return Response.json({ error: { code: error.code, message: error.message } }, { status })
+  }
+  if (error instanceof PaymentError) {
+    const status =
+      error.code === "not_found"
+        ? STATUS.notFound
+        : error.code === "bad_amount"
+          ? STATUS.badRequest
           : STATUS.conflict
     return Response.json({ error: { code: error.code, message: error.message } }, { status })
   }

@@ -6,6 +6,7 @@
  *   pnpm ops register <network> <account> register an account on USDC so it can receive dollars
  *   pnpm ops proof-relay                 Proof 1: a 0-NEAR account moves tokens through the relayer
  *   pnpm ops proof-parallel              Proof 2: parallel relays never double-send
+ *   pnpm ops pay-link <url> [dollars]    pay a Sandbox pay link from the operator, the way a NEAR wallet does
  *
  * Secret keys are read from and written to files only. They are never printed.
  */
@@ -224,6 +225,73 @@ async function register(network: NetworkId, accountId: string) {
   console.log(explorerTx(network, result.hash))
 }
 
+const USDC_DECIMALS = 6
+const FOLLOW_TRIES = 30
+const FOLLOW_EVERY_MS = 2_000
+
+/**
+ * Pay a Sandbox pay link from the operator account exactly as a NEAR wallet does: start an attempt on the public
+ * API, send one USDC `ft_transfer` carrying the attempt's memo, hand the hash back, then follow the attempt until
+ * the app has read the transfer on NEAR and issued the receipt.
+ */
+async function payLink(target: string, dollars: string | undefined) {
+  const network: NetworkId = "testnet"
+  const url = new URL(target)
+  const token = url.pathname.split("/pay/")[1]
+  if (!token) throw new Error("Give the pay link's full URL, like http://localhost:3100/pay/abc123")
+  const operator = new Operator(network, operatorKeys(network))
+  const post = async <T>(path: string, body: unknown): Promise<T> => {
+    const response = await fetch(`${url.origin}${path}`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(body),
+    })
+    const data = (await response.json()) as T & { error?: { message: string } }
+    if (!response.ok) throw new Error(data.error?.message ?? `HTTP ${response.status}`)
+    return data
+  }
+
+  const attempt = await post<{
+    paymentId: string
+    receiverId: string
+    amount: string
+    memo: string
+  }>(`/api/pay/${token}/attempts`, {
+    rail: "near_wallet",
+    payer: operator.accountId,
+    amount: dollars,
+  })
+  const amount = BigInt(attempt.amount)
+  console.log(
+    `Paying ${fromUnits(amount, USDC_DECIMALS)} USDC to ${attempt.receiverId} (memo ${attempt.memo})`,
+  )
+  const sent = await operator.call(NETWORKS[network].usdc, [
+    ftTransfer(attempt.receiverId, amount, attempt.memo),
+  ])
+  console.log(`Transfer ${sent.status}: ${explorerTx(network, sent.hash)}`)
+  if (sent.status !== "success") {
+    process.exitCode = 1
+    return
+  }
+  await post(`/api/pay/attempts/${attempt.paymentId}/tx`, {
+    txHash: sent.hash,
+    payer: operator.accountId,
+  })
+  for (let i = 0; i < FOLLOW_TRIES; i++) {
+    const view = (await (
+      await fetch(`${url.origin}/api/pay/attempts/${attempt.paymentId}`)
+    ).json()) as { status: string; receiptToken: string | null; error: string | null }
+    if (view.status !== "awaiting" && view.status !== "detected") {
+      console.log(`Payment ${view.status}${view.error ? `: ${view.error}` : ""}`)
+      if (view.receiptToken) console.log(`Receipt: ${url.origin}/r/${view.receiptToken}`)
+      if (view.status !== "succeeded") process.exitCode = 1
+      return
+    }
+    await new Promise((resolve) => setTimeout(resolve, FOLLOW_EVERY_MS))
+  }
+  console.log("NEAR is still being checked. Open the pay page to follow it.")
+}
+
 const [command, ...args] = process.argv.slice(2)
 try {
   if (command === "status") await status(parseNetwork(args[0]))
@@ -231,10 +299,13 @@ try {
   else if (command === "register") await register(parseNetwork(args[0]), args[1] ?? "")
   else if (command === "proof-relay") await proofRelay()
   else if (command === "proof-parallel") await proofParallel()
+  else if (command === "pay-link") await payLink(args[0] ?? "", args[1])
   else if (command === "exists")
     console.log(await accountExists(parseNetwork(args[0]), args[1] ?? ""))
   else {
-    console.error("Commands: status, add-keys, register, proof-relay, proof-parallel, exists")
+    console.error(
+      "Commands: status, add-keys, register, proof-relay, proof-parallel, pay-link, exists",
+    )
     process.exitCode = 2
   }
 } catch (error) {
