@@ -42,8 +42,8 @@ export function JoinView(p: JoinViewProps) {
               <span className="display text-[44px] leading-none text-white">Tegata</span>
             </div>
             <p className="max-w-sm text-[16px] text-white/90">
-              Send invoices and pay links, and get paid in exact dollars on NEAR. Sign in with
-              email; Tegata pays every network fee.
+              Get paid and pay your team in exact dollars on NEAR: invoices, pay links and payroll.
+              Sign in with email; Tegata pays every network fee.
             </p>
             <MarkStack ids={["usdc", "near"]} size={28} />
           </div>

@@ -154,9 +154,11 @@ function stage(x, y, w, h, scale = 1, paperCenterX = x + w / 2) {
   </g>`
 }
 
-const HEADLINE = ["Send an invoice.", "Get paid in", "exact dollars."]
+const HEADLINE = ["Get paid.", "Pay your team.", "In exact dollars."]
+/** Lines in ink; the rest in the muted tone (the two-tone hero). */
+const INK_LINES = 2
 const SUB =
-  "Invoices and pay links for small businesses, settled in USDC on NEAR. Sign in with email; Tegata pays every network fee; every payment gets a sealed receipt."
+  "Invoices, pay links and payroll for small businesses, settled in USDC on NEAR. Sign in with email; Tegata pays every network fee and seals every receipt."
 
 function banner(theme) {
   const t = THEMES[theme]
@@ -168,7 +170,7 @@ function banner(theme) {
   const sub = wrap(BOOK, SUB, 40, colW - 40)
   const headTop = 470
   const lines = HEADLINE.map((l, i) =>
-    text(BOLD, l, left, headTop + i * hs * 1.02, hs, i === 0 ? t.ink : t.muted),
+    text(BOLD, l, left, headTop + i * hs * 1.02, hs, i < INK_LINES ? t.ink : t.muted),
   ).join("")
   const subTop = headTop + (HEADLINE.length - 1) * hs * 1.02 + 110
   const subLines = sub.map((l, i) => text(BOOK, l, left, subTop + i * 58, 40, t.soft)).join("")
@@ -187,7 +189,7 @@ function banner(theme) {
     })
     .join("")
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">
-  <title>Tegata. Send an invoice. Get paid in exact dollars.</title>
+  <title>Tegata. Get paid. Pay your team. In exact dollars.</title>
   <rect width="${W}" height="${H}" fill="${t.page}"/>
   ${seal(left, 150, 150)}
   ${text(BOLD, "Tegata", left + 190, 262, 112, t.ink)}

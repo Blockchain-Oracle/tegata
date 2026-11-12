@@ -158,9 +158,11 @@ export default function BrandPage() {
           <div className="flex h-full flex-col justify-between">
             <Lockup size={52} tone="paper" />
             <p className="display max-w-xl text-[44px] leading-[0.95] sm:text-[64px]">
-              Get paid and pay your people in dollars.
+              Get paid. Pay your team. In exact dollars.
             </p>
-            <p className="text-[18px] text-white/85">From any chain, settled on NEAR.</p>
+            <p className="text-[18px] text-white/85">
+              Invoices, pay links and payroll, settled in USDC on NEAR.
+            </p>
           </div>
         </Stage>
       </Section>

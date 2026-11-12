@@ -25,8 +25,9 @@ export default function Home() {
             <Seal size={16} tilt={0} /> 手形 · {SITE.meaning}
           </span>
           <h1 className="display text-[3.4rem] leading-[0.92] sm:text-[4.6rem]">
-            Send an invoice.
-            <span className="block text-text-3">Get paid in exact dollars.</span>
+            <span className="block">Get paid.</span>
+            <span className="block">Pay your team.</span>
+            <span className="block text-text-3">In exact dollars.</span>
           </h1>
           <p className="max-w-[46ch] text-[18px] text-fd-muted-foreground">{SITE.subheadline}</p>
           <div className="flex flex-wrap gap-2">

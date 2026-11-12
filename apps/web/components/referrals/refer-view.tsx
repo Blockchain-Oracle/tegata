@@ -83,7 +83,7 @@ export function ReferView(p: ReferViewProps) {
       await navigator
         .share({
           title: `Join ${p.businessName} on Tegata`,
-          text: `Invoices and pay links, settled in dollars on NEAR. We both get ${reward}.`,
+          text: `Invoices, pay links and payroll, settled in dollars on NEAR. We both get ${reward}.`,
           url: p.url,
         })
         .catch(() => undefined)

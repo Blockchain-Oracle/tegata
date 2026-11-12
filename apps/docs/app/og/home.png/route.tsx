@@ -8,6 +8,6 @@ export async function GET() {
   return ogImage({
     kicker: "Docs",
     title: SITE.headline,
-    description: "Invoices and pay links, settled in USDC on NEAR.",
+    description: "Invoices, pay links and payroll, settled in USDC on NEAR.",
   })
 }

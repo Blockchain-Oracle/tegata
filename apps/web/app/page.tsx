@@ -14,9 +14,9 @@ import { PAYER_ROUTES } from "@/lib/server/oneclick"
 import { cn } from "@/lib/utils"
 
 export const metadata: Metadata = {
-  title: { absolute: "Tegata · Send an invoice. Get paid in exact dollars." },
+  title: { absolute: "Tegata · Get paid. Pay your team. In exact dollars." },
   description:
-    "Invoices and pay links for small businesses, settled in USDC on NEAR: sign in with email, Tegata pays every network fee, and every payment gets a sealed receipt.",
+    "Invoices, pay links and payroll for small businesses, settled in USDC on NEAR. Sign in with email; Tegata pays every network fee and seals every receipt.",
 }
 
 const ROUTES = PAYER_ROUTES.map(({ id, symbol, chain, coin, chainMark }) => ({
@@ -71,12 +71,13 @@ export default function Landing() {
       <section className="mx-auto grid max-w-[1240px] gap-8 px-5 pt-6 pb-16 sm:px-8 lg:grid-cols-[1fr_1.05fr] lg:items-stretch lg:gap-10 lg:pt-10">
         <div className="flex flex-col justify-center gap-7 lg:py-10">
           <h1 className="display text-[52px] leading-[0.92] sm:text-[72px] lg:text-[80px]">
-            Send an invoice.
-            <span className="block text-text-3">Get paid in exact dollars.</span>
+            <span className="block">Get paid.</span>
+            <span className="block">Pay your team.</span>
+            <span className="block text-text-3">In exact dollars.</span>
           </h1>
           <p className="max-w-[46ch] text-[18px] text-muted-foreground">
-            Invoices and pay links for small businesses, settled in USDC on NEAR: sign in with
-            email, Tegata pays every network fee, and every payment gets a sealed receipt.
+            Invoices, pay links and payroll for small businesses, settled in USDC on NEAR. Sign in
+            with email; Tegata pays every network fee and seals every receipt.
           </p>
           <div className="flex flex-wrap gap-2">
             <Link href="/signin" className={buttonVariants({ size: "lg" })}>
@@ -220,7 +221,7 @@ export default function Landing() {
             field="bg-matcha"
             icon={<UsersRound />}
             title="Remote teams"
-            detail="Send dollars to anyone on NEAR in one hold. Tegata pays the fee."
+            detail="Add your team by email. One approval pays everyone, with a payslip each."
           />
           <UseCase
             field="bg-sakura"

@@ -5,9 +5,9 @@ export const SITE = {
   title: "Tegata docs",
   /** 手形: the old Japanese bill of exchange. */
   meaning: "a written promise to pay",
-  headline: "Send an invoice. Get paid in exact dollars.",
+  headline: "Get paid. Pay your team. In exact dollars.",
   subheadline:
-    "Invoices and pay links for small businesses, settled in USDC on NEAR: sign in with email, Tegata pays every network fee, and every payment gets a sealed receipt.",
+    "Invoices, pay links and payroll for small businesses, settled in USDC on NEAR. Sign in with email; Tegata pays every network fee and seals every receipt.",
   url: "https://tegata-docs.84.46.247.92.sslip.io",
   app: "https://tegata.84.46.247.92.sslip.io",
   repo: "https://github.com/Blockchain-Oracle/tegata",

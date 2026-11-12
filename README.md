@@ -2,14 +2,14 @@
   <a href="https://tegata.84.46.247.92.sslip.io">
     <picture>
       <source media="(prefers-color-scheme: dark)" srcset=".github/assets/banner-dark.png">
-      <img alt="Tegata. Send an invoice. Get paid in exact dollars. Invoices and pay links for small businesses, settled in USDC on NEAR." src=".github/assets/banner-light.png" width="100%">
+      <img alt="Tegata. Get paid. Pay your team. In exact dollars. Invoices, pay links and payroll for small businesses, settled in USDC on NEAR." src=".github/assets/banner-light.png" width="100%">
     </picture>
   </a>
 </p>
 
 <h1 align="center">Tegata · 手形</h1>
 
-<p align="center"><b>Send an invoice. Get paid in exact dollars.</b></p>
+<p align="center"><b>Get paid. Pay your team. In exact dollars.</b></p>
 
 <p align="center">
   <b><a href="https://tegata.84.46.247.92.sslip.io">Open the app</a></b> ·
@@ -18,12 +18,15 @@
   <b><a href="#proof-on-near">Proof on NEAR</a></b>
 </p>
 
-Tegata gives a small business invoices and pay links that settle in USDC on NEAR. The owner signs in with an
+Tegata gives a small business invoices, pay links and payroll that settle in USDC on NEAR. The owner signs in with an
 email, and Tegata opens a NEAR account named after the business and pays every network fee with meta
 transactions, so nobody buys NEAR or keeps a wallet. A customer pays from a Tegata balance or any NEAR wallet,
 and one who holds another coin on another chain sees the live NEAR Intents price for paying with it. The business
 receives exactly what it billed. A payment on NEAR counts as paid only when NEAR's own USDC record shows it; then the
-invoice is stamped with the business's seal and a numbered receipt links to the transaction. Around that sit
+invoice is stamped with the business's seal and a numbered receipt links to the transaction. To pay people, the
+owner adds them by email or CSV; each person chooses on their own page where their pay lands (their own Tegata
+account or a NEAR account), and one approval pays everyone ready in one all-or-nothing transaction, with a payslip
+each. Around that sit
 customers, part-payments, repeat invoices, PDFs, a business profile, and referrals that reward two
 businesses once real customers pay.
 

@@ -4,12 +4,13 @@ import { ImageResponse } from "next/og"
 import { SEAL_FACES } from "@/lib/brand/glyphs"
 
 export const alt =
-  "Tegata. Send an invoice. Get paid in exact dollars. Invoices and pay links, settled in USDC on NEAR."
+  "Tegata. Get paid. Pay your team. In exact dollars. Invoices, pay links and payroll, settled in USDC on NEAR."
 export const size = { width: 1200, height: 630 }
 export const contentType = "image/png"
 
-const HEADLINE = "Send an invoice. Get paid in exact dollars."
-const SUB = "Invoices and pay links, settled in USDC on NEAR."
+/** Two lines, as on the landing page: the promise, then "in exact dollars" in the quieter tone. */
+const HEADLINE = ["Get paid. Pay your team.", "In exact dollars."] as const
+const SUB = "Invoices, pay links and payroll, settled in USDC on NEAR."
 
 /** Archivo at width 62, weight 900, subset to exactly the characters drawn (Google Fonts returns a TTF). */
 async function archivo(text: string): Promise<ArrayBuffer> {
@@ -66,7 +67,7 @@ function Seal({ px }: { px: number }) {
 }
 
 export default async function OpengraphImage() {
-  const font = await archivo(`${HEADLINE}${SUB}Tegata`)
+  const font = await archivo(`${HEADLINE.join("")}${SUB}Tegata`)
   return new ImageResponse(
     <div
       style={{
@@ -88,7 +89,10 @@ export default async function OpengraphImage() {
         <span style={{ fontSize: 52 }}>Tegata</span>
       </div>
       <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
-        <span style={{ fontSize: 96, lineHeight: 0.95, maxWidth: 980 }}>{HEADLINE}</span>
+        <div style={{ display: "flex", flexDirection: "column", fontSize: 96, lineHeight: 0.95 }}>
+          <span>{HEADLINE[0]}</span>
+          <span style={{ opacity: 0.8 }}>{HEADLINE[1]}</span>
+        </div>
         <span style={{ fontSize: 44, opacity: 0.85 }}>{SUB}</span>
       </div>
     </div>,
