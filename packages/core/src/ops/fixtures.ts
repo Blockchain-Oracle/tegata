@@ -39,3 +39,6 @@ export async function fundedUser(operator: Operator, token: string, amount: bigi
   if (sent.status !== "success") throw new Error(`Funding the user failed: ${sent.error}`)
   return { pair, accountId, creationBurnt: created.tokensBurnt }
 }
+
+/** A fresh ed25519 key for a proof account (its secret never leaves the proof run). */
+export const newProofKey = () => KeyPair.fromRandom("ed25519")

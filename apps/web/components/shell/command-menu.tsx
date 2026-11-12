@@ -7,6 +7,7 @@ import {
   ArrowUpRight,
   Copy,
   FileText,
+  Gift,
   Home,
   Link2,
   LogOut,
@@ -107,6 +108,9 @@ export function CommandMenu({
                 </Item>
                 <Item icon={<Users />} onSelect={run(() => router.push("/app/customers"))}>
                   Customers
+                </Item>
+                <Item icon={<Gift />} onSelect={run(() => router.push("/app/refer"))}>
+                  Refer a business
                 </Item>
                 <Item icon={<Settings />} onSelect={run(() => router.push("/app/settings"))}>
                   Business profile

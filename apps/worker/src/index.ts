@@ -20,6 +20,7 @@ import {
   settlePayment,
   settleRelayedPayment,
   setupAccount,
+  sweepReferrals,
   unfinishedRelays,
 } from "@tegata/services"
 
@@ -147,6 +148,18 @@ await boss.work(QUEUES.invoiceRepeat.name, async () => {
   }
 })
 
+/** Referrals: every five minutes, qualify the open ones and pay those past their hold, on each network. */
+const REFERRAL_CRON = "*/5 * * * *"
+async function sweepAllReferrals() {
+  for (const operator of operators.values()) {
+    const { checked, paid } = await sweepReferrals(db, operator)
+    if (paid.length)
+      console.log(`[referrals] ${operator.network}: ${checked} checked, ${paid.length} paid`)
+  }
+}
+await boss.schedule(QUEUES.referralSweep.name, REFERRAL_CRON, {})
+await boss.work(QUEUES.referralSweep.name, sweepAllReferrals)
+
 // Anything approved or mid-send when the last worker stopped is picked up again.
 const leftover = await unfinishedRelays(db)
 for (const relay of leftover) await enqueue(boss, "relaySend", { relayId: relay.id }, relay.id)
@@ -161,6 +174,10 @@ for (const account of await accountsNotReady(db)) {
     await enqueue(boss, "accountSetup", { accountRowId: account.id }, account.id)
   }
 }
+
+await sweepAllReferrals().catch((error) =>
+  console.error("[referrals] sweep at start failed", error),
+)
 
 console.log(
   `[worker] running on ${[...operators.keys()].join(" + ")}; ${leftover.length} relays resumed`,

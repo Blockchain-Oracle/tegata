@@ -103,6 +103,31 @@ export const RESERVED_HANDLES: readonly string[] = [
 /** Sandbox only: test dollars the operator sends a person, once per UTC day (Circle testnet USDC). */
 export const TEST_DOLLARS = { units: 5_000_000n, memo: "tegata:test-dollars" } as const
 
+/**
+ * Referral rules per network (plan 6.8 H). Live pays $10 to each side once the invited business has received $50
+ * from other payers within 30 days, after a 48-hour hold. Sandbox runs the same checks at a tenth of the amounts
+ * with a 10-minute hold, so it can be tried with test dollars.
+ */
+export const REFERRALS = {
+  testnet: {
+    threshold: 5_000_000n,
+    reward: 1_000_000n,
+    windowDays: 30,
+    holdMs: 10 * 60_000,
+    yearlyCap: 10,
+  },
+  mainnet: {
+    threshold: 50_000_000n,
+    reward: 10_000_000n,
+    windowDays: 30,
+    holdMs: 48 * 3_600_000,
+    yearlyCap: 10,
+  },
+} as const satisfies Record<
+  NetworkId,
+  { threshold: bigint; reward: bigint; windowDays: number; holdMs: number; yearlyCap: number }
+>
+
 export const TIMEOUTS = {
   rpcMs: 15_000,
   /** How long to wait for a relayed transaction to reach finality before reporting "unknown". */

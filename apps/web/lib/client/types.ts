@@ -62,7 +62,7 @@ export type PaymentRail = "tegata" | "near_wallet" | "oneclick" | "manual"
 export interface ActivityItem {
   id: string
   /** send: a one-off send · paid: a pay link this person paid · received: a payment into one of their links. */
-  kind: "send" | "paid" | "received"
+  kind: "send" | "paid" | "received" | "reward"
   network: NetworkId
   /** A NEAR account, or the business that was paid. */
   counterparty: string
@@ -308,4 +308,40 @@ export interface InvoiceDetail {
     repeat: "weekly" | "monthly" | null
     lines: { description: string; quantityMilli: string; unitPrice: string }[]
   } | null
+}
+
+export interface ReferralRow {
+  id: string
+  status: "open" | "qualified" | "paid" | "void"
+  business: string
+  handle: string | null
+  /** USDC base units received from payers who count. */
+  received: string
+  lockedAt: string | null
+  qualifiedAt: string | null
+  payoutAfter: string | null
+  paidAt: string | null
+  voidReason: string | null
+  createdAt: string
+  payout: {
+    status: "queued" | "sent" | "failed"
+    txHash: string | null
+    error: string | null
+  } | null
+}
+
+export interface ReferralRules {
+  threshold: string
+  reward: string
+  windowDays: number
+  holdMinutes: number
+  yearlyCap: number
+}
+
+export interface ReferralsView {
+  handle: string | null
+  network: NetworkId
+  rules: ReferralRules
+  invited: ReferralRow[]
+  referredBy: ReferralRow | null
 }

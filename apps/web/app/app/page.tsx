@@ -8,7 +8,7 @@ import { useShell } from "@/components/shell/shell-context"
 import { useProfile } from "@/hooks/use-profile"
 import { useTestDollars } from "@/hooks/use-test-dollars"
 import { api } from "@/lib/client/api"
-import type { ActivityItem } from "@/lib/client/types"
+import type { ActivityItem, ReferralsView } from "@/lib/client/types"
 
 const ACTIVITY_POLL_MS = 10_000
 
@@ -21,6 +21,12 @@ export default function HomePage() {
     queryFn: () => api<{ items: ActivityItem[] }>("/api/activity"),
     refetchInterval: ACTIVITY_POLL_MS,
   })
+  const referrals = useQuery({
+    queryKey: ["referrals"],
+    queryFn: () => api<ReferralsView>("/api/referrals"),
+    staleTime: 60_000,
+  })
+  const by = referrals.data?.referredBy
   const account = profile?.accounts.find((entry) => entry.network === "testnet")
   if (!profile || !account) return null
 
@@ -36,6 +42,17 @@ export default function HomePage() {
       onRetryActivity={() => void activity.refetch()}
       testDollars={account.network === "testnet" ? testDollars : undefined}
       onAddTestDollars={testDollars.add}
+      invite={
+        by && referrals.data && (by.status === "open" || by.status === "qualified")
+          ? {
+              business: by.business,
+              received: BigInt(by.received),
+              threshold: BigInt(referrals.data.rules.threshold),
+              reward: BigInt(referrals.data.rules.reward),
+              qualified: by.status === "qualified",
+            }
+          : null
+      }
     />
   )
 }

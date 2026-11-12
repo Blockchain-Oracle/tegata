@@ -1,5 +1,5 @@
 import { enqueue } from "@tegata/jobs"
-import { onboard } from "@tegata/services"
+import { attachReferral, onboard, ReferralError } from "@tegata/services"
 import { z } from "zod"
 
 import { requireUser } from "@/lib/server/auth.ts"
@@ -12,6 +12,8 @@ const body = z.object({
   handle: z.string().trim().toLowerCase(),
   businessName: z.string().trim().min(1, "Give the business a name").max(BUSINESS_NAME_MAX),
   timezone: z.string().trim().min(1),
+  /** The handle from a join link, if the person came through one. */
+  referrer: z.string().trim().toLowerCase().max(64).optional(),
 })
 
 /** Name the business, claim `name.tegata.near`, and start creating the accounts. */
@@ -23,10 +25,22 @@ export const POST = route(async (request) => {
   } catch {
     throw badRequest("Unknown time zone")
   }
-  const result = await onboard(db(), { userId: user.id, ...input, networks: activeNetworks() })
+  const { referrer, ...business } = input
+  const result = await onboard(db(), { userId: user.id, ...business, networks: activeNetworks() })
   const queue = await boss()
   for (const account of result.accounts) {
     await enqueue(queue, "accountSetup", { accountRowId: account.id }, account.id)
   }
-  return result
+  // A join link that doesn't check out (their own, a typo) never blocks opening the account; it is reported.
+  let referral: { ok: true } | { ok: false; problem: string } | null = null
+  if (referrer) {
+    try {
+      await attachReferral(db(), { refereeId: user.id, handle: referrer, network: "testnet" })
+      referral = { ok: true }
+    } catch (error) {
+      if (!(error instanceof ReferralError)) throw error
+      referral = { ok: false, problem: error.message }
+    }
+  }
+  return { ...result, referral }
 })

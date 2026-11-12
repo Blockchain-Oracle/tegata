@@ -14,6 +14,7 @@ import { WelcomeView } from "@/components/onboarding/welcome-view"
 import { useProfile } from "@/hooks/use-profile"
 import { ApiError, api } from "@/lib/client/api"
 import { takeNext } from "@/lib/client/next-path"
+import { clearInvite, type Invite, loadInvite } from "@/lib/client/referral"
 import { fire } from "@/lib/feedback"
 
 const DEBOUNCE_MS = 350
@@ -58,10 +59,17 @@ export default function WelcomePage() {
     enabled: step === "handle" && debounced.length > 1 && Boolean(profile),
   })
 
+  // An invite from a join link (/join/<handle>), kept on this device until the account opens.
+  const [invite, setInvite] = useState<Invite | null>(null)
+  useEffect(() => setInvite(loadInvite()), [])
+
   const open = useMutation({
     mutationFn: () =>
-      api("/api/onboard", { body: { handle: wanted, businessName: name.trim(), timezone } }),
+      api("/api/onboard", {
+        body: { handle: wanted, businessName: name.trim(), timezone, referrer: invite?.handle },
+      }),
     onSuccess: () => {
+      clearInvite()
       setOpenedHere(true)
       setStartedAt(Date.now())
       void refetch()
@@ -150,6 +158,11 @@ export default function WelcomePage() {
         void refetch()
       }}
       onDone={() => router.replace(takeNext())}
+      invite={invite}
+      onDropInvite={() => {
+        clearInvite()
+        setInvite(null)
+      }}
     />
   )
 }

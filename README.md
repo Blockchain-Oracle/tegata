@@ -45,6 +45,7 @@ In the app (Sandbox), live at **https://tegata.84.46.247.92.sslip.io**:
 | Send it | It gets the next number (INV-0001…) and a link. Open the link as the customer: the invoice, a Pay button for what is left, and a PDF |
 | Allow part-payments and pay part of it | The invoice turns Partly paid, shows what is left, and turns Paid with the business's seal when the rest arrives. Every step is on its timeline |
 | Mark one paid by hand, duplicate one, void one | A receipt that says it isn't on NEAR; a fresh draft; a cancelled invoice whose link stops taking payments |
+| Open Refer and share your link | A friend's business opens `/join/<you>`, joins, and once it has been paid $5 by real customers (Sandbox; $50 in Live) you each get $1 in test USDC (Sandbox; $10 in Live). Money from you, from them, or from anyone either of you sent money to doesn't count |
 | On Home, press Add test dollars | 5 test USDC from Tegata's Sandbox stash, once a day, so you can pay a link without a wallet |
 | Open Business | Your logo, address, tax ID and time zone, with a live preview of the header every receipt carries; your seal follows your name |
 | Open `/dev` | Every part of the design in every state: the seal, colour, type, components, loading and error states, motion and sound |

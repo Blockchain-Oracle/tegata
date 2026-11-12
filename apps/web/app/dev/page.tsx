@@ -79,6 +79,12 @@ const CARDS = [
     field: "bg-matcha",
   },
   {
+    href: "/dev/flows/refer",
+    title: "Referrals",
+    note: "Your join link, the tracker, who invited you, the join page",
+    field: "bg-kin",
+  },
+  {
     href: "/dev/flows/business",
     title: "Business profile",
     note: "The receipt header, the seal that follows the name, every field",

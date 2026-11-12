@@ -23,6 +23,7 @@ export const DEV_PAGES = [
   { href: "/dev/flows/links", label: "Pay links" },
   { href: "/dev/flows/pay", label: "Pay & receipt" },
   { href: "/dev/flows/invoices", label: "Invoices" },
+  { href: "/dev/flows/refer", label: "Refer" },
   { href: "/dev/flows/business", label: "Business" },
 ] as const
 

@@ -41,6 +41,14 @@ export interface HomeViewProps {
   activityError: boolean
   onReceive: () => void
   onRetryActivity: () => void
+  /** Set when this business joined through another's link and the reward is still ahead. */
+  invite?: {
+    business: string
+    received: bigint
+    threshold: bigint
+    reward: bigint
+    qualified: boolean
+  } | null
   /** Sandbox only: today's test dollars from the operator. */
   testDollars?: TestDollars
   onAddTestDollars?: () => void
@@ -57,6 +65,7 @@ export function HomeView({
   onRetryActivity,
   testDollars,
   onAddTestDollars,
+  invite,
 }: HomeViewProps) {
   const [copied, setCopied] = useState(false)
   const reduce = useReducedMotion()
@@ -134,6 +143,36 @@ export function HomeView({
           </StageObject>
         </div>
       </Stage>
+
+      {invite ? (
+        <Link
+          href="/app/refer"
+          className="press-lift flex flex-col gap-3 rounded-[20px] bg-sakura p-5 text-black sm:flex-row sm:items-center"
+        >
+          <span className="grid size-12 shrink-0 place-items-center rounded-full bg-white">
+            <BusinessSeal name={invite.business} size={40} tilt={0} />
+          </span>
+          <span className="flex min-w-0 flex-1 flex-col gap-1.5">
+            <span className="text-[16px] font-semibold">
+              {invite.qualified
+                ? `You and ${invite.business} each get $${viewDollars(invite.reward).toFixed(0)} shortly`
+                : `Invited by ${invite.business}: receive $${viewDollars(invite.threshold).toFixed(0)} from customers and you both get $${viewDollars(invite.reward).toFixed(0)}`}
+            </span>
+            <span className="h-1.5 overflow-hidden rounded-full bg-black/10" aria-hidden>
+              <span
+                className="block h-full rounded-full bg-black"
+                style={{
+                  width: `${invite.threshold > 0n ? Math.min(100, Number((invite.received * 100n) / invite.threshold)) : 0}%`,
+                }}
+              />
+            </span>
+            <span className="text-[13px] text-black/70">
+              ${viewDollars(invite.received).toFixed(2)} of $
+              {viewDollars(invite.threshold).toFixed(0)} received
+            </span>
+          </span>
+        </Link>
+      ) : null}
 
       <div className="grid gap-6 lg:grid-cols-[1.5fr_1fr]">
         <section className="flex flex-col gap-3">
@@ -257,13 +296,15 @@ function ActivityRow({
   index: number
   reduce: boolean
 }) {
-  const incoming = item.kind === "received"
+  const incoming = item.kind === "received" || item.kind === "reward"
   const headline =
-    item.kind === "received"
-      ? `${item.title ?? "Pay link"} · paid`
-      : item.kind === "paid"
-        ? `Paid ${item.counterparty}`
-        : `Sent to ${item.counterparty}`
+    item.kind === "reward"
+      ? (item.title ?? "Referral reward")
+      : item.kind === "received"
+        ? `${item.title ?? "Pay link"} · paid`
+        : item.kind === "paid"
+          ? `Paid ${item.counterparty}`
+          : `Sent to ${item.counterparty}`
   const detail =
     item.kind === "received"
       ? `From ${item.counterparty} · ${timeAgo(item.at)}`

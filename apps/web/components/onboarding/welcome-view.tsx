@@ -2,7 +2,7 @@
 
 // The welcome flow's look (plan 6.8 B), separate from its logic so /dev/flows can show every state.
 // 1 "What's your business called?" → 2 "Your pay address." → 3 "Opening your account." → open.
-import { ArrowLeft, ArrowRight, Clock3, Stamp } from "lucide-react"
+import { ArrowLeft, ArrowRight, Clock3, Gift, Stamp, X } from "lucide-react"
 import { AnimatePresence, motion, useReducedMotion } from "motion/react"
 
 import { AuthShell } from "@/components/auth/auth-shell"
@@ -35,6 +35,9 @@ export interface WelcomeViewProps {
   onOpen: () => void
   onRetry: () => void
   onDone: () => void
+  /** The business whose join link brought this person here, if any. */
+  invite?: { business: string } | null
+  onDropInvite?: () => void
 }
 
 const ORDER: WelcomeStage[] = ["name", "handle", "opening", "open"]
@@ -103,6 +106,19 @@ export function WelcomeView(p: WelcomeViewProps) {
             }}
             {...slide}
           >
+            {p.invite ? (
+              <span className="inline-flex items-center gap-2 self-start rounded-full bg-kin py-1 pr-1 pl-3 text-[14px] font-semibold text-black">
+                <Gift className="size-4" /> Invited by {p.invite.business}
+                <button
+                  type="button"
+                  aria-label="Remove the invite"
+                  onClick={p.onDropInvite}
+                  className="grid size-6 place-items-center rounded-full hover:bg-black/10"
+                >
+                  <X className="size-3.5" />
+                </button>
+              </span>
+            ) : null}
             <h1 className="display text-[44px] leading-[0.95] sm:text-[56px]">
               What's your business called?
             </h1>

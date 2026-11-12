@@ -8,6 +8,7 @@ import {
   ArrowUpRight,
   Command as CommandIcon,
   FileText,
+  Gift,
   Home,
   Link2,
   LogOut,
@@ -44,6 +45,7 @@ const PLACES: Place[] = [
   { kind: "link", href: "/app/links", label: "Pay links", icon: <Link2 /> },
   { kind: "link", href: "/app/customers", label: "Customers", icon: <Users /> },
   { kind: "link", href: "/app/send", label: "Send", icon: <ArrowUpRight /> },
+  { kind: "link", href: "/app/refer", label: "Refer", icon: <Gift /> },
 ]
 
 const PILL = { type: "spring", stiffness: 500, damping: 36 } as const

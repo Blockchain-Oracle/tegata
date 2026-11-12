@@ -3,6 +3,7 @@ import {
   InvoiceError,
   OnboardError,
   PaymentError,
+  ReferralError,
   RelayError,
   SandboxError,
 } from "@tegata/services"
@@ -81,6 +82,15 @@ function toResponse(error: unknown): Response {
       { error: { code: error.field, message: error.message } },
       { status: STATUS.badRequest },
     )
+  }
+  if (error instanceof ReferralError) {
+    const status =
+      error.code === "not_found"
+        ? STATUS.notFound
+        : error.code === "locked"
+          ? STATUS.conflict
+          : STATUS.badRequest
+    return Response.json({ error: { code: error.code, message: error.message } }, { status })
   }
   if (error instanceof SandboxError) {
     return Response.json(

@@ -45,6 +45,12 @@ export const QUEUES = {
     payload: z.object({}),
     options: { retryLimit: 0, expireInSeconds: 300 },
   },
+  /** Every five minutes: qualify referrals and pay the ones past their hold (idempotent). */
+  referralSweep: {
+    name: "referral-sweep",
+    payload: z.object({}),
+    options: { retryLimit: 0, expireInSeconds: 300 },
+  },
   /** Create a user's NEAR account and register it on USDC. Safe to repeat. */
   accountSetup: {
     name: "account-setup",
