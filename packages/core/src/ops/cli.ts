@@ -7,6 +7,7 @@
  *   pnpm ops proof-relay                 Proof 1: a 0-NEAR account moves tokens through the relayer
  *   pnpm ops proof-parallel              Proof 2: parallel relays never double-send
  *   pnpm ops pay-link <url> [dollars]    pay a Sandbox pay link from the operator, the way a NEAR wallet does
+ *   pnpm ops deploy-autopilot testnet    create pay.tegata.testnet, deploy the autopilot contract, register it on USDC
  *
  * Secret keys are read from and written to files only. They are never printed.
  */
@@ -292,6 +293,55 @@ async function payLink(target: string, dollars: string | undefined) {
   console.log("NEAR is still being checked. Open the pay page to follow it.")
 }
 
+/** NEAR the autopilot account starts with: code storage (~1.87 NEAR for 187 KB) plus a float for 1-yocto deposits. */
+const AUTOPILOT_FUNDING_YOCTO = 2_500_000_000_000_000_000_000_000n
+const AUTOPILOT_INIT_GAS = 50n * TGAS
+const YOCTO_PER_BYTE = 10_000_000_000_000_000_000n
+const AUTOPILOT_WASM = join(ROOT, "contracts/target/near/tegata_autopilot/tegata_autopilot.wasm")
+
+/**
+ * Create the autopilot's account under the operator (its key is the operator's first key, so the operator can
+ * redeploy during the hackathon, as the README says), deploy the contract and initialise it with USDC and the
+ * operator as admin, then register it on USDC. Testnet only: mainnet is Abu's to run, after he sees the number.
+ */
+async function deployAutopilot(network: NetworkId) {
+  const code = readFileSync(AUTOPILOT_WASM)
+  const accountId = NETWORKS[network].autopilot
+  const storage = BigInt(code.length) * YOCTO_PER_BYTE
+  console.log(`Contract: ${code.length} bytes, code storage ${fromUnits(storage, NEAR_DECIMALS)} NEAR on either network`)
+  if (network !== "testnet") {
+    console.log("Mainnet is run by Abu. Nothing was sent.")
+    return
+  }
+  const keys = operatorKeys(network)
+  const operator = new Operator(network, keys)
+  if (!(await accountExists(network, accountId))) {
+    const publicKey = KeyPair.fromString(keys[0] as `ed25519:${string}`).getPublicKey()
+    const created = await operator.send(accountId, [
+      actions.createAccount(),
+      actions.transfer(AUTOPILOT_FUNDING_YOCTO),
+      actions.addFullAccessKey(publicKey),
+    ])
+    console.log(`Created ${accountId}: ${created.status} ${explorerTx(network, created.hash)}`)
+    if (created.status !== "success") return void (process.exitCode = 1)
+  }
+  const self = new Operator(network, keys.slice(0, 1), accountId)
+  const deployed = await self.send(accountId, [
+    actions.deployContract(code),
+    actions.functionCall(
+      "new",
+      { token: NETWORKS[network].usdc, admin: NETWORKS[network].operator },
+      AUTOPILOT_INIT_GAS,
+      0n,
+    ),
+  ])
+  console.log(`Deployed and initialised: ${deployed.status} ${explorerTx(network, deployed.hash)}`)
+  if (deployed.status !== "success") return void (process.exitCode = 1)
+  const registered = await operator.registerOnUsdc(accountId)
+  console.log(`Registered on USDC: ${registered.status} ${explorerTx(network, registered.hash)}`)
+  console.log(`${accountId} holds ${fromUnits(await nearBalance(network, accountId), NEAR_DECIMALS)} NEAR`)
+}
+
 const [command, ...args] = process.argv.slice(2)
 try {
   if (command === "status") await status(parseNetwork(args[0]))
@@ -300,11 +350,12 @@ try {
   else if (command === "proof-relay") await proofRelay()
   else if (command === "proof-parallel") await proofParallel()
   else if (command === "pay-link") await payLink(args[0] ?? "", args[1])
+  else if (command === "deploy-autopilot") await deployAutopilot(parseNetwork(args[0]))
   else if (command === "exists")
     console.log(await accountExists(parseNetwork(args[0]), args[1] ?? ""))
   else {
     console.error(
-      "Commands: status, add-keys, register, proof-relay, proof-parallel, pay-link, exists",
+      "Commands: status, add-keys, register, proof-relay, proof-parallel, pay-link, deploy-autopilot, exists",
     )
     process.exitCode = 2
   }

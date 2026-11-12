@@ -1,0 +1,15 @@
+[package]
+name = "tegata-test-token"
+version = "0.1.0"
+description = "NEP-141 reference token from near-contract-standards, for the autopilot's sandbox tests only"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish = false
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+near-sdk.workspace = true
+near-contract-standards.workspace = true

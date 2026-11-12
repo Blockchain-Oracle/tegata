@@ -1,0 +1,21 @@
+[package]
+name = "tegata-autopilot"
+version = "0.1.0"
+description = "Pays a business's payroll schedule in USDC with nobody online, and confirms every row"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+near-sdk.workspace = true
+
+[dev-dependencies]
+near-sdk = { workspace = true, features = ["unit-testing"] }
+
+[package.metadata.near.reproducible_build]
+image = "sourcescan/cargo-near:0.23.0-rust-1.95.0"
+container_build_command = ["cargo", "near", "build", "non-reproducible-wasm", "--locked"]
