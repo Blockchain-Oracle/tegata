@@ -54,7 +54,9 @@ export function delegateHash(draft: Omit<DelegateDraft, "hash" | "network">): Ui
 
 /**
  * Server side: read the user's key nonce and the chain height, and produce the draft to sign.
- * Fails if the key is not a full-access key on the account.
+ * Fails if the key is not a full-access key on the account. Drafts signed together (a payroll's batches, the
+ * autopilot's deposit and plan) take `nonceOffset` 1, 2, 3…: NEAR accepts each as long as it is relayed after the
+ * ones before it, which the worker does (one relay at a time, in the order they were queued).
  */
 export async function draftDelegate(input: {
   network: NetworkId
@@ -62,6 +64,7 @@ export async function draftDelegate(input: {
   receiverId: string
   publicKey: string
   calls: CallSpec[]
+  nonceOffset?: number
 }): Promise<DelegateDraft> {
   const provider = nearProvider(input.network)
   const [accessKey, block] = await Promise.all([
@@ -73,7 +76,7 @@ export async function draftDelegate(input: {
     receiverId: input.receiverId,
     publicKey: input.publicKey,
     calls: input.calls,
-    nonce: (BigInt(accessKey.nonce) + 1n).toString(),
+    nonce: (BigInt(accessKey.nonce) + BigInt(input.nonceOffset ?? 1)).toString(),
     maxBlockHeight: (BigInt(block.header.height) + BigInt(LIMITS.delegateTtlBlocks)).toString(),
   }
   return { network: input.network, ...body, hash: toHex(delegateHash(body)) }

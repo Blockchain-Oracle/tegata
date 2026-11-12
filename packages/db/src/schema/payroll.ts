@@ -105,6 +105,65 @@ export const payrolls = pgTable(
   (table) => [uniqueIndex("payrolls_workspace_idx").on(table.workspaceId, table.network)],
 )
 
+/**
+ * The autopilot (plan 6.8 T): one plan per business and network on the `pay.tegata.*` contract. The row snapshot and
+ * paydays are kept here; the money and the run state live in the contract and are read from it.
+ * preparing: the operator is registering the business · ready: drafts can be signed · approved: signed, relaying ·
+ * on: the plan exists on NEAR · off: cancelled · failed: the relays didn't land.
+ */
+export const autopilotStatus = pgEnum("autopilot_status", [
+  "preparing",
+  "ready",
+  "approved",
+  "on",
+  "off",
+  "failed",
+])
+
+export interface AutopilotRowSnapshot {
+  personId: string
+  name: string
+  role: string | null
+  destinationKind: "tegata" | "near"
+  accountId: string
+  /** USDC base units. */
+  amount: string
+}
+
+export const autopilotPlans = pgTable(
+  "autopilot_plans",
+  {
+    id: id(),
+    workspaceId: uuid()
+      .notNull()
+      .references(() => workspaces.id, { onDelete: "cascade" }),
+    network: network().notNull(),
+    status: autopilotStatus().notNull().default("preparing"),
+    /** The contract's plan id, once `create_plan` has landed. */
+    planId: text(),
+    senderId: text().notNull(),
+    paydays: jsonb().$type<string[]>().notNull(),
+    dueMs: jsonb().$type<number[]>().notNull(),
+    rows: jsonb().$type<AutopilotRowSnapshot[]>().notNull(),
+    /** One payday's total, and what the owner chose to set aside now. */
+    total: money().notNull(),
+    setAside: money().notNull(),
+    registerTx: text(),
+    depositRelayId: uuid().references(() => relays.id),
+    planRelayId: uuid().references(() => relays.id),
+    /** The last run that couldn't be covered: what it needed and what was there. */
+    underfunded: jsonb().$type<{ payday: string; needed: string; available: string; at: string }>(),
+    error: text(),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (table) => [
+    index("autopilot_plans_workspace_idx").on(table.workspaceId, table.network, table.createdAt),
+  ],
+)
+
+export const payRunSource = pgEnum("pay_run_source", ["approval", "autopilot"])
+
 /** draft: being reviewed · approved: signed, on its way · paid: every included row landed · failed: nothing moved. */
 export const payRunStatus = pgEnum("pay_run_status", ["draft", "approved", "paid", "failed"])
 
@@ -121,6 +180,9 @@ export const payRuns = pgTable(
     periodFrom: date().notNull(),
     periodTo: date().notNull(),
     status: payRunStatus().notNull().default("draft"),
+    /** Approved by the owner, or paid by the autopilot contract on its own. */
+    source: payRunSource().notNull().default("approval"),
+    autopilotId: uuid().references(() => autopilotPlans.id),
     /** The business's account the run pays from. */
     senderId: text().notNull(),
     /** Included rows, in USDC base units. */

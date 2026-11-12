@@ -51,6 +51,7 @@ export async function runsView(workspaceId: string): Promise<PayRunSummary[]> {
   const runs = await listRuns(db(), workspaceId, PAYROLL_NETWORK)
   return runs.map(({ run, people, label }) => ({
     id: run.id,
+    source: run.source,
     payday: run.payday,
     label,
     status: run.status,
@@ -64,6 +65,7 @@ export async function runView(workspaceId: string, runId: string): Promise<PayRu
   const { run, rows, label } = await getRun(db(), workspaceId, runId)
   return {
     id: run.id,
+    source: run.source,
     payday: run.payday,
     label,
     status: run.status,
@@ -132,7 +134,7 @@ export async function payslipView(rowId: string): Promise<ReceiptView | null> {
     logo: slip.logo,
     title: slip.label,
     amount: row.amount.toString(),
-    method: "payroll",
+    method: run.source === "autopilot" ? "autopilot" : "payroll",
     payer: run.senderId,
     payerName: slip.business,
     receiverName: row.name,

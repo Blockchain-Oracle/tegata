@@ -1,4 +1,5 @@
 export * from "./accounts.ts"
+export * from "./autopilot.ts"
 export * from "./calls.ts"
 export * from "./delegate.ts"
 export * from "./operator.ts"

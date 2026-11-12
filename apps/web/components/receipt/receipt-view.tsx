@@ -24,6 +24,7 @@ const METHOD_WORD = {
   manual: "Marked paid by hand (not on NEAR)",
   reward: "Tegata referral rewards",
   payroll: "Payroll from a Tegata balance",
+  autopilot: "Autopilot: Tegata's contract on NEAR",
 } as const
 
 const FEE_WORD = { tegata: "Paid by Tegata", payer: "Paid by the payer's wallet" } as const
@@ -124,7 +125,9 @@ export function ReceiptView({ receipt, token }: { receipt: Receipt; token: strin
                 <span className="inline-flex items-center gap-1.5">
                   <RailMark
                     rail={
-                      receipt.method === "reward" || receipt.method === "payroll"
+                      receipt.method === "reward" ||
+                      receipt.method === "payroll" ||
+                      receipt.method === "autopilot"
                         ? "tegata"
                         : receipt.method
                     }

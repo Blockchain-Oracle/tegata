@@ -3,5 +3,5 @@
   "description": "Accounts without gas, and what makes a payment paid",
   "icon": "ArrowLeftRight",
   "root": true,
-  "pages": ["index", "paid", "gas-free", "quotes", "proof"]
+  "pages": ["index", "paid", "gas-free", "autopilot", "quotes", "proof"]
 }

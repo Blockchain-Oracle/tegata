@@ -63,6 +63,18 @@ export const QUEUES = {
     payload: z.object({ kind: z.enum(["invite", "paid"]), id: z.uuid() }),
     options: { retryLimit: 3, retryDelay: 30, retryBackoff: true, expireInSeconds: 120 },
   },
+  /** Register a business on the autopilot contract (the operator pays its storage). Safe to repeat. */
+  autopilotRegister: {
+    name: "autopilot-register",
+    payload: z.object({ autopilotId: z.uuid() }),
+    options: { retryLimit: 3, retryDelay: 5, retryBackoff: true, expireInSeconds: 180 },
+  },
+  /** Every minute: call `run` on autopilot plans whose payday has come, and record each run from its events. */
+  autopilotKeeper: {
+    name: "autopilot-keeper",
+    payload: z.object({}),
+    options: { retryLimit: 0, expireInSeconds: 600 },
+  },
   /** Create a user's NEAR account and register it on USDC. Safe to repeat. */
   accountSetup: {
     name: "account-setup",

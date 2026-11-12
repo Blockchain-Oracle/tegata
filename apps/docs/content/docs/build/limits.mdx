@@ -13,8 +13,9 @@ icon: TriangleExclamationPoint
 - **Payroll pays Tegata and NEAR accounts.** Another chain is Live-only, and a bank account is shown locked: cash-out
   to a bank needs a licensed payout partner. Payroll emails wait for email too; until then you share each person's
   link.
-- **Not in this build yet:** CSV export and the monthly statement, refunds, signing in with a NEAR wallet, and the
-  scheduled-payroll contract.
+- **Not in this build yet:** CSV export and the monthly statement, refunds, and signing in with a NEAR wallet.
+- **The autopilot contract has no upgrade method, but its account does.** `pay.tegata.testnet`'s only key is the
+  operator's, so during the hackathon Tegata can redeploy it. Autopilot pays Tegata and NEAR accounts only.
 - **The Sandbox stash is shared.** Add test dollars draws from Tegata's own test USDC and can run dry; Circle's faucet
   is the fallback.
 - **Referrals don't yet flag two accounts opened from one device or network.**
@@ -26,7 +27,6 @@ These are planned, in this order, and none of them is described anywhere in thes
 
 | Next | What it adds |
 | --- | --- |
-| Autopilot | A NEAR contract that pays a payroll schedule with nobody online |
 | Books | Activity with filters, CSV export, the monthly statement, refunds |
 | Developers | API keys, checkout sessions, signed webhooks, a counter mode |
 | Live | Real dollars on mainnet, and paying in from other chains through NEAR Intents |

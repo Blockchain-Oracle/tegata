@@ -308,7 +308,9 @@ async function deployAutopilot(network: NetworkId) {
   const code = readFileSync(AUTOPILOT_WASM)
   const accountId = NETWORKS[network].autopilot
   const storage = BigInt(code.length) * YOCTO_PER_BYTE
-  console.log(`Contract: ${code.length} bytes, code storage ${fromUnits(storage, NEAR_DECIMALS)} NEAR on either network`)
+  console.log(
+    `Contract: ${code.length} bytes, code storage ${fromUnits(storage, NEAR_DECIMALS)} NEAR on either network`,
+  )
   if (network !== "testnet") {
     console.log("Mainnet is run by Abu. Nothing was sent.")
     return
@@ -323,7 +325,10 @@ async function deployAutopilot(network: NetworkId) {
       actions.addFullAccessKey(publicKey),
     ])
     console.log(`Created ${accountId}: ${created.status} ${explorerTx(network, created.hash)}`)
-    if (created.status !== "success") return void (process.exitCode = 1)
+    if (created.status !== "success") {
+      process.exitCode = 1
+      return
+    }
   }
   const self = new Operator(network, keys.slice(0, 1), accountId)
   const deployed = await self.send(accountId, [
@@ -336,10 +341,15 @@ async function deployAutopilot(network: NetworkId) {
     ),
   ])
   console.log(`Deployed and initialised: ${deployed.status} ${explorerTx(network, deployed.hash)}`)
-  if (deployed.status !== "success") return void (process.exitCode = 1)
+  if (deployed.status !== "success") {
+    process.exitCode = 1
+    return
+  }
   const registered = await operator.registerOnUsdc(accountId)
   console.log(`Registered on USDC: ${registered.status} ${explorerTx(network, registered.hash)}`)
-  console.log(`${accountId} holds ${fromUnits(await nearBalance(network, accountId), NEAR_DECIMALS)} NEAR`)
+  console.log(
+    `${accountId} holds ${fromUnits(await nearBalance(network, accountId), NEAR_DECIMALS)} NEAR`,
+  )
 }
 
 const [command, ...args] = process.argv.slice(2)

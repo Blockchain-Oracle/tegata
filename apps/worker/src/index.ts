@@ -7,6 +7,7 @@ import { emailConfigured, loadDotEnv, operatorKeys, serverEnv } from "@tegata/en
 import { enqueue, QUEUES, startBoss } from "@tegata/jobs"
 import {
   accountsNotReady,
+  autopilotsToRegister,
   destinationsToRegister,
   inviteEmail,
   invoiceDocuments,
@@ -19,11 +20,15 @@ import {
   processRelay,
   queuedTestDollars,
   registerDestination,
+  registerForAutopilot,
   reminderTarget,
   reminderTimes,
+  runAutopilots,
   runDueSchedules,
   runRelaysToSettle,
   sendTestDollars,
+  settleAutopilotAction,
+  settleAutopilotRelay,
   settlePayment,
   settleRelayedPayment,
   settleRunRelay,
@@ -70,6 +75,12 @@ await boss.work(QUEUES.relaySend.name, async ([job]) => {
   if (relay?.purpose.startsWith("pay:")) {
     const settled = await settleRelayedPayment(db, relay.id, operator.accountId)
     console.log(`[payment] ${relay.purpose} ${settled}`)
+  }
+  // Autopilot: once the plan's relay lands, read its id from the contract; turning it off ends it.
+  if (relay?.purpose.startsWith("autopilot:")) {
+    const on = await settleAutopilotRelay(db, relay.id)
+    await settleAutopilotAction(db, relay.id)
+    console.log(`[autopilot] ${relay.purpose} ${relay.status} ${on}`)
   }
   // A payroll batch: its rows are paid only once the USDC events are read from NEAR.
   if (relay?.purpose.startsWith("run:")) {
@@ -151,6 +162,26 @@ await boss.work(QUEUES.invoiceEmail.name, async ([job]) => {
   console.log(`[email] ${kind} for ${docs.document.number} sent`)
 })
 
+await boss.work(QUEUES.autopilotRegister.name, async ([job]) => {
+  if (!job) return
+  const { autopilotId } = QUEUES.autopilotRegister.payload.parse(job.data)
+  const row = (await autopilotsToRegister(db)).find((a) => a.id === autopilotId)
+  const operator = row ? operators.get(row.network) : undefined
+  if (!row || !operator) return
+  const ready = await registerForAutopilot(db, operator, autopilotId)
+  console.log(`[autopilot] ${autopilotId} ${ready?.status ?? "gone"}`)
+})
+
+/** The keeper: every minute, pay the autopilot plans whose payday has come (anyone may call `run`; we do). */
+const KEEPER_CRON = "* * * * *"
+await boss.schedule(QUEUES.autopilotKeeper.name, KEEPER_CRON, {})
+await boss.work(QUEUES.autopilotKeeper.name, async () => {
+  for (const operator of operators.values()) {
+    const ran = await runAutopilots(db, operator)
+    if (ran.length) console.log(`[autopilot] ${operator.network}: ran ${ran.join(", ")}`)
+  }
+})
+
 /** Payroll emails: "added you to payroll" when someone is added, "you've been paid" for each paid row. */
 await boss.work(QUEUES.payrollEmail.name, async ([job]) => {
   if (!job || !mailer) return
@@ -219,6 +250,11 @@ for (const grant of await queuedTestDollars(db)) {
 for (const destination of await destinationsToRegister(db)) {
   if (operators.has(destination.network)) {
     await enqueue(boss, "destinationRegister", { destinationId: destination.id }, destination.id)
+  }
+}
+for (const autopilot of await autopilotsToRegister(db)) {
+  if (operators.has(autopilot.network)) {
+    await enqueue(boss, "autopilotRegister", { autopilotId: autopilot.id }, autopilot.id)
   }
 }
 // Payroll batches that landed while no worker was watching are settled now.

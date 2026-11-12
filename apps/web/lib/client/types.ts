@@ -175,7 +175,7 @@ export interface ReceiptView {
   title: string
   amount: string
   /** How the money moved. */
-  method: PaymentRail | "reward" | "payroll"
+  method: PaymentRail | "reward" | "payroll" | "autopilot"
   payer: string | null
   payerName: string | null
   receiverName: string
@@ -401,6 +401,7 @@ export interface PaySlipRow {
 
 export interface PayRunSummary {
   id: string
+  source: "approval" | "autopilot"
   payday: string
   label: string
   status: "draft" | "approved" | "paid" | "failed"
@@ -433,6 +434,7 @@ export interface PayRunRow {
 
 export interface PayRun {
   id: string
+  source: "approval" | "autopilot"
   payday: string
   label: string
   status: "draft" | "approved" | "paid" | "failed"
@@ -469,4 +471,56 @@ export interface PersonPage {
   ready: PayReadiness
   pending: PendingDestination | null
   slips: PaySlipRow[]
+}
+
+// --- autopilot (plan 6.8 T) ----------------------------------------------------------------------------------------
+
+export interface AutopilotRowView {
+  personId: string
+  name: string
+  role: string | null
+  destinationKind: "tegata" | "near"
+  accountId: string
+  amount: string
+}
+
+export interface AutopilotView {
+  contract: string
+  contractUrl: string
+  /** The newest autopilot of any status: money left after it's off is withdrawn through it. */
+  lastId: string | null
+  /** The business's time zone: paydays run at 09:00 there. */
+  timezone: string
+  row: {
+    id: string
+    status: "preparing" | "ready" | "approved" | "on" | "off" | "failed"
+    planId: string | null
+    paydays: string[]
+    dueMs: number[]
+    rows: AutopilotRowView[]
+    total: string
+    setAside: string
+    underfunded: { payday: string; needed: string; available: string; at: string } | null
+    error: string | null
+  } | null
+  /** The contract's numbers for this business, in USDC base units. */
+  funds: { available: string; reserved: string; inFlight: string } | null
+  plan: {
+    status: "Active" | "Paused" | "Finished"
+    next: number
+    cursor: number
+    due: number[]
+    lastPaid: number
+    lastFailed: number
+  } | null
+}
+
+export interface AutopilotPreview {
+  cadence: PayCadence
+  paydays: string[]
+  dueMs: number[]
+  rows: AutopilotRowView[]
+  left: { name: string; reason: string }[]
+  total: string
+  timezone: string
 }

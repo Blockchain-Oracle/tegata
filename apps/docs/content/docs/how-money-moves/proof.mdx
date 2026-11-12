@@ -15,6 +15,12 @@ icon: BadgeCheck
 | Referral: a fresh customer account (made by the proof script and funded by Tegata's operator, never by either business) paid the invited business 5.00, which qualified the invite | <Tx hash="5rdLsxc1kMucKP2phfen3M5wwTgetLHYcg3u1fjPZqWs" /> |
 | Referral: 1.00 reward to the business that invited, after the 10-minute hold | <Tx hash="GPweE94qUfz4EecjcKyyXpTRrkCkYpaaY4YZDtwhjB3U" /> |
 | Referral: 1.00 reward to the business that joined | <Tx hash="2REcTS4fZ6rqnWUEQBxZoe8VUgenN3aaUKcQ5ghqYtT9" /> |
+| Payroll: Tegata's operator registered a person's own NEAR account for USDC so it could be paid | <Tx hash="G9ZMLtY9grbqzwva6hhUjtFxqUErcAeEw4p4qjFPpad7" /> |
+| Payroll: one approval paid 0.50 to a person's own Tegata account and 0.30 to another's NEAR account, in one all-or-nothing transaction | <Tx hash="7hEg9DgZdEaq7e4AHtY9FZ4ReB3sveq5XwewiEanCKFr" /> |
+| Autopilot: `pay.tegata.testnet` created, then the contract deployed and initialised | <Tx hash="6LWDQnxsfvMfhhWacX42zFy9qKmzqo5xGQdPhURAQsjm" />, <Tx hash="7mcSR43Xi5LH47g959CPh8UUoVMhbwRSabZv7PAqCZz3" /> |
+| Autopilot: a business set 0.30 aside, then created a plan for three people, two gas-free actions signed together | <Tx hash="F74hZwjkPaGjMygCSCGpQ2S2i2k8SuAw7BkAPmeEeFXB" />, <Tx hash="Cz1131sSzL454dYYU6MdT4VU4eMZ1ByX4AgVPuGr2TfZ" /> |
+| Autopilot: once the payday passed, with nobody online, the keeper's one `run` paid all three 0.10 each, three `payout_paid` events | <Tx hash="DrvyRxFLWQjYRr9xMgbPXZ2qSW2hwrZNMLrShYUTvvUb" /> |
+| Autopilot: the business turned it off; the plan's storage went back to Tegata's operator | <Tx hash="HDWhmuhLR9JFvuDo3cueyed9LEFPDRjigFwtiPSn8tSn" /> |
 
 ## Run them yourself
 
@@ -27,3 +33,6 @@ After [running Tegata yourself](/docs/build/self-host):
 | An action stopped before or after sending lands exactly once | `pnpm --filter @tegata/services exec tsx src/proofs/recover.ts` |
 | An invoice sent through the app's own services; pay it in parts with `pnpm ops pay-link <link> <dollars>` | `pnpm --filter @tegata/services exec tsx src/proofs/invoice.ts` |
 | A referral: self-referral refused, a funded payer ignored, both rewards paid | `…/proofs/referral.ts setup`, then `pay <link> <dollars>`, then `sweep` |
+| Payroll: three people (one from a CSV), a Tegata account and a NEAR account chosen, one run, a 24-hour change | `…/proofs/payroll.ts` |
+| Autopilot: a plan set minutes ahead pays three people with nobody online, then is turned off | `…/proofs/autopilot.ts` |
+| The autopilot contract's twelve tests on a local sandbox | `cd contracts && cargo test -p tegata-autopilot-harness` |

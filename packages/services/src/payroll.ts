@@ -764,6 +764,7 @@ export async function prepareRun(
       receiverId: usdc,
       publicKey: input.publicKey,
       calls: group.map((row) => ftTransfer(row.accountId ?? "", row.amount, payrollMemo(row.id))),
+      nonceOffset: index + 1,
     })
     await db
       .update(payRows)

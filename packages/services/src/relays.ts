@@ -36,6 +36,8 @@ export interface RelayRequest {
   receiverId: string
   publicKey: string
   calls: CallSpec[]
+  /** For drafts signed together: 1, 2, 3… in the order they will be relayed. */
+  nonceOffset?: number
 }
 
 /**

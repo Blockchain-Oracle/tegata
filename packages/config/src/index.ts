@@ -69,6 +69,24 @@ export const GAS = {
   storageDeposit: 10n * TGAS,
   /** Wrapping NEAR (operator tooling only). */
   nearDeposit: 10n * TGAS,
+  /** `create_plan` on the autopilot: up to 100 rows written to storage. */
+  autopilotPlan: 100n * TGAS,
+  /** pause / resume / cancel / withdraw on the autopilot. */
+  autopilotAction: 50n * TGAS,
+  /** One `run` call: 20 Tgas plus 18 per row, ten rows a chunk (contract constants). */
+  autopilotRun: 300n * TGAS,
+} as const
+
+/** The autopilot contract (plan section 2, 6.8 T). Numbers match `contracts/autopilot`. */
+export const AUTOPILOT = {
+  /** NEAR the operator attaches to register a business: its record plus a few plans (a 100-row plan is ~0.038). */
+  storageYocto: 100_000_000_000_000_000_000_000n,
+  maxRows: 100,
+  maxDates: 60,
+  /** Paydays to choose from when turning it on. */
+  dateChoices: [3, 6, 12] as const,
+  /** NEP-297 standard of its events. */
+  standard: "tegata_autopilot",
 } as const
 
 /** NEP-145 registration on USDC: min = max on both networks (read from `storage_balance_bounds`). */

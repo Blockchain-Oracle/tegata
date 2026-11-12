@@ -2,7 +2,7 @@
 
 // Payroll (plan 6.8 Q): the next payday on the stage with what it pays and to whom, the schedule in the business's
 // time zone, the team's readiness, and every run so far. Separate from its data so /dev/flows can show every state.
-import { CalendarDays, ChevronRight, Play, Users } from "lucide-react"
+import { CalendarClock, CalendarDays, ChevronRight, Play, Users } from "lucide-react"
 import Link from "next/link"
 import { useEffect, useState } from "react"
 
@@ -53,6 +53,8 @@ export function PayrollView({
   starting,
   startProblem,
   onRun,
+  autopilot,
+  autopilotPays = false,
 }: {
   overview: PayrollOverview | undefined
   people: TeamPerson[] | undefined
@@ -66,6 +68,10 @@ export function PayrollView({
   starting: boolean
   startProblem: string | null
   onRun: () => void
+  /** The autopilot card, shown under the schedule. */
+  autopilot?: React.ReactNode
+  /** The autopilot pays the next payday, so it isn't run by hand. */
+  autopilotPays?: boolean
 }) {
   const [editing, setEditing] = useState(false)
   if (error)
@@ -139,15 +145,21 @@ export function PayrollView({
                     : ""}
                 </span>
               </div>
-              <Button
-                variant="paper"
-                size="lg"
-                busy={starting}
-                disabled={!ready.length}
-                onClick={onRun}
-              >
-                <Play /> Run payroll
-              </Button>
+              {autopilotPays ? (
+                <span className="inline-flex items-center gap-2 self-start rounded-full bg-white px-4 py-2.5 text-[15px] font-semibold text-black shadow-object sm:self-auto">
+                  <CalendarClock className="size-4" /> Autopilot pays this one
+                </span>
+              ) : (
+                <Button
+                  variant="paper"
+                  size="lg"
+                  busy={starting}
+                  disabled={!ready.length}
+                  onClick={onRun}
+                >
+                  <Play /> Run payroll
+                </Button>
+              )}
             </div>
           </Stage>
           {startProblem ? (
@@ -172,6 +184,8 @@ export function PayrollView({
             </span>
             <span className="text-[15px] font-semibold text-shu-ink">Change</span>
           </button>
+
+          {autopilot}
 
           <section className="flex flex-col gap-2">
             <div className="flex items-center justify-between">
@@ -219,6 +233,11 @@ export function PayrollView({
                     {run.people === 1 ? "person" : "people"}
                   </span>
                 </span>
+                {run.source === "autopilot" ? (
+                  <StatusPill tone="wait" className="hidden sm:inline-flex">
+                    By autopilot
+                  </StatusPill>
+                ) : null}
                 <RunStatusPill status={run.status} />
                 <span className="tnum text-[16px] font-semibold">{money(run.total)}</span>
                 <ChevronRight className="size-4 text-text-3" />

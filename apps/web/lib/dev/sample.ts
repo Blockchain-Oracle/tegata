@@ -1,5 +1,7 @@
 // Sample names and figures for /dev only (plan 6.9). Nothing outside app/dev imports this file.
 import type {
+  AutopilotPreview,
+  AutopilotView,
   Customer,
   InvoiceDetail,
   InvoiceRow,
@@ -439,6 +441,7 @@ export const SAMPLE_PAYROLL: PayrollOverview = {
   runs: [
     {
       id: "9c8d0000-0000-4000-8000-000000000001",
+      source: "approval",
       payday: "2026-10-31",
       label: "Pay · 1–31 Oct 2026",
       status: "paid",
@@ -465,6 +468,7 @@ const runRow = (over: Partial<PayRunRow> & Pick<PayRunRow, "id" | "name">): PayR
 
 export const SAMPLE_RUN: PayRun = {
   id: "9c8d0000-0000-4000-8000-000000000002",
+  source: "approval",
   payday: "2026-11-30",
   label: "Pay · 31 Oct – 30 Nov 2026",
   status: "draft",
@@ -531,4 +535,126 @@ export const SAMPLE_PAYSLIP: ReceiptView = {
   payerName: SAMPLE_BUSINESS,
   receiverName: "Mei Tanaka",
   receiverId: "mei.tegata.testnet",
+}
+
+// --- autopilot ----------------------------------------------------------------------------------------------------
+
+const DAY = 24 * HOUR
+const nextNine = (days: number) => {
+  const at = new Date(Date.now() + days * DAY)
+  at.setHours(9, 0, 0, 0)
+  return at.getTime()
+}
+
+export const SAMPLE_AUTOPILOT_ROWS = [
+  {
+    personId: "0b1c2d3e-0000-4000-8000-000000000001",
+    name: "Mei Tanaka",
+    role: "Designer",
+    destinationKind: "tegata" as const,
+    accountId: "mei.tegata.testnet",
+    amount: "2400000000",
+  },
+  {
+    personId: "0b1c2d3e-0000-4000-8000-000000000002",
+    name: "Kofi Mensah",
+    role: "Engineer",
+    destinationKind: "near" as const,
+    accountId: "kofi-mensah.testnet",
+    amount: "3100000000",
+  },
+]
+
+export const SAMPLE_AUTOPILOT_PREVIEW: AutopilotPreview = {
+  cadence: "monthly",
+  paydays: ["2026-11-30", "2026-12-31", "2027-01-31"],
+  dueMs: [nextNine(18), nextNine(49), nextNine(80)],
+  rows: SAMPLE_AUTOPILOT_ROWS,
+  left: [
+    { name: "Sara Okafor", reason: "Hasn't chosen where pay lands" },
+    { name: "Diego Alvarez", reason: "Their account is still getting ready" },
+  ],
+  total: "5500000000",
+  timezone: "Africa/Lagos",
+}
+
+const AUTOPILOT_BASE = {
+  contract: "pay.tegata.testnet",
+  contractUrl: "https://testnet.nearblocks.io/address/pay.tegata.testnet",
+  lastId: "a1700000-0000-4000-8000-000000000001",
+  timezone: "Africa/Lagos",
+}
+
+const autopilotRow = (status: NonNullable<AutopilotView["row"]>["status"]) => ({
+  id: "a1700000-0000-4000-8000-000000000001",
+  status,
+  planId: status === "on" ? "7" : null,
+  paydays: SAMPLE_AUTOPILOT_PREVIEW.paydays,
+  dueMs: SAMPLE_AUTOPILOT_PREVIEW.dueMs,
+  rows: SAMPLE_AUTOPILOT_ROWS,
+  total: "5500000000",
+  setAside: "11000000000",
+  underfunded: null,
+  error: null,
+})
+
+export const SAMPLE_AUTOPILOT: Record<
+  "off" | "setting-up" | "on" | "paused" | "underfunded" | "left-over",
+  AutopilotView
+> = {
+  off: { ...AUTOPILOT_BASE, row: null, funds: null, plan: null },
+  "setting-up": { ...AUTOPILOT_BASE, row: autopilotRow("ready"), funds: null, plan: null },
+  on: {
+    ...AUTOPILOT_BASE,
+    row: autopilotRow("on"),
+    funds: { available: "11000000000", reserved: "0", inFlight: "0" },
+    plan: {
+      status: "Active",
+      next: 0,
+      cursor: 0,
+      due: SAMPLE_AUTOPILOT_PREVIEW.dueMs,
+      lastPaid: 0,
+      lastFailed: 0,
+    },
+  },
+  paused: {
+    ...AUTOPILOT_BASE,
+    row: autopilotRow("on"),
+    funds: { available: "5500000000", reserved: "0", inFlight: "0" },
+    plan: {
+      status: "Paused",
+      next: 1,
+      cursor: 0,
+      due: SAMPLE_AUTOPILOT_PREVIEW.dueMs,
+      lastPaid: 2,
+      lastFailed: 0,
+    },
+  },
+  underfunded: {
+    ...AUTOPILOT_BASE,
+    row: {
+      ...autopilotRow("on"),
+      underfunded: {
+        payday: "2026-11-30",
+        needed: "5500000000",
+        available: "3000000000",
+        at: ago(5 * MIN),
+      },
+    },
+    funds: { available: "3000000000", reserved: "0", inFlight: "0" },
+    plan: {
+      status: "Active",
+      next: 0,
+      cursor: 0,
+      due: SAMPLE_AUTOPILOT_PREVIEW.dueMs,
+      lastPaid: 0,
+      lastFailed: 0,
+    },
+  },
+  "left-over": {
+    ...AUTOPILOT_BASE,
+    row: null,
+    funds: { available: "2400000000", reserved: "0", inFlight: "0" },
+    plan: null,
+  },
 }

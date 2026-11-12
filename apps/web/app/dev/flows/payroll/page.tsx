@@ -5,13 +5,22 @@
 import { useState } from "react"
 
 import { Segmented } from "@/components/kit/segmented"
+import { AutopilotCard, AutopilotSheet } from "@/components/payroll/autopilot-card"
 import { PayrollView } from "@/components/payroll/payroll-view"
 import { RunView } from "@/components/payroll/run-view"
 import type { PayRun } from "@/lib/client/types"
-import { SAMPLE_BUSINESS, SAMPLE_PAYROLL, SAMPLE_PEOPLE, SAMPLE_RUN } from "@/lib/dev/sample"
+import {
+  SAMPLE_AUTOPILOT,
+  SAMPLE_AUTOPILOT_PREVIEW,
+  SAMPLE_BUSINESS,
+  SAMPLE_PAYROLL,
+  SAMPLE_PEOPLE,
+  SAMPLE_RUN,
+} from "@/lib/dev/sample"
 
 type PageState = "scheduled" | "unscheduled" | "no-team" | "loading" | "error"
 type RunState = "review" | "paying" | "paid" | "failed"
+type AutopilotState = keyof typeof SAMPLE_AUTOPILOT
 
 const TX = "7hEg9DgZdEaq7e4AHtY9FZ4ReB3sveq5XwewiEanCKFr"
 
@@ -45,6 +54,9 @@ function runIn(state: RunState): PayRun {
 export default function PayrollFlow() {
   const [page, setPage] = useState<PageState>("scheduled")
   const [run, setRun] = useState<RunState>("review")
+  const [autopilot, setAutopilot] = useState<AutopilotState>("on")
+  const [sheet, setSheet] = useState(false)
+  const [count, setCount] = useState(3)
   return (
     <div className="flex flex-col gap-12 pt-6">
       <section className="flex flex-col gap-4">
@@ -87,6 +99,44 @@ export default function PayrollFlow() {
           starting={false}
           startProblem={null}
           onRun={() => undefined}
+        />
+      </section>
+
+      <section className="flex flex-col gap-4">
+        <div className="flex flex-wrap items-center gap-3">
+          <span className="display text-[30px]">Autopilot</span>
+          <Segmented
+            label="Autopilot state"
+            value={autopilot}
+            onValueChange={(v) => setAutopilot(v as AutopilotState)}
+            options={[
+              { value: "off", label: "Off" },
+              { value: "setting-up", label: "Setting up" },
+              { value: "on", label: "On" },
+              { value: "paused", label: "Paused" },
+              { value: "underfunded", label: "Short" },
+              { value: "left-over", label: "Left over" },
+            ]}
+          />
+        </div>
+        <AutopilotCard
+          view={SAMPLE_AUTOPILOT[autopilot]}
+          canSetUp
+          busy={false}
+          problem={null}
+          onSetUp={() => setSheet(true)}
+          onAction={() => undefined}
+        />
+        <AutopilotSheet
+          open={sheet}
+          onOpenChange={setSheet}
+          preview={SAMPLE_AUTOPILOT_PREVIEW}
+          count={count}
+          onCount={setCount}
+          balance="8040000000"
+          busy={false}
+          problem={null}
+          onTurnOn={() => setSheet(false)}
         />
       </section>
 

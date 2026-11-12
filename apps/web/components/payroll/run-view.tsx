@@ -75,6 +75,7 @@ export function RunView({
       <h1 className="display min-w-0 flex-1 truncate text-page-title">
         {run?.label ?? "Payroll run"}
       </h1>
+      {run?.source === "autopilot" ? <StatusPill tone="wait">By autopilot</StatusPill> : null}
       {run ? <RunStatusPill status={run.status} /> : null}
     </header>
   )
@@ -124,139 +125,137 @@ export function RunView({
   return (
     <div className="flex flex-col gap-6">
       {header}
-      <>
-        {run.status === "draft" ? (
-          <motion.div key="review" className="flex flex-col gap-5" {...slide}>
-            <Stage className="p-6 sm:p-8">
+      {run.status === "draft" ? (
+        <motion.div key="review" className="flex flex-col gap-5" {...slide}>
+          <Stage className="p-6 sm:p-8">
+            <div className="flex flex-col gap-1">
+              <span className="inline-flex items-center gap-2 text-[15px] font-medium text-white/85">
+                <MarkStack ids={["usdc", "near"]} size={22} /> Payday {paydayText(run.payday)}
+              </span>
+              <Figure
+                value={viewDollars(total)}
+                className="text-[56px] text-white sm:text-[72px]"
+              />
+              <span className="text-[15px] font-medium text-white/85">
+                {balance === null
+                  ? `to ${included.length} ${included.length === 1 ? "person" : "people"}`
+                  : `You have ${money(balance)} · this run is ${money(total)}`}
+              </span>
+            </div>
+          </Stage>
+          {run.error ? (
+            <p className="rounded-[14px] bg-down-surface px-4 py-3 text-[15px] font-medium text-down">
+              The last try didn't go through, and nothing in that batch moved. Check the rows and
+              pay again.
+            </p>
+          ) : null}
+          <div className="flex flex-col rounded-[20px] bg-card p-2">
+            {run.rows.map((row) => (
+              <RowLine key={row.id} row={row} onToggle={onToggle} />
+            ))}
+          </div>
+          {skipped.length ? (
+            <p className="text-detail text-muted-foreground">
+              Skipped people aren't paid in this run. Once they're ready, open the run again and
+              they'll be in it.
+            </p>
+          ) : null}
+          {short ? (
+            <p className="rounded-[14px] bg-warn-surface px-4 py-3 text-[15px] font-medium text-warn">
+              Your balance is {money(BigInt(run.total) - BigInt(balance ?? "0"))} short. Add dollars
+              or leave someone out.
+            </p>
+          ) : null}
+          {problem ? <p className="text-[15px] font-medium text-down">{problem}</p> : null}
+          <HoldButton
+            label={`Hold to pay ${included.length} ${included.length === 1 ? "person" : "people"} ${money(total)}`}
+            ready={included.length > 0 && !short}
+            busy={busy}
+            onConfirm={onPay}
+          />
+          <p className="-mt-2 text-center text-detail text-muted-foreground">
+            {included.length > 50
+              ? `${Math.ceil(included.length / 50)} batches of up to 50. Each one pays everyone in it, or nobody.`
+              : "One transaction on NEAR: everyone in it is paid, or nobody is."}
+          </p>
+        </motion.div>
+      ) : run.status === "approved" ? (
+        <motion.div key="paying" className="flex flex-col gap-5" {...slide}>
+          <div className="flex flex-col items-center gap-1 rounded-[24px] bg-card p-6 text-center">
+            <span className="text-detail font-medium text-muted-foreground">
+              Paying {run.rows.filter((r) => r.batch).length} people
+              {batches > 1 ? ` in ${batches} batches` : ""}
+            </span>
+            <Figure value={viewDollars(total)} className="text-[56px]" />
+          </div>
+          <div className="rounded-[20px] bg-secondary p-2">
+            <TaskSteps steps={STEPS} current={progress} />
+          </div>
+        </motion.div>
+      ) : run.status === "paid" ? (
+        <motion.div key="paid" className="flex flex-col gap-5" {...slide}>
+          <Stage className="p-6 sm:p-8">
+            <div className="flex items-start justify-between gap-4">
               <div className="flex flex-col gap-1">
-                <span className="inline-flex items-center gap-2 text-[15px] font-medium text-white/85">
-                  <MarkStack ids={["usdc", "near"]} size={22} /> Payday {paydayText(run.payday)}
+                <span className="text-[15px] font-medium text-white/85">
+                  Paid {paid.length} {paid.length === 1 ? "person" : "people"}
                 </span>
                 <Figure
                   value={viewDollars(total)}
                   className="text-[56px] text-white sm:text-[72px]"
                 />
                 <span className="text-[15px] font-medium text-white/85">
-                  {balance === null
-                    ? `to ${included.length} ${included.length === 1 ? "person" : "people"}`
-                    : `You have ${money(balance)} · this run is ${money(total)}`}
+                  {run.transactions.length === 1
+                    ? "In one transaction on NEAR"
+                    : `In ${run.transactions.length} transactions on NEAR`}
                 </span>
               </div>
-            </Stage>
-            {run.error ? (
-              <p className="rounded-[14px] bg-down-surface px-4 py-3 text-[15px] font-medium text-down">
-                The last try didn't go through, and nothing in that batch moved. Check the rows and
-                pay again.
-              </p>
-            ) : null}
-            <div className="flex flex-col rounded-[20px] bg-card p-2">
-              {run.rows.map((row) => (
-                <RowLine key={row.id} row={row} onToggle={onToggle} />
-              ))}
+              <SealPress
+                delay={0.3}
+                onLanded={() => fire("filled", { cue: "stamp", identity: `run:${run.id}` })}
+              >
+                <span className="grid shrink-0 place-items-center rounded-full bg-white p-2 shadow-object">
+                  <BusinessSeal name={business} band="Paid" size={96} />
+                </span>
+              </SealPress>
             </div>
-            {skipped.length ? (
-              <p className="text-detail text-muted-foreground">
-                Skipped people aren't paid in this run. Once they're ready, open the run again and
-                they'll be in it.
-              </p>
-            ) : null}
-            {short ? (
-              <p className="rounded-[14px] bg-warn-surface px-4 py-3 text-[15px] font-medium text-warn">
-                Your balance is {money(BigInt(run.total) - BigInt(balance ?? "0"))} short. Add
-                dollars or leave someone out.
-              </p>
-            ) : null}
-            {problem ? <p className="text-[15px] font-medium text-down">{problem}</p> : null}
-            <HoldButton
-              label={`Hold to pay ${included.length} ${included.length === 1 ? "person" : "people"} ${money(total)}`}
-              ready={included.length > 0 && !short}
-              busy={busy}
-              onConfirm={onPay}
-            />
-            <p className="-mt-2 text-center text-detail text-muted-foreground">
-              {included.length > 50
-                ? `${Math.ceil(included.length / 50)} batches of up to 50. Each one pays everyone in it, or nobody.`
-                : "One transaction on NEAR: everyone in it is paid, or nobody is."}
-            </p>
-          </motion.div>
-        ) : run.status === "approved" ? (
-          <motion.div key="paying" className="flex flex-col gap-5" {...slide}>
-            <div className="flex flex-col items-center gap-1 rounded-[24px] bg-card p-6 text-center">
-              <span className="text-detail font-medium text-muted-foreground">
-                Paying {run.rows.filter((r) => r.batch).length} people
-                {batches > 1 ? ` in ${batches} batches` : ""}
-              </span>
-              <Figure value={viewDollars(total)} className="text-[56px]" />
-            </div>
-            <div className="rounded-[20px] bg-secondary p-2">
-              <TaskSteps steps={STEPS} current={progress} />
-            </div>
-          </motion.div>
-        ) : run.status === "paid" ? (
-          <motion.div key="paid" className="flex flex-col gap-5" {...slide}>
-            <Stage className="p-6 sm:p-8">
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex flex-col gap-1">
-                  <span className="text-[15px] font-medium text-white/85">
-                    Paid {paid.length} {paid.length === 1 ? "person" : "people"}
-                  </span>
-                  <Figure
-                    value={viewDollars(total)}
-                    className="text-[56px] text-white sm:text-[72px]"
-                  />
-                  <span className="text-[15px] font-medium text-white/85">
-                    {run.transactions.length === 1
-                      ? "In one transaction on NEAR"
-                      : `In ${run.transactions.length} transactions on NEAR`}
-                  </span>
-                </div>
-                <SealPress
-                  delay={0.3}
-                  onLanded={() => fire("filled", { cue: "stamp", identity: `run:${run.id}` })}
-                >
-                  <span className="grid shrink-0 place-items-center rounded-full bg-white p-2 shadow-object">
-                    <BusinessSeal name={business} band="Paid" size={96} />
-                  </span>
-                </SealPress>
-              </div>
-            </Stage>
-            <div className="flex flex-col rounded-[20px] bg-card p-2">
-              {run.rows.map((row) => (
-                <RowLine key={row.id} row={row} />
-              ))}
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {run.transactions.map((tx, i) => (
-                <Button key={tx.hash} variant="secondary" size="sm" asChild>
-                  <a href={tx.url} target="_blank" rel="noreferrer">
-                    {run.transactions.length > 1 ? `Batch ${i + 1} on NEAR` : "See it on NEAR"}{" "}
-                    <ExternalLink />
-                  </a>
-                </Button>
-              ))}
-            </div>
-          </motion.div>
-        ) : (
-          <motion.div key="failed" className="flex flex-col gap-5" {...slide}>
-            <ErrorState
-              title="This run didn't go through"
-              detail={
-                paid.length
-                  ? `${paid.length} were paid. Nothing in the failed batch moved, so no one was paid twice or half.`
-                  : "Nothing moved. No one was paid, and your balance is as it was."
-              }
-              stillWorks="Review it and pay again: the batch is drafted fresh."
-              onRetry={busy ? undefined : onRetry}
-              technical={run.error ?? undefined}
-            />
-            <div className="flex flex-col rounded-[20px] bg-card p-2">
-              {run.rows.map((row) => (
-                <RowLine key={row.id} row={row} />
-              ))}
-            </div>
-          </motion.div>
-        )}
-      </>
+          </Stage>
+          <div className="flex flex-col rounded-[20px] bg-card p-2">
+            {run.rows.map((row) => (
+              <RowLine key={row.id} row={row} />
+            ))}
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {run.transactions.map((tx, i) => (
+              <Button key={tx.hash} variant="secondary" size="sm" asChild>
+                <a href={tx.url} target="_blank" rel="noreferrer">
+                  {run.transactions.length > 1 ? `Batch ${i + 1} on NEAR` : "See it on NEAR"}{" "}
+                  <ExternalLink />
+                </a>
+              </Button>
+            ))}
+          </div>
+        </motion.div>
+      ) : (
+        <motion.div key="failed" className="flex flex-col gap-5" {...slide}>
+          <ErrorState
+            title="This run didn't go through"
+            detail={
+              paid.length
+                ? `${paid.length} were paid. Nothing in the failed batch moved, so no one was paid twice or half.`
+                : "Nothing moved. No one was paid, and your balance is as it was."
+            }
+            stillWorks="Review it and pay again: the batch is drafted fresh."
+            onRetry={busy ? undefined : onRetry}
+            technical={run.error ?? undefined}
+          />
+          <div className="flex flex-col rounded-[20px] bg-card p-2">
+            {run.rows.map((row) => (
+              <RowLine key={row.id} row={row} />
+            ))}
+          </div>
+        </motion.div>
+      )}
     </div>
   )
 }

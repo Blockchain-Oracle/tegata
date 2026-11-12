@@ -1,0 +1,89 @@
+---
+title: Autopilot
+description: Money a business sets aside in Tegata's own contract on NEAR pays its payroll on each payday with nobody online, and every row is confirmed, paid or returned.
+icon: CalendarClock
+---
+
+Autopilot is Tegata's own contract, `pay.tegata.testnet` (Rust, near-sdk 5.30). A business sets dollars aside in it
+and gives it a plan: who is paid how much, and on which paydays. Once a payday's time has passed, **anyone** may call
+`run`. Tegata's worker does, every minute, so payroll goes out with every browser closed.
+
+## Turning it on
+
+<Steps>
+<Step>
+### Choose
+
+On **Payroll**, **Set up autopilot** lists the ready people (the same rows a run would pay), the next 3, 6 or 12
+paydays at 09:00 in your time zone, and how much to set aside now (one payday at least).
+</Step>
+<Step>
+### Tegata registers you
+
+Tegata's operator registers your business on the contract and pays for its storage in NEAR, in its own
+transaction. You never hold NEAR.
+</Step>
+<Step>
+### Sign two actions together
+
+Hold to turn it on. Your key signs two gas-free actions, each re-encoded and checked against the sheet first:
+`ft_transfer_call` on USDC sets the money aside, and `create_plan` on the contract writes the rows and paydays. Tegata
+relays them in that order.
+</Step>
+</Steps>
+
+## How a payday runs
+
+| Step | What the contract does |
+| --- | --- |
+| The first call of a payday | Checks the date has passed and the business has the whole payday set aside, then **reserves** it, so the business can't withdraw it halfway. If it can't cover it, it emits `run_underfunded`, sends nothing, and the payday stays due |
+| Each call | Pays the next ten rows: each is a USDC `ft_transfer` (10 Tgas) followed by `on_paid` (8 Tgas) |
+| `on_paid` | Never fails. Paid: emits `payout_paid`. Not paid (say, the account can't hold USDC): the money goes back to the business's available balance and it emits `payout_failed` |
+| The last chunk | Moves to the next payday. Nothing ever moves a plan back, so a payday can't be paid twice, even when two keepers call `run` at the same moment |
+
+Each payday becomes an ordinary payroll run in Tegata, marked **By autopilot**, with a payslip for every row paid,
+recorded from the contract's own events.
+
+## What the contract promises
+
+| Promise | Checked by |
+| --- | --- |
+| Only USDC can be deposited; a deposit with a message, from an unregistered account or over the caps is returned in full | `deposit_only_from_usdc`, `unregistered_deposit_refunded` |
+| Running before the date changes nothing | `run_before_due_changes_nothing` |
+| Each row is paid once, even under two runs at once | `each_row_paid_once_under_concurrent_runs` |
+| A bad row comes back while the others are paid | `bad_row_refunded_while_others_paid` |
+| The token's balance always equals what businesses hold here | `conservation_across_businesses` |
+| What a started payday reserved can't be withdrawn | `withdraw_cannot_touch_reserved` |
+| An underfunded payday sends nothing and stays due | `underfunded_run_sends_nothing_and_stays_due` |
+| A run without enough gas reverts whole | `low_gas_run_reverts_whole` |
+| A failed withdrawal is put back | `failed_withdraw_recredits` |
+| Only the owner manages a plan; pause never blocks a withdrawal or a cancel | `auth_and_pause` |
+| Storage is bounded, paid by the operator, and refunded to it on cancel | `storage_bounded_and_refunded_to_payer` |
+
+The twelve run on a local NEAR sandbox with the NEP-141 reference token standing in for USDC:
+
+```bash
+cd contracts/autopilot && cargo near build non-reproducible-wasm
+cd ../test-token && cargo near build non-reproducible-wasm --no-abi
+cd .. && cargo test -p tegata-autopilot-harness
+```
+
+## Limits and costs
+
+| | |
+| --- | --- |
+| Rows per plan | 100 |
+| Plans per business | 10 |
+| Paydays per plan | 60 |
+| Smallest row | $0.01 |
+| Held per business / in total | $10,000 / $100,000 |
+| Storage for a 100-row plan | 0.0381 NEAR, paid by Tegata, refunded to Tegata on cancel |
+| Contract code | 186,596 bytes: 1.87 NEAR of storage on either network |
+
+Autopilot pays Tegata and NEAR accounts only. Paying someone on another chain needs a fresh NEAR Intents quote, which
+can't be fetched with nobody online, so those people are paid by an approved run instead.
+
+<Callout title="During the hackathon" type="warn">
+The contract has no upgrade method, but `pay.tegata.testnet`'s only key is Tegata's operator key, so Tegata can
+redeploy it. Pause stops deposits, new plans and runs; it never stops a withdrawal or a cancel.
+</Callout>

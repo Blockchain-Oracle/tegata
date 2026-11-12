@@ -156,6 +156,7 @@ and never pays twice.
 | NEAR Intents (1Click API)   | Live quotes for the landing calculator and the pay page: what a payer on Base, Solana, Tron, Bitcoin and more sends so the business receives the exact amount                | `apps/web/lib/server/oneclick.ts`, `GET /api/quote`                                    |
 | NEAR Connect                | Customers pay from their own NEAR wallet: in the Sandbox, the wallets NEAR Connect lists for testnet, such as Meteor and Intear                                              | `apps/web/lib/client/near-wallet.ts`                                                   |
 | Privy                       | Email sign-in that gives each owner a NEAR key without a wallet app                                                                                                          | `apps/web/app/providers.tsx`                                                           |
+| Our contract: autopilot     | `pay.tegata.testnet` holds money a business sets aside and pays its payroll on each payday with nobody online, confirming every row (paid, or returned to the business) | `contracts/autopilot/src/lib.rs`; 12 tests in `contracts/harness/tests/autopilot.rs` |
 
 USDC contracts: `3e2210e1184b45b64c8a434c0a7e7b23cc04ea7eb7a6c3c32520d03d4afcb8af` on testnet,
 `17208628f84f5d6ad33f0da3bbbeb27ffcb398eac501a31bd6ad2011e36133a1` on mainnet.
@@ -216,6 +217,9 @@ Recorded on NEAR testnet. Every one opens on the explorer.
 | Referral: 1.00 reward to the business that joined                                                                                                                                  | [2REcTS…](https://testnet.nearblocks.io/txns/2REcTS4fZ6rqnWUEQBxZoe8VUgenN3aaUKcQ5ghqYtT9)                                                                                             |
 | Payroll: Tegata's operator registered a person's own NEAR account for USDC so it could be paid                                                                                     | [G9ZMLt…](https://testnet.nearblocks.io/txns/G9ZMLtY9grbqzwva6hhUjtFxqUErcAeEw4p4qjFPpad7)                                                                                             |
 | Payroll: one approval paid 0.50 to a person's own Tegata account and 0.30 to another's NEAR account, in one all-or-nothing transaction; a third, who hadn't chosen, was skipped | [7hEg9D…](https://testnet.nearblocks.io/txns/7hEg9DgZdEaq7e4AHtY9FZ4ReB3sveq5XwewiEanCKFr)                                                                                             |
+| Autopilot: `pay.tegata.testnet` created, then the contract deployed and initialised                                                                                                | [6LWDQn…](https://testnet.nearblocks.io/txns/6LWDQnxsfvMfhhWacX42zFy9qKmzqo5xGQdPhURAQsjm), [7mcSR4…](https://testnet.nearblocks.io/txns/7mcSR43Xi5LH47g959CPh8UUoVMhbwRSabZv7PAqCZz3) |
+| Autopilot: a business set 0.30 aside and created a plan for three people, two gas-free actions signed together                                                                     | [F74hZw…](https://testnet.nearblocks.io/txns/F74hZwjkPaGjMygCSCGpQ2S2i2k8SuAw7BkAPmeEeFXB), [Cz1131…](https://testnet.nearblocks.io/txns/Cz1131sSzL454dYYU6MdT4VU4eMZ1ByX4AgVPuGr2TfZ) |
+| Autopilot: after the payday passed, with nobody online, the keeper's one `run` paid all three 0.10 each (three `payout_paid` events)                                              | [DrvyRx…](https://testnet.nearblocks.io/txns/DrvyRxFLWQjYRr9xMgbPXZ2qSW2hwrZNMLrShYUTvvUb)                                                                                             |
 
 Run the proofs yourself (after [Run it locally](#run-it-locally)):
 
@@ -227,6 +231,8 @@ Run the proofs yourself (after [Run it locally](#run-it-locally)):
 | An invoice sent through the app's own services; pay it in parts with `pnpm ops pay-link <link> <dollars>` | `pnpm --filter @tegata/services exec tsx src/proofs/invoice.ts`                                                   |
 | A referral: self-referral refused, a funded payer ignored, both rewards paid                              | `pnpm --filter @tegata/services exec tsx src/proofs/referral.ts setup`, then `pay <link> <dollars>`, then `sweep` |
 | Payroll: three people (one from a CSV), a Tegata account and a NEAR account chosen, one run, a 24-hour change | `pnpm --filter @tegata/services exec tsx src/proofs/payroll.ts`                                                   |
+| Autopilot: a plan set minutes ahead pays three people with nobody online, then is turned off              | `pnpm --filter @tegata/services exec tsx src/proofs/autopilot.ts`                                                 |
+| The autopilot contract's twelve tests on a local sandbox (build both wasm files first, see `contracts/`)    | `cd contracts && cargo test -p tegata-autopilot-harness`                                                          |
 
 ## The rest of the product
 
@@ -295,6 +301,8 @@ packages/documents  the invoice PDF and the emails
 packages/env        the only reader of server environment variables
 packages/jobs       queue definitions
 packages/services   database-aware logic shared by the web app and the worker
+contracts/autopilot the autopilot contract (Rust, near-sdk 5.30): pays a payroll schedule with nobody online
+contracts/harness   its tests on a local NEAR sandbox, with the NEP-141 reference token as USDC
 ```
 
 ## Credits and reused work
@@ -327,8 +335,10 @@ Everything else in this repository was written during the hackathon.
 - **Payroll pays Tegata and NEAR accounts.** Another chain is Live-only, and a bank account is shown locked:
   cash-out to a bank needs a licensed payout partner. Payroll and "you've been paid" emails wait for email too;
   until then the business shares each person's link.
-- **Not in this build yet:** CSV export and the monthly statement, refunds, signing in with a NEAR wallet, and the
-  scheduled-payroll contract.
+- **Not in this build yet:** CSV export and the monthly statement, refunds, and signing in with a NEAR wallet.
+- **The autopilot contract has no upgrade method, but its account does.** `pay.tegata.testnet`'s only key is the
+  operator's, so during the hackathon Tegata can redeploy it. Autopilot pays Tegata and NEAR accounts only: a payout to
+  another chain needs a fresh NEAR Intents quote, which can't be fetched with nobody online.
 - **The Sandbox stash is shared.** Add test dollars draws from Tegata's own test USDC and can run dry; Circle's
   faucet is the fallback.
 - **Referrals don't yet flag two accounts opened from one device or network.**
