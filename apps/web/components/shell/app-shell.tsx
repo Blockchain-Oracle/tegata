@@ -6,6 +6,7 @@
 import {
   ArrowDownLeft,
   ArrowUpRight,
+  Banknote,
   BookOpen,
   Command as CommandIcon,
   FileText,
@@ -19,6 +20,7 @@ import {
   Settings,
   Sun,
   Users,
+  UsersRound,
 } from "lucide-react"
 import { motion } from "motion/react"
 import Link from "next/link"
@@ -46,6 +48,8 @@ const PLACES: Place[] = [
   { kind: "link", href: "/app/invoices", label: "Invoices", icon: <FileText /> },
   { kind: "link", href: "/app/links", label: "Pay links", icon: <Link2 /> },
   { kind: "link", href: "/app/customers", label: "Customers", icon: <Users /> },
+  { kind: "link", href: "/app/people", label: "People", icon: <UsersRound /> },
+  { kind: "link", href: "/app/payroll", label: "Payroll", icon: <Banknote /> },
   { kind: "link", href: "/app/send", label: "Send", icon: <ArrowUpRight /> },
   { kind: "link", href: "/app/refer", label: "Refer", icon: <Gift /> },
 ]
@@ -300,6 +304,18 @@ export function AppShell({
                       field: "bg-sora",
                     },
                     { href: "/app/send", label: "Send", icon: <ArrowUpRight />, field: "bg-kin" },
+                    {
+                      href: "/app/payroll",
+                      label: "Run payroll",
+                      icon: <Banknote />,
+                      field: "bg-matcha",
+                    },
+                    {
+                      href: "/app/people",
+                      label: "Add people",
+                      icon: <UsersRound />,
+                      field: "bg-sora",
+                    },
                   ].map((item) => (
                     <DropdownMenu.Item key={item.href} asChild>
                       <Link

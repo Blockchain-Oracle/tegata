@@ -1,4 +1,12 @@
-export { InvoiceEmail, type InvoiceEmailData, ReminderEmail } from "./emails.tsx"
+export {
+  InvoiceEmail,
+  type InvoiceEmailData,
+  PaidEmail,
+  type PaidEmailData,
+  type PayrollInviteData,
+  PayrollInviteEmail,
+  ReminderEmail,
+} from "./emails.tsx"
 export {
   type InvoiceDocument,
   InvoicePdf,

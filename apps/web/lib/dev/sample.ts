@@ -5,8 +5,14 @@ import type {
   InvoiceRow,
   LinkDetail,
   PayLink,
+  PayRun,
+  PayRunRow,
+  PayrollOverview,
+  PaySlipRow,
+  PersonPage,
   PublicRequest,
   ReceiptView,
+  TeamPerson,
 } from "@/lib/client/types"
 
 const ago = (ms: number) => new Date(Date.now() - ms).toISOString()
@@ -359,4 +365,170 @@ export const SAMPLE_INVOICE: InvoiceDetail = {
   remaining: "943990000",
   status: "partly_paid",
   draft: null,
+}
+
+// --- pay people -------------------------------------------------------------------------------------------------
+
+const person = (over: Partial<TeamPerson> & Pick<TeamPerson, "id" | "name">): TeamPerson => ({
+  email: `${over.name.split(" ")[0]?.toLowerCase()}@studio-kaze.example`,
+  role: null,
+  amount: "2400000000",
+  token: "Mx7Qp2Lr9KdTzA",
+  claimed: true,
+  invitedAt: ago(3 * 24 * HOUR),
+  ready: { state: "none" },
+  pending: null,
+  setBy: "person",
+  ...over,
+})
+
+export const SAMPLE_PEOPLE: TeamPerson[] = [
+  person({
+    id: "0b1c2d3e-0000-4000-8000-000000000001",
+    name: "Mei Tanaka",
+    role: "Designer",
+    ready: { state: "ready", kind: "tegata", accountId: "mei.tegata.testnet" },
+  }),
+  person({
+    id: "0b1c2d3e-0000-4000-8000-000000000002",
+    name: "Kofi Mensah",
+    role: "Engineer",
+    amount: "3100000000",
+    ready: { state: "ready", kind: "near", accountId: "kofi-mensah.testnet" },
+    pending: {
+      kind: "tegata",
+      accountId: "kofi.tegata.testnet",
+      activatesAt: new Date(Date.now() + 20 * HOUR).toISOString(),
+    },
+  }),
+  person({
+    id: "0b1c2d3e-0000-4000-8000-000000000003",
+    name: "Sara Okafor",
+    role: "Writer",
+    amount: "1700000000",
+    claimed: false,
+  }),
+  person({
+    id: "0b1c2d3e-0000-4000-8000-000000000004",
+    name: "Diego Alvarez",
+    role: "Support",
+    amount: "1500000000",
+    ready: { state: "opening", kind: "tegata", accountId: "diego.tegata.testnet" },
+  }),
+]
+
+export const SAMPLE_SLIPS: PaySlipRow[] = [
+  {
+    id: "5a1b0000-0000-4000-8000-000000000001",
+    amount: "2400000000",
+    label: "Pay · 1–31 Oct 2026",
+    paidAt: ago(12 * 24 * HOUR),
+  },
+  {
+    id: "5a1b0000-0000-4000-8000-000000000002",
+    amount: "2400000000",
+    label: "Pay · 1–30 Sept 2026",
+    paidAt: ago(42 * 24 * HOUR),
+  },
+]
+
+export const SAMPLE_PAYROLL: PayrollOverview = {
+  timezone: "Africa/Lagos",
+  schedule: { cadence: "monthly", nextPayday: "2026-11-30", label: "Pay · 31 Oct – 30 Nov 2026" },
+  emailEnabled: false,
+  runs: [
+    {
+      id: "9c8d0000-0000-4000-8000-000000000001",
+      payday: "2026-10-31",
+      label: "Pay · 1–31 Oct 2026",
+      status: "paid",
+      total: "5500000000",
+      people: 2,
+      paidAt: ago(12 * 24 * HOUR),
+    },
+  ],
+}
+
+const runRow = (over: Partial<PayRunRow> & Pick<PayRunRow, "id" | "name">): PayRunRow => ({
+  personId: over.id,
+  role: null,
+  destinationKind: "tegata",
+  accountId: null,
+  amount: "2400000000",
+  status: "included",
+  skipReason: null,
+  batch: null,
+  relayStatus: null,
+  txHash: null,
+  ...over,
+})
+
+export const SAMPLE_RUN: PayRun = {
+  id: "9c8d0000-0000-4000-8000-000000000002",
+  payday: "2026-11-30",
+  label: "Pay · 31 Oct – 30 Nov 2026",
+  status: "draft",
+  total: "5500000000",
+  attempt: 1,
+  error: null,
+  senderId: SAMPLE_ACCOUNT,
+  network: "testnet",
+  approvedAt: null,
+  paidAt: null,
+  transactions: [],
+  rows: [
+    runRow({ id: "1a00-mei", name: "Mei Tanaka", accountId: "mei.tegata.testnet" }),
+    runRow({
+      id: "1a00-kofi",
+      name: "Kofi Mensah",
+      amount: "3100000000",
+      destinationKind: "near",
+      accountId: "kofi-mensah.testnet",
+    }),
+    runRow({
+      id: "1a00-diego",
+      name: "Diego Alvarez",
+      amount: "1500000000",
+      status: "skipped",
+      skipReason: "Their Tegata account is still opening",
+    }),
+    runRow({
+      id: "1a00-sara",
+      name: "Sara Okafor",
+      amount: "1700000000",
+      destinationKind: null,
+      status: "skipped",
+      skipReason: "Hasn't chosen where pay lands",
+    }),
+  ],
+}
+
+export const SAMPLE_PERSON_PAGE: PersonPage = {
+  token: "Mx7Qp2Lr9KdTzA",
+  name: "Mei Tanaka",
+  role: "Designer",
+  amount: "2400000000",
+  cadence: "monthly",
+  business: SAMPLE_BUSINESS,
+  logo: null,
+  network: "testnet",
+  emailHint: "m••@studio-kaze.example",
+  claimed: false,
+  ready: { state: "none" },
+  pending: null,
+  slips: [],
+}
+
+/** A payslip: the receipt of one person's pay from one run. */
+export const SAMPLE_PAYSLIP: ReceiptView = {
+  ...SAMPLE_RECEIPT,
+  kind: "payslip",
+  number: null,
+  title: "Pay · 1–31 Oct 2026",
+  amount: "2400000000",
+  method: "payroll",
+  payer: SAMPLE_ACCOUNT,
+  payerName: SAMPLE_BUSINESS,
+  receiverName: "Mei Tanaka",
+  receiverId: "mei.tegata.testnet",
 }

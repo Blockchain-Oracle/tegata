@@ -1,0 +1,92 @@
+---
+title: Pay people
+description: Add your team by email or CSV, let each person choose where their pay lands, and pay everyone ready in one approval, in one all-or-nothing transaction on NEAR, with a payslip each.
+icon: Banknote
+---
+
+<Phones>
+  <Phone src="/shots/phone/person-choose.webp" alt="A person's page: Proof Payroll Studio added you to payroll, Sara Okafor, Writer, $20.00 in dollars a month, and where should your pay land: Tegata account (recommended), NEAR account, another chain (Live, locked), bank account (coming, locked)" caption="What a person opens: their pay, and where it should land." eager />
+  <Phone src="/shots/phone/person-set.webp" alt="Mei Tanaka's page after choosing: You're set, your pay lands in your Tegata account mei-eae1422a.tegata.testnet, and one payslip of $0.50" caption="Once chosen: where it lands, and every payslip." eager />
+  <Phone src="/shots/phone/payslip.webp" alt="A payslip from Proof Payroll Studio stamped PAID: $0.50 to Mei Tanaka for Pay 13 Oct to 12 Nov 2026, paid with payroll from a Tegata balance, fee paid by Tegata" caption="A payslip, stamped by the business." />
+</Phones>
+
+## Add your team
+
+Open **People** and press **Add person**: name, email, role (optional) and pay per run in dollars. Or press
+**Import CSV** with a header row naming `name`, `email`, `role` and `amount`:
+
+```csv
+name,email,role,amount
+Mei Tanaka,mei@studio.example,Designer,2400
+Kofi Mensah,kofi@studio.example,Engineer,"3,100.50"
+```
+
+Every row is shown before anything is saved. A row with a mistake says which line and what to fix ("Line 3:
+"leo@example" isn't an email"), and only the good rows are imported. A team holds up to 200 people.
+
+Each person gets their own page at `/p/<token>`. Copy or share it from their sheet. Once email is switched on, they
+get it in an email that says they've been added to payroll.
+
+## Where their pay lands
+
+The person opens their page and chooses:
+
+| Choice | What happens |
+| --- | --- |
+| **Tegata account** (recommended) | They sign in with the email they were invited with, name themselves, and their own `name.tegata.testnet` opens. No wallet, no fees |
+| **NEAR account** | One they already have. Tegata checks it exists and, if it can't hold USDC yet, registers it and pays for that |
+| **Another chain** | Shown locked: it needs Live, because NEAR Intents has no testnet |
+| **Bank account** | Shown locked: cash-out to a bank needs a licensed payout partner |
+
+Only someone signed in with the invited email can choose, and the first person to choose is bound to that invite.
+**A change waits 24 hours** once they already have a destination. The business sees "Changes Fri 17:21" on their
+row, and pay keeps landing in the old place until then. Their first choice, and a NEAR account you set for them
+from their sheet, apply at once.
+
+## Run payroll
+
+<Steps>
+<Step>
+### Set a payday
+
+Open **Payroll**: weekly, every two weeks or monthly, and the next payday, in your business's time zone. A monthly
+payday on the 31st lands on the last day of shorter months.
+</Step>
+<Step>
+### Review
+
+**Run payroll** drafts the run from your team as it is now: each person, the account their pay lands in, and this
+run's amount. Switch anyone off to leave them out. People who aren't ready are skipped with the reason ("Hasn't
+chosen where pay lands", "Their Tegata account is still opening"). The total is shown against your balance.
+</Step>
+<Step>
+### Hold to pay
+
+Your key signs one gas-free action that carries one USDC transfer per person, each with the memo
+`tegata:payroll:<row>`. Before signing, the page re-encodes it and checks every transfer against the rows on
+screen. Tegata relays it and pays the network fee.
+</Step>
+<Step>
+### Everyone, or nobody
+
+On NEAR, every transfer in one action list lands together or none do. Rows turn **Paid** only when the USDC
+contract's own event shows the transfer to that account, for that amount, with that memo. Then each gets a payslip
+at `/r/slip/<row>`. More than 50 people go in batches of 50, and each batch is all or nothing.
+</Step>
+</Steps>
+
+If a batch fails, nothing in it moved. The run says so, and **Try again** drafts it fresh. People already paid stay
+paid and are never paid twice.
+
+## A real one
+
+A proof business added Mei and Kofi by hand and Sara from a CSV (the same CSV's second row, with a bad email, was
+refused). Mei opened her own Tegata account; Kofi gave a NEAR account that couldn't hold USDC yet, so Tegata
+registered it (<Tx hash="G9ZMLtY9grbqzwva6hhUjtFxqUErcAeEw4p4qjFPpad7" />). One approval paid Mei $0.50 and Kofi
+$0.30 in a single transaction (<Tx hash="7hEg9DgZdEaq7e4AHtY9FZ4ReB3sveq5XwewiEanCKFr" />), and Sara, who hadn't
+chosen, was skipped. Run it yourself with `pnpm --filter @tegata/services exec tsx src/proofs/payroll.ts`.
+
+<Callout title="Where it shows up" type="info">
+Home shows **Payroll due** on or after payday when no run has paid it. Activity lists each run for the business and
+each payslip for the person. **Send** offers your ready people as one-tap recipients.
+</Callout>

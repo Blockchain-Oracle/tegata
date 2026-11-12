@@ -13,19 +13,21 @@ icon: Server
 | `apps/web` | Next.js 16: the landing page, sign-in, the app, the public invoice, pay and receipt pages, the API, and `/dev` (every part of the design in every state) |
 | `apps/worker` | Background jobs on pg-boss. The only process that holds Tegata's NEAR keys; the web server never does |
 | `apps/docs` | These docs: Fumadocs, exported to static files |
-| Postgres 17 | The books: users, businesses, accounts, requests, payments, receipts, invoices, customers, referrals, relays |
+| Postgres 17 | The books: users, businesses, accounts, requests, payments, receipts, invoices, customers, referrals, people, payroll runs, relays |
 
 ## The worker's jobs
 
 | Job | When |
 | --- | --- |
-| `relay-send` | Each signed action: send it to NEAR, exactly once. A Tegata-balance payment settles here |
+| `relay-send` | Each signed action: send it to NEAR, exactly once. A Tegata-balance payment and a payroll batch settle here |
 | `account-setup` | A new sign-up: create the NEAR account and register it on USDC |
 | `payment-verify` | A NEAR-wallet payment: read it from NEAR and settle it |
 | `test-dollars` | A Sandbox grant: send 5 test USDC |
 | `invoice-email` | An invoice or reminder email, when email is on |
 | `invoice-repeat` | Every 10 minutes: issue repeat invoices that are due |
 | `referral-sweep` | Every 5 minutes, and once at start: qualify invites, pay rewards past their hold |
+| `destination-register` | A person's NEAR account that can't hold USDC yet: Tegata's operator registers it |
+| `payroll-email` | "Added you to payroll" and "You've been paid", when email is on |
 
 At start the worker also picks up any relay or payment it left halfway.
 
@@ -48,7 +50,7 @@ apps/web            Next.js: landing, sign-in, the app, public pages, API, /dev
 apps/worker         background jobs; the only process that holds operator keys
 apps/docs           these docs
 packages/config     constants: networks, gas, limits, referral rules
-packages/core       money and invoice maths, schedules; NEAR: accounts, USDC, delegate actions, the operator
+packages/core       money, invoice and payroll maths, schedules, the people CSV; NEAR: accounts, USDC, delegate actions, the operator
 packages/db         Postgres schema and migrations (Drizzle)
 packages/documents  the invoice PDF and the emails
 packages/env        the only reader of server environment variables

@@ -5,6 +5,7 @@ import { Command } from "cmdk"
 import {
   ArrowDownLeft,
   ArrowUpRight,
+  Banknote,
   BookOpen,
   Copy,
   FileText,
@@ -18,6 +19,7 @@ import {
   Settings,
   Sun,
   Users,
+  UsersRound,
 } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { Dialog } from "radix-ui"
@@ -94,6 +96,12 @@ export function CommandMenu({
                 <Item icon={<ArrowUpRight />} onSelect={run(() => router.push("/app/send"))}>
                   Send dollars
                 </Item>
+                <Item icon={<Banknote />} onSelect={run(() => router.push("/app/payroll"))}>
+                  Run payroll
+                </Item>
+                <Item icon={<UsersRound />} onSelect={run(() => router.push("/app/people"))}>
+                  Add people
+                </Item>
                 <Item icon={<Copy />} onSelect={run(onCopyAddress)}>
                   Copy my pay address
                 </Item>
@@ -110,6 +118,12 @@ export function CommandMenu({
                 </Item>
                 <Item icon={<Users />} onSelect={run(() => router.push("/app/customers"))}>
                   Customers
+                </Item>
+                <Item icon={<UsersRound />} onSelect={run(() => router.push("/app/people"))}>
+                  People
+                </Item>
+                <Item icon={<Banknote />} onSelect={run(() => router.push("/app/payroll"))}>
+                  Payroll
                 </Item>
                 <Item icon={<Gift />} onSelect={run(() => router.push("/app/refer"))}>
                   Refer a business

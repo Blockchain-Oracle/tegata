@@ -1,7 +1,17 @@
 // Sends the emails in emails.tsx through Resend. Server only (the worker); the browser only previews templates.
 import { Resend } from "resend"
 
-import { InvoiceEmail, type InvoiceEmailData, longDay, ReminderEmail, usd } from "./emails.tsx"
+import {
+  InvoiceEmail,
+  type InvoiceEmailData,
+  longDay,
+  PaidEmail,
+  type PaidEmailData,
+  type PayrollInviteData,
+  PayrollInviteEmail,
+  ReminderEmail,
+  usd,
+} from "./emails.tsx"
 
 export interface Mailer {
   invoice(input: { to: string; data: InvoiceEmailData; pdf: Buffer; key: string }): Promise<string>
@@ -11,6 +21,8 @@ export interface Mailer {
     offset: number
     key: string
   }): Promise<string>
+  payrollInvite(input: { to: string; data: PayrollInviteData; key: string }): Promise<string>
+  paid(input: { to: string; data: PaidEmailData; key: string }): Promise<string>
 }
 
 /** A Resend mailer. `key` is the idempotency key, so a retried job never sends twice. */
@@ -46,6 +58,24 @@ export function resendMailer(apiKey: string, from: string): Mailer {
           to,
           subject: `Reminder: ${data.number} from ${data.business}, ${usd(data.remaining)}`,
           react: <ReminderEmail data={data} offset={offset} />,
+        },
+        key,
+      ),
+    payrollInvite: ({ to, data, key }) =>
+      send(
+        {
+          to,
+          subject: `${data.business} added you to payroll`,
+          react: <PayrollInviteEmail data={data} />,
+        },
+        key,
+      ),
+    paid: ({ to, data, key }) =>
+      send(
+        {
+          to,
+          subject: `You've been paid ${usd(data.amount)} by ${data.business}`,
+          react: <PaidEmail data={data} />,
         },
         key,
       ),

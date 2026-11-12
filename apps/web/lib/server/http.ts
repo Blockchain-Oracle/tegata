@@ -3,6 +3,7 @@ import {
   InvoiceError,
   OnboardError,
   PaymentError,
+  PayrollError,
   ReferralError,
   RelayError,
   SandboxError,
@@ -76,6 +77,15 @@ function toResponse(error: unknown): Response {
       { error: { code: error.field ?? error.code, message: error.message } },
       { status },
     )
+  }
+  if (error instanceof PayrollError) {
+    const status =
+      error.code === "not_found"
+        ? STATUS.notFound
+        : error.code === "bad_input"
+          ? STATUS.badRequest
+          : STATUS.conflict
+    return Response.json({ error: { code: error.code, message: error.message } }, { status })
   }
   if (error instanceof BusinessError) {
     return Response.json(

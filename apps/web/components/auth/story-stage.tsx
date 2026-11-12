@@ -16,9 +16,9 @@ import { cn } from "@/lib/utils"
 
 const DWELL_MS = 5600
 
-// The payroll scene rejoins the pager when payroll ships (plan S04); it stays below, exported, until then.
 const SCENES = [
   { key: "link", title: "Send a link. Get paid in exact dollars." },
+  { key: "payroll", title: "Pay your whole team in one approval." },
   { key: "address", title: "No wallet. No fees to think about." },
   { key: "receipt", title: "Every payment gets a sealed receipt." },
 ] as const
@@ -79,7 +79,15 @@ export function StoryStage({ sealed = false }: { sealed?: boolean }) {
           >
             <div className="absolute inset-x-0 top-14 bottom-[150px] grid place-items-center sm:top-12 sm:bottom-40 lg:top-10 lg:bottom-44">
               <div className="origin-center scale-[0.8] sm:scale-90 lg:scale-100">
-                {index === 0 ? <LinkScene /> : index === 1 ? <AddressScene /> : <ReceiptScene />}
+                {index === 0 ? (
+                  <LinkScene />
+                ) : index === 1 ? (
+                  <PayrollScene />
+                ) : index === 2 ? (
+                  <AddressScene />
+                ) : (
+                  <ReceiptScene />
+                )}
               </div>
             </div>
           </motion.div>

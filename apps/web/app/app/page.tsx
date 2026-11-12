@@ -28,9 +28,16 @@ export default function HomePage() {
   })
   const steps = useQuery({
     queryKey: ["steps"],
-    queryFn: () => api<{ invoiceSent: boolean; linkMade: boolean }>("/api/steps"),
+    queryFn: () =>
+      api<{ invoiceSent: boolean; linkMade: boolean; peopleAdded: boolean }>("/api/steps"),
     staleTime: 60_000,
   })
+  const due = useQuery({
+    queryKey: ["payroll", "due"],
+    queryFn: () =>
+      api<{ due: { payday: string; people: number; total: string } | null }>("/api/payroll/due"),
+    staleTime: 60_000,
+  }).data?.due
   const by = referrals.data?.referredBy
   const account = profile?.accounts.find((entry) => entry.network === "testnet")
   if (!profile || !account) return null
@@ -48,6 +55,7 @@ export default function HomePage() {
       testDollars={account.network === "testnet" ? testDollars : undefined}
       onAddTestDollars={testDollars.add}
       steps={steps.data}
+      payrollDue={due ? { ...due, total: BigInt(due.total) } : null}
       invite={
         by && referrals.data && (by.status === "open" || by.status === "qualified")
           ? {

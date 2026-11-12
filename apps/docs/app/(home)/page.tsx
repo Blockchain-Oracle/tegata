@@ -149,6 +149,14 @@ export default function Home() {
             field="bg-kin"
           />
           <Tile
+            title="Pay people"
+            line="Add your team by email or CSV. They choose where pay lands; one approval pays everyone."
+            href={`${DOCS.guide}/pay-people`}
+            src="/shots/phone/person-choose.webp"
+            alt="A person's page: added to payroll, $20.00 a month, and where should your pay land"
+            field="bg-matcha"
+          />
+          <Tile
             title="Send"
             line="Dollars to any NEAR account that can hold USDC, in one hold. Tegata pays the fee."
             href={`${DOCS.guide}/send`}

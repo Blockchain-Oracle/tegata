@@ -44,14 +44,18 @@ export interface InvoiceEmailData {
 
 const font = "Archivo, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif"
 
+const INVOICE_FOOTER = "Pay in dollars from any wallet; the payment settles in USDC on NEAR."
+
 function Frame({
   preview,
   children,
   business,
+  footer = INVOICE_FOOTER,
 }: {
   preview: string
   children: React.ReactNode
   business: string
+  footer?: string
 }) {
   return (
     <Html lang="en">
@@ -74,8 +78,7 @@ function Frame({
           {children}
           <Hr style={{ borderColor: "#ECECEC", margin: "28px 0 16px" }} />
           <Text style={{ fontSize: 12, color: GREY, margin: 0 }}>
-            Sent with Tegata on behalf of {business}. Pay in dollars from any wallet; the payment
-            settles in USDC on NEAR.
+            Sent with Tegata on behalf of {business}. {footer}
           </Text>
         </Container>
       </Body>
@@ -186,6 +189,147 @@ export function ReminderEmail({ data, offset }: { data: InvoiceEmailData; offset
       >
         View and pay
       </Button>
+    </Frame>
+  )
+}
+
+// --- payroll (plan 6.8 O–S) ---------------------------------------------------------------------------------------
+
+const PAYROLL_FOOTER = "Pay arrives in dollars (USDC on NEAR); Tegata covers the network fee."
+
+export interface PayrollInviteData {
+  business: string
+  name: string
+  role: string | null
+  /** USDC base units per run. */
+  amount: string
+  /** "a month", "every two weeks", "a week", or "each payday". */
+  cadence: string
+  url: string
+  sandbox: boolean
+}
+
+/** "Studio Kaze added you to payroll": one button to the person's page, where they choose where pay lands. */
+export function PayrollInviteEmail({ data }: { data: PayrollInviteData }) {
+  return (
+    <Frame
+      business={data.business}
+      footer={PAYROLL_FOOTER}
+      preview={`${data.business} added you to payroll: ${usd(data.amount)} ${data.cadence}`}
+    >
+      <Text style={{ fontSize: 15, color: "#000", margin: "20px 0 4px" }}>Hi {data.name},</Text>
+      <Text style={{ fontSize: 15, color: "#000", margin: 0 }}>
+        {data.business} added you to payroll{data.role ? ` as ${data.role}` : ""}.
+      </Text>
+      <Section
+        style={{
+          backgroundColor: "#F5F5F5",
+          borderRadius: 14,
+          padding: "18px 20px",
+          margin: "20px 0",
+        }}
+      >
+        <Text style={{ fontSize: 13, color: GREY, margin: 0 }}>Your pay</Text>
+        <Text
+          style={{
+            fontSize: 34,
+            fontWeight: 800,
+            color: "#000",
+            margin: "2px 0 6px",
+            lineHeight: "1.1",
+          }}
+        >
+          {usd(data.amount)}
+        </Text>
+        <Text style={{ fontSize: 13, color: GREY, margin: 0 }}>in dollars, {data.cadence}</Text>
+      </Section>
+      <Text style={{ fontSize: 15, color: "#000", margin: "0 0 18px" }}>
+        Choose where your pay lands: your own Tegata account (sign in with this email, no wallet
+        needed) or a NEAR account you already have.
+      </Text>
+      <Button
+        href={data.url}
+        style={{
+          backgroundColor: SHU,
+          color: "#FFFFFF",
+          borderRadius: 14,
+          padding: "14px 22px",
+          fontSize: 15,
+          fontWeight: 600,
+        }}
+      >
+        Choose where pay lands
+      </Button>
+      {data.sandbox ? (
+        <Text style={{ fontSize: 13, color: GREY, margin: "14px 0 0" }}>
+          This is a Sandbox payroll on NEAR testnet; no real money moves.
+        </Text>
+      ) : null}
+    </Frame>
+  )
+}
+
+export interface PaidEmailData {
+  business: string
+  name: string
+  amount: string
+  /** "Pay · 1–30 Nov 2026". */
+  period: string
+  /** The payslip page. */
+  url: string
+  sandbox: boolean
+}
+
+/** "You've been paid $2,400": the amount, the period and the payslip. */
+export function PaidEmail({ data }: { data: PaidEmailData }) {
+  return (
+    <Frame
+      business={data.business}
+      footer={PAYROLL_FOOTER}
+      preview={`You've been paid ${usd(data.amount)}`}
+    >
+      <Text style={{ fontSize: 15, color: "#000", margin: "20px 0 4px" }}>Hi {data.name},</Text>
+      <Text style={{ fontSize: 15, color: "#000", margin: 0 }}>{data.business} has paid you.</Text>
+      <Section
+        style={{
+          backgroundColor: "#F5F5F5",
+          borderRadius: 14,
+          padding: "18px 20px",
+          margin: "20px 0",
+        }}
+      >
+        <Text style={{ fontSize: 13, color: GREY, margin: 0 }}>You've been paid</Text>
+        <Text
+          style={{
+            fontSize: 34,
+            fontWeight: 800,
+            color: "#000",
+            margin: "2px 0 6px",
+            lineHeight: "1.1",
+          }}
+        >
+          {usd(data.amount)}
+        </Text>
+        <Text style={{ fontSize: 13, color: GREY, margin: 0 }}>{data.period}</Text>
+      </Section>
+      <Button
+        href={data.url}
+        style={{
+          backgroundColor: SHU,
+          color: "#FFFFFF",
+          borderRadius: 14,
+          padding: "14px 22px",
+          fontSize: 15,
+          fontWeight: 600,
+        }}
+      >
+        Open your payslip
+      </Button>
+      {data.sandbox ? (
+        <Text style={{ fontSize: 13, color: GREY, margin: "14px 0 0" }}>
+          Sandbox pay on NEAR testnet; no real money moved.
+        </Text>
+      ) : null}
     </Frame>
   )
 }

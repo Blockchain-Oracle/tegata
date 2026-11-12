@@ -167,6 +167,7 @@ tomorrow." What to lean on: "Stablecoins, NEAR Intents, meta transactions".
 | ----------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
 | "invoicing"                                     | Numbered invoices with customers, items, discount, tax and due dates; part-payments, repeat invoices, a PDF and a timeline | `/app/invoices`; `packages/services/src/invoices.ts`; [INV-0001](#a-real-one)                                                        |
 | "merchant payments"                             | Pay links for a fixed or any amount, with a QR code, paid from a Tegata balance or a NEAR wallet                           | `/app/links`; [transaction](https://testnet.nearblocks.io/txns/4rs3uTXRaCnNCsMepj4tDiTsTZuootKSsW2QzqMkcaQ5)                         |
+| "payroll"                                       | People added by email or CSV choose where pay lands on their own page; one approval pays everyone ready in one all-or-nothing transaction, with a payslip each | `/app/people`, `/app/payroll`; `packages/services/src/payroll.ts`; [transaction](https://testnet.nearblocks.io/txns/7hEg9DgZdEaq7e4AHtY9FZ4ReB3sveq5XwewiEanCKFr) |
 | "remittances"                                   | Send dollars to any NEAR account that can hold USDC, in one hold; Tegata pays the fee                                      | `/app/send`; [transaction](https://testnet.nearblocks.io/txns/4a5U9osgJrXKN5EDT3mvrWGT6NrFXoQXwH4bYZjqH6TX)                          |
 | "stablecoin rails", "Stablecoins"               | USDC on NEAR holds every balance and settles every payment, receipt and reward                                             | `packages/config/src/index.ts`; `packages/core/src/near/usdc.ts`                                                                     |
 | "NEAR Intents"                                  | Live 1Click quotes on the landing calculator and the pay page, for the business to receive the exact amount                | `apps/web/lib/server/oneclick.ts`                                                                                                    |
@@ -210,6 +211,8 @@ Recorded on NEAR testnet. Every one opens on the explorer.
 | Referral: a fresh customer account (made by the proof script and funded by Tegata's operator, never by either business) paid the invited business 5.00, which qualified the invite | [5rdLsx…](https://testnet.nearblocks.io/txns/5rdLsxc1kMucKP2phfen3M5wwTgetLHYcg3u1fjPZqWs)                                                                                             |
 | Referral: 1.00 reward to the business that invited, after the 10-minute hold                                                                                                       | [GPweE9…](https://testnet.nearblocks.io/txns/GPweE94qUfz4EecjcKyyXpTRrkCkYpaaY4YZDtwhjB3U)                                                                                             |
 | Referral: 1.00 reward to the business that joined                                                                                                                                  | [2REcTS…](https://testnet.nearblocks.io/txns/2REcTS4fZ6rqnWUEQBxZoe8VUgenN3aaUKcQ5ghqYtT9)                                                                                             |
+| Payroll: Tegata's operator registered a person's own NEAR account for USDC so it could be paid                                                                                     | [G9ZMLt…](https://testnet.nearblocks.io/txns/G9ZMLtY9grbqzwva6hhUjtFxqUErcAeEw4p4qjFPpad7)                                                                                             |
+| Payroll: one approval paid 0.50 to a person's own Tegata account and 0.30 to another's NEAR account, in one all-or-nothing transaction; a third, who hadn't chosen, was skipped | [7hEg9D…](https://testnet.nearblocks.io/txns/7hEg9DgZdEaq7e4AHtY9FZ4ReB3sveq5XwewiEanCKFr)                                                                                             |
 
 Run the proofs yourself (after [Run it locally](#run-it-locally)):
 
@@ -220,6 +223,7 @@ Run the proofs yourself (after [Run it locally](#run-it-locally)):
 | An action interrupted before or after sending lands exactly once                                          | `pnpm --filter @tegata/services exec tsx src/proofs/recover.ts`                                                   |
 | An invoice sent through the app's own services; pay it in parts with `pnpm ops pay-link <link> <dollars>` | `pnpm --filter @tegata/services exec tsx src/proofs/invoice.ts`                                                   |
 | A referral: self-referral refused, a funded payer ignored, both rewards paid                              | `pnpm --filter @tegata/services exec tsx src/proofs/referral.ts setup`, then `pay <link> <dollars>`, then `sweep` |
+| Payroll: three people (one from a CSV), a Tegata account and a NEAR account chosen, one run, a 24-hour change | `pnpm --filter @tegata/services exec tsx src/proofs/payroll.ts`                                                   |
 
 ## The rest of the product
 
@@ -234,6 +238,8 @@ Run the proofs yourself (after [Run it locally](#run-it-locally)):
 | Mark an invoice paid by hand, duplicate one, void one         | A receipt that says it isn't on NEAR; a fresh draft; a cancelled invoice whose link stops taking payments                                                                                                       |
 | Open **Customers**                                            | Each customer with their email, how many invoices you sent them and what they owe; their sheet shows billed, paid and owed, and New invoice for them                                                            |
 | Open **Refer** and share your link                            | Another business opens `/join/<you>`, joins, and once real customers have paid it $5 (Sandbox) you each get $1 in test USDC                                                                                     |
+| Open **People**, add someone or import a CSV                  | Each person gets a page (`/p/<token>`) where they sign in with the invited email and choose their own Tegata account or a NEAR account; a CSV row with a mistake says which line and why |
+| Open **Payroll**, set a payday, press **Run payroll**         | Review every row (leave someone out, see who's skipped and why), hold to pay, and everyone ready is paid in one transaction on NEAR, each with a payslip at `/r/slip/<id>` |
 | Open **Send**                                                 | Send dollars to any NEAR account that can hold USDC: hold to send, live steps, a sealed receipt, and no fee for you                                                                                             |
 | Open **Business**                                             | Your logo, address, tax ID and time zone, with a live preview of the header on every invoice and receipt                                                                                                        |
 | Press ⌘K                                                      | Every action and place in the app, from the keyboard                                                                                                                                                            |
@@ -246,7 +252,7 @@ Run the proofs yourself (after [Run it locally](#run-it-locally)):
   no cut.
 - **Numbers in order.** Invoices are numbered INV-0001, INV-0002… when they are sent; a voided invoice keeps its
   number. Receipts for customer payments are numbered No. 0001, No. 0002… per business.
-- **A receipt for every movement:** customer payments, sends and referral rewards. Each says who paid whom, for
+- **A receipt for every movement:** customer payments, sends, referral rewards and payslips. Each says who paid whom, for
   what, when, how, and who paid the fee, then links to the transaction on NEAR. Every row on Home opens its
   receipt first. Money received another way can be marked paid by hand; its receipt says so.
 
@@ -315,8 +321,11 @@ Everything else in this repository was written during the hackathon.
   turns a payer's coin into USDC on NEAR is part of Live and not built yet; today customers pay in USDC on NEAR.
 - **Emails are switched off on the live site** until a sending domain is set up, so invoice and reminder emails
   don't go out. Sending an invoice still gives you its link to share.
-- **Not in this build yet:** payroll, CSV export and the monthly statement, refunds, and the scheduled-payroll
-  contract.
+- **Payroll pays Tegata and NEAR accounts.** Another chain is Live-only, and a bank account is shown locked:
+  cash-out to a bank needs a licensed payout partner. Payroll and "you've been paid" emails wait for email too;
+  until then the business shares each person's link.
+- **Not in this build yet:** CSV export and the monthly statement, refunds, signing in with a NEAR wallet, and the
+  scheduled-payroll contract.
 - **The Sandbox stash is shared.** Add test dollars draws from Tegata's own test USDC and can run dry; Circle's
   faucet is the fallback.
 - **Referrals don't yet flag two accounts opened from one device or network.**

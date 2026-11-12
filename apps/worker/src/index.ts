@@ -7,18 +7,26 @@ import { emailConfigured, loadDotEnv, operatorKeys, serverEnv } from "@tegata/en
 import { enqueue, QUEUES, startBoss } from "@tegata/jobs"
 import {
   accountsNotReady,
+  destinationsToRegister,
+  inviteEmail,
   invoiceDocuments,
   invoiceToken,
   logInvoiceEvent,
+  markInvited,
+  paidEmail,
+  paidRowsToEmail,
   paymentsToVerify,
   processRelay,
   queuedTestDollars,
+  registerDestination,
   reminderTarget,
   reminderTimes,
   runDueSchedules,
+  runRelaysToSettle,
   sendTestDollars,
   settlePayment,
   settleRelayedPayment,
+  settleRunRelay,
   setupAccount,
   sweepReferrals,
   unfinishedRelays,
@@ -43,6 +51,12 @@ if (env.OPERATOR_KEYS_MAINNET?.length) {
   operators.set("mainnet", new Operator("mainnet", env.OPERATOR_KEYS_MAINNET))
 }
 
+/** Email goes out only when Resend and a verified sender are set; otherwise invoices are shared by link. */
+const mailer =
+  emailConfigured(env) && env.RESEND_API_KEY && env.EMAIL_FROM
+    ? resendMailer(env.RESEND_API_KEY, env.EMAIL_FROM)
+    : null
+
 await boss.work(QUEUES.relaySend.name, async ([job]) => {
   if (!job) return
   const { relayId } = QUEUES.relaySend.payload.parse(job.data)
@@ -57,6 +71,28 @@ await boss.work(QUEUES.relaySend.name, async ([job]) => {
     const settled = await settleRelayedPayment(db, relay.id, operator.accountId)
     console.log(`[payment] ${relay.purpose} ${settled}`)
   }
+  // A payroll batch: its rows are paid only once the USDC events are read from NEAR.
+  if (relay?.purpose.startsWith("run:")) {
+    const settled = await settleRunRelay(db, relay.id, operator.accountId)
+    console.log(`[payroll] ${relay.purpose} ${settled}`)
+    if (settled === "paid" && mailer) {
+      for (const row of await paidRowsToEmail(db, relay.purpose.split(":")[1] ?? "")) {
+        await enqueue(boss, "payrollEmail", { kind: "paid", id: row.id }, `paid:${row.id}`)
+      }
+    }
+  }
+})
+
+await boss.work(QUEUES.destinationRegister.name, async ([job]) => {
+  if (!job) return
+  const { destinationId } = QUEUES.destinationRegister.payload.parse(job.data)
+  const row = (await destinationsToRegister(db)).find((d) => d.id === destinationId)
+  const operator = row ? operators.get(row.network) : undefined
+  if (!row || !operator) return
+  const ready = await registerDestination(db, operator, destinationId)
+  console.log(
+    `[payroll] ${ready?.accountId} ${ready?.readyAt ? "ready" : (ready?.error ?? "waiting")}`,
+  )
 })
 
 await boss.work(QUEUES.accountSetup.name, async ([job]) => {
@@ -91,12 +127,6 @@ await boss.work(QUEUES.testDollars.name, async ([job]) => {
   console.log(`[test-dollars] ${grantId} ${status}`)
 })
 
-/** Email goes out only when Resend and a verified sender are set; otherwise invoices are shared by link. */
-const mailer =
-  emailConfigured(env) && env.RESEND_API_KEY && env.EMAIL_FROM
-    ? resendMailer(env.RESEND_API_KEY, env.EMAIL_FROM)
-    : null
-
 await boss.work(QUEUES.invoiceEmail.name, async ([job]) => {
   if (!job || !mailer) return
   const { invoiceId, kind, offset } = QUEUES.invoiceEmail.payload.parse(job.data)
@@ -119,6 +149,23 @@ await boss.work(QUEUES.invoiceEmail.name, async ([job]) => {
     await logInvoiceEvent(db, invoiceId, "reminder", { to: docs.to, offset: offset ?? 0 })
   }
   console.log(`[email] ${kind} for ${docs.document.number} sent`)
+})
+
+/** Payroll emails: "added you to payroll" when someone is added, "you've been paid" for each paid row. */
+await boss.work(QUEUES.payrollEmail.name, async ([job]) => {
+  if (!job || !mailer) return
+  const { kind, id } = QUEUES.payrollEmail.payload.parse(job.data)
+  if (kind === "invite") {
+    const email = await inviteEmail(db, id, env.APP_URL)
+    if (!email) return
+    await mailer.payrollInvite({ ...email, key: `invite:${id}` })
+    await markInvited(db, id)
+  } else {
+    const email = await paidEmail(db, id, env.APP_URL)
+    if (!email) return
+    await mailer.paid({ ...email, key: `paid:${id}` })
+  }
+  console.log(`[email] payroll ${kind} ${id} sent`)
 })
 
 /** Repeating invoices: every ten minutes, issue and send those that are due. */
@@ -168,6 +215,19 @@ for (const payment of await paymentsToVerify(db)) {
 }
 for (const grant of await queuedTestDollars(db)) {
   await enqueue(boss, "testDollars", { grantId: grant.id }, grant.id)
+}
+for (const destination of await destinationsToRegister(db)) {
+  if (operators.has(destination.network)) {
+    await enqueue(boss, "destinationRegister", { destinationId: destination.id }, destination.id)
+  }
+}
+// Payroll batches that landed while no worker was watching are settled now.
+for (const { relayId, network } of await runRelaysToSettle(db)) {
+  const operator = operators.get(network)
+  if (relayId && operator) {
+    const settled = await settleRunRelay(db, relayId, operator.accountId).catch(() => "pending")
+    console.log(`[payroll] resumed ${relayId} ${settled}`)
+  }
 }
 for (const account of await accountsNotReady(db)) {
   if (operators.has(account.network)) {

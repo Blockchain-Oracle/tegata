@@ -61,8 +61,11 @@ export type PaymentRail = "tegata" | "near_wallet" | "oneclick" | "manual"
 
 export interface ActivityItem {
   id: string
-  /** send: a one-off send · paid: a pay link this person paid · received: a payment into one of their links. */
-  kind: "send" | "paid" | "received" | "reward"
+  /**
+   * send: a one-off send · paid: a pay link this person paid · received: a payment into one of their links ·
+   * reward: a referral reward · payroll: a run the business paid · payslip: pay this person received.
+   */
+  kind: "send" | "paid" | "received" | "reward" | "payroll" | "payslip"
   network: NetworkId
   /** A NEAR account, or the business that was paid. */
   counterparty: string
@@ -163,7 +166,7 @@ export interface WalletAttempt {
 
 /** A receipt for any money movement: a customer payment (numbered), a send, or a referral reward. */
 export interface ReceiptView {
-  kind: "payment" | "send" | "reward"
+  kind: "payment" | "send" | "reward" | "payslip"
   /** The business's receipt number; only customer payments are numbered. */
   number: number | null
   /** Whose receipt this is: the header and the seal (Tegata's own for a reward). */
@@ -172,7 +175,7 @@ export interface ReceiptView {
   title: string
   amount: string
   /** How the money moved. */
-  method: PaymentRail | "reward"
+  method: PaymentRail | "reward" | "payroll"
   payer: string | null
   payerName: string | null
   receiverName: string
@@ -355,4 +358,115 @@ export interface ReferralsView {
   rules: ReferralRules
   invited: ReferralRow[]
   referredBy: ReferralRow | null
+}
+
+// --- pay people (plan 6.8 O–S) ---------------------------------------------------------------------------------
+
+export type PayCadence = "weekly" | "fortnightly" | "monthly"
+
+/** Whether a person can be paid now, and the NEAR account their pay lands in. */
+export type PayReadiness =
+  | { state: "ready"; kind: "tegata" | "near"; accountId: string }
+  | { state: "opening"; kind: "tegata" | "near"; accountId: string | null }
+  | { state: "none" }
+
+export interface PendingDestination {
+  kind: "tegata" | "near"
+  accountId: string | null
+  activatesAt: string
+}
+
+export interface TeamPerson {
+  id: string
+  name: string
+  email: string | null
+  role: string | null
+  /** Pay per run, USDC base units. */
+  amount: string
+  /** `/p/<token>`: their own page. */
+  token: string
+  claimed: boolean
+  invitedAt: string | null
+  ready: PayReadiness
+  pending: PendingDestination | null
+  setBy: "person" | "owner" | null
+}
+
+export interface PaySlipRow {
+  id: string
+  amount: string
+  label: string
+  paidAt: string | null
+}
+
+export interface PayRunSummary {
+  id: string
+  payday: string
+  label: string
+  status: "draft" | "approved" | "paid" | "failed"
+  total: string
+  people: number
+  paidAt: string | null
+}
+
+export interface PayrollOverview {
+  timezone: string
+  schedule: { cadence: PayCadence; nextPayday: string; label: string } | null
+  runs: PayRunSummary[]
+  emailEnabled: boolean
+}
+
+export interface PayRunRow {
+  id: string
+  personId: string
+  name: string
+  role: string | null
+  destinationKind: "tegata" | "near" | null
+  accountId: string | null
+  amount: string
+  status: "included" | "excluded" | "skipped" | "paid" | "failed"
+  skipReason: string | null
+  batch: number | null
+  relayStatus: RelayStatus["status"] | null
+  txHash: string | null
+}
+
+export interface PayRun {
+  id: string
+  payday: string
+  label: string
+  status: "draft" | "approved" | "paid" | "failed"
+  total: string
+  attempt: number
+  error: string | null
+  senderId: string
+  network: NetworkId
+  approvedAt: string | null
+  paidAt: string | null
+  /** One per all-or-nothing batch. */
+  transactions: { hash: string; url: string }[]
+  rows: PayRunRow[]
+}
+
+export interface RunBatchDraft {
+  relayId: string
+  draft: DelegateDraft
+  rows: { id: string; accountId: string; amount: string }[]
+}
+
+/** What `/p/<token>` shows the person. */
+export interface PersonPage {
+  token: string
+  name: string
+  role: string | null
+  amount: string
+  cadence: PayCadence | null
+  business: string
+  logo: string | null
+  network: NetworkId
+  emailHint: string | null
+  claimed: boolean
+  ready: PayReadiness
+  pending: PendingDestination | null
+  slips: PaySlipRow[]
 }

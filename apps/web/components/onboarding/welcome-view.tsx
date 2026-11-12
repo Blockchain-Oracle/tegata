@@ -2,7 +2,7 @@
 
 // The welcome flow's look (plan 6.8 B), separate from its logic so /dev/flows can show every state.
 // 1 "What's your business called?" → 2 "Your pay address." → 3 "Opening your account." → open.
-import { ArrowLeft, ArrowRight, Clock3, Gift, Stamp, X } from "lucide-react"
+import { ArrowLeft, ArrowRight, Clock3, Gift, Stamp, Users, X } from "lucide-react"
 import { AnimatePresence, motion, useReducedMotion } from "motion/react"
 
 import { AuthShell } from "@/components/auth/auth-shell"
@@ -38,6 +38,8 @@ export interface WelcomeViewProps {
   /** The business whose join link brought this person here, if any. */
   invite?: { business: string } | null
   onDropInvite?: () => void
+  /** Set when the person is joining a team's payroll: step 1 asks for their own name. */
+  joining?: { business: string } | null
 }
 
 const ORDER: WelcomeStage[] = ["name", "handle", "opening", "open"]
@@ -119,22 +121,29 @@ export function WelcomeView(p: WelcomeViewProps) {
                 </button>
               </span>
             ) : null}
+            {p.joining ? (
+              <span className="inline-flex items-center gap-2 self-start rounded-full bg-matcha px-3 py-1 text-[14px] font-semibold text-black">
+                <Users className="size-4" /> Joining {p.joining.business}'s payroll
+              </span>
+            ) : null}
             <h1 className="display text-[44px] leading-[0.95] sm:text-[56px]">
-              What's your business called?
+              {p.joining ? "What should we call you?" : "What's your business called?"}
             </h1>
             <Field
               id="business"
-              aria-label="Business name"
-              placeholder="Studio Kaze"
+              aria-label={p.joining ? "Your name" : "Business name"}
+              placeholder={p.joining ? "Mei Tanaka" : "Studio Kaze"}
               value={p.name}
               onChange={(e) => p.onName(e.target.value)}
               maxLength={60}
               autoFocus
               big
-              autoComplete="organization"
+              autoComplete={p.joining ? "name" : "organization"}
             />
             <p className="-mt-3 text-detail text-text-3">
-              It goes on your invoices, receipts and your seal.
+              {p.joining
+                ? "It goes on your payslips and your seal. You can bill people too, later."
+                : "It goes on your invoices, receipts and your seal."}
             </p>
             <Button type="submit" cue="tap" disabled={!p.canContinue}>
               Continue <ArrowRight />

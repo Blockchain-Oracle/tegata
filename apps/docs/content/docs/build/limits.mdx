@@ -10,8 +10,11 @@ icon: TriangleExclamationPoint
   payer's coin into USDC on NEAR is part of Live and isn't built yet. Today customers pay in USDC on NEAR.
 - **Emails are switched off on the live site** until a sending domain is set up, so invoice and reminder emails
   don't go out. Sending an invoice still gives you its link to share.
-- **Not in this build yet:** payroll, CSV export and the monthly statement, refunds, and the scheduled-payroll
-  contract.
+- **Payroll pays Tegata and NEAR accounts.** Another chain is Live-only, and a bank account is shown locked: cash-out
+  to a bank needs a licensed payout partner. Payroll emails wait for email too; until then you share each person's
+  link.
+- **Not in this build yet:** CSV export and the monthly statement, refunds, signing in with a NEAR wallet, and the
+  scheduled-payroll contract.
 - **The Sandbox stash is shared.** Add test dollars draws from Tegata's own test USDC and can run dry; Circle's faucet
   is the fallback.
 - **Referrals don't yet flag two accounts opened from one device or network.**
@@ -23,7 +26,6 @@ These are planned, in this order, and none of them is described anywhere in thes
 
 | Next | What it adds |
 | --- | --- |
-| Pay people | People, payroll in one all-or-nothing transaction, payslips |
 | Autopilot | A NEAR contract that pays a payroll schedule with nobody online |
 | Books | Activity with filters, CSV export, the monthly statement, refunds |
 | Developers | API keys, checkout sessions, signed webhooks, a counter mode |

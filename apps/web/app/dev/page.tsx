@@ -85,6 +85,18 @@ const CARDS = [
     field: "bg-kin",
   },
   {
+    href: "/dev/flows/people",
+    title: "People",
+    note: "The team, add, CSV import, a person, the page they open, a payslip",
+    field: "bg-matcha",
+  },
+  {
+    href: "/dev/flows/payroll",
+    title: "Payroll",
+    note: "Schedule, next payday, review, hold to pay, paid, failed",
+    field: "bg-sora",
+  },
+  {
     href: "/dev/flows/business",
     title: "Business profile",
     note: "The receipt header, the seal that follows the name, every field",

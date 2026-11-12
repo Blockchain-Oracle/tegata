@@ -14,6 +14,7 @@ import { WelcomeView } from "@/components/onboarding/welcome-view"
 import { useProfile } from "@/hooks/use-profile"
 import { ApiError, api } from "@/lib/client/api"
 import { takeNext } from "@/lib/client/next-path"
+import { loadPayrollInvite } from "@/lib/client/payroll-invite"
 import { clearInvite, type Invite, loadInvite } from "@/lib/client/referral"
 import { fire } from "@/lib/feedback"
 
@@ -62,6 +63,12 @@ export default function WelcomePage() {
   // An invite from a join link (/join/<handle>), kept on this device until the account opens.
   const [invite, setInvite] = useState<Invite | null>(null)
   useEffect(() => setInvite(loadInvite()), [])
+  // A person joining a team's payroll from their page names themselves, not a business.
+  const [joining, setJoining] = useState<{ business: string } | null>(null)
+  useEffect(() => {
+    const payroll = loadPayrollInvite()
+    setJoining(payroll ? { business: payroll.business } : null)
+  }, [])
 
   const open = useMutation({
     mutationFn: () =>
@@ -159,6 +166,7 @@ export default function WelcomePage() {
       }}
       onDone={() => router.replace(takeNext())}
       invite={invite}
+      joining={joining}
       onDropInvite={() => {
         clearInvite()
         setInvite(null)

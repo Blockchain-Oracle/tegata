@@ -13,7 +13,7 @@ import { useShell } from "@/components/shell/shell-context"
 import { useNearKey } from "@/hooks/use-near-key"
 import { useProfile } from "@/hooks/use-profile"
 import { ApiError, api } from "@/lib/client/api"
-import type { RelayStatus, SendDraft } from "@/lib/client/types"
+import type { RelayStatus, SendDraft, TeamPerson } from "@/lib/client/types"
 import { fire } from "@/lib/feedback"
 
 const POLL_MS = 1_200
@@ -33,6 +33,18 @@ export default function SendPage() {
 
   const account = profile?.accounts.find((entry) => entry.network === "testnet")
   const balance = viewDollars(account?.balance ?? "0")
+
+  // Ready people on your team, so a one-off payment to one of them is a tap.
+  const team = useQuery({
+    queryKey: ["people"],
+    queryFn: () => api<{ people: TeamPerson[] }>("/api/people"),
+    select: (data) =>
+      data.people.flatMap((person) =>
+        person.ready.state === "ready"
+          ? [{ id: person.id, name: person.name, accountId: person.ready.accountId }]
+          : [],
+      ),
+  })
 
   const relay = useQuery({
     queryKey: ["relay", send?.relayId],
@@ -144,6 +156,7 @@ export default function SendPage() {
         setProblem(null)
       }}
       onReceive={openReceive}
+      team={team.data}
       onAgain={() => {
         setSend(null)
         setAmount("")

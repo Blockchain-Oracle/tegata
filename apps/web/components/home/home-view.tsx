@@ -6,12 +6,14 @@
 import {
   ArrowDownLeft,
   ArrowUpRight,
+  Banknote,
   Check,
   Copy,
   ExternalLink,
   FileText,
   Link2,
   Plus,
+  UsersRound,
 } from "lucide-react"
 import { motion, useReducedMotion } from "motion/react"
 import Link from "next/link"
@@ -51,10 +53,12 @@ export interface HomeViewProps {
     qualified: boolean
   } | null
   /** First steps already taken; each retires its tile. Undefined while loading (no tiles flash in and out). */
-  steps?: { invoiceSent: boolean; linkMade: boolean }
+  steps?: { invoiceSent: boolean; linkMade: boolean; peopleAdded: boolean }
   /** Sandbox only: today's test dollars from the operator. */
   testDollars?: TestDollars
   onAddTestDollars?: () => void
+  /** The payday has come and no run has paid it yet. */
+  payrollDue?: { payday: string; people: number; total: bigint } | null
 }
 
 export function HomeView({
@@ -70,6 +74,7 @@ export function HomeView({
   onAddTestDollars,
   invite,
   steps,
+  payrollDue,
 }: HomeViewProps) {
   const [copied, setCopied] = useState(false)
   const reduce = useReducedMotion()
@@ -104,6 +109,16 @@ export function HomeView({
         detail="One link anyone can pay, from an email sign-in or a NEAR wallet."
         href="/app/links?new=1"
         icon={<Link2 />}
+      />
+    ) : null,
+    steps && !steps.peopleAdded ? (
+      <Tile
+        key="people"
+        field="bg-matcha"
+        title="Add your people"
+        detail="They choose where their pay lands. One approval pays everyone."
+        href="/app/people"
+        icon={<UsersRound />}
       />
     ) : null,
     wantsTestDollars ? (
@@ -193,6 +208,27 @@ export function HomeView({
           </StageObject>
         </div>
       </Stage>
+
+      {payrollDue ? (
+        <Link
+          href="/app/payroll"
+          className="press-lift flex items-center gap-4 rounded-[20px] bg-kin p-5 text-black"
+        >
+          <span className="grid size-12 shrink-0 place-items-center rounded-full bg-white [&_svg]:size-6">
+            <Banknote />
+          </span>
+          <span className="flex min-w-0 flex-1 flex-col">
+            <span className="text-[17px] font-semibold">Payroll due</span>
+            <span className="text-[14px] text-black/70">
+              {paydayWord(payrollDue.payday)} · ${viewDollars(payrollDue.total).toFixed(2)} to{" "}
+              {payrollDue.people} {payrollDue.people === 1 ? "person" : "people"}
+            </span>
+          </span>
+          <span className="inline-flex h-10 items-center rounded-full bg-black px-4 text-[15px] font-semibold text-white">
+            Review
+          </span>
+        </Link>
+      ) : null}
 
       {invite ? (
         <Link
@@ -302,21 +338,27 @@ function ActivityRow({
   index: number
   reduce: boolean
 }) {
-  const incoming = item.kind === "received" || item.kind === "reward"
+  const incoming = item.kind === "received" || item.kind === "reward" || item.kind === "payslip"
   const headline =
-    item.kind === "reward"
-      ? (item.title ?? "Referral reward")
-      : item.kind === "received"
-        ? `${item.title ?? "Pay link"} · paid`
-        : item.kind === "paid"
-          ? `Paid ${item.counterparty}`
-          : `Sent to ${item.counterparty}`
+    item.kind === "payroll"
+      ? "Payroll"
+      : item.kind === "payslip"
+        ? `Pay from ${item.counterparty}`
+        : item.kind === "reward"
+          ? (item.title ?? "Referral reward")
+          : item.kind === "received"
+            ? `${item.title ?? "Pay link"} · paid`
+            : item.kind === "paid"
+              ? `Paid ${item.counterparty}`
+              : `Sent to ${item.counterparty}`
   const detail =
-    item.kind === "received"
-      ? `From ${item.counterparty} · ${timeAgo(item.at)}`
-      : item.kind === "paid" && item.title
-        ? `${item.title} · ${timeAgo(item.at)}`
-        : timeAgo(item.at)
+    item.kind === "payroll" && item.title
+      ? `${item.title} · ${timeAgo(item.at)}`
+      : item.kind === "received"
+        ? `From ${item.counterparty} · ${timeAgo(item.at)}`
+        : item.kind === "paid" && item.title
+          ? `${item.title} · ${timeAgo(item.at)}`
+          : timeAgo(item.at)
   const receipt = item.receiptUrl
   const body = (
     <>
@@ -423,4 +465,11 @@ function Tile({
       {body}
     </button>
   )
+}
+
+/** "Payday was Fri 28 Nov" or "Payday is today": a payday is a calendar date, read as one. */
+function paydayWord(iso: string): string {
+  const today = new Date().toISOString().slice(0, 10)
+  if (iso === today) return "Payday is today"
+  return `Payday was ${new Date(`${iso}T12:00:00Z`).toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short", timeZone: "UTC" })}`
 }

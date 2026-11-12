@@ -8,7 +8,8 @@
     "./near": "./src/near/index.ts",
     "./money": "./src/money/index.ts",
     "./fixtures": "./src/ops/fixtures.ts",
-    "./invoices": "./src/invoices/index.ts"
+    "./invoices": "./src/invoices/index.ts",
+    "./payroll": "./src/payroll/index.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",

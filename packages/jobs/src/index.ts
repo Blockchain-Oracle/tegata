@@ -51,6 +51,18 @@ export const QUEUES = {
     payload: z.object({}),
     options: { retryLimit: 0, expireInSeconds: 300 },
   },
+  /** Register a person's NEAR account on USDC (paid by Tegata) so payroll can pay it. Safe to repeat. */
+  destinationRegister: {
+    name: "destination-register",
+    payload: z.object({ destinationId: z.uuid() }),
+    options: { retryLimit: 3, retryDelay: 5, retryBackoff: true, expireInSeconds: 180 },
+  },
+  /** Email a person: added to payroll, or paid (with the payslip link). Only when email is on. */
+  payrollEmail: {
+    name: "payroll-email",
+    payload: z.object({ kind: z.enum(["invite", "paid"]), id: z.uuid() }),
+    options: { retryLimit: 3, retryDelay: 30, retryBackoff: true, expireInSeconds: 120 },
+  },
   /** Create a user's NEAR account and register it on USDC. Safe to repeat. */
   accountSetup: {
     name: "account-setup",

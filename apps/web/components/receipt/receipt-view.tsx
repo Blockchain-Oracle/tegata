@@ -23,6 +23,7 @@ const METHOD_WORD = {
   oneclick: "Another chain (NEAR Intents)",
   manual: "Marked paid by hand (not on NEAR)",
   reward: "Tegata referral rewards",
+  payroll: "Payroll from a Tegata balance",
 } as const
 
 const FEE_WORD = { tegata: "Paid by Tegata", payer: "Paid by the payer's wallet" } as const
@@ -34,7 +35,9 @@ export function ReceiptView({ receipt, token }: { receipt: Receipt; token: strin
       ? `No. ${String(receipt.number).padStart(4, "0")}`
       : receipt.kind === "send"
         ? "Sent"
-        : "Reward"
+        : receipt.kind === "payslip"
+          ? "Payslip"
+          : "Reward"
   const tegata = receipt.kind === "reward"
   const settled = receipt.settledAt
     ? new Date(receipt.settledAt).toLocaleString("en-GB", {
@@ -53,7 +56,10 @@ export function ReceiptView({ receipt, token }: { receipt: Receipt; token: strin
     const url = window.location.href
     if (navigator.share) {
       await navigator
-        .share({ title: `Receipt ${number} · ${receipt.business}`, url })
+        .share({
+          title: `${receipt.kind === "payslip" ? "Payslip" : `Receipt ${number}`} · ${receipt.business}`,
+          url,
+        })
         .catch(() => undefined)
       return
     }
@@ -81,7 +87,9 @@ export function ReceiptView({ receipt, token }: { receipt: Receipt; token: strin
             )}
           </span>
           <span className="flex flex-col">
-            <span className="text-[14px] font-medium text-white/85">Receipt from</span>
+            <span className="text-[14px] font-medium text-white/85">
+              {receipt.kind === "payslip" ? "Payslip from" : "Receipt from"}
+            </span>
             <span className="text-[18px] font-semibold text-white">{receipt.business}</span>
           </span>
         </div>
@@ -90,7 +98,8 @@ export function ReceiptView({ receipt, token }: { receipt: Receipt; token: strin
           <article className="relative rounded-[20px] bg-white text-black shadow-receipt">
             <div className="p-6 pb-4">
               <span className="flex items-center gap-2 text-[13px] font-semibold text-[#666]">
-                <TegataSeal size={20} textured={false} /> Receipt · {number}
+                <TegataSeal size={20} textured={false} />{" "}
+                {receipt.kind === "payslip" ? "Payslip" : `Receipt · ${number}`}
               </span>
               <Figure value={viewDollars(receipt.amount)} className="mt-3 flex text-[60px]" />
               <span className="mt-1 flex items-center gap-1.5 text-[14px] font-medium text-[#666]">
@@ -114,7 +123,11 @@ export function ReceiptView({ receipt, token }: { receipt: Receipt; token: strin
               <Row label="Paid with">
                 <span className="inline-flex items-center gap-1.5">
                   <RailMark
-                    rail={receipt.method === "reward" ? "tegata" : receipt.method}
+                    rail={
+                      receipt.method === "reward" || receipt.method === "payroll"
+                        ? "tegata"
+                        : receipt.method
+                    }
                     size={18}
                   />{" "}
                   {METHOD_WORD[receipt.method]}

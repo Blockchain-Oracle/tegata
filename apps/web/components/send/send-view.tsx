@@ -8,6 +8,7 @@ import { AnimatePresence, motion, useReducedMotion } from "motion/react"
 import Link from "next/link"
 
 import { BusinessSeal, SealPress, TegataSeal } from "@/components/brand/seal"
+import { CustomerDisc } from "@/components/invoices/customer-picker"
 import { Button } from "@/components/kit/button"
 import { Field } from "@/components/kit/field"
 import { Figure } from "@/components/kit/figure"
@@ -42,6 +43,8 @@ export interface SendViewProps {
   onEdit: () => void
   onReceive: () => void
   onAgain: () => void
+  /** Your team's ready people: one tap fills "To" with the account their pay lands in. */
+  team?: { id: string; name: string; accountId: string }[]
 }
 
 const STEPS = [
@@ -159,6 +162,27 @@ export function SendView(p: SendViewProps) {
               leading={<Mark id="near" size={24} />}
               status={p.problem ? { kind: "bad", text: p.problem } : { kind: "none" }}
             />
+            {p.team?.length ? (
+              <div className="-mt-2 flex flex-wrap items-center gap-2">
+                <span className="text-detail text-muted-foreground">Your team</span>
+                {p.team.map((member) => (
+                  <button
+                    key={member.id}
+                    type="button"
+                    onClick={() => p.onTo(member.accountId)}
+                    className={cn(
+                      "press inline-flex h-9 items-center gap-2 rounded-full pr-3 pl-1 text-[14px] font-semibold",
+                      p.to === member.accountId
+                        ? "bg-shu text-black"
+                        : "bg-secondary hover:bg-plate-pressed",
+                    )}
+                  >
+                    <CustomerDisc name={member.name} size={28} />
+                    {member.name}
+                  </button>
+                ))}
+              </div>
+            ) : null}
             {empty ? (
               <Button type="button" variant="shu" cue="tap" onClick={p.onReceive}>
                 Add dollars first <ArrowRight />
