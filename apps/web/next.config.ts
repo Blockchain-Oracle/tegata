@@ -26,17 +26,35 @@ const config: NextConfig = {
   // Node-only packages stay external to the server bundle.
   serverExternalPackages: ["postgres", "pg-boss", "@react-pdf/renderer"],
   poweredByHeader: false,
+  // Keep the dev server from accumulating multi-gigabyte Turbopack cache files.
+  experimental: { turbopackFileSystemCacheForDev: false },
   // No other site may frame Tegata's pages (clickjacking: a signed-in owner tricked into pressing Send or Approve).
-  // Only Tegata frames itself (the /dev phone frame, the invoice preview).
+  // Only Tegata frames itself (the /dev phone frame, the invoice preview). The one exception is /checkout/<token>,
+  // the pay page made to open over a merchant's own site (checkout.js); it holds no owner actions.
   async headers() {
+    const common = [
+      { key: "X-Content-Type-Options", value: "nosniff" },
+      { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+    ]
     return [
       {
-        source: "/:path*",
+        source: "/:path((?!checkout/).*)",
         headers: [
           { key: "Content-Security-Policy", value: "frame-ancestors 'self'" },
           { key: "X-Frame-Options", value: "SAMEORIGIN" },
-          { key: "X-Content-Type-Options", value: "nosniff" },
-          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+          ...common,
+        ],
+      },
+      {
+        source: "/checkout/:token",
+        headers: [{ key: "Content-Security-Policy", value: "frame-ancestors *" }, ...common],
+      },
+      {
+        // The embed script: cached a day, refetched when its version query changes.
+        source: "/checkout.js",
+        headers: [
+          { key: "Cache-Control", value: "public, max-age=86400" },
+          { key: "Access-Control-Allow-Origin", value: "*" },
         ],
       },
     ]

@@ -107,9 +107,12 @@ async function submitClaim(claim: WalletClaim) {
 export function PayClient({
   initial,
   routes,
+  embed,
 }: {
   initial: PublicRequest
   routes: readonly PayRoute[]
+  /** Opened over a merchant's site by checkout.js: the paid moment is told to that page (its origin only). */
+  embed?: { parent: string | null }
 }) {
   const router = useRouter()
   // Signed in by email (Privy) or with a NEAR wallet: either can pay from its Tegata balance.
@@ -124,7 +127,10 @@ export function PayClient({
     const asked = new URLSearchParams(window.location.search).get("rail")
     if (asked === "chain") setRail("oneclick")
     if (asked === "card") setRail("card")
-  }, [])
+    // An any-amount link opened from a merchant's button arrives with the amount filled in (still editable).
+    const given = new URLSearchParams(window.location.search).get("amount")
+    if (given && initial.amount === null && /^\d{1,9}(\.\d{1,2})?$/.test(given)) setAmount(given)
+  }, [initial.amount])
   const [amount, setAmount] = useState(() =>
     initial.invoice?.allowPartial ? viewDollars(initial.invoice.remaining).toFixed(2) : "",
   )
@@ -181,6 +187,26 @@ export function PayClient({
   })
 
   const status = attempt.data?.status
+  // Embedded: tell the merchant's page it was paid, for its own screens only (proof is the signed webhook).
+  const paidAttempt = step === "paid" ? attempt.data : undefined
+  useEffect(() => {
+    const parent = embed?.parent
+    if (!paidAttempt || !parent || window.parent === window) return
+    window.parent.postMessage(
+      {
+        type: "tegata:checkout.completed",
+        token: initial.token,
+        detail: {
+          paymentId: paidAttempt.id,
+          amount: paidAttempt.amount,
+          receipt: paidAttempt.receiptToken
+            ? `${window.location.origin}/r/${paidAttempt.receiptToken}`
+            : null,
+        },
+      },
+      parent,
+    )
+  }, [paidAttempt, embed?.parent, initial.token])
   useEffect(() => {
     if (step !== "paying" || !status) return
     if (status === "succeeded") setStep("paid")

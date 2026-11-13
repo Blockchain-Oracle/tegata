@@ -29,3 +29,6 @@ out/
 
 # Extra Next build folders (a second dev server or a build check)
 .next-*/
+
+# Written by next dev for coding agents; kept out of the repo
+apps/web/AGENTS.md
