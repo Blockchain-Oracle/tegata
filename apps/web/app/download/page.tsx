@@ -69,7 +69,7 @@ function Phone({ src, alt, className }: { src: string; alt: string; className?: 
   return (
     <div
       className={cn(
-        "w-[230px] shrink-0 rounded-[44px] bg-black p-[9px] shadow-[0_24px_60px_#7a240066] sm:w-[250px]",
+        "w-[230px] shrink-0 rounded-[44px] bg-black p-[9px] shadow-[0_24px_60px_#16130f80] sm:w-[250px]",
         className,
       )}
     >
@@ -304,7 +304,11 @@ export default async function DownloadPage() {
       </header>
 
       <section className="mx-auto max-w-[1240px] px-5 sm:px-8">
-        <Stage className="relative overflow-hidden px-6 pt-10 pb-0 sm:px-12 sm:pt-14" rounded>
+        <Stage
+          tone="lacquer"
+          className="relative overflow-hidden px-6 pt-10 pb-0 sm:px-12 sm:pt-14"
+          rounded
+        >
           <div className="grid items-end gap-10 lg:grid-cols-[1fr_auto]">
             <div className="flex flex-col gap-6 pb-10 lg:pb-16">
               <div className="flex items-center gap-3">
@@ -333,13 +337,13 @@ export default async function DownloadPage() {
             </div>
             <div className="relative flex justify-center gap-4 self-end">
               <Phone
-                src="/download/phone-home.png"
+                src="/download/phone-home.webp"
                 alt="Tegata's Home on an iPhone: the balance on the vermilion stage"
                 className="translate-y-6"
               />
               <Phone
-                src="/download/phone-receipt.png"
-                alt="A Tegata receipt with the business seal pressed on"
+                src="/download/phone-link.webp"
+                alt="A Tegata pay link on an iPhone: the amount, its QR and the business seal"
                 className="hidden translate-y-14 sm:block"
               />
               <div className="absolute -top-6 -left-8 hidden rotate-[-8deg] lg:block">

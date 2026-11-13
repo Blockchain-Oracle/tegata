@@ -10,11 +10,13 @@ import { fire } from "@/lib/feedback"
 export function QrPlate({ url, caption }: { url: string; caption: string }) {
   return (
     <div className="flex items-center gap-4 rounded-[20px] bg-secondary p-4">
-      <div className="rounded-[14px] bg-white p-2.5">
+      <div className="rounded-[14px] bg-paper p-2.5">
         <QRCodeSVG
           value={url}
           size={112}
           level="M"
+          bgColor="#FFFCF6"
+          fgColor="#16130F"
           imageSettings={{ src: "/icon.svg", height: 22, width: 22, excavate: true }}
         />
       </div>

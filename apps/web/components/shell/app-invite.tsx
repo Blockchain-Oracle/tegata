@@ -55,7 +55,7 @@ export function AppInvite() {
               "radial-gradient(60% 80% at 10% 0%, var(--stage-hot) 0%, transparent 70%), radial-gradient(70% 70% at 70% 110%, var(--stage-glow) 0%, transparent 65%)",
           }}
         >
-          <span className="grid size-14 shrink-0 place-items-center rounded-[16px] bg-white shadow-object">
+          <span className="grid size-14 shrink-0 place-items-center rounded-[16px] bg-paper shadow-object">
             <TegataSeal size={40} tilt={-4} />
           </span>
           <span className="flex min-w-0 flex-1 flex-col gap-2">
@@ -79,8 +79,14 @@ export function AppInvite() {
               Or open tegata.xyz/download
             </Link>
           </span>
-          <span className="hidden shrink-0 rounded-[12px] bg-white p-1.5 lg:block" aria-hidden>
-            <QRCodeSVG value={DOWNLOAD_URL} size={76} level="M" />
+          <span className="hidden shrink-0 rounded-[12px] bg-paper p-1.5 lg:block" aria-hidden>
+            <QRCodeSVG
+              value={DOWNLOAD_URL}
+              size={76}
+              level="M"
+              bgColor="#FFFCF6"
+              fgColor="#16130F"
+            />
           </span>
           <button
             type="button"
