@@ -70,7 +70,8 @@ export function ReceiptSlip({
           borderTopLeftRadius: 20,
           borderTopRightRadius: 20,
           padding: 20,
-          paddingBottom: 26,
+          // Room at the foot for the seal, so it never sits on a value.
+          paddingBottom: 92,
           gap: 14,
           shadowColor: PAPER.ink,
           shadowOpacity: 0.2,
@@ -134,7 +135,7 @@ export function ReceiptSlip({
           ))}
         </View>
         {footer}
-        <View style={{ position: "absolute", right: 14, bottom: 6 }} pointerEvents="none">
+        <View style={{ position: "absolute", right: 18, bottom: 4 }} pointerEvents="none">
           {band ? (
             <SealPress delay={420} identity={`receipt-${identity}`}>
               <BusinessSeal

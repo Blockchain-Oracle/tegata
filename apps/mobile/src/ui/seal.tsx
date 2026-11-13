@@ -204,7 +204,8 @@ export function BusinessSeal({
             y={c + 8}
             textAnchor="middle"
             fontFamily={FONT.display}
-            fontSize={21}
+            // Fit the band: Archivo's condensed black runs about half an em per capital.
+            fontSize={Math.min(21, 124 / (band.length * 0.52))}
             letterSpacing={1}
             fill={color === SHU ? PAPER.face : SHU}
           >
