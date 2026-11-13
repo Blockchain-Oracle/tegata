@@ -16,7 +16,7 @@ import { Mark } from "@/components/marks/mark"
 import { cn } from "@/lib/utils"
 
 import { Checksum, QrPlate } from "./parts"
-import { ANDROID, IOS, isTestflightLink, testflightOpen } from "./release"
+import { ANDROID, githubPublic, IOS, isTestflightLink, testflightOpen } from "./release"
 
 export const metadata: Metadata = {
   title: "Get the app",
@@ -33,7 +33,8 @@ function platformOf(agent: string): Platform {
   return "desktop"
 }
 
-const MB = 1024 * 1024
+// Decimal megabytes, as GitHub and the release notes count them.
+const MB = 1_000_000
 
 function AppleGlyph({ className }: { className?: string }) {
   return (
@@ -60,6 +61,20 @@ function AndroidGlyph({ className }: { className?: string }) {
         fill="#202124"
         d="M194.59 113.712c5.122-3.41 5.867-11.3 1.661-17.62-4.203-6.323-11.763-8.682-16.883-5.273-5.122 3.41-5.868 11.3-1.662 17.621 4.203 6.322 11.764 8.682 16.883 5.272ZM78.518 108.462c4.206-6.321 3.46-14.21-1.662-17.62-5.123-3.41-12.68-1.05-16.886 5.27-4.203 6.323-3.458 14.212 1.662 17.622 5.122 3.41 12.683 1.05 16.886-5.272Z"
       />
+    </svg>
+  )
+}
+
+function GitHubGlyph({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      className={className}
+      fill="currentColor"
+      aria-hidden
+      focusable="false"
+    >
+      <path d="M12 .5C5.65.5.5 5.65.5 12.02c0 5.08 3.29 9.39 7.86 10.91.58.1.79-.25.79-.56v-1.97c-3.2.7-3.87-1.54-3.87-1.54-.52-1.33-1.28-1.69-1.28-1.69-1.04-.71.08-.7.08-.7 1.15.08 1.76 1.19 1.76 1.19 1.03 1.76 2.69 1.25 3.35.96.1-.75.4-1.25.73-1.54-2.55-.29-5.24-1.28-5.24-5.69 0-1.26.45-2.29 1.19-3.09-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.17 1.18a11 11 0 0 1 5.77 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.8 1.19 1.83 1.19 3.09 0 4.42-2.69 5.39-5.26 5.68.41.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.56A11.53 11.53 0 0 0 23.5 12.02C23.5 5.65 18.35.5 12 .5Z" />
     </svg>
   )
 }
@@ -153,6 +168,7 @@ function Facts({ facts }: { facts: [string, string][] }) {
 
 export default async function DownloadPage() {
   const platform = platformOf((await headers()).get("user-agent") ?? "")
+  const github = ANDROID && (await githubPublic(ANDROID.github)) ? ANDROID.github : null
   const testflight =
     isTestflightLink(IOS.testflight) && (await testflightOpen(IOS.testflight))
       ? IOS.testflight
@@ -244,9 +260,16 @@ export default async function DownloadPage() {
               "Play Protect may ask once: Tegata isn't on Google Play, so tap Install anyway.",
             ]}
           />
-          <a href={ANDROID.url} className={cn(buttonVariants({ size: "lg" }), "mt-auto")}>
-            <Download /> Download the APK
-          </a>
+          <div className="mt-auto flex flex-col gap-2">
+            <a href={ANDROID.url} className={buttonVariants({ size: "lg" })}>
+              <Download /> Download the APK
+            </a>
+            {github ? (
+              <a href={github} className={buttonVariants({ variant: "secondary", size: "md" })}>
+                <GitHubGlyph className="size-[18px]" /> Same file on GitHub
+              </a>
+            ) : null}
+          </div>
         </>
       ) : (
         <>

@@ -194,7 +194,15 @@ export function Footer() {
             <Mark id="usdc" size={16} /> Circle USDC
           </span>
         </span>
-        <span>Built for NEAR HACKATHON · Real-World Money · MIT licence</span>
+        <span className="flex flex-wrap items-center gap-x-3 gap-y-1">
+          <Link href="/download" className="hover:underline">
+            Get the app
+          </Link>
+          <Link href="/privacy" className="hover:underline">
+            Privacy
+          </Link>
+          <span>Built for NEAR HACKATHON · Real-World Money · MIT licence</span>
+        </span>
       </div>
     </footer>
   )
