@@ -29,6 +29,31 @@ const ROUTES = PAYER_ROUTES.map(({ id, symbol, chain, coin, chainMark }) => ({
 /** The chains the calculator's routes come from (lib/server/oneclick.ts PAYER_ROUTES), and no others. */
 const CHAINS = ["eth", "base", "sol", "btc", "tron", "arb", "bnb", "pol"] as const
 
+/** On a $1,250 payment: what each way of being paid takes from the business. Figures from the sources linked. */
+const FEES = [
+  { label: "Tegata", source: "You receive the exact amount", href: null, cost: 0 },
+  {
+    label: "International wire",
+    source: "Wise Business, receiving a USD wire: $6.11",
+    href: "https://wise.com/us/pricing/business/receive",
+    cost: 6.11,
+  },
+  {
+    label: "Card, same country",
+    source: "Stripe: 2.9% + 30¢",
+    href: "https://stripe.com/pricing",
+    cost: 36.55,
+  },
+  {
+    label: "Card from abroad",
+    source: "Stripe: 2.9% + 30¢, +1.5% international, +1% conversion",
+    href: "https://stripe.com/pricing",
+    cost: 67.8,
+  },
+] as const
+const MAX_FEE = 67.8
+const feeText = (cost: number) => (cost === 0 ? "$0.00" : `−$${cost.toFixed(2)}`)
+
 export default function Landing() {
   return (
     <div className="min-h-dvh bg-background">
@@ -202,6 +227,54 @@ export default function Landing() {
               detail="Sign in with email. Tegata pays every network fee for you."
             />
           </div>
+        </div>
+      </section>
+
+      {/* What a payment costs the business (plan D3): the fee bars, each figure with its source. */}
+      <section id="fees" className="mx-auto max-w-[1240px] scroll-mt-20 px-5 pt-16 sm:px-8">
+        <h2 className="display max-w-[18ch] text-[44px] leading-[0.95] sm:text-[60px]">
+          A $1,250 payment. <span className="text-text-3">What it costs you.</span>
+        </h2>
+        <div className="mt-10 flex flex-col gap-2 rounded-[28px] bg-card p-4 sm:p-6">
+          {FEES.map((fee) => (
+            <div
+              key={fee.label}
+              className="grid grid-cols-[1fr_auto] items-center gap-x-4 gap-y-1.5 rounded-[18px] px-2 py-3 sm:grid-cols-[minmax(0,15rem)_1fr_auto]"
+            >
+              <span className="flex flex-col">
+                <span className="text-[16px] font-semibold">{fee.label}</span>
+                {fee.href ? (
+                  <a
+                    href={fee.href}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-[13px] text-muted-foreground underline decoration-dotted underline-offset-[3px] hover:text-foreground"
+                  >
+                    {fee.source}
+                  </a>
+                ) : (
+                  <span className="text-[13px] text-muted-foreground">{fee.source}</span>
+                )}
+              </span>
+              <span className="col-span-2 row-start-2 h-3 overflow-hidden rounded-full bg-secondary sm:col-span-1 sm:col-start-2 sm:row-start-1">
+                {fee.cost > 0 ? (
+                  <span
+                    className="block h-full rounded-full bg-foreground"
+                    style={{ width: `${(fee.cost / MAX_FEE) * 100}%` }}
+                  />
+                ) : null}
+              </span>
+              <span
+                className={`tnum text-right text-[17px] font-semibold ${fee.cost === 0 ? "text-up" : ""}`}
+              >
+                {feeText(fee.cost)}
+              </span>
+            </div>
+          ))}
+          <p className="px-2 pt-2 text-[14px] text-muted-foreground">
+            With Tegata you receive exactly $1,250.00. A customer paying from another chain sees the
+            NEAR Intents route cost on their side before they pay; paying in USDC on NEAR has none.
+          </p>
         </div>
       </section>
 
