@@ -81,7 +81,7 @@ export function Questions() {
 
 export function Close() {
   return (
-    <section className="px-3 pt-24 sm:px-6 lg:pt-32">
+    <section id="open" className="px-3 pt-24 sm:px-6 lg:pt-32">
       <Stage
         className="mx-auto max-w-[1300px] rounded-[32px] px-6 py-20 sm:py-28"
         inner="flex flex-col items-center gap-7 text-center"

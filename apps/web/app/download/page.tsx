@@ -1,6 +1,6 @@
 // /download (S11): Tegata on your phone. The promise on the lit stage beside the real app, then a card per way in, the
-// visitor's own platform first (from the user agent): iPhone through Apple's TestFlight (offered only while Apple's join
-// page takes testers; until then it says where the beta stands), Android as the APK itself with its version, size and
+// visitor's own platform first (from the user agent): iPhone through Apple's public TestFlight link (always offered;
+// while Apple reviews the beta it says so in one line), Android as the APK itself with its version, size and
 // SHA-256, and the web app, which works on any phone today. On a desktop each card carries a QR for the phone in your
 // other hand. Release facts live in ./release.ts. Ported from Kawase's /download (the owner's own), in Tegata's design.
 import { ArrowRight, ArrowUpRight, Download, Globe } from "lucide-react"
@@ -169,10 +169,10 @@ function Facts({ facts }: { facts: [string, string][] }) {
 export default async function DownloadPage() {
   const platform = platformOf((await headers()).get("user-agent") ?? "")
   const github = ANDROID && (await githubPublic(ANDROID.github)) ? ANDROID.github : null
-  const testflight =
-    isTestflightLink(IOS.testflight) && (await testflightOpen(IOS.testflight))
-      ? IOS.testflight
-      : null
+  // The public link is always offered, like Kawase's (Abu, 13 Nov: "just use the normal link"); while Apple's review
+  // runs, the card says so in one line, and the same link starts taking testers the moment it passes.
+  const testflight = isTestflightLink(IOS.testflight) ? IOS.testflight : null
+  const testersIn = testflight ? await testflightOpen(testflight) : false
 
   const ios = (
     <Card
@@ -180,7 +180,7 @@ export default async function DownloadPage() {
       id="iphone"
       title="iPhone"
       glyph={<AppleGlyph />}
-      state={testflight ? "Public beta on TestFlight" : "In Apple's TestFlight review"}
+      state={testersIn ? "Public beta on TestFlight" : "Public beta · in Apple's review"}
       mine={platform === "ios"}
       qr={
         <QrPlate
@@ -202,6 +202,12 @@ export default async function DownloadPage() {
               "Install Tegata and sign in with your email.",
             ]}
           />
+          {testersIn ? null : (
+            <p className="text-[14px] text-muted-foreground">
+              Apple is reviewing the beta. If TestFlight says it isn&apos;t taking testers yet, the
+              same link works as soon as it does.
+            </p>
+          )}
           <a href={testflight} className={cn(buttonVariants({ size: "lg" }), "mt-auto")}>
             Join the beta <ArrowUpRight />
           </a>

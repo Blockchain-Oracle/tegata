@@ -6,16 +6,15 @@
 import { X } from "lucide-react"
 import { AnimatePresence, motion } from "motion/react"
 import Link from "next/link"
-import { QRCodeSVG } from "qrcode.react"
 import { useEffect, useState } from "react"
 
 import { TegataSeal } from "@/components/brand/seal"
 import { buttonVariants } from "@/components/kit/button-variants"
+import { DownloadQr } from "@/components/shell/download-qr"
 import { fire } from "@/lib/feedback"
 import { cn } from "@/lib/utils"
 
 const KEY = "tegata.app-invite.dismissed"
-const DOWNLOAD_URL = "https://tegata.xyz/download"
 
 export function AppInvite() {
   const [shown, setShown] = useState(false)
@@ -80,13 +79,7 @@ export function AppInvite() {
             </Link>
           </span>
           <span className="hidden shrink-0 rounded-[12px] bg-paper p-1.5 lg:block" aria-hidden>
-            <QRCodeSVG
-              value={DOWNLOAD_URL}
-              size={76}
-              level="M"
-              bgColor="#FFFCF6"
-              fgColor="#16130F"
-            />
+            <DownloadQr size={76} />
           </span>
           <button
             type="button"
