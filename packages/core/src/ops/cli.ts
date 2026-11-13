@@ -74,6 +74,9 @@ function writeEnvValue(name: string, value: string): void {
 function operatorKeys(network: NetworkId): string[] {
   const fromEnv = readEnv().get(envName(network))
   if (fromEnv) return fromEnv.split(",").filter(Boolean)
+  // On a laptop, tegata.near's first key lives in .env under the name create-operator gave it.
+  const bootstrap = network === "mainnet" ? readEnv().get(BOOTSTRAP_ENV) : undefined
+  if (bootstrap) return [bootstrap]
   const file = join(homedir(), ".near-credentials", network, `${NETWORKS[network].operator}.json`)
   if (!existsSync(file)) {
     throw new Error(`No operator key: set ${envName(network)} in .env or create ${file}`)
@@ -295,8 +298,13 @@ async function payLink(target: string, dollars: string | undefined) {
   console.log("NEAR is still being checked. Open the pay page to follow it.")
 }
 
-/** NEAR the autopilot account starts with: code storage (~1.87 NEAR for 187 KB) plus a float for 1-yocto deposits. */
+/** NEAR the testnet autopilot account started with: code storage (~1.87 NEAR for 187 KB) plus a float. */
 const AUTOPILOT_FUNDING_YOCTO = 2_500_000_000_000_000_000_000_000n
+/**
+ * Mainnet starts leaner: the code's storage plus 0.15 NEAR for the contract's own state and the deploy's gas hold.
+ * Each business's state is paid by its own storage_deposit, so nothing more is needed up front.
+ */
+const AUTOPILOT_MAINNET_MARGIN_YOCTO = 150_000_000_000_000_000_000_000n
 const AUTOPILOT_INIT_GAS = 50n * TGAS
 const YOCTO_PER_BYTE = 10_000_000_000_000_000_000n
 const AUTOPILOT_WASM = join(ROOT, "contracts/target/near/tegata_autopilot/tegata_autopilot.wasm")
@@ -304,17 +312,24 @@ const AUTOPILOT_WASM = join(ROOT, "contracts/target/near/tegata_autopilot/tegata
 /**
  * Create the autopilot's account under the operator (its key is the operator's first key, so the operator can
  * redeploy during the hackathon, as the README says), deploy the contract and initialise it with USDC and the
- * operator as admin, then register it on USDC. Testnet only: mainnet is Abu's to run, after he sees the number.
+ * operator as admin, then register it on USDC. Mainnet spends real NEAR, so it runs only with `--go` (Abu's OK).
  */
-async function deployAutopilot(network: NetworkId) {
+async function deployAutopilot(network: NetworkId, go: boolean) {
   const code = readFileSync(AUTOPILOT_WASM)
   const accountId = NETWORKS[network].autopilot
   const storage = BigInt(code.length) * YOCTO_PER_BYTE
   console.log(
     `Contract: ${code.length} bytes, code storage ${fromUnits(storage, NEAR_DECIMALS)} NEAR on either network`,
   )
-  if (network !== "testnet") {
-    console.log("Mainnet is run by Abu. Nothing was sent.")
+  const funding =
+    network === "mainnet" ? storage + AUTOPILOT_MAINNET_MARGIN_YOCTO : AUTOPILOT_FUNDING_YOCTO
+  console.log(
+    `${accountId} starts with ${fromUnits(funding, NEAR_DECIMALS)} NEAR from the operator`,
+  )
+  if (network === "mainnet" && !go) {
+    console.log(
+      "Mainnet spends real NEAR: run again with --go once that number is agreed. Nothing was sent.",
+    )
     return
   }
   const keys = operatorKeys(network)
@@ -323,7 +338,7 @@ async function deployAutopilot(network: NetworkId) {
     const publicKey = KeyPair.fromString(keys[0] as `ed25519:${string}`).getPublicKey()
     const created = await operator.send(accountId, [
       actions.createAccount(),
-      actions.transfer(AUTOPILOT_FUNDING_YOCTO),
+      actions.transfer(funding),
       actions.addFullAccessKey(publicKey),
     ])
     console.log(`Created ${accountId}: ${created.status} ${explorerTx(network, created.hash)}`)
@@ -437,6 +452,29 @@ async function createOperator() {
   console.log(`${operatorId} holds ${near(await nearBalance("mainnet", operatorId))} NEAR`)
 }
 
+/** Fold the funding address's leftover gas hold into tegata.near: delete it with tegata.near as beneficiary. */
+async function sweepBootstrap() {
+  const key = bootstrapKey()
+  const implicit = implicitOf(key)
+  if (!(await accountExists("mainnet", implicit))) {
+    console.log(`${implicit} is already gone. Nothing was sent.`)
+    return
+  }
+  console.log(
+    `${implicit} holds ${near(await nearBalance("mainnet", implicit))} NEAR; moving it to tegata.near…`,
+  )
+  const funder = new Operator("mainnet", [key.toString()], implicit)
+  // The sender deletes itself, so reading its outcome back can fail after it worked: the account being gone is
+  // the proof (A579UkFkmEjrVkZ6L2KYhPZPTvYrofftJfmMjwZ7E8vg moved 0.11 NEAR this way on 2026-11-13).
+  await funder.send(implicit, [actions.deleteAccount(NETWORKS.mainnet.operator)]).catch(() => null)
+  const gone = !(await accountExists("mainnet", implicit))
+  console.log(gone ? "Moved." : "The funding address is still there: nothing moved.")
+  if (!gone) process.exitCode = 1
+  console.log(
+    `tegata.near holds ${near(await nearBalance("mainnet", NETWORKS.mainnet.operator))} NEAR`,
+  )
+}
+
 const [command, ...args] = process.argv.slice(2)
 try {
   if (command === "status") await status(parseNetwork(args[0]))
@@ -445,14 +483,16 @@ try {
   else if (command === "proof-relay") await proofRelay()
   else if (command === "proof-parallel") await proofParallel()
   else if (command === "pay-link") await payLink(args[0] ?? "", args[1])
-  else if (command === "deploy-autopilot") await deployAutopilot(parseNetwork(args[0]))
+  else if (command === "deploy-autopilot")
+    await deployAutopilot(parseNetwork(args[0]), args.includes("--go"))
   else if (command === "mainnet-address") await mainnetAddress()
   else if (command === "create-operator") await createOperator()
+  else if (command === "sweep-bootstrap") await sweepBootstrap()
   else if (command === "exists")
     console.log(await accountExists(parseNetwork(args[0]), args[1] ?? ""))
   else {
     console.error(
-      "Commands: status, add-keys, register, proof-relay, proof-parallel, pay-link, deploy-autopilot, mainnet-address, create-operator, exists",
+      "Commands: status, add-keys, register, proof-relay, proof-parallel, pay-link, deploy-autopilot, mainnet-address, create-operator, sweep-bootstrap, exists",
     )
     process.exitCode = 2
   }

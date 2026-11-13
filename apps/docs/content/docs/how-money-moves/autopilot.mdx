@@ -4,12 +4,12 @@ description: Money a business sets aside in Tegata's own contract on NEAR pays i
 icon: CalendarClock
 ---
 
-<Callout title="Sandbox only, for now" type="info">
-Autopilot runs in the Sandbox. In Live the Payroll page says "Live opens when its contract is on NEAR mainnet · runs in
-the Sandbox now": `pay.tegata.near` isn't deployed yet, and Live paydays are paid by an approved run.
+<Callout title="On both networks" type="info">
+Live uses [`pay.tegata.near`](https://nearblocks.io/txns/7fMpaZ85y8zTYMqFg6van8VYB3xpj3GhMXiyWL3unEy5) with real USDC and the Sandbox uses `pay.tegata.testnet` with test USDC: the
+same contract, byte for byte.
 </Callout>
 
-Autopilot is Tegata's own contract, `pay.tegata.testnet` (Rust, near-sdk 5.30). A business sets dollars aside in it
+Autopilot is Tegata's own contract (Rust, near-sdk 5.30). A business sets dollars aside in it
 and gives it a plan: who is paid how much, and on which paydays. Once a payday's time has passed, **anyone** may call
 `run`. Tegata's worker does, every minute, so payroll goes out with every browser closed.
 
@@ -89,6 +89,6 @@ Autopilot pays Tegata and NEAR accounts only. Paying someone on another chain ne
 can't be fetched with nobody online, so those people are paid by an approved run instead.
 
 <Callout title="During the hackathon" type="warn">
-The contract has no upgrade method, but `pay.tegata.testnet`'s only key is Tegata's operator key, so Tegata can
-redeploy it. Pause stops deposits, new plans and runs; it never stops a withdrawal or a cancel.
+The contract has no upgrade method, but the only key on `pay.tegata.near` and `pay.tegata.testnet` is Tegata's
+operator key, so Tegata can redeploy them. Pause stops deposits, new plans and runs; it never stops a withdrawal or a cancel.
 </Callout>
