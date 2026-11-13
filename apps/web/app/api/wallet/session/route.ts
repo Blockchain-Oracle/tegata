@@ -1,8 +1,9 @@
-import { getProfile, signInWithWallet } from "@tegata/services"
+import { getProfile, noteSeen, signInWithWallet } from "@tegata/services"
 import { z } from "zod"
 
 import { activeNetworks, db } from "@/lib/server/context.ts"
 import { route } from "@/lib/server/http.ts"
+import { seenOf } from "@/lib/server/seen.ts"
 import { endSession, requireSessionSecret, startSession } from "@/lib/server/session.ts"
 
 const body = z.object({
@@ -18,9 +19,12 @@ export const POST = route(async (request) => {
   const input = body.parse(await request.json())
   requireSessionSecret()
   const user = await signInWithWallet(db(), input)
+  const { seen, setCookie } = seenOf(request)
+  await noteSeen(db(), user.id, seen)
   const profile = await getProfile(db(), user.id)
   const headers = new Headers({ "content-type": "application/json" })
   for (const value of startSession(user.id)) headers.append("set-cookie", value)
+  if (setCookie) headers.append("set-cookie", setCookie)
   return new Response(JSON.stringify({ ...profile, networks: activeNetworks() }), { headers })
 })
 

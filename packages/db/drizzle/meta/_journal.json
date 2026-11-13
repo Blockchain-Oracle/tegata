@@ -169,6 +169,13 @@
       "when": 1794589062577,
       "tag": "0023_person_kind",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1794589799865,
+      "tag": "0024_user_seen",
+      "breakpoints": true
     }
   ]
 }

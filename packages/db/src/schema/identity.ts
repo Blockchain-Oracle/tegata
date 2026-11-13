@@ -29,6 +29,9 @@ export const users = pgTable(
     walletAccountId: text(),
     /** The network that wallet account lives on (an implicit account's name alone doesn't say). */
     walletNetwork: network(),
+    /** Keyed hashes of the last sign-in's IP and device (never the IP): only for the referral review flag. */
+    ipHash: text(),
+    deviceHash: text(),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
   },

@@ -5,6 +5,7 @@ import { z } from "zod"
 import { requireUser } from "@/lib/server/auth.ts"
 import { activeNetworks, boss, db } from "@/lib/server/context.ts"
 import { badRequest, route } from "@/lib/server/http.ts"
+import { seenOf } from "@/lib/server/seen.ts"
 
 const BUSINESS_NAME_MAX = 80
 
@@ -39,6 +40,7 @@ export const POST = route(async (request) => {
         refereeId: user.id,
         handle: referrer,
         network: "testnet",
+        seen: seenOf(request).seen,
       })
       if (row) await queueReferralJoined(db(), row.id)
       referral = { ok: true }

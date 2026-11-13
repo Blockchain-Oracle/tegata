@@ -1,8 +1,9 @@
-import { getProfile, syncPrivyUser } from "@tegata/services"
+import { getProfile, noteSeen, syncPrivyUser } from "@tegata/services"
 
 import { privy, privyUserId, publicKeyFromNearAddress } from "@/lib/server/auth.ts"
 import { activeNetworks, db } from "@/lib/server/context.ts"
 import { route } from "@/lib/server/http.ts"
+import { seenOf } from "@/lib/server/seen.ts"
 
 /**
  * Called once after sign-in. The email and the signing key are read from Privy on the
@@ -22,6 +23,10 @@ export const POST = route(async (request) => {
   }
 
   const user = await syncPrivyUser(db(), { privyId, email, publicKey })
+  const { seen, setCookie } = seenOf(request)
+  await noteSeen(db(), user.id, seen)
   const profile = await getProfile(db(), user.id)
-  return { ...profile, networks: activeNetworks() }
+  const headers = new Headers({ "content-type": "application/json" })
+  if (setCookie) headers.append("set-cookie", setCookie)
+  return new Response(JSON.stringify({ ...profile, networks: activeNetworks() }), { headers })
 })
