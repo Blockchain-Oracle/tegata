@@ -8,6 +8,7 @@ import {
   ReferralError,
   RelayError,
   SandboxError,
+  WalletSignInError,
 } from "@tegata/services"
 import { ZodError } from "zod"
 
@@ -55,7 +56,9 @@ function toResponse(error: unknown): Response {
         ? STATUS.tooMany
         : error.code === "not_found"
           ? STATUS.notFound
-          : STATUS.conflict
+          : error.code === "bad_signature"
+            ? STATUS.badRequest
+            : STATUS.conflict
     return Response.json({ error: { code: error.code, message: error.message } }, { status })
   }
   if (error instanceof PaymentError) {
@@ -86,6 +89,10 @@ function toResponse(error: unknown): Response {
         : error.code === "bad_input"
           ? STATUS.badRequest
           : STATUS.conflict
+    return Response.json({ error: { code: error.code, message: error.message } }, { status })
+  }
+  if (error instanceof WalletSignInError) {
+    const status = error.code === "bad_signature" ? STATUS.unauthorized : STATUS.badRequest
     return Response.json({ error: { code: error.code, message: error.message } }, { status })
   }
   if (error instanceof DeveloperError) {

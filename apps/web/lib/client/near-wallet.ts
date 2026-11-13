@@ -13,7 +13,7 @@ export type NearNetwork = "mainnet" | "testnet"
 const connectors = new Map<NearNetwork, Promise<NearConnector>>()
 
 /** near-connect remembers the chosen wallet under fixed keys; keep testnet's apart. */
-const prefixedStorage = (prefix: string) => ({
+export const prefixedStorage = (prefix: string) => ({
   async get(key: string) {
     try {
       return localStorage.getItem(`${prefix}${key}`)

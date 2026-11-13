@@ -11,8 +11,6 @@ import {
   matchingTransfer,
   type Operator,
   readUsdcTransfers,
-  signatureFromBase64,
-  verifyDraftSignature,
 } from "@tegata/core/near"
 import {
   anchorDayFor,
@@ -27,7 +25,7 @@ import { type Db, schema } from "@tegata/db"
 import { and, asc, count, desc, eq, gt, inArray, ne, sql } from "drizzle-orm"
 
 import { BUSINESS_HEADER, headerLogo, publicToken } from "./payments.ts"
-import { createRelayDraft, submitRelaySignature } from "./relays.ts"
+import { type Approval, approvalMatches, createRelayDraft, submitRelaySignature } from "./relays.ts"
 
 const {
   people,
@@ -795,7 +793,7 @@ export async function approveRun(
     workspaceId: string
     userId: string
     runId: string
-    signatures: { relayId: string; signature: string }[]
+    signatures: Approval[]
   },
 ) {
   const run = await ownRun(db, input.workspaceId, input.runId)
@@ -806,7 +804,7 @@ export async function approveRun(
     .from(payRows)
     .where(and(eq(payRows.runId, run.id), eq(payRows.status, "included")))
   const needed = new Set(rows.map((row) => row.relayId))
-  const given = new Map(input.signatures.map((s) => [s.relayId, s.signature]))
+  const given = new Map(input.signatures.map((s) => [s.relayId, s]))
   if (
     needed.has(null) ||
     needed.size !== given.size ||
@@ -819,15 +817,16 @@ export async function approveRun(
     .from(relays)
     .where(inArray(relays.id, [...given.keys()]))
   for (const relay of relayRows) {
-    const signature = given.get(relay.id) ?? ""
+    const approval = given.get(relay.id)
     if (
       relay.userId !== input.userId ||
-      !verifyDraftSignature(relay.draft as DelegateDraft, signatureFromBase64(signature))
+      !approval ||
+      !approvalMatches(relay.draft as DelegateDraft, approval)
     )
       throw new PayrollError("forbidden", "A signature doesn't match this run")
   }
-  for (const [relayId, signature] of given) {
-    await submitRelaySignature(db, { relayId, userId: input.userId, signature })
+  for (const approval of given.values()) {
+    await submitRelaySignature(db, { ...approval, userId: input.userId })
   }
   await db
     .update(payRuns)

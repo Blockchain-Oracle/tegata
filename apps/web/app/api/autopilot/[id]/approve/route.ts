@@ -6,8 +6,19 @@ import { requireOwner } from "@/lib/server/auth.ts"
 import { boss, db } from "@/lib/server/context.ts"
 import { route } from "@/lib/server/http.ts"
 
+const approval = z
+  .object({
+    relayId: z.uuid(),
+    signature: z.string().min(1).max(200).optional(),
+    signedDelegate: z.string().min(1).max(20_000).optional(),
+  })
+  .refine(
+    (a) => Boolean(a.signature) !== Boolean(a.signedDelegate),
+    "Send a signature or a signed delegate",
+  )
+
 const body = z.object({
-  signatures: z.array(z.object({ relayId: z.uuid(), signature: z.string().min(1) })).length(2),
+  signatures: z.array(approval).length(2),
 })
 
 /** Store both signatures, then queue the relays in order: the deposit, then the plan. */

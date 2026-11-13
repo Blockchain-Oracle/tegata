@@ -11,13 +11,13 @@ export const toHandle = (text: string) =>
     .replace(/^-+|-+$/g, "")
     .slice(0, 32)
 
-/** The account-opening steps, in the order the setup job completes them. */
-export function setupSteps(accountId: string): TaskStep[] {
+/** The account-opening steps, in the order the setup job completes them. A wallet's own account already exists. */
+export function setupSteps(accountId: string, own = false): TaskStep[] {
   return [
     {
       id: "account",
-      label: `Creating ${accountId}`,
-      detail: "on NEAR · fee paid by Tegata",
+      label: own ? `Using ${accountId}` : `Creating ${accountId}`,
+      detail: own ? "your own NEAR account" : "on NEAR · fee paid by Tegata",
       mark: "near",
     },
     {

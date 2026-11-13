@@ -10,6 +10,7 @@ import { Button } from "@/components/kit/button"
 import { Field, type FieldStatus } from "@/components/kit/field"
 import { ErrorState, WaitingText } from "@/components/kit/states"
 import type { TaskStep } from "@/components/kit/task-steps"
+import { Mark } from "@/components/marks/mark"
 import { BillStage, type WelcomeStage } from "@/components/onboarding/bill-stage"
 import { cn } from "@/lib/utils"
 
@@ -40,6 +41,8 @@ export interface WelcomeViewProps {
   onDropInvite?: () => void
   /** Set when the person is joining a team's payroll: step 1 asks for their own name. */
   joining?: { business: string } | null
+  /** Signed in with a NEAR wallet: this account is the pay address, so step 2 shows it instead of a name to pick. */
+  walletAccount?: string | null
 }
 
 const ORDER: WelcomeStage[] = ["name", "handle", "opening", "open"]
@@ -60,7 +63,7 @@ export function WelcomeView(p: WelcomeViewProps) {
         <BillStage
           stage={p.stage}
           name={p.name}
-          accountId={`${p.handle || "your-name"}${p.suffix}`}
+          accountId={p.walletAccount ?? `${p.handle || "your-name"}${p.suffix}`}
           steps={p.steps}
           current={p.current}
           failed={p.failed}
@@ -164,25 +167,41 @@ export function WelcomeView(p: WelcomeViewProps) {
                 Your pay address.
               </h1>
               <p className="text-[17px] text-muted-foreground">
-                A name on NEAR your customers pay.
+                {p.walletAccount
+                  ? "Your own NEAR account. Payments land there, in USDC."
+                  : "A name on NEAR your customers pay."}
               </p>
             </div>
-            <Field
-              id="handle"
-              aria-label="Pay address"
-              value={p.handle}
-              onChange={(e) => p.onHandle(e.target.value)}
-              spellCheck={false}
-              autoCapitalize="none"
-              autoFocus
-              big
-              status={p.handleStatus}
-              reserveStatus
-              className="font-mono"
-              trailing={
-                <span className="shrink-0 font-mono text-[17px] text-text-3">{p.suffix}</span>
-              }
-            />
+            {p.walletAccount ? (
+              <div className="flex items-center gap-3 rounded-[16px] bg-card px-4 py-4">
+                <Mark id="near" size={36} />
+                <span className="flex min-w-0 flex-col">
+                  <span className="truncate font-mono text-[19px] font-semibold">
+                    {p.walletAccount}
+                  </span>
+                  <span className="text-[14px] text-muted-foreground">
+                    Signed in with your wallet · nothing new to create
+                  </span>
+                </span>
+              </div>
+            ) : (
+              <Field
+                id="handle"
+                aria-label="Pay address"
+                value={p.handle}
+                onChange={(e) => p.onHandle(e.target.value)}
+                spellCheck={false}
+                autoCapitalize="none"
+                autoFocus
+                big
+                status={p.handleStatus}
+                reserveStatus
+                className="font-mono"
+                trailing={
+                  <span className="shrink-0 font-mono text-[17px] text-text-3">{p.suffix}</span>
+                }
+              />
+            )}
             <div className="flex items-center justify-between rounded-[14px] bg-card px-4 py-3 text-[15px]">
               <span className="inline-flex items-center gap-2 text-muted-foreground">
                 <Clock3 className="size-4" /> Time zone
@@ -217,8 +236,9 @@ export function WelcomeView(p: WelcomeViewProps) {
                   className="text-[17px]"
                 />
                 <p className="text-[15px] text-muted-foreground">
-                  Tegata creates your account on NEAR and pays the network fee. It takes a few
-                  seconds.
+                  {p.walletAccount
+                    ? "Tegata registers your account for USDC and pays the network fee. It takes a few seconds."
+                    : "Tegata creates your account on NEAR and pays the network fee. It takes a few seconds."}
                 </p>
               </>
             )}

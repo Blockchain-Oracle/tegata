@@ -47,6 +47,8 @@ const serverSchema = z.object({
 
   PRIVY_APP_ID: optional(z.string()),
   PRIVY_APP_SECRET: optional(z.string()),
+  /** Signs the session cookie of people who sign in with a NEAR wallet. At least 32 characters. */
+  SESSION_SECRET: optional(z.string().min(32)),
   /** From the Privy dashboard; lets the server verify tokens without a network call. */
   PRIVY_VERIFICATION_KEY: optional(z.string()),
 

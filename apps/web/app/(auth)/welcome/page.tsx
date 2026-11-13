@@ -48,6 +48,7 @@ export default function WelcomePage() {
   const [sealCut, setSealCut] = useState(false)
   const [startedAt, setStartedAt] = useState(() => Date.now())
 
+  const walletAccount = profile?.user.walletAccountId ?? null
   const network = profile?.networks.includes("mainnet") ? "mainnet" : "testnet"
   const suffix = `.${NETWORKS[network].operator}`
   const wanted = handleEdited ? handle : toHandle(name)
@@ -57,7 +58,7 @@ export default function WelcomePage() {
   const check = useQuery({
     queryKey: ["handle", debounced],
     queryFn: () => api<HandleCheck>(`/api/handle?name=${encodeURIComponent(debounced)}`),
-    enabled: step === "handle" && debounced.length > 1 && Boolean(profile),
+    enabled: step === "handle" && debounced.length > 1 && Boolean(profile) && !walletAccount,
   })
 
   // An invite from a join link (/join/<handle>), kept on this device until the account opens.
@@ -73,7 +74,13 @@ export default function WelcomePage() {
   const open = useMutation({
     mutationFn: () =>
       api("/api/onboard", {
-        body: { handle: wanted, businessName: name.trim(), timezone, referrer: invite?.handle },
+        // A wallet's handle is made on the server from its account name.
+        body: {
+          handle: walletAccount ? "" : wanted,
+          businessName: name.trim(),
+          timezone,
+          referrer: invite?.handle,
+        },
       }),
     onSuccess: () => {
       clearInvite()
@@ -113,7 +120,16 @@ export default function WelcomePage() {
   }, [settingUp, allReady, openedHere, profile?.workspace?.name])
 
   const stage: WelcomeStage = !settingUp ? step : sealCut ? "open" : "opening"
-  const current = !account ? 0 : account.readyAt ? (sealCut ? 3 : 2) : account.createdTx ? 1 : 0
+  // A wallet's own account exists from the start; Tegata's is created first.
+  const current = !account
+    ? 0
+    : account.readyAt
+      ? sealCut
+        ? 3
+        : 2
+      : account.createdTx || walletAccount
+        ? 1
+        : 0
   const shownHandle = settingUp && profile?.user.handle ? profile.user.handle : wanted
 
   const status = check.data && check.data.handle === wanted ? check.data : undefined
@@ -144,7 +160,7 @@ export default function WelcomePage() {
       handleStatus={handleStatus}
       timezone={timezone}
       canContinue={name.trim().length >= 2}
-      canOpen={status?.available === true && !open.isPending}
+      canOpen={(walletAccount ? true : status?.available === true) && !open.isPending}
       opening={open.isPending}
       openError={
         open.error
@@ -154,7 +170,8 @@ export default function WelcomePage() {
           : null
       }
       setupStartedAt={startedAt}
-      steps={setupSteps(`${shownHandle}${suffix}`)}
+      steps={setupSteps(walletAccount ?? `${shownHandle}${suffix}`, Boolean(walletAccount))}
+      walletAccount={walletAccount}
       current={current}
       failed={false}
       onNext={() => setStep("handle")}

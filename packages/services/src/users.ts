@@ -9,6 +9,8 @@ import {
 import { type Db, schema } from "@tegata/db"
 import { and, eq } from "drizzle-orm"
 
+import { walletAccountTaken, walletHandle } from "./wallet-auth.ts"
+
 const { users, workspaces, accounts } = schema
 
 export class OnboardError extends Error {
@@ -90,13 +92,29 @@ export async function onboard(
   if (!user.publicKey) throw new OnboardError("no_key", "Your signing key is not ready yet")
   if (user.handle) throw new OnboardError("already_onboarded", "This account is already set up")
 
-  const problem = await handleUnavailable(db, input.handle, input.networks)
-  if (problem) {
-    throw new OnboardError(problem === "Taken" ? "handle_taken" : "handle_invalid", problem)
+  // Signed in with a NEAR wallet: the pay address is that account, on its own network, and the handle (only for the
+  // join link) is made from its name. Otherwise the handle names a new `handle.tegata.testnet` on each network.
+  const wallet = user.walletAccountId && user.walletNetwork
+  let handle = input.handle
+  let rows: { network: NetworkId; accountId: string }[]
+  if (wallet) {
+    const accountId = user.walletAccountId ?? ""
+    const network = user.walletNetwork ?? "testnet"
+    if (await walletAccountTaken(db, accountId, user.id)) {
+      throw new OnboardError("handle_taken", `${accountId} is already used in Tegata`)
+    }
+    handle = await walletHandle(db, accountId)
+    rows = [{ network, accountId }]
+  } else {
+    const problem = await handleUnavailable(db, input.handle, input.networks)
+    if (problem) {
+      throw new OnboardError(problem === "Taken" ? "handle_taken" : "handle_invalid", problem)
+    }
+    rows = input.networks.map((network) => ({ network, accountId: accountIdFor(network, handle) }))
   }
 
   return db.transaction(async (tx) => {
-    await tx.update(users).set({ handle: input.handle }).where(eq(users.id, user.id))
+    await tx.update(users).set({ handle }).where(eq(users.id, user.id))
     const [workspace] = await tx
       .insert(workspaces)
       .values({
@@ -106,17 +124,11 @@ export async function onboard(
         email: user.email,
       })
       .returning()
-    const rows = await tx
+    const created = await tx
       .insert(accounts)
-      .values(
-        input.networks.map((network) => ({
-          userId: user.id,
-          network,
-          accountId: accountIdFor(network, input.handle),
-        })),
-      )
+      .values(rows.map((row) => ({ userId: user.id, ...row })))
       .returning()
-    return { workspace, accounts: rows }
+    return { workspace, accounts: created }
   })
 }
 
@@ -135,6 +147,8 @@ export async function setupAccount(db: Db, operator: Operator, accountRowId: str
 
   let createdTx = row.createdTx
   if (!(await accountExists(network, row.accountId))) {
+    // A wallet's own account always exists (its key signed in); Tegata never creates one in its name.
+    if (user.walletAccountId) throw new Error(`${row.accountId} doesn't exist on ${network}`)
     const created = await operator.createUserAccount(row.accountId, user.publicKey, 0n)
     if (created.status !== "success") {
       throw new Error(`Creating ${row.accountId} failed: ${created.error ?? created.status}`)

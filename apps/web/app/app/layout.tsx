@@ -8,11 +8,12 @@ import { TegataSeal } from "@/components/brand/seal"
 import { LoadingShape, Skeleton } from "@/components/kit/states"
 import { AppShell } from "@/components/shell/app-shell"
 import { useProfile } from "@/hooks/use-profile"
+import { signOutNearWallet } from "@/lib/client/near-account"
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter()
   const { logout } = usePrivy()
-  const { ready, authenticated, profile } = useProfile()
+  const { ready, authenticated, profile, viaWallet } = useProfile()
 
   const needsWelcome =
     profile !== undefined &&
@@ -33,7 +34,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       accountId={account.accountId}
       live={false}
       liveAvailable={profile.networks.includes("mainnet")}
-      onSignOut={() => logout().then(() => router.replace("/signin"))}
+      onSignOut={() =>
+        (viaWallet ? signOutNearWallet(profile.user.walletNetwork ?? "testnet") : logout()).then(
+          () => router.replace("/signin"),
+        )
+      }
     >
       {children}
     </AppShell>

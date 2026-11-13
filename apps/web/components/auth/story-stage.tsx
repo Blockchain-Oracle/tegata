@@ -255,7 +255,8 @@ export function PayrollScene() {
   const paidRows = Math.max(0, beat - 2)
   return (
     <StageObject from={{ y: 28, rotate: 2 }}>
-      <Paper className="w-[300px] p-5 sm:w-[340px]">
+      {/* Four rows and the hold button are taller than the phone band leaves for an object: shrink it there. */}
+      <Paper className="w-[300px] p-5 max-lg:scale-[0.8] sm:w-[340px]">
         <div className="flex items-center justify-between">
           <span className="text-[13px] font-semibold text-[#666]">Payroll · November</span>
           <ExampleTag />
@@ -346,7 +347,9 @@ function AddressScene() {
           </div>
         </Paper>
       </StageObject>
-      <div className="absolute -top-14 -left-6 flex flex-col gap-2 sm:-left-28">
+      {/* Beside the card where the stage is tall; on a phone band they would cover the lockup, and the card's own
+          rows already say the same. */}
+      <div className="absolute -top-14 -left-6 hidden flex-col gap-2 sm:-left-28 lg:flex">
         {chips.map((c, i) => (
           <StageObject key={c} delay={0.5 + i * 0.18} from={{ x: -20, y: 0 }} driftDelay={i}>
             <span className="inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-1.5 text-[13px] font-semibold text-black shadow-object">

@@ -17,6 +17,10 @@ export default function SignInFlow() {
   const [sending, setSending] = useState(false)
   const [problem, setProblem] = useState<string | null>(null)
   const [sealed, setSealed] = useState(false)
+  // The wallet row: the first try plays a wrong-network refusal, the next one signs in.
+  const [walletState, setWalletState] = useState<"idle" | "waiting" | "done">("idle")
+  const [walletProblem, setWalletProblem] = useState<string | null>(null)
+  const [walletTries, setWalletTries] = useState(0)
 
   return (
     <div>
@@ -70,6 +74,26 @@ export default function SignInFlow() {
           setStep("email")
           setSealed(false)
           setProblem(null)
+        }}
+        walletState={walletState}
+        walletProblem={walletProblem}
+        onWallet={() => {
+          setWalletState("waiting")
+          setWalletProblem(null)
+          setTimeout(() => {
+            if (walletTries === 0) {
+              setWalletState("idle")
+              fire("fail", { cue: "error" })
+              setWalletProblem(
+                "That's a mainnet account. The Sandbox runs on NEAR testnet: switch your wallet to testnet.",
+              )
+            } else {
+              setWalletState("done")
+              fire("filled", { cue: "confirmed" })
+              setSealed(true)
+            }
+            setWalletTries((n) => n + 1)
+          }, 1200)
         }}
       />
     </div>

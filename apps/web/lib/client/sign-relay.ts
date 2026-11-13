@@ -7,6 +7,12 @@ import type { DelegateDraft } from "@tegata/core/near"
 import { api } from "@/lib/client/api"
 import type { RelayStatus } from "@/lib/client/types"
 
+export interface Approval {
+  relayId: string
+  signature?: string
+  signedDelegate?: string
+}
+
 const POLL_MS = 1_500
 const MAX_POLLS = 80
 
@@ -47,14 +53,14 @@ export async function followRelay(relayId: string): Promise<RelayStatus> {
   throw new Error("Still waiting on NEAR. Check again in a minute.")
 }
 
-/** Check, sign with the person's key, submit, and wait until NEAR has it. */
+/** Check, approve as the signed-in person (their key or their wallet), submit, and wait until NEAR has it. */
 export async function signAndFollow(
-  sign: (hash: string) => Promise<string>,
+  approve: (relays: { relayId: string; draft: DelegateDraft }[]) => Promise<Approval[]>,
   relay: { relayId: string; draft: DelegateDraft },
   expected: ExpectedCall,
 ): Promise<RelayStatus> {
   await checkDraft(relay.draft, expected)
-  const signature = await sign(relay.draft.hash)
-  await api("/api/relay/sign", { body: { relayId: relay.relayId, signature } })
+  const [approval] = await approve([relay])
+  await api("/api/relay/sign", { body: approval })
   return followRelay(relay.relayId)
 }

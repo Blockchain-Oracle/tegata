@@ -16,8 +16,8 @@ import {
   AutopilotSheet,
 } from "@/components/payroll/autopilot-card"
 import { PayrollView } from "@/components/payroll/payroll-view"
-import { useNearKey } from "@/hooks/use-near-key"
 import { useProfile } from "@/hooks/use-profile"
+import { useSigner } from "@/hooks/use-signer"
 import { ApiError, api } from "@/lib/client/api"
 import { checkDraft, signAndFollow } from "@/lib/client/sign-relay"
 import type {
@@ -43,7 +43,7 @@ export default function PayrollPage() {
   const router = useRouter()
   const queryClient = useQueryClient()
   const { profile } = useProfile()
-  const key = useNearKey()
+  const signer = useSigner()
   const [sheet, setSheet] = useState(false)
   const [count, setCount] = useState(3)
   const [busy, setBusy] = useState(false)
@@ -138,10 +138,8 @@ export default function PayrollPage() {
           due: shown.dueMs.map(String),
         },
       })
-      const signatures = [
-        { relayId: drafts.deposit.relayId, signature: await key.sign(drafts.deposit.draft.hash) },
-        { relayId: drafts.plan.relayId, signature: await key.sign(drafts.plan.draft.hash) },
-      ]
+      // Signed together, in this order: setting the money aside, then the plan.
+      const signatures = await signer.approve([drafts.deposit, drafts.plan])
       await api(`/api/autopilot/${id}/approve`, { body: { signatures } })
       fire("confirm", { cue: "confirmed" })
       refresh()
@@ -187,7 +185,7 @@ export default function PayrollPage() {
                       : "cancel_plan",
                 args: { plan_id: row?.planId },
               }
-      await signAndFollow(key.sign, relay, expected)
+      await signAndFollow(signer.approve, relay, expected)
       fire("confirm", { cue: action === "add" || action === "withdraw" ? "sent" : "confirmed" })
     } catch (error) {
       fire("fail", { cue: "error" })
@@ -231,7 +229,7 @@ export default function PayrollPage() {
             canSetUp={Boolean(
               overview.data?.schedule && people?.some((p) => p.ready.state === "ready"),
             )}
-            busy={busy || !key.ready}
+            busy={busy || !signer.ready}
             problem={problem}
             onSetUp={() => {
               setProblem(null)

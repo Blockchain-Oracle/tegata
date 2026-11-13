@@ -9,6 +9,7 @@ import { StoryStage } from "@/components/auth/story-stage"
 import { Button, Spinner } from "@/components/kit/button"
 import { CodeField, type CodeState } from "@/components/kit/code-field"
 import { Field } from "@/components/kit/field"
+import { Mark } from "@/components/marks/mark"
 
 export type SignInStep = "email" | "code"
 
@@ -28,6 +29,10 @@ export interface SignInViewProps {
   onRequestCode: (event?: React.FormEvent) => void
   onSubmitCode: (value: string) => void
   onBack: () => void
+  /** Sign in with a NEAR wallet instead (plan 6.8 AA). */
+  onWallet?: () => void
+  walletState?: "idle" | "waiting" | "done"
+  walletProblem?: string | null
 }
 
 export function SignInView({
@@ -46,6 +51,9 @@ export function SignInView({
   onRequestCode,
   onSubmitCode,
   onBack,
+  onWallet,
+  walletState = "idle",
+  walletProblem = null,
 }: SignInViewProps) {
   const reduce = useReducedMotion()
   const slide = {
@@ -80,10 +88,12 @@ export function SignInView({
           >
             <div className="flex flex-col gap-3">
               <h1 className="display text-[44px] leading-[0.95] sm:text-[56px]">
-                Get paid in exact dollars.
+                {walletState === "done" ? "You're in." : "Get paid in exact dollars."}
               </h1>
               <p className="text-[17px] text-muted-foreground">
-                Sign in or open a business account with your email.
+                {walletState === "done"
+                  ? "Opening Tegata…"
+                  : "Sign in or open a business account with your email."}
               </p>
             </div>
             <Field
@@ -113,6 +123,42 @@ export function SignInView({
             <p className="text-detail text-text-3">
               We'll email you a 6-digit code. No password, no wallet to install.
             </p>
+            {onWallet ? (
+              <div className="flex flex-col gap-4">
+                <div className="flex items-center gap-3 text-[14px] text-text-3">
+                  <span className="h-px flex-1 bg-border" /> or{" "}
+                  <span className="h-px flex-1 bg-border" />
+                </div>
+                <button
+                  type="button"
+                  onClick={onWallet}
+                  disabled={walletState !== "idle" || !ready}
+                  className="press flex w-full items-center gap-3 rounded-[16px] bg-card px-4 py-3.5 text-left shadow-[0_0_0_1px_var(--border)] hover:bg-secondary disabled:opacity-70"
+                >
+                  <Mark id="near" size={36} />
+                  <span className="flex min-w-0 flex-1 flex-col">
+                    <span className="text-[16px] font-semibold">
+                      {walletState === "waiting"
+                        ? "Approve in your wallet"
+                        : "Continue with a NEAR wallet"}
+                    </span>
+                    <span className="text-[13px] text-muted-foreground">
+                      Meteor, Intear, Ledger and more
+                    </span>
+                  </span>
+                  {walletState === "waiting" ? (
+                    <Spinner className="size-5 text-muted-foreground" />
+                  ) : (
+                    <ArrowRight className="size-5 text-muted-foreground" />
+                  )}
+                </button>
+                {walletProblem ? (
+                  <p className="text-[15px] font-medium text-down" aria-live="polite">
+                    {walletProblem}
+                  </p>
+                ) : null}
+              </div>
+            ) : null}
           </motion.form>
         ) : (
           <motion.div key="code" className="flex flex-col gap-7" {...slide}>

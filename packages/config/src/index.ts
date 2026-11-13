@@ -65,6 +65,8 @@ export const GAS = {
   ftTransfer: 10n * TGAS,
   /** `ft_transfer_call` into the autopilot contract. */
   ftTransferCall: 100n * TGAS,
+  /** A registrar's `create_account` (`near`, `testnet`), which creates the account in a callback. */
+  registrarCreateAccount: 100n * TGAS,
   /** `storage_deposit` on a token. */
   storageDeposit: 10n * TGAS,
   /** Wrapping NEAR (operator tooling only). */

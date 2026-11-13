@@ -1,6 +1,6 @@
 ---
 title: Accounts without gas
-description: Sign in with email, get a named NEAR account holding only dollars, and let Tegata relay every action and pay its fee, exactly once.
+description: Sign in with email for a named NEAR account holding only dollars, or bring your own NEAR wallet; either way Tegata relays every action and pays its fee, exactly once.
 icon: KeyRound
 ---
 
@@ -25,6 +25,32 @@ Your account holds dollars and no NEAR.
 The relayer only sponsors action lists the server drafted itself. A signed action is valid for 120 blocks (a
 little over a minute on testnet today). Each person can have 30 sponsored actions an hour and 200 a day.
 
+## Or your own NEAR wallet
+
+On the sign-in page, **Continue with a NEAR wallet** opens NEAR Connect with the wallets that can do both things
+Tegata needs (on testnet: Meteor, Intear, Ledger and NEAR CLI).
+
+1. **Sign in.** The server hands out a one-time 32-byte nonce. The wallet signs "Sign in to Tegata" with it (NEP-413),
+   in the same prompt that connects it. The server checks the signature and that the key has full access to the
+   account, spends the nonce so it can't be used twice, and starts a session (an httpOnly cookie, signed by the
+   server).
+2. **Your account stays yours.** Nothing is created: your wallet's account (`abu.testnet`) is your pay address.
+   Tegata's operator registers it on USDC if it can't hold dollars yet.
+3. **Approving.** The same draft as above goes to the wallet, which signs it as a NEP-366 delegate action with its own
+   nonce, expiry and key (`signDelegateActions`). Several drafts are one prompt. The server takes the wallet's
+   answer only if, apart from those three, it is byte for byte the delegate it drafted, signed by a full-access key.
+   Then the relay is the same: Tegata pays the fee.
+
+Wallet accounts live on one network: a testnet account uses the Sandbox. A Tegata account (`name.tegata.testnet`) can't
+sign in through a wallet; only its email can.
+
+<Callout title="Proved on testnet" type="success">
+A real `tegata-wallet-dacd0228.testnet` signed in with its own key (the same signature sent twice was refused),
+opened a business with that account as its pay address, and sent $0.05 with a delegate action it signed itself,
+relayed by Tegata: <Tx hash="8PWgsYjeTMFY7WVkgWNBqcSnRwfQqPoAazsNeaFnXRo7" />. A delegate for a different receiver was
+refused, and the wallet's NEAR balance didn't change. `packages/services/src/proofs/wallet.ts` plays the wallet.
+</Callout>
+
 ## Exactly once
 
 The worker saves the signed transaction's bytes and hash **before** sending it. After a crash it never signs again:
@@ -36,6 +62,7 @@ same hash.
 | --- | --- |
 | Accounts, USDC registration | `packages/core/src/near/accounts.ts`, `operator.ts` |
 | Drafting and checking delegate actions | `packages/core/src/near/delegate.ts` |
+| Wallet sign-in (NEP-413) and wallet-signed delegates | `packages/core/src/near/wallet.ts`, `packages/services/src/wallet-auth.ts`, `apps/web/lib/client/near-account.ts` |
 | Relays: draft, signature, send | `packages/services/src/relays.ts`, `apps/worker` |
 
 <Callout title="Measured" type="success">

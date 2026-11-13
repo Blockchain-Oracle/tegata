@@ -18,16 +18,14 @@ import {
   type DelegateDraft,
   type Operator,
   readAutopilotEvents,
-  signatureFromBase64,
   usdcBalance,
-  verifyDraftSignature,
 } from "@tegata/core/near"
 import { nextPayday, payPeriod } from "@tegata/core/payroll"
 import { type Db, schema } from "@tegata/db"
 import { and, desc, eq, inArray } from "drizzle-orm"
 
 import { listPeople, nextPaydayFor, PayrollError } from "./payroll.ts"
-import { createRelayDraft, submitRelaySignature } from "./relays.ts"
+import { type Approval, approvalMatches, createRelayDraft, submitRelaySignature } from "./relays.ts"
 
 const { autopilotPlans, accounts, relays, payRuns, payRows } = schema
 
@@ -249,13 +247,13 @@ export async function approveAutopilot(
     workspaceId: string
     userId: string
     id: string
-    signatures: { relayId: string; signature: string }[]
+    signatures: Approval[]
   },
 ) {
   const row = await ownAutopilot(db, input.workspaceId, input.id)
   if (row.status !== "ready") throw new PayrollError("wrong_state", "Autopilot isn't ready to sign")
   const order = [row.depositRelayId, row.planRelayId]
-  const given = new Map(input.signatures.map((s) => [s.relayId, s.signature]))
+  const given = new Map(input.signatures.map((s) => [s.relayId, s]))
   if (order.some((id) => !id || !given.has(id)) || given.size !== 2)
     throw new PayrollError("wrong_state", "Autopilot changed. Set it up again.")
   const drafts = await db
@@ -263,21 +261,17 @@ export async function approveAutopilot(
     .from(relays)
     .where(inArray(relays.id, order as string[]))
   for (const relay of drafts) {
+    const approval = given.get(relay.id)
     if (
       relay.userId !== input.userId ||
-      !verifyDraftSignature(
-        relay.draft as DelegateDraft,
-        signatureFromBase64(given.get(relay.id) ?? ""),
-      )
+      !approval ||
+      !approvalMatches(relay.draft as DelegateDraft, approval)
     )
       throw new PayrollError("forbidden", "A signature doesn't match")
   }
   for (const relayId of order as string[]) {
-    await submitRelaySignature(db, {
-      relayId,
-      userId: input.userId,
-      signature: given.get(relayId) ?? "",
-    })
+    const approval = given.get(relayId)
+    if (approval) await submitRelaySignature(db, { ...approval, userId: input.userId })
   }
   await db.update(autopilotPlans).set({ status: "approved" }).where(eq(autopilotPlans.id, row.id))
   return order as string[]

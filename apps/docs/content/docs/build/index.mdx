@@ -13,7 +13,7 @@ icon: Server
 | `apps/web` | Next.js 16: the landing page, sign-in, the app, the public invoice, pay and receipt pages, the app's API and the [developer API](/docs/build/developers), and `/dev` (every part of the design in every state) |
 | `apps/worker` | Background jobs on pg-boss. The only process that holds Tegata's NEAR keys; the web server never does |
 | `apps/docs` | These docs: Fumadocs, exported to static files |
-| Postgres 17 | The books: users, businesses, accounts, requests, payments, receipts, invoices, customers, referrals, people, payroll runs, autopilot plans, relays, API keys, events and webhook deliveries |
+| Postgres 17 | The books: users, businesses, accounts, requests, payments, receipts, invoices, customers, referrals, people, payroll runs, autopilot plans, relays, API keys, events and webhook deliveries, wallet sign-in requests |
 
 ## The worker's jobs
 
@@ -43,8 +43,9 @@ At start the worker also picks up any relay or payment it left halfway.
 | Meta transactions (NEP-366) | The owner signs; the worker relays and pays the fee | `packages/core/src/near/delegate.ts`, `packages/services/src/relays.ts` |
 | USDC on NEAR (NEP-141) | Every balance and settlement; "paid" is read from its transfer event | `packages/core/src/near/usdc.ts`, `transfers.ts` |
 | NEAR Intents (1Click) | Live prices from other chains | `apps/web/lib/server/oneclick.ts` |
-| NEAR Connect | Customers pay from their own NEAR wallet | `apps/web/lib/client/near-wallet.ts` |
+| NEAR Connect | Customers pay from their own NEAR wallet; owners can sign in with one (NEP-413) and approve actions as delegate actions it signs | `apps/web/lib/client/near-wallet.ts`, `near-account.ts` |
 | Privy | Email sign-in that gives each owner a NEAR key | `apps/web/app/providers.tsx` |
+| NEP-413 | Signing in with a NEAR wallet: a signed message with a one-time nonce, checked against the account's full-access keys | `packages/core/src/near/wallet.ts`, `packages/services/src/wallet-auth.ts` |
 | react-pdf, react-email, Resend | The invoice PDF, and the invoice and reminder emails | `packages/documents` |
 | Standard Webhooks | Signing every webhook, so a shop can verify it in one call | `packages/services/src/developers.ts` |
 

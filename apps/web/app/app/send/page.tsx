@@ -10,8 +10,8 @@ import { useEffect, useState } from "react"
 import { viewDollars } from "@/components/kit/figure"
 import { type SendStep, SendView } from "@/components/send/send-view"
 import { useShell } from "@/components/shell/shell-context"
-import { useNearKey } from "@/hooks/use-near-key"
 import { useProfile } from "@/hooks/use-profile"
+import { useSigner } from "@/hooks/use-signer"
 import { ApiError, api } from "@/lib/client/api"
 import type { RelayStatus, SendDraft, TeamPerson } from "@/lib/client/types"
 import { fire } from "@/lib/feedback"
@@ -22,7 +22,7 @@ const TERMINAL: RelayStatus["status"][] = ["success", "failed", "expired"]
 export default function SendPage() {
   const { profile } = useProfile()
   const { openReceive } = useShell()
-  const key = useNearKey()
+  const signer = useSigner()
   const queryClient = useQueryClient()
   const [step, setStep] = useState<SendStep>("form")
   const [to, setTo] = useState("")
@@ -108,8 +108,8 @@ export default function SendPage() {
       ) {
         throw new Error("The payment to approve does not match what you entered")
       }
-      const signature = await key.sign(send.draft.hash)
-      await api("/api/relay/sign", { body: { relayId: send.relayId, signature } })
+      const [approval] = await signer.approve([send])
+      await api("/api/relay/sign", { body: approval })
       setStep("sending")
     } catch (error) {
       fire("fail", { cue: "error" })
@@ -144,7 +144,7 @@ export default function SendPage() {
       balance={balance}
       businessName={profile?.workspace?.name ?? "Your business"}
       suffix={`.${NETWORKS.testnet.operator}`}
-      busy={busy || !key.ready}
+      busy={busy || !signer.ready}
       problem={problem}
       progress={progress}
       explorerUrl={relay.data?.explorerUrl ?? null}

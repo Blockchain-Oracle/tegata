@@ -73,7 +73,11 @@ export default function SettingsPage() {
         logo: workspace.logo,
       }}
       accountId={account.accountId}
-      signInEmail={profile.user.email}
+      signInEmail={
+        profile.user.walletAccountId
+          ? `${profile.user.walletAccountId} (NEAR wallet)`
+          : profile.user.email
+      }
       saving={save.isPending}
       problem={
         error

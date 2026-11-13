@@ -45,7 +45,7 @@ const CARDS = [
   {
     href: "/dev/flows/signin",
     title: "Sign-in",
-    note: "Story stage, email, the six-cell code, the seal",
+    note: "Story stage, email, the six-cell code, a NEAR wallet (refused, then in), the seal",
     field: "bg-shu",
   },
   {
@@ -53,6 +53,12 @@ const CARDS = [
     title: "Welcome",
     note: "Name, pay address, opening on NEAR, the stamp",
     field: "bg-kin",
+  },
+  {
+    href: "/dev/flows/welcome?wallet=1",
+    title: "Welcome with a wallet",
+    note: "Signed in with a NEAR wallet: its own account is the pay address, registered for USDC",
+    field: "bg-sora",
   },
   {
     href: "/dev/flows/home",

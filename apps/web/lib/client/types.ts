@@ -15,7 +15,15 @@ export interface AccountView {
 }
 
 export interface Profile {
-  user: { id: string; email: string | null; handle: string | null; publicKey: string | null }
+  user: {
+    id: string
+    email: string | null
+    handle: string | null
+    publicKey: string | null
+    /** Set when they signed in with a NEAR wallet: their own account is their pay address. */
+    walletAccountId?: string | null
+    walletNetwork?: NetworkId | null
+  }
   workspace?: {
     id: string
     name: string

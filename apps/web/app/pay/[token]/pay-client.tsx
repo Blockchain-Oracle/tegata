@@ -6,7 +6,6 @@
 //    this link's receiver, amount and memo, the Privy key signs it, and our relayer sends it gas-free.
 //  · NEAR wallet: the wallet sends one `ft_transfer` with the memo; this page hands the hash to the server.
 //  · Another chain: a live NEAR Intents quote; deposit addresses run in Live only (no testnet).
-import { usePrivy } from "@privy-io/react-auth"
 import { useQuery } from "@tanstack/react-query"
 import { GAS, ONE_YOCTO } from "@tegata/config"
 import { toUnits } from "@tegata/core/money"
@@ -15,8 +14,8 @@ import { useEffect, useState } from "react"
 
 import { viewDollars } from "@/components/kit/figure"
 import { type PayRoute, type PayStep, PayView, type TegataState } from "@/components/pay/pay-view"
-import { useNearKey } from "@/hooks/use-near-key"
 import { useProfile } from "@/hooks/use-profile"
+import { useSigner } from "@/hooks/use-signer"
 import { useTestDollars } from "@/hooks/use-test-dollars"
 import { ApiError, api } from "@/lib/client/api"
 import { rememberNext } from "@/lib/client/next-path"
@@ -121,9 +120,9 @@ export function PayClient({
   routes: readonly PayRoute[]
 }) {
   const router = useRouter()
-  const { ready, authenticated } = usePrivy()
-  const { profile } = useProfile()
-  const key = useNearKey()
+  // Signed in by email (Privy) or with a NEAR wallet: either can pay from its Tegata balance.
+  const { ready, authenticated, profile } = useProfile()
+  const signer = useSigner()
   const testDollars = useTestDollars()
   const network = initial.network
 
@@ -251,8 +250,8 @@ export function PayClient({
       ) {
         throw new Error("The payment to approve doesn't match this link")
       }
-      const signature = await key.sign(res.draft.hash)
-      await api("/api/relay/sign", { body: { relayId: res.relayId, signature } })
+      const [approval] = await signer.approve([res])
+      await api("/api/relay/sign", { body: approval })
       begin(res.paymentId, "tegata")
     } catch (error) {
       fire("fail", { cue: "error" })
@@ -383,7 +382,7 @@ export function PayClient({
             : "No route right now"
           : undefined,
       }}
-      busy={busy || (rail === "tegata" && !key.ready)}
+      busy={busy || (rail === "tegata" && !signer.ready)}
       problem={problem}
       onPayTegata={payTegata}
       onPayWallet={payWallet}

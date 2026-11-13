@@ -27,11 +27,30 @@ export const users = pgTable(
     publicKey: text(),
     /** Set for NEAR-wallet sign-in: the person's own account, used instead of a Tegata one. */
     walletAccountId: text(),
+    /** The network that wallet account lives on (an implicit account's name alone doesn't say). */
+    walletNetwork: network(),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
   },
-  (table) => [index("users_email_idx").on(table.email)],
+  (table) => [
+    index("users_email_idx").on(table.email),
+    uniqueIndex("users_wallet_account_idx").on(table.walletAccountId),
+  ],
 )
+
+/**
+ * A NEAR-wallet sign-in in progress: the 32-byte NEP-413 nonce the wallet must sign. Used once, and only before it
+ * expires, so a signed message can't be replayed.
+ */
+export const signInChallenges = pgTable("sign_in_challenges", {
+  id: id(),
+  /** Base64 of the 32 random bytes. */
+  nonce: text().notNull().unique(),
+  network: network().notNull(),
+  expiresAt: timestamp({ withTimezone: true }).notNull(),
+  usedAt: timestamp({ withTimezone: true }),
+  createdAt: createdAt(),
+})
 
 /** A business. Every invoice, person, payroll and payment belongs to one. */
 export const workspaces = pgTable("workspaces", {

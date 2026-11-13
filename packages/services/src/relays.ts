@@ -1,5 +1,6 @@
 import { LIMITS, type NetworkId } from "@tegata/config"
 import {
+  adoptWalletDelegate,
   type CallSpec,
   type DelegateDraft,
   draftDelegate,
@@ -9,6 +10,7 @@ import {
   signedDelegateAction,
   type TxResult,
   verifyDraftSignature,
+  WalletDelegateError,
 } from "@tegata/core/near"
 import { type Db, schema } from "@tegata/db"
 import { and, count, desc, eq, gte, inArray, like } from "drizzle-orm"
@@ -99,23 +101,76 @@ async function assertWithinLimits(db: Db, userId: string) {
 /** Store the user's signature after checking it against the stored draft. */
 export async function submitRelaySignature(
   db: Db,
-  input: { relayId: string; userId: string; signature: string },
+  input: {
+    relayId: string
+    userId: string
+    /** Base64 signature over the draft's hash (a key held by Privy). */
+    signature?: string
+    /** Or a NEAR wallet's own signed delegate action for the draft (base64 borsh). */
+    signedDelegate?: string
+  },
 ) {
   const [row] = await db.select().from(relays).where(eq(relays.id, input.relayId))
   if (!row || row.userId !== input.userId) throw new RelayError("not_found", "No such action")
   if (row.status !== "drafted") throw new RelayError("wrong_state", "Already approved")
-  const draft = row.draft as DelegateDraft
-  if (!verifyDraftSignature(draft, signatureFromBase64(input.signature))) {
+  let draft = row.draft as DelegateDraft
+  let signature = input.signature ?? ""
+  if (input.signedDelegate) {
+    // A wallet signs with its own nonce, expiry and key: take those, but only for exactly the drafted action.
+    try {
+      ;({ draft, signature } = adoptWalletDelegate(draft, input.signedDelegate))
+    } catch (error) {
+      throw new RelayError(
+        "bad_signature",
+        error instanceof WalletDelegateError
+          ? error.message
+          : "The wallet's answer couldn't be read",
+      )
+    }
+    if (!(await hasFullAccess(draft))) {
+      throw new RelayError("bad_signature", "That key can't approve payments on this account")
+    }
+  } else if (!verifyDraftSignature(draft, signatureFromBase64(signature))) {
     throw new RelayError("bad_signature", "The signature does not match this action")
   }
   // Only a row that is still `drafted` moves on, so two submissions cannot both win.
   const [updated] = await db
     .update(relays)
-    .set({ signature: input.signature, status: "signed" })
+    .set({ draft, signature, status: "signed" })
     .where(and(eq(relays.id, row.id), eq(relays.status, "drafted")))
     .returning()
   if (!updated) throw new RelayError("wrong_state", "Already approved")
   return updated
+}
+
+/** One approval of a drafted action: a Privy key's signature over its hash, or a NEAR wallet's own signed delegate. */
+export interface Approval {
+  relayId: string
+  signature?: string
+  signedDelegate?: string
+}
+
+/** True when the approval is for exactly this draft (checked before any of a batch is submitted). */
+export function approvalMatches(draft: DelegateDraft, approval: Approval): boolean {
+  try {
+    if (approval.signedDelegate) return Boolean(adoptWalletDelegate(draft, approval.signedDelegate))
+    return verifyDraftSignature(draft, signatureFromBase64(approval.signature ?? ""))
+  } catch {
+    return false
+  }
+}
+
+/** A delegate signed by a function-call key would fail on chain with the operator's gas spent: check first. */
+async function hasFullAccess(draft: DelegateDraft): Promise<boolean> {
+  try {
+    const key = await nearProvider(draft.network).viewAccessKey({
+      accountId: draft.senderId,
+      publicKey: draft.publicKey,
+    })
+    return key.permission === "FullAccess"
+  } catch {
+    return false
+  }
 }
 
 /**

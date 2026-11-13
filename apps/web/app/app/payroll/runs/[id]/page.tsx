@@ -7,8 +7,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { use, useState } from "react"
 
 import { RunView } from "@/components/payroll/run-view"
-import { useNearKey } from "@/hooks/use-near-key"
 import { useProfile } from "@/hooks/use-profile"
+import { useSigner } from "@/hooks/use-signer"
 import { ApiError, api } from "@/lib/client/api"
 import type { PayRun, PayRunRow, RunBatchDraft } from "@/lib/client/types"
 import { fire } from "@/lib/feedback"
@@ -19,7 +19,7 @@ export default function RunPage({ params }: { params: Promise<{ id: string }> })
   const { id } = use(params)
   const queryClient = useQueryClient()
   const { profile } = useProfile()
-  const key = useNearKey()
+  const signer = useSigner()
   const [busy, setBusy] = useState(false)
   const [problem, setProblem] = useState<string | null>(null)
 
@@ -83,10 +83,7 @@ export default function RunPage({ params }: { params: Promise<{ id: string }> })
       }
       if (covered !== expected.size)
         throw new Error("The run to approve doesn't match what you reviewed")
-      const signatures = []
-      for (const batch of batches) {
-        signatures.push({ relayId: batch.relayId, signature: await key.sign(batch.draft.hash) })
-      }
+      const signatures = await signer.approve(batches)
       await api(`/api/payroll/runs/${id}/approve`, { body: { signatures } })
       fire("confirm", { cue: "sent" })
       refresh()
@@ -113,7 +110,7 @@ export default function RunPage({ params }: { params: Promise<{ id: string }> })
       onReload={() => void run.refetch()}
       business={profile?.workspace?.name ?? "Your business"}
       balance={account?.balance ?? null}
-      busy={busy || !key.ready || retry.isPending}
+      busy={busy || !signer.ready || retry.isPending}
       problem={problem}
       onToggle={(row, included) => toggle.mutate({ row, included })}
       onPay={pay}

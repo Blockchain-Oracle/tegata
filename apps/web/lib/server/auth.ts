@@ -6,6 +6,7 @@ import { eq } from "drizzle-orm"
 
 import { db } from "./context.ts"
 import { HttpError, unauthorized } from "./http.ts"
+import { walletSessionUserId } from "./session.ts"
 
 const NOT_CONFIGURED = 503
 const ED25519_KEY_HEX_LENGTH = 64
@@ -50,12 +51,26 @@ export async function privyUserId(request: Request): Promise<string> {
   }
 }
 
-/** The signed-in user row, or a 401. */
+/**
+ * The signed-in user row, or a 401. Email sign-in carries Privy's token; NEAR-wallet sign-in carries Tegata's own
+ * session cookie. A Privy token that no longer checks out falls back to a wallet session if there is one.
+ */
 export async function requireUser(request: Request) {
-  const id = await privyUserId(request)
-  const [user] = await db().select().from(schema.users).where(eq(schema.users.privyId, id))
-  if (!user) throw unauthorized()
-  return user
+  const walletUserId = walletSessionUserId(request)
+  if (bearer(request)) {
+    try {
+      const id = await privyUserId(request)
+      const [user] = await db().select().from(schema.users).where(eq(schema.users.privyId, id))
+      if (user) return user
+    } catch (error) {
+      if (!walletUserId) throw error
+    }
+  }
+  if (walletUserId) {
+    const [user] = await db().select().from(schema.users).where(eq(schema.users.id, walletUserId))
+    if (user?.walletAccountId) return user
+  }
+  throw unauthorized()
 }
 
 /** The business a user owns, if they have named one. */

@@ -9,7 +9,7 @@ import { useState } from "react"
 
 import { type ActivityFilter, ActivityView } from "@/components/books/activity-view"
 import { RefundSheet } from "@/components/books/refund-sheet"
-import { useNearKey } from "@/hooks/use-near-key"
+import { useSigner } from "@/hooks/use-signer"
 import { ApiError, api, download } from "@/lib/client/api"
 import { signAndFollow } from "@/lib/client/sign-relay"
 import type { BooksMonth, MovementView } from "@/lib/client/types"
@@ -23,7 +23,7 @@ const shift = (month: string, by: number) => {
 
 export default function ActivityPage() {
   const queryClient = useQueryClient()
-  const key = useNearKey()
+  const signer = useSigner()
   const [month, setMonth] = useState<string | null>(null)
   const [filter, setFilter] = useState<ActivityFilter>("all")
   const [query, setQuery] = useState("")
@@ -67,7 +67,7 @@ export default function ActivityPage() {
       const units = (
         BigInt(Math.round(Number.parseFloat(amount.replaceAll(",", "")) * 100)) * 10_000n
       ).toString()
-      const status = await signAndFollow(key.sign, relay, {
+      const status = await signAndFollow(signer.approve, relay, {
         receiverId: NETWORKS.testnet.usdc,
         method: "ft_transfer",
         args: {
@@ -114,7 +114,7 @@ export default function ActivityPage() {
       <RefundSheet
         movement={refunding}
         onOpenChange={(open) => !open && setRefunding(null)}
-        busy={busy || !key.ready}
+        busy={busy || !signer.ready}
         problem={problem}
         done={done}
         onRefund={(amount) => void refund(amount)}

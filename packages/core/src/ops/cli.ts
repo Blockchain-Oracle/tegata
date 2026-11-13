@@ -17,7 +17,7 @@ import { existsSync, readFileSync, writeFileSync } from "node:fs"
 import { homedir } from "node:os"
 import { join, resolve } from "node:path"
 
-import { NETWORKS, type NetworkId, ONE_YOCTO, TGAS } from "@tegata/config"
+import { GAS, NETWORKS, type NetworkId, ONE_YOCTO, TGAS } from "@tegata/config"
 import { actions, KeyPair } from "near-api-js"
 
 import { fromUnits } from "../money/index.ts"
@@ -358,7 +358,6 @@ async function deployAutopilot(network: NetworkId) {
 const BOOTSTRAP_ENV = "MAINNET_OPERATOR_KEY"
 /** NEAR kept on the implicit account for the create transaction's gas; everything else goes to tegata.near. */
 const CREATE_RESERVE_YOCTO = 50_000_000_000_000_000_000_000n
-const CREATE_GAS = 100n * TGAS
 const MIN_OPERATOR_YOCTO = 2_000_000_000_000_000_000_000_000n
 
 function bootstrapKey(): KeyPair {
@@ -417,7 +416,7 @@ async function createOperator() {
     actions.functionCall(
       "create_account",
       { new_account_id: operatorId, new_public_key: key.getPublicKey().toString() },
-      CREATE_GAS,
+      GAS.registrarCreateAccount,
       deposit,
     ),
   ])

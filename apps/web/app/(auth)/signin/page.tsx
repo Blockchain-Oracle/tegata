@@ -8,6 +8,11 @@ import { useEffect, useState } from "react"
 
 import { type SignInStep, SignInView } from "@/components/auth/sign-in-view"
 import type { CodeState } from "@/components/kit/code-field"
+import {
+  hasWalletSession,
+  signInWithNearWallet,
+  WalletSignInError,
+} from "@/lib/client/near-account"
 import { takeNext } from "@/lib/client/next-path"
 import { fire } from "@/lib/feedback"
 
@@ -30,11 +35,38 @@ export default function SignInPage() {
   const [problem, setProblem] = useState<string | null>(null)
   const [resendIn, setResendIn] = useState(0)
   const [sealed, setSealed] = useState(false)
+  const [walletState, setWalletState] = useState<"idle" | "waiting" | "done">("idle")
+  const [walletProblem, setWalletProblem] = useState<string | null>(null)
 
-  // Already signed in (a returning visit): go straight in.
+  // Already signed in (a returning visit, by email or with a wallet): go straight in.
   useEffect(() => {
-    if (ready && authenticated && !sealed) router.replace(takeNext())
+    if (sealed) return
+    if ((ready && authenticated) || hasWalletSession()) router.replace(takeNext())
   }, [ready, authenticated, sealed, router])
+
+  async function signInWithWallet() {
+    setWalletState("waiting")
+    setWalletProblem(null)
+    setProblem(null)
+    try {
+      await signInWithNearWallet("testnet")
+      setWalletState("done")
+      fire("filled", { cue: "confirmed" })
+      setSealed(true)
+      setTimeout(() => router.replace(takeNext()), AFTER_SEAL_MS)
+    } catch (error) {
+      setWalletState("idle")
+      fire("fail", { cue: "error" })
+      const text = error instanceof Error ? error.message : ""
+      setWalletProblem(
+        /reject|cancel|closed|denied/i.test(text)
+          ? "Nothing was signed. Try again when you're ready."
+          : error instanceof WalletSignInError
+            ? text
+            : "Your wallet didn't finish signing in. Try again.",
+      )
+    }
+  }
 
   useEffect(() => {
     if (resendIn <= 0) return
@@ -112,6 +144,9 @@ export default function SignInPage() {
         setStep("email")
         setProblem(null)
       }}
+      onWallet={signInWithWallet}
+      walletState={walletState}
+      walletProblem={walletProblem}
     />
   )
 }
