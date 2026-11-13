@@ -168,6 +168,11 @@ export default function HomeFlow() {
         activityError={home === "error"}
         onReceive={() => undefined}
         onRetryActivity={() => setHome("busy")}
+        pots={
+          home === "busy"
+            ? { spendable: 8_736_000_000n, tax: 2_496_000_000n, savings: 1_248_000_000n }
+            : null
+        }
       />
 
       <div className="flex flex-wrap items-center gap-3 pt-8">

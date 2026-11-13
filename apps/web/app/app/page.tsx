@@ -1,7 +1,7 @@
 "use client"
 
 import { useQuery } from "@tanstack/react-query"
-
+import type { PotsView } from "@/components/books/pots-card"
 import { HomeView } from "@/components/home/home-view"
 import { useShell } from "@/components/shell/shell-context"
 import { useNetwork } from "@/hooks/use-network"
@@ -40,6 +40,12 @@ export default function HomePage() {
   }).data?.due
   const by = referrals.data?.referredBy
   const network = useNetwork()
+  // The same pots the Balance page shows (one cache entry per network).
+  const pots = useQuery({
+    queryKey: ["pots", network],
+    queryFn: () => api<PotsView>("/api/pots"),
+    staleTime: 30_000,
+  }).data
   const account = profile?.accounts.find((entry) => entry.network === network)
   if (!profile || !account) return null
 
@@ -58,6 +64,15 @@ export default function HomePage() {
       onAddTestDollars={testDollars.add}
       steps={steps.data}
       payrollDue={due ? { ...due, total: BigInt(due.total) } : null}
+      pots={
+        pots
+          ? {
+              spendable: BigInt(pots.spendable),
+              tax: BigInt(pots.tax),
+              savings: BigInt(pots.savings),
+            }
+          : null
+      }
       invite={
         by && referrals.data && (by.status === "open" || by.status === "qualified")
           ? {

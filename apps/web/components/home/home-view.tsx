@@ -72,6 +72,8 @@ export interface HomeViewProps {
   onAddTestDollars?: () => void
   /** The payday has come and no run has paid it yet. */
   payrollDue?: { payday: string; people: number; total: bigint } | null
+  /** What the pots hold, shown under the balance once anything is set aside. */
+  pots?: { spendable: bigint; tax: bigint; savings: bigint } | null
 }
 
 export function HomeView({
@@ -89,6 +91,7 @@ export function HomeView({
   invite,
   steps,
   payrollDue,
+  pots,
 }: HomeViewProps) {
   const [copied, setCopied] = useState(false)
   const reduce = useReducedMotion()
@@ -194,6 +197,22 @@ export function HomeView({
                   className="text-[64px] text-white sm:text-[80px]"
                 />
               )}
+              {pots && pots.tax + pots.savings > 0n ? (
+                <Link
+                  href="/app/balance"
+                  className="tnum flex flex-wrap gap-x-4 gap-y-1 self-start text-[15px] font-medium text-white/85 hover:text-white"
+                >
+                  <span>Spendable {usdUnits(pots.spendable)}</span>
+                  <span className="inline-flex items-center gap-1.5">
+                    <span className="size-2.5 rounded-full bg-pot-tax ring-1 ring-white/60" />
+                    Tax {usdUnits(pots.tax)}
+                  </span>
+                  <span className="inline-flex items-center gap-1.5">
+                    <span className="size-2.5 rounded-full bg-pot-savings ring-1 ring-white/60" />
+                    Savings {usdUnits(pots.savings)}
+                  </span>
+                </Link>
+              ) : null}
             </div>
             <div className="flex gap-4 sm:gap-6">
               <StageAction label="Get paid" onClick={onReceive} icon={<ArrowDownLeft />} />
