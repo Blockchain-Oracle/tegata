@@ -3,6 +3,7 @@
 import { useQuery } from "@tanstack/react-query"
 
 import { HomeView } from "@/components/home/home-view"
+import { AppInvite } from "@/components/shell/app-invite"
 import { useShell } from "@/components/shell/shell-context"
 import { useNetwork } from "@/hooks/use-network"
 import { useProfile } from "@/hooks/use-profile"
@@ -44,31 +45,34 @@ export default function HomePage() {
   if (!profile || !account) return null
 
   return (
-    <HomeView
-      businessName={profile.workspace?.name ?? "Your business"}
-      accountId={account.accountId}
-      network={account.network}
-      balance={account.balance === undefined ? null : BigInt(account.balance)}
-      activity={activity.data?.items}
-      activityError={activity.isError}
-      onReceive={openReceive}
-      onScan={openScan}
-      onRetryActivity={() => void activity.refetch()}
-      testDollars={account.network === "testnet" ? testDollars : undefined}
-      onAddTestDollars={testDollars.add}
-      steps={steps.data}
-      payrollDue={due ? { ...due, total: BigInt(due.total) } : null}
-      invite={
-        by && referrals.data && (by.status === "open" || by.status === "qualified")
-          ? {
-              business: by.business,
-              received: BigInt(by.received),
-              threshold: BigInt(referrals.data.rules.threshold),
-              reward: BigInt(referrals.data.rules.reward),
-              qualified: by.status === "qualified",
-            }
-          : null
-      }
-    />
+    <>
+      <AppInvite />
+      <HomeView
+        businessName={profile.workspace?.name ?? "Your business"}
+        accountId={account.accountId}
+        network={account.network}
+        balance={account.balance === undefined ? null : BigInt(account.balance)}
+        activity={activity.data?.items}
+        activityError={activity.isError}
+        onReceive={openReceive}
+        onScan={openScan}
+        onRetryActivity={() => void activity.refetch()}
+        testDollars={account.network === "testnet" ? testDollars : undefined}
+        onAddTestDollars={testDollars.add}
+        steps={steps.data}
+        payrollDue={due ? { ...due, total: BigInt(due.total) } : null}
+        invite={
+          by && referrals.data && (by.status === "open" || by.status === "qualified")
+            ? {
+                business: by.business,
+                received: BigInt(by.received),
+                threshold: BigInt(referrals.data.rules.threshold),
+                reward: BigInt(referrals.data.rules.reward),
+                qualified: by.status === "qualified",
+              }
+            : null
+        }
+      />
+    </>
   )
 }
