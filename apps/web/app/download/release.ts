@@ -26,7 +26,14 @@ export const IOS: IosRelease = {
   testflight: null,
 }
 
-export const ANDROID: AndroidRelease | null = null
+export const ANDROID: AndroidRelease | null = {
+  version: "1.0.0",
+  build: 1,
+  url: "https://expo.dev/artifacts/eas/J-kIepU5qgdJIYQWCvfzcLCre1O8GNan037QXJZaiow.apk",
+  sha256: "9ac8add6aa8a2c64c3d980abf5a2aee9337e61925a56c54af2118d455d783640",
+  sizeBytes: 82_498_985,
+  builtAt: "2026-11-13T17:45:00Z",
+}
 
 /** Only Apple's own join links count as a TestFlight invitation. */
 export function isTestflightLink(url: string | null): url is string {
