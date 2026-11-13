@@ -168,6 +168,12 @@ export default function PrivacyPage() {
                   <strong>Server logs:</strong> our servers record requests (time, page, IP address)
                   to keep Tegata secure and working. We don't use them to profile you.
                 </>,
+                <>
+                  <strong>Referral check:</strong> at sign-in Tegata keeps a keyed hash of your IP
+                  address and of a device cookie, never the IP itself, and compares them only when
+                  someone is referred. A match flags the referral for a person to look at; it never
+                  blocks anyone.
+                </>,
               ]}
             />
           </Section>
@@ -206,6 +212,14 @@ export default function PrivacyPage() {
             <p>
               We share data with authorities only when the law requires it. We don't sell or rent
               data, and nothing goes to advertisers or data brokers.
+            </p>
+          </Section>
+
+          <Section title="Cookies">
+            <p>
+              Only the ones Tegata needs: Privy's sign-in session (or Tegata's own for a NEAR
+              wallet), the device cookie for the referral check above, and your Sandbox or Live
+              choice. No advertising or analytics cookies.
             </p>
           </Section>
 
