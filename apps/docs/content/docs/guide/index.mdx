@@ -5,18 +5,18 @@ icon: LayoutDashboard
 ---
 
 <Phones>
-  <Phone src="/shots/phone/app-home.webp" alt="Home for Studio Kaze on a phone: a $1.25 balance in USDC on NEAR with Get paid, Send, Add money and Scan, then Latest: Order #1042 paid, a send to tegata.testnet, a payroll run, invoice INV-0001 paid" caption="Home: the balance on the stage, then Latest." eager />
-  <Phone src="/shots/phone/get-paid.webp" alt="The Get paid sheet: a QR code of studio-kaze-5601a94a.testnet with the business seal, USDC on NEAR, Sandbox test dollars, Copy and Share" caption="Get paid: your pay address as a QR code." eager />
+  <Phone src="/shots/phone/app-home.webp" alt="Home for Studio Kaze on a phone: a $1.25 balance in USDC on NEAR, Spendable $0.90, Tax $0.25, Savings $0.10, with Get paid, Send, Add money and Scan, then Latest: Order #1042 paid, a send to tegata.testnet, a payroll run, invoice INV-0001 paid" caption="Home: the balance on the stage, then Latest." eager />
+  <Phone src="/shots/phone/get-paid.webp" alt="The Get paid sheet: a QR code of studio-kaze-4a050c1f.testnet with the business seal, USDC on NEAR, Sandbox test dollars, Copy and Share" caption="Get paid: your pay address as a QR code." eager />
   <Phone src="/shots/phone/app-menu.webp" alt="The phone Menu sheet titled Everything: Search, Home, Get paid with Invoices, Pay links, Counter, Customers, Pay people with Send, People, Payroll, then Money with Activity and Balance" caption="On a phone, Menu opens every place." eager />
 </Phones>
 
 ## Home
 
-<Shot src="/shots/wide/app-home.webp" alt="Home for Studio Kaze, a demo business on testnet: the grouped rail on the left with Scan a QR code at the top and Bank and Cards under Money; a $1.25 balance with Get paid, Send, Add money and Scan; the pay address card with Copy and Show QR; Latest: Order #1042 paid, a send, a payroll run, invoice INV-0001 paid, Design sprint paid" caption="Home on a laptop, for a demo business signed in with a NEAR wallet." address="tegata.xyz/app" />
+<Shot src="/shots/wide/app-home.webp" alt="Home for Studio Kaze, a demo business on testnet: the grouped rail with Scan a QR code at the top, Checkout under Get paid and Bank and Cards under Money; a $1.25 balance with Spendable $0.90, Tax $0.25 and Savings $0.10, then Get paid, Send, Add money and Scan; the pay address card with Copy and Show QR; Latest: Order #1042 paid, a send, a payroll run, invoice INV-0001 paid, Design sprint paid" caption="Home on a laptop, for a demo business signed in with a NEAR wallet." address="tegata.xyz/app" />
 
 | Part | What it does |
 | --- | --- |
-| Balance | Your USDC on NEAR, read live from the USDC contract. It opens [Balance](/docs/guide/balance) |
+| Balance | Your USDC on NEAR, read live from the USDC contract. It opens [Balance](/docs/guide/balance). Once anything is set aside, **Spendable**, **Tax** and **Savings** under it ([Pots](/docs/guide/balance#pots-tax-and-savings)) |
 | **Get paid** | Your pay address as a QR code, with **Copy** and **Share** |
 | **Send** | Opens [Send](/docs/guide/send) |
 | **Add money** | Your pay address, a card, another chain, or (in the Sandbox) test dollars: [Balance](/docs/guide/balance#add-money) |
@@ -29,7 +29,7 @@ icon: LayoutDashboard
 ## Places
 
 On a desktop the rail starts with the [Sandbox / Live](/docs/guide/sandbox) switch, **Search ⌘K** and **Scan a QR
-code**, then groups places by job: **Home**, then **Get paid** (Invoices, Pay links, Counter, Customers), **Pay
+code**, then groups places by job: **Home**, then **Get paid** (Invoices, Pay links, Counter, Checkout, Customers), **Pay
 people** (Send, People, Payroll) and **Money** (Activity, Balance, Bank, Cards), with Refer, Developers and Business at
 the foot. A group folds with its chevron, and the rail remembers it.
 
@@ -42,12 +42,13 @@ Run payroll, Counter, Add people, **Scan to pay** and Get paid (QR); **Menu** op
 | Invoices | [Invoices](/docs/guide/invoices) |
 | Pay links | [Pay links](/docs/guide/pay-links) |
 | Counter | [Take a payment in person](/docs/guide/counter): keypad, QR code, paid |
+| Checkout | [A pay button for your own site](/docs/build/checkout), with its code |
 | Customers | [Customers](/docs/guide/customers) |
 | Send | [Send](/docs/guide/send), to a NEAR account or another chain |
 | People | [Your team and where their pay lands](/docs/guide/pay-people) |
 | Payroll | [The schedule, runs and payslips](/docs/guide/pay-people#run-payroll) |
 | Activity | Every movement by month, filters, search, refunds, the CSV and the statement ([for bookkeepers](/docs/start/bookkeepers)) |
-| Balance | [What you hold, Add money, Move out, and the books checked against NEAR](/docs/guide/balance) |
+| Balance | [What you hold, Tax and Savings pots, Add money, Move out, and the books checked against NEAR](/docs/guide/balance) |
 | Bank | [Withdraw to a bank, and a euro account](/docs/guide/bank) |
 | Cards | [Cards for you and your team, and a crypto card you already have](/docs/guide/cards) |
 | Refer | [Referrals](/docs/guide/refer) |

@@ -1,13 +1,41 @@
 ---
 title: Balance
-description: What you hold in USDC on NEAR, every way to add money (your pay address, a card, another chain, test dollars), every way out, and your books checked against NEAR.
+description: What you hold in USDC on NEAR, Tax and Savings pots that set a share of every payment aside, every way to add money and every way out, and your books checked against NEAR.
 icon: Wallet
 ---
 
-<Shot src="/shots/wide/app-balance.webp" alt="Balance for Studio Kaze on a laptop: you hold $1.25 in your balance, Sandbox · other chains in Live, with Add money, Move out and To a bank; Books against NEAR: 1 transfer outside Tegata of 7, Arrived outside Tegata from tegata.testnet, +$1.00" caption="Balance: what you hold, three ways to move it, and the books checked against NEAR." address="tegata.xyz/app/balance" />
+<Shot src="/shots/wide/app-balance.webp" alt="Balance for Studio Kaze on a laptop: you hold $1.25, with Add money, Move out and To a bank; Pots with Split money in on: to spend $0.90, tax $0.25, savings $0.10; a Tax pot at 25% of each payment and a Savings pot at 10%, each with To spending and Add; Change the shares; Books against NEAR below" caption="Real: Balance with Tax and Savings pots, and the books checked against NEAR." address="tegata.xyz/app/balance" />
 
 Open **Balance** under **Money**. The stage shows what you hold, read live from the USDC contract on NEAR (and what
 sits in [autopilot](/docs/how-money-moves/autopilot), if any), your pay address, and three actions.
+
+## Pots: tax and savings
+
+<Phones>
+  <Phone src="/shots/phone/app-balance.webp" alt="Balance on a phone: you hold $1.25; Pots, Split money in on, a bar of to spend $0.90, tax $0.25 and savings $0.10, then the Tax pot at 25% of each payment" caption="Real: the pots under the balance." eager />
+  <Phone src="/shots/phone/pots-shares.webp" alt="Change the shares: presets Freelancer 25 · 10, Light 15 · 5 and Savings only 0 · 20; Tax % 25, Savings % 10; $1,000 in → $250 tax · $100 savings · $650 to spend; Split from now on and Cancel" caption="Real: the shares, with a $1,000 example." eager />
+  <Phone src="/shots/phone/app-home.webp" alt="Home: the $1.25 balance with Spendable $0.90, Tax $0.25 and Savings $0.10 under it" caption="Real: Home shows what's spendable." eager />
+</Phones>
+
+Turn on **Split money in** and choose a share for **Tax %** and **Savings %**, or a preset: **Freelancer** 25 · 10,
+**Light** 15 · 5, **Savings only** 0 · 20. Together they can be at most 90%, so something is always left to spend. The
+sheet works out an example as you type ("$1,000 in → $250 tax · $100 savings · $650 to spend"); **Split from now on**
+saves it. Money already in stays as it is.
+
+From then on, every payment that settles on NEAR sets its share aside, once per payment. Money marked paid by hand
+never does: it isn't on the account. Pay that lands in a person's own Tegata account follows that person's own rule,
+never their employer's.
+
+| | |
+| --- | --- |
+| What a pot is | A label on your one NEAR account. The money never moves, so it needs no signature, Tegata holds nothing, and nothing is paid to a tax office |
+| **To spend** | What you hold, less Tax and Savings |
+| **To spending** | Moves money from a pot back to spending, up to what the pot holds |
+| **Add** | Moves money from spending into a pot, up to what's spendable |
+| If money left another way | When the account holds less than the pots (say, a transfer from a wallet outside Tegata), the pots shrink in proportion |
+
+Once anything is set aside, Home shows **Spendable**, **Tax** and **Savings** under the balance, opening Balance.
+Each mode, Sandbox and Live, has its own pots.
 
 ## Add money
 

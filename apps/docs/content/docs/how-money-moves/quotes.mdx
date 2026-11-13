@@ -4,20 +4,20 @@ description: NEAR Intents' 1Click API prices what a payer on another chain sends
 icon: Globe
 ---
 
-<Shot src="/shots/wide/landing.webp" alt="Tegata's landing page: Get paid. Pay your team. In exact dollars., beside the calculator: you get paid $1250, your customer pays with one of eleven coins; they send on Tron 1,263.94 USDT, you receive exactly $1,250.00, quote from NEAR Intents, about 80 s" caption="The landing page's calculator, on a live quote." address="tegata.xyz" />
+<Shot src="/shots/wide/landing.webp" alt="Tegata's landing page: Get paid. Pay your team. In exact dollars., beside the calculator: you get paid $1250, your customer pays with one of the coins; they send on Tron 1,263.94 USDT, you receive exactly $1,250.00, quote from NEAR Intents, about 80 s" caption="The landing page's calculator, on a live quote." address="tegata.xyz" />
 
 A business is always paid an exact amount. So every price for paying in is an **exact-output** quote: the business
 receives exactly $1,250.00 in USDC on NEAR, and the payer's side carries the cost of the route.
 
 | Coin | Chains |
 | --- | --- |
-| USDT | Tron, Ethereum, BNB Chain |
-| USDC | Base, Solana, Arbitrum, Polygon, Gnosis |
+| USDT | Tron, Ethereum, BNB Chain, Solana, Polygon, Avalanche, Gnosis, and USDT0 on Arbitrum |
+| USDC | Base, Solana, Arbitrum, Polygon, Gnosis, Ethereum, BNB Chain, Avalanche, Sui |
 | BTC | Bitcoin |
 | ETH | Ethereum |
 | SOL | Solana |
 
-- The eleven routes are fixed in code (`apps/web/lib/routes.ts`); each one's asset is looked up in 1Click's
+- The 20 routes, on 11 chains, are fixed in code (`apps/web/lib/routes.ts`); each one's asset is looked up in 1Click's
   `/v0/tokens` (cached for 5 minutes).
 - A price shown before anyone commits is a **dry** quote, cached for 30 seconds. A dry quote never creates a deposit
   address. The landing page's calculator and the pay page's **Another chain** show one everywhere; Send's
@@ -27,7 +27,7 @@ receives exactly $1,250.00 in USDC on NEAR, and the payer's side carries the cos
 - In Live, **Get the deposit address** asks for a real, signed quote with a deposit address and a 20-minute window,
   and Tegata checks it before the payer sees it: [Any chain, in and out](/docs/how-money-moves/any-chain).
 
-<Phone src="/shots/phone/pay-chain-sandbox.webp" alt="The pay page in the Sandbox with Another chain open: the eleven coins and NEAR Intents' live answer, Temporary swap limits: minimum swap amount is $100, marked Live only · real price" caption="On a $0.25 link, NEAR Intents' live answer is its minimum." />
+<Phone src="/shots/phone/pay-chain-sandbox.webp" alt="The pay page in the Sandbox with Another chain open: the coins and NEAR Intents' live answer, Temporary swap limits: minimum swap amount is $100, marked Live only · real price" caption="On a $0.25 link, NEAR Intents' live answer is its minimum." />
 
 <Callout title="In the Sandbox" type="info">
 NEAR Intents has no testnet. In the Sandbox the price is real and marked "Live only · real price"; the deposit

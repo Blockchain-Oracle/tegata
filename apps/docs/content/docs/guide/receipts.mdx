@@ -5,7 +5,7 @@ icon: ReceiptText
 ---
 
 <Phones>
-  <Phone src="/shots/phone/receipt.webp" alt="Real receipt No. 0002 from Studio Kaze: $0.15 for invoice INV-0001 from northwind-04010c29.tegata.testnet, paid with a NEAR wallet, settled 13 Nov 2026, 09:30 GMT+1, network fee paid by the payer, stamped PAID" caption="A customer payment: numbered, stamped PAID." eager />
+  <Phone src="/shots/phone/receipt.webp" alt="Real receipt No. 0002 from Studio Kaze: $0.15 for invoice INV-0001 from northwind-aeb5ac54.tegata.testnet, paid with a NEAR wallet, settled 13 Nov 2026, 17:11 GMT+1, network fee paid by the payer, stamped PAID" caption="A customer payment: numbered, stamped PAID." eager />
   <Phone src="/shots/phone/receipt-send.webp" alt="Real receipt from Studio Kaze stamped SENT: $0.05 to tegata.testnet, one-off payment, paid with a Tegata balance, network fee paid by Tegata" caption="A send: stamped SENT." eager />
   <Phone src="/shots/phone/receipt-reward.webp" alt="A receipt from Tegata under Tegata's seal: a $1.00 referral reward to Abu Studio" caption="A referral reward: under Tegata's own seal." eager />
 </Phones>
@@ -18,7 +18,7 @@ pages: share one with the person you paid, or the one who paid you.
 | Customer payment | `/r/<token>` | Yes, No. 0001… per business | Your seal, PAID (or Refunded) |
 | Send, payment to another chain, refund | `/r/send/<id>` | No | Your seal, SENT |
 | Referral reward | `/r/reward/<id>` | No | Tegata's seal |
-| Payslip | `/r/slip/<id>`, and its PDF at `/r/slip/<id>/pdf` | No | The business's seal, PAID |
+| Payslip (a contractor's: Payment receipt) | `/r/slip/<id>`, and its PDF at `/r/slip/<id>/pdf` | No | The business's seal, PAID |
 
 Each one shows **Paid to**, **For**, **From**, **Paid with**, **Settled** (in the reader's own time zone, named),
 **Network fee** and **Transaction**, then **Share**, **Save as PDF** and **See it on NEAR**. A send that hasn't
@@ -41,4 +41,4 @@ delivery transaction on that chain. A payslip paid on another chain adds **Deliv
 Bank withdrawals and deposits have no public receipt page: their slip on [Bank](/docs/guide/bank) and the email are
 the record.
 
-<Phone src="/shots/phone/receipt-order.webp" alt="Real receipt No. 0003 from Studio Kaze: $0.10 for Order #1042, a checkout session, paid with a NEAR wallet by northwind-04010c29.tegata.testnet, stamped PAID" caption="A checkout session's receipt: Order #1042." />
+<Phone src="/shots/phone/receipt-order.webp" alt="Real receipt No. 0003 from Studio Kaze: $0.10 for Order #1042, a checkout session, paid with a NEAR wallet by northwind-aeb5ac54.tegata.testnet, stamped PAID" caption="A checkout session's receipt: Order #1042." />

@@ -1,0 +1,294 @@
+---
+title: Checkout
+description: "Tegata Checkout: one script tag and one button put a pay button on any site; the customer pays over your page from a Tegata balance, a NEAR wallet or a coin on another chain, and you receive exact USDC on NEAR."
+icon: ShoppingBag
+---
+
+<Shot src="/shots/wide/shop-sheet.webp" alt="The Kaze Goods demo shop with Tegata's checkout open over it: Pay Studio Kaze, Washi tote bag, $1.00, Sandbox, Studio Kaze receives exactly this in USDC; How do you want to pay? Tegata balance with Sign in to pay, NEAR wallet, Another chain; Open in a new window and a close button at the top" caption="Real: the demo shop on another site, with Tegata Checkout open over it." address="docs.tegata.xyz/demo-shop" />
+
+Tegata Checkout is a pay button for any website. Your page loads one script from tegata.xyz; a button opens
+Tegata's pay page over your page; the customer pays; your server hears about it from a signed webhook. The business
+always receives exactly the price, in USDC on NEAR.
+
+<Callout title="Try it" type="info">
+The [demo shop](https://docs.tegata.xyz/demo-shop) on this docs site (a different origin from tegata.xyz) has three real buttons on
+Sandbox pay links. Paying them takes test dollars, not real money.
+</Callout>
+
+<Phones>
+  <Phone src="/shots/phone/shop.webp" alt="The Kaze Goods demo shop on a phone: a note that the buttons are real Tegata Checkout on Sandbox pay links, Small things, paid in dollars, and the Washi tote bag at $1.00" caption="Real: the demo shop on a phone." eager />
+  <Phone src="/shots/phone/shop-sheet.webp" alt="The checkout risen from the bottom over the demo shop: Open in a new window and close, Pay Studio Kaze, Washi tote bag, $1.00, Sandbox; How do you want to pay? Tegata balance with Sign in to pay, NEAR wallet, Another chain" caption="Real: on a phone, it rises from the bottom." eager />
+  <Phone src="/shots/phone/app-checkout.webp" alt="Checkout in the app on a phone: What it charges with Tip the studio, Seal print A5, Washi tote bag and Design sprint; Amount on the button 42.50; Look: Vermilion, Ink, Washi; Small, Medium, Large; Show the coins" caption="Real: building a button in the app." eager />
+</Phones>
+
+## Quickstart
+
+<Steps>
+<Step>
+### Load the script, once per page
+
+```html
+<script src="https://tegata.xyz/checkout.js" defer></script>
+```
+</Step>
+<Step>
+### Put a button where you want it
+
+```html
+<button data-tegata-link="TOKEN"></button>
+```
+
+`TOKEN` is your pay link's token, the last part of its address: `https://tegata.xyz/pay/3h7CkB7muWUM` has the token
+`3h7CkB7muWUM`. Make a link under [Pay links](/docs/guide/pay-links), or let **Checkout** build the code for you.
+</Step>
+</Steps>
+
+That's all. An empty element gets Tegata's own button; press it and the checkout opens over your page.
+
+## The Checkout page in the app
+
+<Shot src="/shots/wide/app-checkout.webp" alt="The Checkout page in Tegata: What it charges, a list of Studio Kaze's pay links (Tip the studio, any amount, chosen; Seal print, A5, $2.50; Washi tote bag, $1.00; Design sprint, Week 2, $0.25); Amount on the button 42.50; Look: Vermilion, Ink, Washi and Small, Medium, Large; Show the coins; beside them a shop page at your-shop.com with the button and What your customer sees; below, the code in tabs index.html, PayButton.tsx and no-script.html, with Copy" caption="Real: Get paid → Checkout builds the button and its code." address="tegata.xyz/app/checkout" />
+
+Open **Checkout** under **Get paid** in the rail. Choose **What it charges** (one of your open pay links; the page
+lists six), the **Amount
+on the button** for an any-amount link, the **Look** (Vermilion, Ink or Washi; Small, Medium or Large) and **Show the
+coins**. A shop page shows the real button; press it for the real checkout. The code comes in three tabs,
+`index.html`, `PayButton.tsx` and `no-script.html`, each with **Copy**.
+
+## The attributes
+
+checkout.js wires every element with `data-tegata-link` or `data-tegata-session`, including ones added to the page
+later.
+
+| Attribute | What it does |
+| --- | --- |
+| `data-tegata-link` | A pay link's token. The checkout charges that link |
+| `data-tegata-session` | A [checkout session](/docs/build/developers#checkout-sessions)'s pay URL (its `url`) or token. Use it when your server sets the price per order |
+| `data-tegata-amount` | Dollars, like `42.50`. Drawn on the button; for an any-amount link it is also the amount the checkout starts with (the payer can change it). On a fixed-price link it is only drawn, so keep it equal to the link's price |
+| `data-tegata-theme` | `shu` (vermilion, the default), `ink` or `washi`. `dark` means `ink`, `light` means `washi` |
+| `data-tegata-size` | `s`, `m` or `l`: 40, 48 or 56 pixels tall. `m` by default |
+| `data-tegata-coins` | `off` hides the coin marks on the button |
+
+An element with its own content keeps your markup: put text or an image inside and checkout.js only wires the click
+(and, on an element that isn't a `<button>`, adds `role="button"` and a tab stop). An empty element gets Tegata's
+button, drawn in a Shadow DOM so your page's CSS can't change it.
+
+## The three looks
+
+<div className="not-prose my-6 flex flex-wrap items-center gap-4">
+  <img src="/checkout/button-shu.svg" alt="Pay $42.50 with Tegata, vermilion" width="265" height="48" />
+  <img src="/checkout/button-ink.svg" alt="Pay $42.50 with Tegata, ink" width="265" height="48" />
+  <img src="/checkout/button-washi.svg" alt="Pay $42.50 with Tegata, washi" width="265" height="48" />
+</div>
+
+`shu`, `ink` and `washi`, as tegata.xyz draws them: the tilted 手形 seal, "Pay $42.50" in Archivo, and the coins a
+customer can pay with (USDC, USDT, ETH, SOL, BTC). Without an amount the button reads "Tegata":
+
+<div className="not-prose my-6 flex flex-wrap items-center gap-4">
+  <img src="/checkout/button-plain.svg" alt="Tegata, with the seal and the coins, no amount" width="242" height="48" />
+  <img src="/checkout/button-nocoins.svg" alt="Pay $42.50 with Tegata, without the coins" width="178" height="48" />
+  <img src="/checkout/button-small.svg" alt="Pay $42.50 with Tegata, small" width="223" height="40" />
+  <img src="/checkout/button-large.svg" alt="Pay $42.50 with Tegata, large" width="310" height="56" />
+</div>
+
+## From JavaScript
+
+```js
+Tegata.checkout({
+  link: "3h7CkB7muWUM",        // or session: "https://tegata.xyz/pay/zFydXvEnyZjFzF"
+  amount: "12.50",             // any-amount links: where it starts
+  onPaid: (detail) => {},      // { paymentId, amount, receipt }
+  onClose: ({ reason }) => {}, // "closed", "backdrop", "escape" or "replaced"
+  target: document.querySelector("#buy"), // gets the DOM events below
+})
+
+Tegata.close()
+```
+
+| Option | |
+| --- | --- |
+| `link` or `session` | One of them. A session can be its pay URL or its token |
+| `amount` | Dollars, for an any-amount link |
+| `onPaid(detail)` | When the payment has settled. `detail` is `{ paymentId, amount, receipt }`: `amount` in USDC base units as a string (`"1000000"` is $1.00), `receipt` the receipt's address, or `null` |
+| `onClose({ reason })` | When the checkout closes: its close button, a click outside it, Escape (while your page has focus), or another checkout opening |
+| `target` | An element that receives `tegata:paid` and `tegata:closed` |
+
+<Shot src="/shots/wide/shop-tip.webp" alt="The demo shop with the checkout open from the shop's own Send a tip button: Pay Studio Kaze, Tip the studio, $12.50, the amount the shop typed, still editable; How do you want to pay? Tegata balance, NEAR wallet, Another chain" caption="Real: the shop's own button and Tegata.checkout, opening an any-amount link at $12.50." address="docs.tegata.xyz/demo-shop" />
+
+Buttons wired from attributes are their own target. Both events bubble, so one listener on `document` hears every
+button:
+
+```js
+document.addEventListener("tegata:paid", (event) => {
+  console.log(event.detail) // { paymentId, amount, receipt }
+})
+document.addEventListener("tegata:closed", () => {})
+```
+
+On a screen 520 pixels wide or less, the checkout rises from the bottom; on a wider one it sits in the middle. Loading
+the script twice does no harm.
+
+## React and Next.js
+
+Load the script once, and render plain buttons. checkout.js finds them when they appear.
+
+```tsx title="PayButton.tsx"
+"use client"
+import { useEffect } from "react"
+
+const SRC = "https://tegata.xyz/checkout.js"
+
+export function PayButton({ link, amount }: { link: string; amount?: string }) {
+  useEffect(() => {
+    if (document.querySelector(`script[src="${SRC}"]`)) return
+    const script = document.createElement("script")
+    script.src = SRC
+    script.defer = true
+    document.body.appendChild(script)
+  }, [])
+
+  // A new key when the amount changes, so the button is drawn again with it.
+  return <button key={amount} data-tegata-link={link} data-tegata-amount={amount} />
+}
+```
+
+In the Next.js App Router, load it from the root layout with `next/script` and open the checkout from a client
+component. Here the price comes from your server, as a [checkout session](/docs/build/developers#checkout-sessions):
+
+```tsx title="app/layout.tsx"
+import Script from "next/script"
+
+export default function RootLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <html lang="en">
+      <body>
+        {children}
+        <Script src="https://tegata.xyz/checkout.js" strategy="afterInteractive" />
+      </body>
+    </html>
+  )
+}
+```
+
+```tsx title="app/cart/pay.tsx"
+"use client"
+import { useRouter } from "next/navigation"
+
+declare global {
+  interface Window {
+    Tegata?: {
+      checkout(options: {
+        link?: string
+        session?: string
+        amount?: string
+        onPaid?: (detail: { paymentId: string; amount: string; receipt: string | null }) => void
+        onClose?: (info: { reason: string }) => void
+        target?: Element
+      }): void
+      close(): void
+    }
+  }
+}
+
+export function Pay({ sessionUrl }: { sessionUrl: string }) {
+  const router = useRouter()
+  return (
+    <button
+      type="button"
+      onClick={() =>
+        window.Tegata?.checkout({
+          session: sessionUrl,
+          // For the screen only: the order is confirmed by your webhook handler.
+          onPaid: () => router.push("/thanks"),
+        })
+      }
+    >
+      Pay with Tegata
+    </button>
+  )
+}
+```
+
+`sessionUrl` is the `url` your server got back when it created the session with its secret API key. Never put the
+key in the browser.
+
+## No JavaScript
+
+The same button as an image, linking to the pay page:
+
+```html
+<a href="https://tegata.xyz/pay/TOKEN">
+  <img src="https://tegata.xyz/checkout/button.svg?amount=42.50&theme=shu"
+       alt="Pay $42.50 with Tegata" height="48">
+</a>
+```
+
+| `button.svg` parameter | |
+| --- | --- |
+| `amount` | Dollars, like `42.50` (up to nine digits and two decimals). Left out, the button reads "Tegata" |
+| `theme` | `shu`, `ink` or `washi`. Anything else draws `shu` |
+| `size` | `s`, `m` or `l` (40, 48 or 56 pixels tall). Anything else draws `m` |
+| `coins` | `0` hides the coins |
+
+The image is one SVG with the words drawn as outlines, so it looks the same on every site without a font, and it is
+cached for a day. For an any-amount link, add `?amount=12.50` to the pay page's address and the page starts there.
+
+## How the customer pays
+
+The checkout is Tegata's [pay page](/docs/guide/pay-page), the same one `https://tegata.xyz/pay/TOKEN` opens:
+
+| Way | |
+| --- | --- |
+| **Tegata balance** | Sign in with an email and pay from Tegata dollars. In the Sandbox, **Add $5.00 test dollars** appears when the balance is short. Signing in takes the payer to Tegata's sign-in page and back to the plain pay page, so the payment works but your page doesn't hear `onPaid` from it: your webhook still arrives |
+| **NEAR wallet** | Approve one USDC transfer with the payment's memo |
+| **Another chain** (Live) | USDT, USDC, BTC, ETH or SOL: 20 coin-and-chain routes on 11 chains, through NEAR Intents, picked coin first, then chain. The payer gives a refund address on their chain, then sends exactly the quoted amount to a deposit address before the "Pay within" time runs out: from a wallet on the device (EVM wallets found through EIP-6963, such as MetaMask, Rabby, Coinbase Wallet and OKX, or TronLink: "Connect, then approve one transfer", which also fills the refund address), or from any wallet or exchange to the address or QR code |
+| **Card** | Through Transak, once its keys are set ([Cards](/docs/guide/cards#customers-who-pay-by-card)) |
+
+Payers on another chain start on USDC on Base. A route below its minimum says so in dollars ("USDC on Base needs at
+least $0.15 right now", "USDT on Tron needs at least $100 right now"), with a one-tap switch to Base. In the Sandbox, another chain shows the real price and pays in Live only.
+
+The bar on top of the checkout has **Open in a new window**, for a sign-in or a wallet that won't work inside another
+site's frame. It opens the same pay page in a tab of its own (without an amount you preset). Your page hears nothing
+from that tab; the webhook arrives as always.
+
+## Security
+
+- **The browser event is not proof.** `onPaid`, `tegata:paid` and the messages behind them are for your screens.
+  Confirm an order from the signed [webhook](/docs/build/developers#webhooks), or by reading the session with your
+  API key.
+- **An any-amount link takes what the payer sends.** The amount you set is where the page starts, and the payer can
+  change it. Check the webhook's `amount` against the order, or use a checkout session: its price is set by your
+  server and can't be changed.
+- **A pay link has no order number.** Its `payment.succeeded` names the link (`request_id`) and the amount. For
+  orders, make a session per order and put the order in its `metadata`.
+- **Only the checkout can be framed.** Other sites may load `https://tegata.xyz/checkout/<token>` in a frame; every
+  other Tegata page refuses to load in another site's frame (`frame-ancestors 'self'`), so nobody can frame the app
+  where an owner approves money.
+
+<Accordions>
+<Accordion title="The messages between the checkout and your page">
+
+checkout.js opens `https://tegata.xyz/checkout/<token>?parent=<your page's origin>` in an iframe. The checkout sends
+messages only to that origin, with `postMessage`:
+
+| `type` | When | Carries |
+| --- | --- | --- |
+| `tegata:checkout.opened` | The checkout loaded | `token` |
+| `tegata:checkout.completed` | The payment settled | `token`, `detail: { paymentId, amount, receipt }` |
+| `tegata:checkout.close` | The payer pressed close | `token` |
+
+checkout.js acts on a message only if it comes from tegata.xyz, from its own frame, for the token it opened.
+
+</Accordion>
+</Accordions>
+
+## Sandbox and Live
+
+A pay link or session belongs to the mode it was made in. A Sandbox link charges test dollars on NEAR testnet; a Live
+one charges real USDC on NEAR mainnet, and only there can a customer pay from another chain (NEAR Intents has no
+testnet). The script, the attributes and the events are the same in both.
+
+<Cards>
+  <Card icon={<Icon name="Store" />} title="The demo shop" href="https://docs.tegata.xyz/demo-shop" description="Three real buttons on Sandbox pay links, on this docs site." />
+  <Card icon={<Icon name="CodeXml" />} title="The API and webhooks" href="/docs/build/developers" description="Checkout sessions, events and signed webhooks." />
+</Cards>

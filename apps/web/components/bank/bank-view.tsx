@@ -632,7 +632,7 @@ export function BankView(p: BankViewProps) {
           </motion.div>
         ) : p.step === "paid" && p.payout ? (
           <motion.div key="paid" className="flex flex-col gap-5" {...slide}>
-            <div className="relative rounded-[20px] bg-paper text-[#16130F] shadow-receipt">
+            <div className="relative overflow-hidden rounded-[20px] bg-paper text-[#16130F] shadow-receipt">
               <div className="flex flex-col gap-1 p-6 pb-4">
                 <span className="flex items-center gap-2 text-[13px] font-semibold text-[#6B6357]">
                   <TegataSeal size={20} textured={false} /> Paid to a bank

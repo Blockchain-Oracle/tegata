@@ -279,7 +279,7 @@ export function InvoiceBuilder({
       <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)]">
         <form
           className={cn(
-            "flex flex-col gap-6 rounded-[24px] bg-card p-5 sm:p-6",
+            "flex min-w-0 flex-col gap-6 rounded-[24px] bg-card p-5 sm:p-6",
             phoneView === "preview" && "max-lg:hidden",
           )}
           onSubmit={(e) => {

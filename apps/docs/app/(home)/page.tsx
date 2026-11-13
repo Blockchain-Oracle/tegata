@@ -72,7 +72,7 @@ export default function Home() {
 
       <section className="flex flex-col gap-3">
         <span className="text-center text-[13px] font-semibold text-fd-muted-foreground">
-          Settled in USDC on NEAR · paid in and out across 9 chains through NEAR Intents
+          Settled in USDC on NEAR · paid in and out across 11 chains through NEAR Intents
         </span>
         <Marquee />
       </section>
@@ -139,7 +139,7 @@ export default function Home() {
           />
           <Tile
             title="The pay page"
-            line="Pay from a Tegata balance, any NEAR wallet, or in Live any of 11 coins on 9 chains."
+            line="Pay from a Tegata balance, any NEAR wallet, or in Live USDT, USDC, BTC, ETH or SOL on 11 chains."
             href={`${DOCS.guide}/pay-page`}
             src="/shots/phone/pay-chain-sandbox.webp"
             alt="The pay page for $0.25 with Another chain open: USDT on Tron, USDC on Base, Solana, Arbitrum, Polygon, Gnosis and more, with NEAR Intents' live answer"
@@ -166,7 +166,7 @@ export default function Home() {
             line="Dollars to any NEAR account, or in Live to an address on another chain. Tegata pays the fee."
             href={`${DOCS.guide}/send`}
             src="/shots/phone/send-chain.webp"
-            alt="Send with Another chain chosen: you send $1, the eleven coins, and Their address on Base"
+            alt="Send with Another chain chosen: you send $1, the coins, and Their address on Base"
             field="bg-sora"
           />
           <Tile
