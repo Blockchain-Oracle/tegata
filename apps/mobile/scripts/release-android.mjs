@@ -12,8 +12,14 @@ import { dirname, join } from "node:path"
 import { fileURLToPath } from "node:url"
 
 const [url, version, code] = process.argv.slice(2)
-if (!url?.startsWith("https://") || !/^\d+\.\d+\.\d+$/.test(version ?? "") || !/^\d+$/.test(code ?? "")) {
-  console.error("usage: release-android.mjs <EAS .apk URL> <version, e.g. 1.0.1> <versionCode, e.g. 2>")
+if (
+  !url?.startsWith("https://") ||
+  !/^\d+\.\d+\.\d+$/.test(version ?? "") ||
+  !/^\d+$/.test(code ?? "")
+) {
+  console.error(
+    "usage: release-android.mjs <EAS .apk URL> <version, e.g. 1.0.1> <versionCode, e.g. 2>",
+  )
   process.exit(1)
 }
 
@@ -43,7 +49,10 @@ const block = `export const ANDROID: AndroidRelease | null = {
   builtAt: "${new Date().toISOString().replace(/\.\d+Z$/, "Z")}",
   github: "https://github.com/${repo}/releases/download/${tag}/${name}",
 }`
-const next = source.replace(/export const ANDROID: AndroidRelease \| null = (?:null|\{[\s\S]*?\n\})/, block)
+const next = source.replace(
+  /export const ANDROID: AndroidRelease \| null = (?:null|\{[\s\S]*?\n\})/,
+  block,
+)
 if (next === source) throw new Error("Couldn't find the ANDROID block in release.ts")
 writeFileSync(releaseFile, next)
 
@@ -57,15 +66,27 @@ const exists = (() => {
   }
 })()
 const files = [apk, join(dir, "SHA256SUMS.txt")]
-if (exists) execFileSync("gh", ["release", "upload", tag, ...files, "--repo", repo, "--clobber"], { stdio: "inherit" })
+if (exists)
+  execFileSync("gh", ["release", "upload", tag, ...files, "--repo", repo, "--clobber"], {
+    stdio: "inherit",
+  })
 else
   execFileSync(
     "gh",
     [
-      "release", "create", tag, ...files,
-      "--repo", repo, "--draft", "--target", "main",
-      "--title", `Tegata mobile ${version}`,
-      "--notes", `Android APK ${version} (versionCode ${code}), ${(size / 1e6).toFixed(1)} MB.\n\nSHA-256: \`${sha256}\`\n\niPhone: TestFlight, linked from https://tegata.xyz/download.`,
+      "release",
+      "create",
+      tag,
+      ...files,
+      "--repo",
+      repo,
+      "--draft",
+      "--target",
+      "main",
+      "--title",
+      `Tegata mobile ${version}`,
+      "--notes",
+      `Android APK ${version} (versionCode ${code}), ${(size / 1e6).toFixed(1)} MB.\n\nSHA-256: \`${sha256}\`\n\niPhone: TestFlight, linked from https://tegata.xyz/download.`,
     ],
     { stdio: "inherit" },
   )

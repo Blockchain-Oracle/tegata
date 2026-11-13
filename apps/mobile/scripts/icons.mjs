@@ -24,7 +24,9 @@ function fit([x1, y1, x2, y2], x, y, w, h) {
 function seal({ field, ink, inset = 6, radius = 30, ring = 6, pad = 30 }) {
   const cellH = (VIEW - pad * 2 - 6) / 2
   return [
-    field ? `<rect x="${inset}" y="${inset}" width="${VIEW - inset * 2}" height="${VIEW - inset * 2}" rx="${radius}" fill="${field}"/>` : "",
+    field
+      ? `<rect x="${inset}" y="${inset}" width="${VIEW - inset * 2}" height="${VIEW - inset * 2}" rx="${radius}" fill="${field}"/>`
+      : "",
     `<rect x="${inset + 12}" y="${inset + 12}" width="${VIEW - (inset + 12) * 2}" height="${VIEW - (inset + 12) * 2}" rx="${radius - 10}" fill="none" stroke="${ink}" stroke-width="${ring}"/>`,
     `<path d="${glyphs.手.d}" fill="${ink}" transform="${fit(glyphs.手.box, pad, pad - 2, VIEW - pad * 2, cellH)}"/>`,
     `<path d="${glyphs.形.d}" fill="${ink}" transform="${fit(glyphs.形.box, pad, pad + cellH + 8, VIEW - pad * 2, cellH)}"/>`,
@@ -38,7 +40,8 @@ const stage = `<defs>
 <rect width="${VIEW}" height="${VIEW}" fill="${SHU}"/>
 <rect width="${VIEW}" height="${VIEW}" fill="url(#hot)"/>
 <rect width="${VIEW}" height="${VIEW}" fill="url(#glow)" opacity="0.7"/>`
-const svg = (body) => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${VIEW} ${VIEW}">${body}</svg>`
+const svg = (body) =>
+  `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${VIEW} ${VIEW}">${body}</svg>`
 /** The seal centred at `scale` of the canvas, tilted like a stamp. */
 const placed = (body, scale, tilt = -4) =>
   `<g transform="rotate(${tilt} 100 100) translate(${(VIEW * (1 - scale)) / 2} ${(VIEW * (1 - scale)) / 2}) scale(${scale})">${body}</g>`
@@ -59,9 +62,26 @@ const tmp = mkdtempSync(join(tmpdir(), "tegata-icons-"))
 for (const [name, [body, size]] of Object.entries(files)) {
   const file = join(tmp, `${name}.svg`)
   writeFileSync(file, body)
-  execFileSync("rsvg-convert", ["-w", String(size), "-h", String(size), file, "-o", join(out, name)])
+  execFileSync("rsvg-convert", [
+    "-w",
+    String(size),
+    "-h",
+    String(size),
+    file,
+    "-o",
+    join(out, name),
+  ])
 }
 rmSync(tmp, { recursive: true })
 // iOS refuses an icon with an alpha channel: flatten it.
-execFileSync("magick", [join(out, "icon.png"), "-background", SHU, "-alpha", "remove", "-alpha", "off", join(out, "icon.png")])
+execFileSync("magick", [
+  join(out, "icon.png"),
+  "-background",
+  SHU,
+  "-alpha",
+  "remove",
+  "-alpha",
+  "off",
+  join(out, "icon.png"),
+])
 console.log(`wrote ${Object.keys(files).join(", ")} to assets/brand`)

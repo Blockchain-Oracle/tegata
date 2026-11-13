@@ -6,7 +6,8 @@ import { delegateHash, ftTransfer } from "@tegata/core/near"
 
 import { draftHash } from "../src/near/draft.ts"
 
-const toHex = (bytes: Uint8Array) => Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("")
+const toHex = (bytes: Uint8Array) =>
+  Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("")
 
 const KEY = "ed25519:9Kj4sq2RAjwjBbBNNZCmCDN1Nsrq1pS4cyhDy5ToKeYd"
 const cases = [
