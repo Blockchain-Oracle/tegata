@@ -8,6 +8,7 @@ import {
   ArrowUpRight,
   Banknote,
   BookOpen,
+  Code2,
   Command as CommandIcon,
   FileText,
   Gift,
@@ -19,6 +20,7 @@ import {
   Plus,
   Search,
   Settings,
+  Store,
   Sun,
   Users,
   UsersRound,
@@ -55,7 +57,9 @@ const PLACES: Place[] = [
   { kind: "link", href: "/app/send", label: "Send", icon: <ArrowUpRight /> },
   { kind: "link", href: "/app/activity", label: "Activity", icon: <ListOrdered /> },
   { kind: "link", href: "/app/balance", label: "Balance", icon: <Wallet /> },
+  { kind: "link", href: "/app/counter", label: "Counter", icon: <Store /> },
   { kind: "link", href: "/app/refer", label: "Refer", icon: <Gift /> },
+  { kind: "link", href: "/app/developers", label: "Developers", icon: <Code2 /> },
 ]
 
 const PILL = { type: "spring", stiffness: 500, damping: 36 } as const
@@ -313,6 +317,12 @@ export function AppShell({
                       label: "Run payroll",
                       icon: <Banknote />,
                       field: "bg-matcha",
+                    },
+                    {
+                      href: "/app/counter",
+                      label: "Counter",
+                      icon: <Store />,
+                      field: "bg-kin",
                     },
                     {
                       href: "/app/people",

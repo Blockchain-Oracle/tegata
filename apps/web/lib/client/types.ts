@@ -127,6 +127,10 @@ export interface PublicRequest {
   network: NetworkId
   receiverId: string
   usdc: string
+  /** A checkout session's return address: the payer goes back to the merchant once paid. */
+  successUrl: string | null
+  /** A paid one-time request's receipt (a checkout session or a counter sale), for a payer who comes back. */
+  receiptToken: string | null
   /** Set when this is an invoice's pay page. */
   invoice: {
     number: string
@@ -574,4 +578,38 @@ export interface Reconciliation {
   balance: string
   checked: number
   outside: { txHash: string; at: string; delta: string; other: string; explorerUrl: string }[]
+}
+
+// --- developers (plan 6.8 Y) ----------------------------------------------------------------------------------------
+
+export interface DevelopersView {
+  appUrl: string
+  keys: { id: string; name: string; prefix: string; createdAt: string; lastUsedAt: string | null }[]
+  endpoints: {
+    id: string
+    url: string
+    inbox: boolean
+    enabled: boolean
+    secretHint: string
+    createdAt: string
+  }[]
+  deliveries: {
+    id: string
+    endpointId: string
+    eventId: string
+    type: string
+    status: "pending" | "delivered" | "failed"
+    attempts: number
+    lastStatus: number | null
+    lastError: string | null
+    createdAt: string
+    payload: string
+  }[]
+  inbox: {
+    id: string
+    type: string | null
+    verified: boolean
+    webhookId: string | null
+    receivedAt: string
+  }[]
 }

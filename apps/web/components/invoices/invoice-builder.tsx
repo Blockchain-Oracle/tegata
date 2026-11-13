@@ -187,6 +187,8 @@ export function InvoiceBuilder({
           network: business.sandbox ? "testnet" : "mainnet",
           receiverId: business.payAddress,
           usdc: "",
+          successUrl: null,
+          receiptToken: null,
           invoice: {
             number: "INV-····",
             allowPartial: form.allowPartial,

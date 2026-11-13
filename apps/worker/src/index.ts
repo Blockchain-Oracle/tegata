@@ -3,11 +3,18 @@ import { Operator } from "@tegata/core/near"
 import { createDb } from "@tegata/db"
 import { migrateDb } from "@tegata/db/migrate"
 import { renderInvoicePdf, resendMailer } from "@tegata/documents"
-import { emailConfigured, loadDotEnv, operatorKeys, serverEnv } from "@tegata/env"
+import {
+  allowLocalWebhooks,
+  emailConfigured,
+  loadDotEnv,
+  operatorKeys,
+  serverEnv,
+} from "@tegata/env"
 import { enqueue, QUEUES, startBoss } from "@tegata/jobs"
 import {
   accountsNotReady,
   autopilotsToRegister,
+  deliver,
   destinationsToRegister,
   inviteEmail,
   invoiceDocuments,
@@ -17,6 +24,7 @@ import {
   paidEmail,
   paidRowsToEmail,
   paymentsToVerify,
+  pendingDeliveries,
   processRelay,
   queuedTestDollars,
   registerDestination,
@@ -36,6 +44,7 @@ import {
   setupAccount,
   sweepReferrals,
   unfinishedRelays,
+  WEBHOOK_BACKOFF_MS,
 } from "@tegata/services"
 
 loadDotEnv(new URL("../../../.env", import.meta.url).pathname)
@@ -63,6 +72,16 @@ const mailer =
     ? resendMailer(env.RESEND_API_KEY, env.EMAIL_FROM)
     : null
 
+/** Queue every webhook delivery that is new or due for its next try (one job per delivery attempt). */
+async function queueDeliveries() {
+  const now = Date.now()
+  for (const d of await pendingDeliveries(db)) {
+    const wait = d.attempts === 0 ? 0 : (WEBHOOK_BACKOFF_MS[d.attempts - 1] ?? 0)
+    if (d.updatedAt.getTime() + wait > now) continue
+    await enqueue(boss, "webhookDeliver", { deliveryId: d.id }, `${d.id}:${d.attempts}`)
+  }
+}
+
 await boss.work(QUEUES.relaySend.name, async ([job]) => {
   if (!job) return
   const { relayId } = QUEUES.relaySend.payload.parse(job.data)
@@ -88,6 +107,9 @@ await boss.work(QUEUES.relaySend.name, async ([job]) => {
     const payment = await settleRefund(db, relay.id)
     if (payment) console.log(`[refund] ${payment.id} refunded ${payment.refunded}`)
   }
+  // A settled payment or refund may have raised webhook events: send them now rather than at the next sweep.
+  if (relay?.purpose.startsWith("pay:") || relay?.purpose.startsWith("refund:"))
+    await queueDeliveries()
   // A payroll batch: its rows are paid only once the USDC events are read from NEAR.
   if (relay?.purpose.startsWith("run:")) {
     const settled = await settleRunRelay(db, relay.id, operator.accountId)
@@ -131,6 +153,7 @@ await boss.work(QUEUES.paymentVerify.name, async ([job]) => {
   if (!payment?.txHash || !payment.payer) return
   const settled = await settlePayment(db, payment.id, payment.txHash, payment.payer)
   console.log(`[payment] ${payment.id} ${settled}`)
+  if (settled === "succeeded") await queueDeliveries()
   // Not final yet: throw so the queue tries again with backoff.
   if (settled === "pending") throw new Error("Transaction not final yet")
 })
@@ -187,6 +210,19 @@ await boss.work(QUEUES.autopilotKeeper.name, async () => {
     if (ran.length) console.log(`[autopilot] ${operator.network}: ran ${ran.join(", ")}`)
   }
 })
+
+await boss.work(QUEUES.webhookDeliver.name, async ([job]) => {
+  if (!job) return
+  const { deliveryId } = QUEUES.webhookDeliver.payload.parse(job.data)
+  const result = await deliver(db, deliveryId, allowLocalWebhooks(env))
+  if (result)
+    console.log(
+      `[webhook] ${deliveryId} ${result.status}${result.retryInMs ? ` (next in ${result.retryInMs / 1000}s)` : ""}`,
+    )
+})
+const WEBHOOK_CRON = "* * * * *"
+await boss.schedule(QUEUES.webhookSweep.name, WEBHOOK_CRON, {})
+await boss.work(QUEUES.webhookSweep.name, queueDeliveries)
 
 /** Payroll emails: "added you to payroll" when someone is added, "you've been paid" for each paid row. */
 await boss.work(QUEUES.payrollEmail.name, async ([job]) => {

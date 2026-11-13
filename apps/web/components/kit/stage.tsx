@@ -12,12 +12,24 @@ import { cn } from "@/lib/utils"
 const GRAIN =
   "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.55 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E\")"
 
+/** The field's lights. The stage is light in both themes, so these are fixed colours, not theme tokens. */
+const LIGHTS = {
+  shu: {
+    base: "var(--stage)",
+    hot: "var(--stage-hot)",
+    glow: "var(--stage-glow)",
+    edge: "#ff3a00",
+  },
+  paid: { base: "#2F7A00", hot: "#4FA81C", glow: "#8FD94E", edge: "#236000" },
+} as const
+
 export function Stage({
   children,
   className,
   inner,
   grid = true,
   rounded = true,
+  tone = "shu",
 }: {
   children?: React.ReactNode
   /** The field: size, padding, corners. */
@@ -27,19 +39,24 @@ export function Stage({
   /** A faint isometric lattice behind the objects. */
   grid?: boolean
   rounded?: boolean
+  /** `paid` lights the field green for money that has arrived (the counter's paid moment). */
+  tone?: "shu" | "paid"
 }) {
+  const light = LIGHTS[tone]
   return (
     <div
       className={cn(
-        "relative isolate overflow-hidden bg-stage text-white",
+        "relative isolate overflow-hidden text-white transition-[background-color] duration-300",
+        tone === "shu" && "bg-stage",
         rounded && "rounded-[24px]",
         className,
       )}
       style={{
+        backgroundColor: tone === "shu" ? undefined : light.base,
         backgroundImage: [
-          "radial-gradient(60% 55% at 16% 10%, var(--stage-hot) 0%, transparent 70%)",
-          "radial-gradient(70% 60% at 55% 105%, var(--stage-glow) 0%, transparent 65%)",
-          "radial-gradient(40% 40% at 92% 30%, #ff3a00 0%, transparent 70%)",
+          `radial-gradient(60% 55% at 16% 10%, ${light.hot} 0%, transparent 70%)`,
+          `radial-gradient(70% 60% at 55% 105%, ${light.glow} 0%, transparent 65%)`,
+          `radial-gradient(40% 40% at 92% 30%, ${light.edge} 0%, transparent 70%)`,
         ].join(","),
       }}
     >

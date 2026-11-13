@@ -10,7 +10,7 @@ export const GET = route(async (_request, context: { params: Promise<{ token: st
   const { token } = await context.params
   const found = await publicRequest(db(), token)
   if (!found) throw notFound("This pay link doesn't exist")
-  const { request, business, logo, invoice } = found
+  const { request, business, logo, invoice, receiptToken } = found
   return {
     token: request.token,
     business,
@@ -22,6 +22,8 @@ export const GET = route(async (_request, context: { params: Promise<{ token: st
     network: request.network,
     receiverId: request.receiverId,
     usdc: NETWORKS[request.network].usdc,
+    successUrl: request.successUrl,
+    receiptToken,
     invoice: invoice
       ? {
           number: invoiceNumber(invoice.number ?? 0),

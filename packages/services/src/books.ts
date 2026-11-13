@@ -8,6 +8,7 @@ import { type Db, schema } from "@tegata/db"
 import { and, eq, gte, inArray, like, lt, or, sql } from "drizzle-orm"
 import type { AnyPgColumn } from "drizzle-orm/pg-core"
 
+import { emitEvent, paymentObject } from "./events.ts"
 import { PayrollError } from "./payroll.ts"
 import { createRelayDraft } from "./relays.ts"
 
@@ -460,6 +461,24 @@ export async function settleRefund(db: Db, relayId: string) {
       .returning()
     if (payment && payment.refunded >= payment.amount)
       await tx.update(payments).set({ status: "refunded" }).where(eq(payments.id, paymentId))
+    if (payment) {
+      const [request] = await tx
+        .select({ workspaceId: requests.workspaceId })
+        .from(requests)
+        .where(eq(requests.id, payment.requestId))
+      if (request)
+        await emitEvent(tx, {
+          workspaceId: request.workspaceId,
+          network: payment.network,
+          type: "payment.refunded",
+          data: {
+            ...paymentObject(payment),
+            refund_units: transfer.amount.toString(),
+            refund_tx: relay.txHash,
+          },
+          dedupe: `payment.refunded:${relay.id}`,
+        })
+    }
     return payment ?? null
   })
 }

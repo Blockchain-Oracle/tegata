@@ -1,5 +1,6 @@
 import {
   BusinessError,
+  DeveloperError,
   InvoiceError,
   OnboardError,
   PaymentError,
@@ -85,6 +86,17 @@ function toResponse(error: unknown): Response {
         : error.code === "bad_input"
           ? STATUS.badRequest
           : STATUS.conflict
+    return Response.json({ error: { code: error.code, message: error.message } }, { status })
+  }
+  if (error instanceof DeveloperError) {
+    const status =
+      error.code === "unauthorized"
+        ? STATUS.unauthorized
+        : error.code === "not_found"
+          ? STATUS.notFound
+          : error.code === "limit"
+            ? STATUS.tooMany
+            : STATUS.badRequest
     return Response.json({ error: { code: error.code, message: error.message } }, { status })
   }
   if (error instanceof BusinessError) {

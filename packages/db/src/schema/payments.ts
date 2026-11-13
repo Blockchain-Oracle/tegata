@@ -42,6 +42,11 @@ export const requests = pgTable(
     status: requestStatus().notNull().default("open"),
     /** The NEAR account that receives the money (the business's account on this network). */
     receiverId: text().notNull(),
+    /** Checkout sessions (API): where the payer returns once paid, the developer's own data, and the key that made it. */
+    successUrl: text(),
+    metadata: jsonb().$type<Record<string, string>>(),
+    apiKeyId: uuid(),
+    idempotencyKey: text(),
     paidCount: integer().notNull().default(0),
     paidTotal: money().notNull().default(sql`0`),
     createdAt: createdAt(),
@@ -49,6 +54,7 @@ export const requests = pgTable(
   },
   (table) => [
     uniqueIndex("requests_token_idx").on(table.token),
+    uniqueIndex("requests_idempotency_idx").on(table.apiKeyId, table.idempotencyKey),
     index("requests_workspace_idx").on(table.workspaceId, table.createdAt),
   ],
 )

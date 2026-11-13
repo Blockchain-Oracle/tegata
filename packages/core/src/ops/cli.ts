@@ -8,6 +8,8 @@
  *   pnpm ops proof-parallel              Proof 2: parallel relays never double-send
  *   pnpm ops pay-link <url> [dollars]    pay a Sandbox pay link from the operator, the way a NEAR wallet does
  *   pnpm ops deploy-autopilot testnet    create pay.tegata.testnet, deploy the autopilot contract, register it on USDC
+ *   pnpm ops mainnet-address             the address to fund (an implicit account of Tegata's new mainnet key)
+ *   pnpm ops create-operator             (run by Abu) create tegata.near from that funded address, with the same key
  *
  * Secret keys are read from and written to files only. They are never printed.
  */
@@ -352,6 +354,81 @@ async function deployAutopilot(network: NetworkId) {
   )
 }
 
+/** The mainnet operator key, made here and kept in .env only; tegata.near is created with it. */
+const BOOTSTRAP_ENV = "MAINNET_OPERATOR_KEY"
+/** NEAR kept on the implicit account for the create transaction's gas; everything else goes to tegata.near. */
+const CREATE_RESERVE_YOCTO = 50_000_000_000_000_000_000_000n
+const CREATE_GAS = 100n * TGAS
+const MIN_OPERATOR_YOCTO = 2_000_000_000_000_000_000_000_000n
+
+function bootstrapKey(): KeyPair {
+  const existing = readEnv().get(BOOTSTRAP_ENV)
+  if (existing) return KeyPair.fromString(existing as `ed25519:${string}`)
+  const key = KeyPair.fromRandom("ed25519")
+  writeEnvValue(BOOTSTRAP_ENV, key.toString())
+  return key
+}
+
+const implicitOf = (key: KeyPair) => Buffer.from(key.getPublicKey().data).toString("hex")
+
+/** Print the address to send NEAR to. The secret key goes to .env and is never printed. */
+async function mainnetAddress() {
+  const key = bootstrapKey()
+  const implicit = implicitOf(key)
+  const funded = (await accountExists("mainnet", implicit))
+    ? await nearBalance("mainnet", implicit)
+    : 0n
+  console.log(`Send NEAR to:   ${implicit}`)
+  console.log(`(public key ${key.getPublicKey().toString()})`)
+  console.log(`It holds:       ${near(funded)} NEAR`)
+  console.log(
+    `tegata.near:    ${(await accountExists("mainnet", NETWORKS.mainnet.operator)) ? "exists" : "free"}`,
+  )
+}
+
+/**
+ * Abu runs this: from the funded implicit account, ask the `near` registrar to create tegata.near with the same key
+ * as its only full-access key, moving everything but a small gas reserve into it.
+ */
+async function createOperator() {
+  const key = bootstrapKey()
+  const implicit = implicitOf(key)
+  const operatorId = NETWORKS.mainnet.operator
+  if (await accountExists("mainnet", operatorId)) {
+    console.log(`${operatorId} already exists. Nothing was sent.`)
+    return
+  }
+  const balance = (await accountExists("mainnet", implicit))
+    ? await nearBalance("mainnet", implicit)
+    : 0n
+  const deposit = balance - CREATE_RESERVE_YOCTO
+  if (deposit < MIN_OPERATOR_YOCTO) {
+    console.log(
+      `${implicit} holds ${near(balance)} NEAR; send at least 2.1 NEAR first. Nothing was sent.`,
+    )
+    process.exitCode = 1
+    return
+  }
+  console.log(
+    `Creating ${operatorId} with ${near(deposit)} NEAR (keeping ${near(CREATE_RESERVE_YOCTO)} for gas)…`,
+  )
+  const funder = new Operator("mainnet", [key.toString()], implicit)
+  const created = await funder.send(NETWORKS.mainnet.registrar, [
+    actions.functionCall(
+      "create_account",
+      { new_account_id: operatorId, new_public_key: key.getPublicKey().toString() },
+      CREATE_GAS,
+      deposit,
+    ),
+  ])
+  console.log(`${created.status}: ${explorerTx("mainnet", created.hash)}`)
+  if (created.status !== "success") {
+    process.exitCode = 1
+    return
+  }
+  console.log(`${operatorId} holds ${near(await nearBalance("mainnet", operatorId))} NEAR`)
+}
+
 const [command, ...args] = process.argv.slice(2)
 try {
   if (command === "status") await status(parseNetwork(args[0]))
@@ -361,11 +438,13 @@ try {
   else if (command === "proof-parallel") await proofParallel()
   else if (command === "pay-link") await payLink(args[0] ?? "", args[1])
   else if (command === "deploy-autopilot") await deployAutopilot(parseNetwork(args[0]))
+  else if (command === "mainnet-address") await mainnetAddress()
+  else if (command === "create-operator") await createOperator()
   else if (command === "exists")
     console.log(await accountExists(parseNetwork(args[0]), args[1] ?? ""))
   else {
     console.error(
-      "Commands: status, add-keys, register, proof-relay, proof-parallel, pay-link, deploy-autopilot, exists",
+      "Commands: status, add-keys, register, proof-relay, proof-parallel, pay-link, deploy-autopilot, mainnet-address, create-operator, exists",
     )
     process.exitCode = 2
   }

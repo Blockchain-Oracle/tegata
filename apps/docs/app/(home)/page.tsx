@@ -166,6 +166,14 @@ export default function Home() {
             field="bg-sora"
           />
           <Tile
+            title="For developers"
+            line="An API key, one curl for a checkout session, and a signed webhook when NEAR settles it."
+            href={`${DOCS.build}/developers`}
+            src="/shots/phone/session-paid.webp"
+            alt="A paid checkout session from Proof Dev Shop: Order #1042, $0.25, stamped PAID, with Back to Proof Dev Shop"
+            field="bg-kin"
+          />
+          <Tile
             title="Referrals"
             line="Invite a business; you both get a reward once real customers pay it."
             href={`${DOCS.guide}/refer`}

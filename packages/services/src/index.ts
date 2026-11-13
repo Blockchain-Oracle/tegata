@@ -1,6 +1,7 @@
 export * from "./autopilot.ts"
 export * from "./books.ts"
 export * from "./business.ts"
+export * from "./developers.ts"
 export * from "./invoices.ts"
 export * from "./payments.ts"
 export * from "./payroll.ts"

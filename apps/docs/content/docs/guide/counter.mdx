@@ -1,0 +1,40 @@
+---
+title: Counter
+description: Type an amount, show the QR code, and the screen turns green with your seal the moment the payment settles on NEAR.
+icon: Store
+---
+
+For taking a payment in person: a till, a market stall, a client at your desk. Open **Counter** from the rail, the
+**+** button on a phone, or **⌘K**.
+
+<Steps>
+<Step>
+
+**Type the amount** on the keypad (two decimals at most), and a note if you want one ("Two flat whites"). The button
+reads **Charge $4.50**.
+
+</Step>
+<Step>
+
+**Charge.** The stage shows the amount and a QR code of a one-time pay page, with "Scan to pay with USDC on NEAR"
+and how long it has been waiting. The customer scans it with their phone's camera and pays on the
+[pay page](/docs/guide/pay-page), with a Tegata balance or a NEAR wallet.
+
+</Step>
+<Step>
+
+**Paid.** When the payment settles on NEAR, the stage turns green, your seal presses PAID and the `received` sound
+plays. **New sale** clears the keypad for the next one.
+
+</Step>
+</Steps>
+
+**Cancel** leaves a sale unpaid and goes back to the keypad.
+
+## This month's sales
+
+Under the keypad, every counter sale this month with its note, time, amount and **Paid** or **Not paid**. Each opens
+its pay page; a paid one shows your seal and the customer's receipt.
+
+Each sale is a one-time checkout, so it also appears in [Activity](/docs/start/bookkeepers), gets a numbered receipt,
+and sends `payment.succeeded` to your [webhooks](/docs/build/developers#webhooks) like any other payment.

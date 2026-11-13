@@ -139,13 +139,18 @@ export function PayView(p: PayViewProps) {
           title: "This invoice was cancelled",
           detail: `Ask ${p.request.business} if you still owe them.`,
         }
-    : {
-        title:
-          p.request.status === "paid"
-            ? "This link has been paid"
-            : "This link isn't taking payments",
-        detail: `Ask ${p.request.business} for a new link if you still owe them.`,
-      }
+    : p.request.receiptToken
+      ? {
+          title: "Paid",
+          detail: `${p.request.business} has received this payment. Your receipt is ready.`,
+        }
+      : {
+          title:
+            p.request.status === "paid"
+              ? "This link has been paid"
+              : "This link isn't taking payments",
+          detail: `Ask ${p.request.business} for a new link if you still owe them.`,
+        }
   const sandbox = p.request.network === "testnet"
   const slide = {
     initial: reduce ? { opacity: 0 } : { opacity: 0, y: 12 },
@@ -238,9 +243,13 @@ export function PayView(p: PayViewProps) {
           {!open && p.step === "choose" ? (
             <motion.div key="closed" {...slide}>
               <Paper className="flex flex-col items-center gap-3 p-8 text-center">
-                <span className="grid size-14 place-items-center rounded-full bg-[#F5F5F5]">
-                  <Lock className="size-6" />
-                </span>
+                {p.request.receiptToken ? (
+                  <BusinessSeal name={p.request.business} band="Paid" size={96} />
+                ) : (
+                  <span className="grid size-14 place-items-center rounded-full bg-[#F5F5F5]">
+                    <Lock className="size-6" />
+                  </span>
+                )}
                 <span className="text-[18px] font-semibold">{closed.title}</span>
                 <span className="text-[15px] text-[#666]">{closed.detail}</span>
                 {invoice ? (
@@ -249,6 +258,20 @@ export function PayView(p: PayViewProps) {
                       <ReceiptText /> View invoice
                     </Link>
                   </Button>
+                ) : null}
+                {p.request.receiptToken ? (
+                  <div className="mt-2 grid w-full grid-cols-1 gap-2">
+                    {p.request.successUrl ? (
+                      <Button asChild>
+                        <a href={p.request.successUrl}>Back to {p.request.business}</a>
+                      </Button>
+                    ) : null}
+                    <Button variant={p.request.successUrl ? "secondary" : "primary"} asChild>
+                      <Link href={`/r/${p.request.receiptToken}`}>
+                        <ReceiptText /> View your receipt
+                      </Link>
+                    </Button>
+                  </div>
                 ) : null}
               </Paper>
             </motion.div>
@@ -305,8 +328,13 @@ export function PayView(p: PayViewProps) {
             <motion.div key="paid" className="flex flex-col gap-4" {...slide}>
               <PaidSlip {...p} dollars={dollars} />
               <div className="grid grid-cols-1 gap-2">
-                {p.attempt?.receiptToken ? (
+                {p.request.successUrl ? (
                   <Button asChild>
+                    <a href={p.request.successUrl}>Back to {p.request.business}</a>
+                  </Button>
+                ) : null}
+                {p.attempt?.receiptToken ? (
+                  <Button variant={p.request.successUrl ? "secondary" : "primary"} asChild>
                     <Link href={`/r/${p.attempt.receiptToken}`}>
                       <ReceiptText /> View your receipt
                     </Link>

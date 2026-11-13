@@ -1,0 +1,211 @@
+---
+title: Developers
+description: An API key, one curl and a signed webhook. Take payments on your own site and hear the moment NEAR settles them.
+icon: Code2
+---
+
+<Phones>
+  <Phone src="/shots/phone/session-paid.webp" alt="A paid checkout session from Proof Dev Shop: Order #1042, $0.25, stamped PAID, with Back to Proof Dev Shop and View your receipt" caption="The checkout page, once paid: back to the shop, or the receipt." eager />
+  <Phone src="/shots/phone/session-receipt.webp" alt="Receipt No. 0001 from Proof Dev Shop: $0.25 for Order #1042, paid with a NEAR wallet by customer-eab2310f.tegata.testnet, transaction 6tmnGK…mSnBnF" caption="Its receipt, with the NEAR transaction." eager />
+</Phones>
+
+A shop's server asks Tegata for a **checkout session**, sends the customer to its page, and gets a signed
+**webhook** when the payment has settled on NEAR. The business receives exactly the amount, in USDC on NEAR.
+
+<Steps>
+<Step>
+
+**Make a key.** In the app, open **Developers** and press **New key**. The key is shown once; Tegata keeps only its
+SHA-256 hash and shows its first characters after that. Sandbox keys start `tk_test_` and work on NEAR testnet.
+
+</Step>
+<Step>
+
+**Add an endpoint.** Type your https URL and press **Add endpoint**, or press **Use Tegata's test inbox** to see
+webhooks arrive without a server of your own. Each endpoint gets its own signing secret (`whsec_…`), shown once and
+behind **Reveal secret** after that.
+
+</Step>
+<Step>
+
+**Create a session** with the curl below, and send your customer to its `url`.
+
+</Step>
+<Step>
+
+**Fulfil the order** when `checkout.session.completed` arrives.
+
+</Step>
+</Steps>
+
+## Create a checkout session
+
+```bash
+curl https://tegata.84.46.247.92.sslip.io/api/v1/checkout/sessions \
+  -H "Authorization: Bearer $TEGATA_KEY" \
+  -H "Idempotency-Key: order-1042" \
+  -H "Content-Type: application/json" \
+  -d '{"amount": "25.00", "description": "Order #1042",
+       "success_url": "https://your-shop.example/thanks",
+       "metadata": {"order": "1042"}}'
+```
+
+| Field | What it takes |
+| --- | --- |
+| `amount` | Dollars, as `"25"`, `"25.50"` or `25.5`. From 0.01 to 1,000,000 |
+| `description` | What the payer sees on the page and the receipt, up to 80 characters. Optional |
+| `success_url` | An https address. Once paid, the page shows **Back to** your business, linking there. Optional |
+| `metadata` | Up to 20 keys, each value a string of up to 500 characters. Comes back on the session and in its webhooks. Optional |
+
+Send an **`Idempotency-Key`** header (up to 200 characters) and a retry with the same key returns the same session
+instead of a second one. The reply is `201` with the session.
+
+A session is paid once, in full: the page takes no part-payments, and it is open until it's paid.
+
+## The session
+
+This is the real session from the proof run below, read back after it was paid (it ran against the app on
+`localhost`, on NEAR testnet):
+
+```json
+{
+  "id": "2f852836-9206-492e-9d6e-830148366c96",
+  "object": "checkout.session",
+  "status": "complete",
+  "url": "http://localhost:3100/pay/E32DvMBiifrjmx",
+  "amount": "0.25",
+  "amount_units": "250000",
+  "currency": "usd",
+  "settlement": { "asset": "USDC", "network": "near-testnet", "account": "dev-eee78deb.tegata.testnet" },
+  "description": "Order #1042",
+  "success_url": "https://shop.example/thanks",
+  "metadata": { "order": "1042" },
+  "payment": {
+    "id": "35fc8d8f-dabe-4c8f-9302-d37e1389b34c",
+    "object": "payment",
+    "amount": "0.25",
+    "amount_units": "250000",
+    "refunded_units": "0",
+    "currency": "usd",
+    "rail": "near_wallet",
+    "payer": "customer-eab2310f.tegata.testnet",
+    "network": "near-testnet",
+    "tx_hash": "6tmnGKULQVyUUeGdpWNQYLNWCrCCmiv4iqQtsimSnBnF",
+    "request_id": "2f852836-9206-492e-9d6e-830148366c96",
+    "settled_at": "2026-11-13T07:23:50.807Z"
+  },
+  "created_at": "2026-11-13T07:23:30.520Z"
+}
+```
+
+| Field | Meaning |
+| --- | --- |
+| `status` | `open` until paid, then `complete` |
+| `amount_units` | The same amount in USDC base units (6 decimals) |
+| `settlement` | Where the money lands: USDC, the NEAR network, the business's account |
+| `payment` | `null` until paid; then who paid, how (`tegata` for a Tegata balance, `near_wallet`), and the NEAR transaction |
+
+## Read it back
+
+```bash
+curl https://tegata.84.46.247.92.sslip.io/api/v1/checkout/sessions/<id> \
+  -H "Authorization: Bearer $TEGATA_KEY"
+```
+
+`GET /api/v1/events?limit=20` lists the latest events, newest first (up to 100), with the same bodies webhooks carry.
+
+Errors come back as `{"error": {"code": "…", "message": "…"}}`:
+
+| Status | When |
+| --- | --- |
+| `401` | No key, a wrong key, or a revoked one |
+| `400` | A field that doesn't fit, such as an amount out of range or a `success_url` that isn't https |
+| `404` | A session that isn't yours |
+
+## Webhooks
+
+| Event | Sent when |
+| --- | --- |
+| `checkout.session.completed` | A session is paid in full |
+| `payment.succeeded` | Any payment to the business settles: a session, a pay link, an invoice, a counter sale |
+| `payment.refunded` | The business refunds a payment, all or part |
+| `invoice.paid` | An invoice is paid in full |
+
+Each event is stored once and sent to every endpoint that's switched on. The body:
+
+```json
+{
+  "id": "838bc31c-f2d2-455a-908a-cd6e84caa6f0",
+  "type": "checkout.session.completed",
+  "created_at": "2026-11-13T07:23:50.806Z",
+  "data": { "id": "2f852836-…", "object": "checkout.session", "status": "complete", "amount": "0.25",
+            "metadata": { "order": "1042" }, "payment": { "tx_hash": "6tmnGKULQVyUUeGdpWNQYLNWCrCCmiv4iqQtsimSnBnF", "…": "…" } }
+}
+```
+
+It is signed with [Standard Webhooks](https://www.standardwebhooks.com): the headers `webhook-id`,
+`webhook-timestamp` and `webhook-signature`, an HMAC with your endpoint's secret. Check it with the
+`standardwebhooks` library before you trust a body:
+
+```js
+import { Webhook } from "standardwebhooks"
+
+const wh = new Webhook(process.env.TEGATA_WEBHOOK_SECRET) // whsec_…
+// In your handler, with the raw body as a string:
+const event = wh.verify(rawBody, {
+  "webhook-id": req.headers["webhook-id"],
+  "webhook-timestamp": req.headers["webhook-timestamp"],
+  "webhook-signature": req.headers["webhook-signature"],
+})
+if (event.type === "checkout.session.completed") fulfil(event.data.metadata.order)
+```
+
+`webhook-id` stays the same across retries of one delivery, so use it to ignore a repeat.
+
+| Rule | Detail |
+| --- | --- |
+| Success | Any 2xx within 10 seconds. Redirects are not followed |
+| Retries | After 30 s, 2 min, 10 min, 1 h and 6 h: six tries in all, then the delivery is marked failed |
+| Endpoints | https only, and never an address inside a private network. Up to 5 per business |
+| **Send test event** | A `ping` event to that endpoint only, now |
+| **Resend** | Any delivery in the log, again |
+
+The **Deliveries** log shows each event, the endpoint, the last status code and the number of tries.
+
+## The test inbox
+
+**Use Tegata's test inbox** adds an endpoint that Tegata hosts. It records every webhook that arrives and checks its
+signature, so the **Test inbox** list shows each event with "Signature valid" or "Bad signature". It is the quickest
+way to watch the whole loop before writing a handler.
+
+## A pay button
+
+For a fixed price with no server, point a button at a [pay link](/docs/guide/pay-links):
+
+```html
+<a href="https://tegata.84.46.247.92.sslip.io/pay/YOUR_LINK_TOKEN"
+   style="display:inline-flex;align-items:center;gap:8px;padding:12px 20px;border-radius:14px;
+          background:#FF4F00;color:#fff;font:600 16px system-ui;text-decoration:none">
+  Pay with Tegata
+</a>
+```
+
+## A real one
+
+`packages/services/src/proofs/developers.ts` runs the whole loop on NEAR testnet, with the app and the worker
+running:
+
+1. A business gets an API key, and Tegata's test inbox as its endpoint.
+2. A real `curl` creates the session above. The same `Idempotency-Key` sent again returns the same session.
+3. A customer with its own NEAR account pays it the way a NEAR wallet does: <Tx hash="6tmnGKULQVyUUeGdpWNQYLNWCrCCmiv4iqQtsimSnBnF" />.
+4. The worker reads the USDC transfer from NEAR, marks the session complete and sends `payment.succeeded` and
+   `checkout.session.completed`. Both arrive at the inbox with valid signatures and a `200`.
+5. A second `curl` reads the session back as `complete`, with the transaction hash.
+
+The session was created at 07:23:30 and paid at 07:23:50.
+
+<Callout title="Sandbox only, for now">
+  API keys are made on the network you're on, and Live is not open yet, so every key today is a `tk_test_` key on
+  NEAR testnet. Payers pay with a Tegata balance or a NEAR wallet; paying a session from another chain arrives with
+  Live.
+</Callout>

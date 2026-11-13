@@ -4,6 +4,7 @@ import type {
   AutopilotView,
   BooksMonth,
   Customer,
+  DevelopersView,
   InvoiceDetail,
   InvoiceRow,
   LinkDetail,
@@ -125,6 +126,8 @@ export const SAMPLE_REQUEST: PublicRequest = {
   network: "testnet",
   receiverId: SAMPLE_ACCOUNT,
   usdc: "3e2210e1184b45b64c8a434c0a7e7b23cc04ea7eb7a6c3c32520d03d4afcb8af",
+  successUrl: null,
+  receiptToken: null,
   invoice: null,
 }
 
@@ -770,3 +773,105 @@ export const SAMPLE_RECONCILIATION: Reconciliation = {
     },
   ],
 }
+
+// --- developers and counter ---------------------------------------------------------------------------------------
+
+export const SAMPLE_DEVELOPERS: DevelopersView = {
+  appUrl: "https://tegata.84.46.247.92.sslip.io",
+  keys: [
+    {
+      id: "k1",
+      name: "Shop server",
+      prefix: "tk_test_mNC-",
+      createdAt: "2026-11-11T09:00:00.000Z",
+      lastUsedAt: "2026-11-12T08:20:00.000Z",
+    },
+  ],
+  endpoints: [
+    {
+      id: "e1",
+      url: "https://tegata.84.46.247.92.sslip.io/api/webhooks/inbox/wn62kD2UzdSjRmBpQ3Ga",
+      inbox: true,
+      enabled: true,
+      secretHint: "whsec_Rk3…",
+      createdAt: "2026-11-11T09:01:00.000Z",
+    },
+    {
+      id: "e2",
+      url: "https://shop.example/tegata/webhooks",
+      inbox: false,
+      enabled: true,
+      secretHint: "whsec_9xQ…",
+      createdAt: "2026-11-11T09:05:00.000Z",
+    },
+  ],
+  deliveries: [
+    {
+      id: "d1",
+      endpointId: "e1",
+      eventId: "ev1",
+      type: "checkout.session.completed",
+      status: "delivered",
+      attempts: 1,
+      lastStatus: 200,
+      lastError: null,
+      createdAt: "2026-11-12T08:21:00.000Z",
+      payload: JSON.stringify(
+        {
+          id: "ev1",
+          type: "checkout.session.completed",
+          data: { id: "2f85…", status: "complete", amount: "$0.25", metadata: { order: "1042" } },
+        },
+        null,
+        2,
+      ),
+    },
+    {
+      id: "d2",
+      endpointId: "e2",
+      eventId: "ev1",
+      type: "checkout.session.completed",
+      status: "pending",
+      attempts: 2,
+      lastStatus: 503,
+      lastError: "HTTP 503",
+      createdAt: "2026-11-12T08:21:00.000Z",
+      payload: "{}",
+    },
+  ],
+  inbox: [
+    {
+      id: "i1",
+      type: "checkout.session.completed",
+      verified: true,
+      webhookId: "msg_d1",
+      receivedAt: "2026-11-12T08:21:02.000Z",
+    },
+    {
+      id: "i2",
+      type: "payment.succeeded",
+      verified: true,
+      webhookId: "msg_d0",
+      receivedAt: "2026-11-12T08:21:01.000Z",
+    },
+  ],
+}
+
+export const SAMPLE_COUNTER_SALES = [
+  {
+    id: "c1",
+    token: "E32DvMBiifrjmx",
+    title: "Two flat whites",
+    amount: "9000000",
+    status: "paid" as const,
+    createdAt: "2026-11-12T08:10:00.000Z",
+  },
+  {
+    id: "c2",
+    token: "F43EwNCjjgskny",
+    title: "Counter sale",
+    amount: "4500000",
+    status: "open" as const,
+    createdAt: "2026-11-12T08:02:00.000Z",
+  },
+]

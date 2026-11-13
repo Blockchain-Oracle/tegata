@@ -15,6 +15,7 @@
     "@tegata/db": "workspace:*",
     "@tegata/env": "workspace:*",
     "drizzle-orm": "catalog:",
+    "standardwebhooks": "1.1.1",
     "zod": "catalog:"
   },
   "devDependencies": {

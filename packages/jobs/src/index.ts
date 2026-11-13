@@ -75,6 +75,18 @@ export const QUEUES = {
     payload: z.object({}),
     options: { retryLimit: 0, expireInSeconds: 600 },
   },
+  /** Send one webhook delivery. Retries are scheduled by the handler itself (30 s, 2 min, 10 min, 1 h, 6 h). */
+  webhookDeliver: {
+    name: "webhook-deliver",
+    payload: z.object({ deliveryId: z.uuid() }),
+    options: { retryLimit: 0, expireInSeconds: 60 },
+  },
+  /** Every minute: queue webhook deliveries that are new or due for their next try. */
+  webhookSweep: {
+    name: "webhook-sweep",
+    payload: z.object({}),
+    options: { retryLimit: 0, expireInSeconds: 120 },
+  },
   /** Create a user's NEAR account and register it on USDC. Safe to repeat. */
   accountSetup: {
     name: "account-setup",

@@ -1,9 +1,11 @@
 import { NETWORKS, type NetworkId } from "@tegata/config"
+import { invoiceNumber } from "@tegata/core/invoices"
 import { formatUsd } from "@tegata/core/money"
 import { ftTransfer, matchingTransfer, readUsdcTransfers } from "@tegata/core/near"
 import { type Db, schema } from "@tegata/db"
 import { and, desc, eq, inArray, sql } from "drizzle-orm"
 
+import { emitEvent, paymentObject } from "./events.ts"
 import { createRelayDraft } from "./relays.ts"
 
 const { requests, payments, receipts, workspaces, accounts, relays, invoices, invoiceEvents } =
@@ -135,7 +137,23 @@ export async function publicRequest(db: Db, token: string) {
           .from(invoices)
           .where(eq(invoices.requestId, row.request.id))
       : []
-  return { ...row, logo: headerLogo(row), invoice: invoice ?? null }
+  // A one-time request (a checkout session or a counter sale) that is paid has one receipt: show it to whoever comes
+  // back to the page, since the page's link was only ever the payer's. A reusable link has many payers and shows none.
+  const [receipt] =
+    !row.request.reusable && row.request.kind !== "invoice" && row.request.status === "paid"
+      ? await db
+          .select({ token: receipts.token })
+          .from(receipts)
+          .innerJoin(payments, eq(payments.id, receipts.paymentId))
+          .where(and(eq(payments.requestId, row.request.id), eq(payments.status, "succeeded")))
+          .limit(1)
+      : []
+  return {
+    ...row,
+    logo: headerLogo(row),
+    invoice: invoice ?? null,
+    receiptToken: receipt?.token ?? null,
+  }
 }
 
 /** What a public page's header shows about the business: its name and, if it has one, its logo. */
@@ -374,9 +392,39 @@ export async function applyPayment(
     token: publicToken(RECEIPT_TOKEN_LENGTH),
     number: counter.next - 1,
   })
+  // Webhook events (plan 6.8 Y): stored in this same transaction, so a payment and its event are never apart.
+  const [row] = await tx.select().from(payments).where(eq(payments.id, payment.id))
+  if (row) {
+    const base = { workspaceId: request.workspaceId, network: request.network }
+    await emitEvent(tx, {
+      ...base,
+      type: "payment.succeeded",
+      data: paymentObject(row),
+      dedupe: `payment.succeeded:${row.id}`,
+    })
+    if (request.kind === "session" && full) {
+      await emitEvent(tx, {
+        ...base,
+        type: "checkout.session.completed",
+        data: {
+          id: request.id,
+          object: "checkout.session",
+          status: "complete",
+          amount: formatUsd(request.amount ?? 0n),
+          amount_units: (request.amount ?? 0n).toString(),
+          currency: "usd",
+          description: request.title,
+          success_url: request.successUrl,
+          metadata: request.metadata ?? {},
+          payment: paymentObject(row),
+        },
+        dedupe: `checkout.session.completed:${request.id}`,
+      })
+    }
+  }
   if (request.kind !== "invoice") return
   const [invoice] = await tx
-    .select({ id: invoices.id, status: invoices.status })
+    .select({ id: invoices.id, status: invoices.status, number: invoices.number })
     .from(invoices)
     .where(eq(invoices.requestId, request.id))
   if (!invoice) return
@@ -391,6 +439,21 @@ export async function applyPayment(
       .set({ status: "paid", paidAt: new Date() })
       .where(and(eq(invoices.id, invoice.id), eq(invoices.status, "open")))
     await tx.insert(invoiceEvents).values({ invoiceId: invoice.id, kind: "paid" })
+    await emitEvent(tx, {
+      workspaceId: request.workspaceId,
+      network: request.network,
+      type: "invoice.paid",
+      data: {
+        id: invoice.id,
+        object: "invoice",
+        number: invoice.number === null ? null : invoiceNumber(invoice.number),
+        amount: formatUsd(request.amount ?? 0n),
+        amount_units: (request.amount ?? 0n).toString(),
+        currency: "usd",
+        request_id: request.id,
+      },
+      dedupe: `invoice.paid:${invoice.id}`,
+    })
   }
 }
 

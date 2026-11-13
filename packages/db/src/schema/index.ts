@@ -1,4 +1,5 @@
 export * from "./columns.ts"
+export * from "./developers.ts"
 export * from "./identity.ts"
 export * from "./invoices.ts"
 export * from "./payments.ts"

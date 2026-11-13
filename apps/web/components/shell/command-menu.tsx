@@ -7,6 +7,7 @@ import {
   ArrowUpRight,
   Banknote,
   BookOpen,
+  Code2,
   Copy,
   FileText,
   Gift,
@@ -18,6 +19,7 @@ import {
   Palette,
   Plus,
   Settings,
+  Store,
   Sun,
   Users,
   UsersRound,
@@ -101,6 +103,9 @@ export function CommandMenu({
                 <Item icon={<Banknote />} onSelect={run(() => router.push("/app/payroll"))}>
                   Run payroll
                 </Item>
+                <Item icon={<Store />} onSelect={run(() => router.push("/app/counter"))}>
+                  Counter: take a payment in person
+                </Item>
                 <Item icon={<UsersRound />} onSelect={run(() => router.push("/app/people"))}>
                   Add people
                 </Item>
@@ -135,6 +140,9 @@ export function CommandMenu({
                 </Item>
                 <Item icon={<Gift />} onSelect={run(() => router.push("/app/refer"))}>
                   Refer a business
+                </Item>
+                <Item icon={<Code2 />} onSelect={run(() => router.push("/app/developers"))}>
+                  Developers: API keys and webhooks
                 </Item>
                 <Item icon={<Settings />} onSelect={run(() => router.push("/app/settings"))}>
                   Business profile

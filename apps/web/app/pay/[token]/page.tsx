@@ -19,7 +19,7 @@ type Props = { params: Promise<{ token: string }> }
 async function load(token: string): Promise<PublicRequest | null> {
   const found = await publicRequest(db(), token)
   if (!found) return null
-  const { request, business, logo, invoice } = found
+  const { request, business, logo, invoice, receiptToken } = found
   return {
     token: request.token,
     business,
@@ -31,6 +31,8 @@ async function load(token: string): Promise<PublicRequest | null> {
     network: request.network,
     receiverId: request.receiverId,
     usdc: NETWORKS[request.network].usdc,
+    successUrl: request.successUrl,
+    receiptToken,
     invoice: invoice
       ? {
           number: invoiceNumber(invoice.number ?? 0),

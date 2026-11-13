@@ -52,6 +52,8 @@ const serverSchema = z.object({
 
   /** Optional 1Click partner key; without it 1Click adds its own small fee. */
   ONECLICK_API_KEY: optional(z.string()),
+  /** Development only: let webhook endpoints be http://localhost (production always requires public https). */
+  ALLOW_LOCAL_WEBHOOKS: optional(z.enum(["true", "false"])),
 })
 
 export type ServerEnv = z.infer<typeof serverSchema>
@@ -99,4 +101,9 @@ export function operatorKeys(
   const keys = network === "testnet" ? env.OPERATOR_KEYS_TESTNET : env.OPERATOR_KEYS_MAINNET
   if (!keys?.length) throw new Error(`OPERATOR_KEYS_${network.toUpperCase()} is not set`)
   return keys
+}
+
+/** Webhooks may go to http://localhost only outside production, and only when switched on. */
+export function allowLocalWebhooks(env: ServerEnv = serverEnv()): boolean {
+  return env.NODE_ENV !== "production" && env.ALLOW_LOCAL_WEBHOOKS === "true"
 }

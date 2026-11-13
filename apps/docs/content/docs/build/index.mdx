@@ -10,10 +10,10 @@ icon: Server
 
 | Part | What it does |
 | --- | --- |
-| `apps/web` | Next.js 16: the landing page, sign-in, the app, the public invoice, pay and receipt pages, the API, and `/dev` (every part of the design in every state) |
+| `apps/web` | Next.js 16: the landing page, sign-in, the app, the public invoice, pay and receipt pages, the app's API and the [developer API](/docs/build/developers), and `/dev` (every part of the design in every state) |
 | `apps/worker` | Background jobs on pg-boss. The only process that holds Tegata's NEAR keys; the web server never does |
 | `apps/docs` | These docs: Fumadocs, exported to static files |
-| Postgres 17 | The books: users, businesses, accounts, requests, payments, receipts, invoices, customers, referrals, people, payroll runs, relays |
+| Postgres 17 | The books: users, businesses, accounts, requests, payments, receipts, invoices, customers, referrals, people, payroll runs, autopilot plans, relays, API keys, events and webhook deliveries |
 
 ## The worker's jobs
 
@@ -28,6 +28,10 @@ icon: Server
 | `referral-sweep` | Every 5 minutes, and once at start: qualify invites, pay rewards past their hold |
 | `destination-register` | A person's NEAR account that can't hold USDC yet: Tegata's operator registers it |
 | `payroll-email` | "Added you to payroll" and "You've been paid", when email is on |
+| `autopilot-register` | A business turning on autopilot: Tegata's operator pays its storage on the contract |
+| `autopilot-keeper` | Every minute: call `run` on the contract for each plan whose payday has come, then record the run from its events |
+| `webhook-deliver` | One signed webhook to one endpoint; a non-2xx is retried after 30 s, 2 min, 10 min, 1 h and 6 h |
+| `webhook-sweep` | Every minute: queue any delivery whose retry is due |
 
 At start the worker also picks up any relay or payment it left halfway.
 
@@ -42,6 +46,7 @@ At start the worker also picks up any relay or payment it left halfway.
 | NEAR Connect | Customers pay from their own NEAR wallet | `apps/web/lib/client/near-wallet.ts` |
 | Privy | Email sign-in that gives each owner a NEAR key | `apps/web/app/providers.tsx` |
 | react-pdf, react-email, Resend | The invoice PDF, and the invoice and reminder emails | `packages/documents` |
+| Standard Webhooks | Signing every webhook, so a shop can verify it in one call | `packages/services/src/developers.ts` |
 
 ## The workspace
 

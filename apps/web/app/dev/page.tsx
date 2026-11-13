@@ -103,6 +103,12 @@ const CARDS = [
     field: "bg-kin",
   },
   {
+    href: "/dev/flows/developers",
+    title: "Developers & counter",
+    note: "API keys, webhooks, deliveries, the test inbox; the counter's keypad, QR and paid",
+    field: "bg-ai text-white",
+  },
+  {
     href: "/dev/flows/business",
     title: "Business profile",
     note: "The receipt header, the seal that follows the name, every field",
