@@ -35,15 +35,26 @@ const PROGRESS: Record<PayoutView["status"], number> = {
 const message = (error: unknown, fallback: string) =>
   error instanceof ApiError || error instanceof Error ? error.message : fallback
 
-export function ChainSend({ switcher }: { switcher?: ReactNode }) {
+export function ChainSend({
+  switcher,
+  initial,
+}: {
+  switcher?: ReactNode
+  /** Filled from a scanned QR code: the route, the address and (for dollar coins) the amount. */
+  initial?: { routeId?: string; to?: string; amount?: string }
+}) {
   const { profile } = useProfile()
-  const { openReceive } = useShell()
+  const { openReceive, openScan } = useShell()
   const signer = useSigner()
   const queryClient = useQueryClient()
   const [step, setStep] = useState<ChainSendStep>("form")
-  const [routeId, setRouteId] = useState<string>("usdc-base")
-  const [to, setTo] = useState("")
-  const [amount, setAmount] = useState("")
+  const [routeId, setRouteId] = useState<string>(
+    PAYER_ROUTES.some((r) => r.id === initial?.routeId)
+      ? (initial?.routeId ?? "usdc-base")
+      : "usdc-base",
+  )
+  const [to, setTo] = useState(initial?.to ?? "")
+  const [amount, setAmount] = useState(initial?.amount ?? "")
   const [problem, setProblem] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [committed, setCommitted] = useState<PayoutDraft | null>(null)
@@ -182,6 +193,7 @@ export function ChainSend({ switcher }: { switcher?: ReactNode }) {
       busy={busy || !signer.ready}
       problem={problem}
       switcher={switcher}
+      onScan={openScan}
       onReview={review}
       onApprove={approve}
       onEdit={() => {

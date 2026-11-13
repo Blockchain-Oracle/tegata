@@ -22,6 +22,7 @@ import {
   LogOut,
   Moon,
   Plus,
+  ScanLine,
   Search,
   Settings,
   Store,
@@ -32,10 +33,11 @@ import {
 } from "lucide-react"
 import { motion } from "motion/react"
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import { DropdownMenu } from "radix-ui"
 import { useCallback, useEffect, useRef, useState } from "react"
 import { BusinessSeal, Lockup, TegataSeal } from "@/components/brand/seal"
+import { Scanner } from "@/components/scan/scanner"
 import { fire } from "@/lib/feedback"
 import { LINKS } from "@/lib/links"
 import { useTheme } from "@/lib/theme"
@@ -136,8 +138,10 @@ export function AppShell({
   onSignOut: () => void
 }) {
   const pathname = usePathname()
+  const router = useRouter()
   const [receive, setReceive] = useState(false)
   const [command, setCommand] = useState(false)
+  const [scan, setScan] = useState(false)
   const { resolvedTheme, setTheme } = useTheme()
 
   const copyAddress = async () => {
@@ -254,7 +258,11 @@ export function AppShell({
 
   return (
     <ShellContext.Provider
-      value={{ openReceive: () => setReceive(true), openCommand: () => setCommand(true) }}
+      value={{
+        openReceive: () => setReceive(true),
+        openCommand: () => setCommand(true),
+        openScan: () => setScan(true),
+      }}
     >
       <div className="min-h-dvh bg-background lg:flex lg:gap-4 lg:p-4">
         {/* Desktop rail */}
@@ -281,6 +289,14 @@ export function AppShell({
             <kbd className="inline-flex items-center gap-0.5 rounded-[6px] bg-card px-1.5 py-0.5 font-mono text-meta max-xl:hidden">
               <CommandIcon className="size-3" />K
             </kbd>
+          </button>
+          <button
+            type="button"
+            onClick={() => setScan(true)}
+            className="press flex h-11 items-center gap-2.5 rounded-[12px] bg-secondary px-3 text-[15px] text-muted-foreground hover:bg-plate-pressed max-xl:justify-center"
+          >
+            <ScanLine className="size-4 shrink-0" />
+            <span className="flex-1 text-left max-xl:hidden">Scan a QR code</span>
           </button>
           <nav
             ref={navRef}
@@ -440,6 +456,13 @@ export function AppShell({
                     </DropdownMenu.Item>
                   ))}
                   <DropdownMenu.Item
+                    onSelect={() => setScan(true)}
+                    className="flex h-24 cursor-pointer flex-col justify-between rounded-[18px] bg-ai p-3 text-[15px] font-semibold text-white outline-none data-[highlighted]:brightness-110 [&_svg]:size-5"
+                  >
+                    <ScanLine />
+                    Scan to pay
+                  </DropdownMenu.Item>
+                  <DropdownMenu.Item
                     onSelect={() => setReceive(true)}
                     className="flex h-24 cursor-pointer flex-col justify-between rounded-[18px] bg-sakura p-3 text-[15px] font-semibold text-black outline-none data-[highlighted]:brightness-95 [&_svg]:size-5"
                   >
@@ -518,10 +541,20 @@ export function AppShell({
         businessName={businessName}
         sandbox={!live}
       />
+      <Sheet open={scan} onOpenChange={setScan} title="Scan a QR code">
+        <Scanner
+          active={scan}
+          onGo={(href) => {
+            setScan(false)
+            router.push(href)
+          }}
+        />
+      </Sheet>
       <CommandMenu
         open={command}
         onOpenChange={setCommand}
         onReceive={() => setReceive(true)}
+        onScan={() => setScan(true)}
         onCopyAddress={copyAddress}
         onSignOut={onSignOut}
       />

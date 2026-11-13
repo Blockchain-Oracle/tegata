@@ -5,7 +5,7 @@
 // grid with real marks, their address, a live quote of what arrives; a review paper from the committed quote; hold to
 // send (one gas-free transfer); steps to delivery; a receipt with both transactions. Separate from its logic so
 // /dev/flows can show every state.
-import { ArrowLeft, Clock3, ExternalLink, KeyRound, Undo2 } from "lucide-react"
+import { ArrowLeft, Clock3, ExternalLink, KeyRound, ScanLine, Undo2 } from "lucide-react"
 import { AnimatePresence, motion, useReducedMotion } from "motion/react"
 import Link from "next/link"
 import type { ReactNode } from "react"
@@ -56,6 +56,8 @@ export interface ChainSendViewProps {
   problem: string | null
   /** Shown under the title on the form: NEAR account / Another chain. */
   switcher?: ReactNode
+  /** Open the QR scanner for the address. */
+  onScan?: () => void
   onReview: () => void
   onApprove: () => void
   onEdit: () => void
@@ -227,6 +229,18 @@ export function ChainSendView(p: ChainSendViewProps) {
               autoComplete="off"
               className="font-mono"
               leading={<Mark id={route.chainMark} size={24} />}
+              trailing={
+                p.onScan ? (
+                  <button
+                    type="button"
+                    onClick={p.onScan}
+                    aria-label="Scan a QR code"
+                    className="press grid size-10 place-items-center rounded-full bg-card [&_svg]:size-5"
+                  >
+                    <ScanLine />
+                  </button>
+                ) : null
+              }
               status={
                 p.problem
                   ? { kind: "bad", text: p.problem }

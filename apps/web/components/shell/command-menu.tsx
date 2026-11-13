@@ -22,6 +22,7 @@ import {
   LogOut,
   Moon,
   Plus,
+  ScanLine,
   Settings,
   Store,
   Sun,
@@ -41,12 +42,14 @@ export function CommandMenu({
   open,
   onOpenChange,
   onReceive,
+  onScan,
   onCopyAddress,
   onSignOut,
 }: {
   open: boolean
   onOpenChange: (open: boolean) => void
   onReceive: () => void
+  onScan: () => void
   onCopyAddress: () => void
   onSignOut: () => void
 }) {
@@ -169,6 +172,9 @@ export function CommandMenu({
               <Group heading="Money">
                 <Item icon={<ArrowDownLeft />} onSelect={run(onReceive)}>
                   Get paid
+                </Item>
+                <Item icon={<ScanLine />} onSelect={run(onScan)}>
+                  Scan a QR code to pay
                 </Item>
                 <Item icon={<FileText />} onSelect={run(() => router.push("/app/invoices/new"))}>
                   New invoice

@@ -3,7 +3,15 @@
 // Send (plan 6.8, Kawase's money lifecycle): one big amount and a NEAR name; a review card that says the fee is paid
 // by Tegata; hold to send (the Privy key signs underneath); live steps; a receipt slip that lands when NEAR settles,
 // or a failure card that says no money moved. Separate from its logic so /dev/flows can show every state.
-import { ArrowLeft, ArrowRight, ExternalLink, KeyRound, Radio, ReceiptText } from "lucide-react"
+import {
+  ArrowLeft,
+  ArrowRight,
+  ExternalLink,
+  KeyRound,
+  Radio,
+  ReceiptText,
+  ScanLine,
+} from "lucide-react"
 import { AnimatePresence, motion, useReducedMotion } from "motion/react"
 import Link from "next/link"
 import { BusinessSeal, SealPress, TegataSeal } from "@/components/brand/seal"
@@ -47,6 +55,10 @@ export interface SendViewProps {
   team?: { id: string; name: string; accountId: string }[]
   /** Shown under the title on the form, in Live: NEAR account / Another chain. */
   switcher?: React.ReactNode
+  /** Open the QR scanner for "To". */
+  onScan?: () => void
+  /** A notice above the form (e.g. a scanned address that needs Live). */
+  notice?: string | null
 }
 
 const STEPS = [
@@ -96,6 +108,11 @@ export function SendView(p: SendViewProps) {
         <h1 className="display text-page-title">Send</h1>
       </div>
       {p.step === "form" ? p.switcher : null}
+      {p.step === "form" && p.notice ? (
+        <p className="rounded-[14px] bg-warn-surface px-4 py-3 text-[14px] font-medium text-warn">
+          {p.notice}
+        </p>
+      ) : null}
 
       <AnimatePresence mode="wait" initial={false}>
         {p.step === "form" ? (
@@ -163,6 +180,18 @@ export function SendView(p: SendViewProps) {
               autoCapitalize="none"
               className="font-mono"
               leading={<Mark id="near" size={24} />}
+              trailing={
+                p.onScan ? (
+                  <button
+                    type="button"
+                    onClick={p.onScan}
+                    aria-label="Scan a QR code"
+                    className="press grid size-10 place-items-center rounded-full bg-card [&_svg]:size-5"
+                  >
+                    <ScanLine />
+                  </button>
+                ) : null
+              }
               status={p.problem ? { kind: "bad", text: p.problem } : { kind: "none" }}
             />
             {p.team?.length ? (

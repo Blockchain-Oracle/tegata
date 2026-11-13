@@ -14,6 +14,7 @@ import {
   FileText,
   Link2,
   Plus,
+  ScanLine,
   UsersRound,
 } from "lucide-react"
 import { motion, useReducedMotion } from "motion/react"
@@ -44,6 +45,8 @@ export interface HomeViewProps {
   activity: ActivityItem[] | undefined
   activityError: boolean
   onReceive: () => void
+  /** Open the QR scanner (pay a link, an account or an address by scanning it). */
+  onScan?: () => void
   onRetryActivity: () => void
   /** Set when this business joined through another's link and the reward is still ahead. */
   invite?: {
@@ -70,6 +73,7 @@ export function HomeView({
   activity,
   activityError,
   onReceive,
+  onScan,
   onRetryActivity,
   testDollars,
   onAddTestDollars,
@@ -184,6 +188,7 @@ export function HomeView({
             <div className="flex gap-4 sm:gap-6">
               <StageAction label="Get paid" onClick={onReceive} icon={<ArrowDownLeft />} />
               <StageAction label="Send" href="/app/send" icon={<ArrowUpRight />} />
+              {onScan ? <StageAction label="Scan" onClick={onScan} icon={<ScanLine />} /> : null}
               <StageAction
                 label={copied ? "Copied" : "Copy"}
                 onClick={copy}

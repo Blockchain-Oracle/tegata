@@ -5,7 +5,8 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { NETWORKS } from "@tegata/config"
 import { toUnits } from "@tegata/core/money"
-import { useEffect, useState } from "react"
+import { useSearchParams } from "next/navigation"
+import { Suspense, useEffect, useMemo, useState } from "react"
 
 import { viewDollars } from "@/components/kit/figure"
 import { Segmented } from "@/components/kit/segmented"
@@ -23,12 +24,31 @@ const POLL_MS = 1_200
 const TERMINAL: RelayStatus["status"][] = ["success", "failed", "expired"]
 
 export default function SendPage() {
+  return (
+    <Suspense fallback={null}>
+      <SendRoutes />
+    </Suspense>
+  )
+}
+
+function SendRoutes() {
   const network = useNetwork()
   const [mode, setMode] = useState<"near" | "chain">("near")
-  // Balance's "Move out" in Live opens straight on another chain.
+  // A scanned QR code or Balance's "Move out" arrives with what to fill in: an account, or a route and an address.
+  // Read reactively, so a scan while already on Send fills it in too.
+  const params = useSearchParams()
+  const prefill = useMemo(
+    () => ({
+      to: params.get("to") ?? undefined,
+      routeId: params.get("route") ?? undefined,
+      amount: params.get("amount") ?? undefined,
+      chain: params.get("mode") === "chain",
+    }),
+    [params],
+  )
   useEffect(() => {
-    if (new URLSearchParams(window.location.search).get("mode") === "chain") setMode("chain")
-  }, [])
+    if (prefill.chain) setMode("chain")
+  }, [prefill.chain])
   // Live only: NEAR Intents has no testnet, so Sandbox sends stay on NEAR.
   const switcher =
     network === "mainnet" ? (
@@ -42,17 +62,45 @@ export default function SendPage() {
         ]}
       />
     ) : null
-  if (network === "mainnet" && mode === "chain") return <ChainSend switcher={switcher} />
-  return <NearSend switcher={switcher} />
+  if (network === "mainnet" && mode === "chain")
+    return (
+      <ChainSend
+        key={`${prefill?.routeId}:${prefill?.to}`}
+        switcher={switcher}
+        initial={prefill?.chain ? prefill : undefined}
+      />
+    )
+  return (
+    <NearSend
+      switcher={switcher}
+      prefillTo={prefill?.chain ? undefined : prefill?.to}
+      notice={
+        prefill?.chain && network === "testnet"
+          ? "That's an address on another chain. Paying other chains runs in Live: switch to Live at the top to send it."
+          : null
+      }
+    />
+  )
 }
 
-function NearSend({ switcher }: { switcher: React.ReactNode }) {
+function NearSend({
+  switcher,
+  prefillTo,
+  notice,
+}: {
+  switcher: React.ReactNode
+  prefillTo?: string
+  notice?: string | null
+}) {
   const { profile } = useProfile()
-  const { openReceive } = useShell()
+  const { openReceive, openScan } = useShell()
   const signer = useSigner()
   const queryClient = useQueryClient()
   const [step, setStep] = useState<SendStep>("form")
   const [to, setTo] = useState("")
+  useEffect(() => {
+    if (prefillTo) setTo(prefillTo.toLowerCase())
+  }, [prefillTo])
   const [amount, setAmount] = useState("")
   const [problem, setProblem] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
@@ -186,6 +234,8 @@ function NearSend({ switcher }: { switcher: React.ReactNode }) {
       onReceive={openReceive}
       team={team.data}
       switcher={switcher}
+      onScan={openScan}
+      notice={notice}
       onAgain={() => {
         setSend(null)
         setAmount("")

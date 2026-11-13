@@ -15,7 +15,7 @@ const ACTIVITY_POLL_MS = 10_000
 
 export default function HomePage() {
   const { profile } = useProfile()
-  const { openReceive } = useShell()
+  const { openReceive, openScan } = useShell()
   const testDollars = useTestDollars()
   const activity = useQuery({
     queryKey: ["activity"],
@@ -53,6 +53,7 @@ export default function HomePage() {
       activity={activity.data?.items}
       activityError={activity.isError}
       onReceive={openReceive}
+      onScan={openScan}
       onRetryActivity={() => void activity.refetch()}
       testDollars={account.network === "testnet" ? testDollars : undefined}
       onAddTestDollars={testDollars.add}
