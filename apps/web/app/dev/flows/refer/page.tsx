@@ -101,7 +101,7 @@ export default function ReferFlow() {
           }
           error={state === "error"}
           onRetry={() => setState("mix")}
-          url="https://tegata.84.46.247.92.sslip.io/join/studio-kaze"
+          url="https://tegata.xyz/join/studio-kaze"
           businessName={SAMPLE_BUSINESS}
           saving={false}
           problem={null}

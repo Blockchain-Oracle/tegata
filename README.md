@@ -1,5 +1,5 @@
 <p align="center">
-  <a href="https://tegata.84.46.247.92.sslip.io">
+  <a href="https://tegata.xyz">
     <picture>
       <source media="(prefers-color-scheme: dark)" srcset=".github/assets/banner-dark.png">
       <img alt="Tegata. Get paid. Pay your team. In exact dollars. Invoices, pay links and payroll for small businesses, settled in USDC on NEAR." src=".github/assets/banner-light.png" width="100%">
@@ -12,9 +12,9 @@
 <p align="center"><b>Get paid. Pay your team. In exact dollars.</b></p>
 
 <p align="center">
-  <b><a href="https://tegata.84.46.247.92.sslip.io">Open the app</a></b> ·
+  <b><a href="https://tegata.xyz">Open the app</a></b> ·
   <b><a href="#demo">Demo</a></b> ·
-  <b><a href="https://tegata-docs.84.46.247.92.sslip.io">Docs</a></b> ·
+  <b><a href="https://docs.tegata.xyz">Docs</a></b> ·
   <b><a href="#proof-on-near">Proof on NEAR</a></b>
 </p>
 
@@ -86,7 +86,7 @@ windows: a normal one and a private one.
 
 | #   | Do this                                                                                                                           | See this                                                                                                                        |
 | --- | --------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
-| 1   | Open [the app](https://tegata.84.46.247.92.sslip.io/signin), enter your email, then the six-digit code it sends                   | The code cells turn vermilion and Tegata's seal presses                                                                         |
+| 1   | Open [the app](https://tegata.xyz/signin), enter your email, then the six-digit code it sends                                     | The code cells turn vermilion and Tegata's seal presses                                                                         |
 | 2   | Name your business, pick a pay address, press **Open my account**                                                                 | `your-name.tegata.testnet` is created on NEAR and registered for USDC while you watch, then your business's own seal is stamped |
 | 3   | Open **Invoices**, press **New invoice**. Add a customer and one item for $1.00, press **Review and send**, then **Send invoice** | The invoice gets its number (INV-0001) and a link. Press **Copy link**                                                          |
 | 4   | Open the link in the private window                                                                                               | The invoice as your customer sees it: items, total, a PDF, and **Pay $1.00**                                                    |
@@ -101,7 +101,7 @@ choose NEAR Testnet, paste the customer's pay address, then hold to pay.
 ## Demo
 
 <p align="center">
-  <a href="https://tegata.84.46.247.92.sslip.io/invoice/new">
+  <a href="https://tegata.xyz/invoice/new">
     <img src=".github/assets/demo-cover.png" width="720" alt="Try Tegata live: make an invoice, no sign-up">
   </a>
 </p>
@@ -113,7 +113,7 @@ to send it. To follow a payment all the way to the PAID seal, use the eight step
 ## How it works
 
 <p align="center">
-  <a href="https://tegata-docs.84.46.247.92.sslip.io/docs/how-money-moves">
+  <a href="https://docs.tegata.xyz/docs/how-money-moves">
     <picture>
       <source media="(prefers-color-scheme: dark)" srcset=".github/assets/system-dark.png">
       <img alt="Tegata's parts: the business owner and the customer use the web app; the web app stores requests, payments and receipts in Postgres and hands work to the worker; the worker, the only holder of operator keys, relays signed actions to NEAR and pays the fee, and reads the USDC event to mark a payment paid; the web app reads live quotes from NEAR Intents" src=".github/assets/system-light.png" width="100%">
@@ -121,7 +121,7 @@ to send it. To follow a payment all the way to the PAID seal, use the eight step
   </a>
 </p>
 
-<p align="center"><a href="https://tegata-docs.84.46.247.92.sslip.io/docs/how-money-moves">Open the detailed map</a> · <a href=".github/diagrams/readme-system.mmd">Edit the Mermaid source</a></p>
+<p align="center"><a href="https://docs.tegata.xyz/docs/how-money-moves">Open the detailed map</a> · <a href=".github/diagrams/readme-system.mmd">Edit the Mermaid source</a></p>
 
 There are three parts. The **web app** (Next.js) serves the landing page, the app, the public invoice, pay and
 receipt pages, and the API. The **worker** runs every slow or risky job: it relays signed actions to NEAR,
@@ -130,7 +130,7 @@ rewards. It is the only process
 that holds the operator's keys; the web server never does. **Postgres** keeps the books.
 
 <p align="center">
-  <a href="https://tegata-docs.84.46.247.92.sslip.io/docs/how-money-moves">
+  <a href="https://docs.tegata.xyz/docs/how-money-moves">
     <picture>
       <source media="(prefers-color-scheme: dark)" srcset=".github/assets/payment-dark.png">
       <img alt="One payment: the pay page starts an attempt with the memo tegata:pay:id; the customer pays from a Tegata balance (Tegata relays it and pays the fee) or a NEAR wallet; the worker reads the final transaction from NEAR, matches the USDC event's receiver, amount and memo, marks it paid and numbers the receipt" src=".github/assets/payment-light.png" width="100%">
@@ -138,7 +138,7 @@ that holds the operator's keys; the web server never does. **Postgres** keeps th
   </a>
 </p>
 
-<p align="center"><a href="https://tegata-docs.84.46.247.92.sslip.io/docs/how-money-moves">Open the detailed map</a> · <a href=".github/diagrams/readme-payment.mmd">Edit the Mermaid source</a></p>
+<p align="center"><a href="https://docs.tegata.xyz/docs/how-money-moves">Open the detailed map</a> · <a href=".github/diagrams/readme-payment.mmd">Edit the Mermaid source</a></p>
 
 Every payment attempt carries its own memo, `tegata:pay:<id>`. Nothing the payer's browser says is believed:
 the worker waits until the transaction is final on NEAR, reads the USDC contract's own transfer event, and marks
@@ -196,7 +196,7 @@ originality and sustainability."
 | ---------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
 | Runs and does what the README says | Every row of Try it runs on the live Sandbox; every claim below has a transaction or a script                                                                                                                                                                          | [Try it](#try-it-on-the-live-sandbox); [Proof on NEAR](#proof-on-near)                                      |
 | Technical implementation           | A relayer that lands each action exactly once, even after a crash mid-send; payments decided by NEAR's own USDC event; invoice and receipt numbers that can't collide; background jobs for settling, repeat invoices, emails, rewards and signed webhooks with retries | `packages/services/src/proofs/recover.ts`; `packages/core/src/near/operator.ts`; `apps/worker/src/index.ts` |
-| Design                             | One system: each business's own seal stamps its invoices and receipts; a lit vermilion stage; real chain and coin logos; motion and sound; light and dark; payer pages designed for phones first                                                                       | [`/dev`](https://tegata.84.46.247.92.sslip.io/dev) shows every part in every state                          |
+| Design                             | One system: each business's own seal stamps its invoices and receipts; a lit vermilion stage; real chain and coin logos; motion and sound; light and dark; payer pages designed for phones first                                                                       | [`/dev`](https://tegata.xyz/dev) shows every part in every state                                            |
 | Impact                             | A $1,250 card payment from abroad costs the business about $68; with Tegata it receives the full $1,250 and never touches crypto tooling                                                                                                                               | [The problem](#the-problem); [Try it](#try-it-on-the-live-sandbox)                                          |
 | Originality                        | A generated seal per business as the PAID stamp; readable NEAR pay addresses; referrals that pay only when money arrives from real customers, never from either business or anyone they funded                                                                         | `apps/web/components/brand/seal.tsx`; `packages/services/src/referrals.ts`                                  |
 | Sustainability                     | About 0.0003 NEAR in fees per relayed action, measured and paid by Tegata; one small server and Postgres; MIT licensed                                                                                                                                                 | [Proof on NEAR](#proof-on-near)                                                                             |
@@ -242,28 +242,28 @@ Run the proofs yourself (after [Run it locally](#run-it-locally)):
 
 ## The rest of the product
 
-| Do this                                                             | See this                                                                                                                                                                                                                                                   |
-| ------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| On `/`, change the amount or the coin in the calculator             | A live NEAR Intents quote: what a customer on Tron, Base, Bitcoin… sends so you receive exactly that many dollars                                                                                                                                          |
-| On `/`, press **Try an invoice, no sign-up**                        | Build an invoice before you have an account; it stays on your device and opens in your account when you sign in to send it                                                                                                                                 |
-| Open **Pay links**, make one for a fixed amount or any amount       | The link card and its QR with Copy, Share and Open; payments appear on it the moment NEAR settles them                                                                                                                                                     |
-| Pay a link or an invoice from a NEAR wallet                         | NEAR Connect opens your wallet for one USDC transfer with the payment's memo; the page follows it to Paid                                                                                                                                                  |
-| On a pay page, choose **Another chain**                             | Real coin and chain logos with a live NEAR Intents price for the exact amount, or the route's reason (such as a minimum)                                                                                                                                   |
-| In an invoice, allow part-payments or set Repeat                    | Customers can pay part of it; a weekly or monthly invoice issues itself shortly after 09:00 in your time zone. Reminder emails (3 days before, on, and 3 and 7 days after the due date) go out once email is on                                            |
-| Mark an invoice paid by hand, duplicate one, void one               | A receipt that says it isn't on NEAR; a fresh draft; a cancelled invoice whose link stops taking payments                                                                                                                                                  |
-| Open **Customers**                                                  | Each customer with their email, how many invoices you sent them and what they owe; their sheet shows billed, paid and owed, and New invoice for them                                                                                                       |
-| Open **Refer** and share your link                                  | Another business opens `/join/<you>`, joins, and once real customers have paid it $5 (Sandbox) you each get $1 in test USDC                                                                                                                                |
-| Open **People**, add someone or import a CSV                        | Each person gets a page (`/p/<token>`) where they sign in with the invited email and choose their own Tegata account or a NEAR account; a CSV row with a mistake says which line and why                                                                   |
-| Open **Payroll**, set a payday, press **Run payroll**               | Review every row (leave someone out, see who's skipped and why), hold to pay, and everyone ready is paid in one transaction on NEAR, each with a payslip at `/r/slip/<id>`                                                                                 |
-| Open **Activity**, change the month, press **CSV** or **Statement** | Every movement of the month (payments, payroll, sends, rewards, refunds, autopilot), filters and search; the CSV and the statement PDF for an accountant; a received payment's refund button                                                               |
-| Open **Balance**                                                    | What you hold (balance plus what's set aside in autopilot), and the books checked against NEAR: every USDC transfer matched by its transaction, anything from outside Tegata listed                                                                        |
-| On `/signin`, press **Continue with a NEAR wallet**                 | NEAR Connect opens with wallets that can sign in and approve actions (Meteor, Intear, Ledger on testnet); one prompt signs you in, your own account becomes the pay address, and every approval after is one wallet prompt, gas-free                       |
-| Open **Counter**, type an amount, press **Charge**                  | A QR code on the stage for a one-time pay page; it turns green with your seal the moment the customer's payment settles, and the sale joins this month's list                                                                                              |
-| Open **Developers**, make a key, add Tegata's test inbox            | One `curl` creates a checkout session; once it's paid, a signed `checkout.session.completed` lands in the inbox marked "Signature valid", with every delivery logged ([API and webhooks](https://tegata-docs.84.46.247.92.sslip.io/docs/build/developers)) |
-| Open **Send**                                                       | Send dollars to any NEAR account that can hold USDC: hold to send, live steps, a sealed receipt, and no fee for you                                                                                                                                        |
-| Open **Business**                                                   | Your logo, address, tax ID and time zone, with a live preview of the header on every invoice and receipt                                                                                                                                                   |
-| Press ⌘K                                                            | Every action and place in the app, from the keyboard                                                                                                                                                                                                       |
-| Open [`/dev`](https://tegata.84.46.247.92.sslip.io/dev)             | Every part of the design in every state: the seal, colour, type, components, loading and error states, motion and sound                                                                                                                                    |
+| Do this                                                             | See this                                                                                                                                                                                                                                 |
+| ------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| On `/`, change the amount or the coin in the calculator             | A live NEAR Intents quote: what a customer on Tron, Base, Bitcoin… sends so you receive exactly that many dollars                                                                                                                        |
+| On `/`, press **Try an invoice, no sign-up**                        | Build an invoice before you have an account; it stays on your device and opens in your account when you sign in to send it                                                                                                               |
+| Open **Pay links**, make one for a fixed amount or any amount       | The link card and its QR with Copy, Share and Open; payments appear on it the moment NEAR settles them                                                                                                                                   |
+| Pay a link or an invoice from a NEAR wallet                         | NEAR Connect opens your wallet for one USDC transfer with the payment's memo; the page follows it to Paid                                                                                                                                |
+| On a pay page, choose **Another chain**                             | Real coin and chain logos with a live NEAR Intents price for the exact amount, or the route's reason (such as a minimum)                                                                                                                 |
+| In an invoice, allow part-payments or set Repeat                    | Customers can pay part of it; a weekly or monthly invoice issues itself shortly after 09:00 in your time zone. Reminder emails (3 days before, on, and 3 and 7 days after the due date) go out once email is on                          |
+| Mark an invoice paid by hand, duplicate one, void one               | A receipt that says it isn't on NEAR; a fresh draft; a cancelled invoice whose link stops taking payments                                                                                                                                |
+| Open **Customers**                                                  | Each customer with their email, how many invoices you sent them and what they owe; their sheet shows billed, paid and owed, and New invoice for them                                                                                     |
+| Open **Refer** and share your link                                  | Another business opens `/join/<you>`, joins, and once real customers have paid it $5 (Sandbox) you each get $1 in test USDC                                                                                                              |
+| Open **People**, add someone or import a CSV                        | Each person gets a page (`/p/<token>`) where they sign in with the invited email and choose their own Tegata account or a NEAR account; a CSV row with a mistake says which line and why                                                 |
+| Open **Payroll**, set a payday, press **Run payroll**               | Review every row (leave someone out, see who's skipped and why), hold to pay, and everyone ready is paid in one transaction on NEAR, each with a payslip at `/r/slip/<id>`                                                               |
+| Open **Activity**, change the month, press **CSV** or **Statement** | Every movement of the month (payments, payroll, sends, rewards, refunds, autopilot), filters and search; the CSV and the statement PDF for an accountant; a received payment's refund button                                             |
+| Open **Balance**                                                    | What you hold (balance plus what's set aside in autopilot), and the books checked against NEAR: every USDC transfer matched by its transaction, anything from outside Tegata listed                                                      |
+| On `/signin`, press **Continue with a NEAR wallet**                 | NEAR Connect opens with wallets that can sign in and approve actions (Meteor, Intear, Ledger on testnet); one prompt signs you in, your own account becomes the pay address, and every approval after is one wallet prompt, gas-free     |
+| Open **Counter**, type an amount, press **Charge**                  | A QR code on the stage for a one-time pay page; it turns green with your seal the moment the customer's payment settles, and the sale joins this month's list                                                                            |
+| Open **Developers**, make a key, add Tegata's test inbox            | One `curl` creates a checkout session; once it's paid, a signed `checkout.session.completed` lands in the inbox marked "Signature valid", with every delivery logged ([API and webhooks](https://docs.tegata.xyz/docs/build/developers)) |
+| Open **Send**                                                       | Send dollars to any NEAR account that can hold USDC: hold to send, live steps, a sealed receipt, and no fee for you                                                                                                                      |
+| Open **Business**                                                   | Your logo, address, tax ID and time zone, with a live preview of the header on every invoice and receipt                                                                                                                                 |
+| Press ⌘K                                                            | Every action and place in the app, from the keyboard                                                                                                                                                                                     |
+| Open [`/dev`](https://tegata.xyz/dev)                               | Every part of the design in every state: the seal, colour, type, components, loading and error states, motion and sound                                                                                                                  |
 
 ## If you keep the books
 

@@ -8,8 +8,8 @@ export const SITE = {
   headline: "Get paid. Pay your team. In exact dollars.",
   subheadline:
     "Invoices, pay links and payroll for small businesses, settled in USDC on NEAR. Sign in with email; Tegata pays every network fee and seals every receipt.",
-  url: "https://tegata-docs.84.46.247.92.sslip.io",
-  app: "https://tegata.84.46.247.92.sslip.io",
+  url: "https://docs.tegata.xyz",
+  app: "https://tegata.xyz",
   repo: "https://github.com/Blockchain-Oracle/tegata",
 } as const
 

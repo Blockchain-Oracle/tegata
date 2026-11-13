@@ -98,7 +98,7 @@ export default function LinksFlow() {
         }
         error={detail === "error"}
         businessName={SAMPLE_BUSINESS}
-        url={`https://tegata.84.46.247.92.sslip.io/pay/${request.token}`}
+        url={`https://tegata.xyz/pay/${request.token}`}
         fresh={detail === "fresh"}
         toggling={false}
         onToggle={setOpen}

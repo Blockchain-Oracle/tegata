@@ -777,7 +777,7 @@ export const SAMPLE_RECONCILIATION: Reconciliation = {
 // --- developers and counter ---------------------------------------------------------------------------------------
 
 export const SAMPLE_DEVELOPERS: DevelopersView = {
-  appUrl: "https://tegata.84.46.247.92.sslip.io",
+  appUrl: "https://tegata.xyz",
   keys: [
     {
       id: "k1",
@@ -790,7 +790,7 @@ export const SAMPLE_DEVELOPERS: DevelopersView = {
   endpoints: [
     {
       id: "e1",
-      url: "https://tegata.84.46.247.92.sslip.io/api/webhooks/inbox/wn62kD2UzdSjRmBpQ3Ga",
+      url: "https://tegata.xyz/api/webhooks/inbox/wn62kD2UzdSjRmBpQ3Ga",
       inbox: true,
       enabled: true,
       secretHint: "whsec_Rk3…",

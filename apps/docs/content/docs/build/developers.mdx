@@ -38,12 +38,12 @@ behind **Reveal secret** after that.
 </Step>
 </Steps>
 
-<Shot src="/shots/wide/app-developers.webp" alt="The Developers page: the checkout session curl, an API key named Shop server, Tegata's test inbox as a webhook endpoint with Send test event, Reveal secret and Remove, and the test inbox list" caption="The Developers page: the quickstart, your keys, your endpoints and the test inbox." address="tegata.84.46.247.92.sslip.io/app/developers" />
+<Shot src="/shots/wide/app-developers.webp" alt="The Developers page: the checkout session curl, an API key named Shop server, Tegata's test inbox as a webhook endpoint with Send test event, Reveal secret and Remove, and the test inbox list" caption="The Developers page: the quickstart, your keys, your endpoints and the test inbox." address="tegata.xyz/app/developers" />
 
 ## Create a checkout session
 
 ```bash
-curl https://tegata.84.46.247.92.sslip.io/api/v1/checkout/sessions \
+curl https://tegata.xyz/api/v1/checkout/sessions \
   -H "Authorization: Bearer $TEGATA_KEY" \
   -H "Idempotency-Key: order-1042" \
   -H "Content-Type: application/json" \
@@ -110,7 +110,7 @@ This is the real session from the proof run below, read back after it was paid (
 ## Read it back
 
 ```bash
-curl https://tegata.84.46.247.92.sslip.io/api/v1/checkout/sessions/<id> \
+curl https://tegata.xyz/api/v1/checkout/sessions/<id> \
   -H "Authorization: Bearer $TEGATA_KEY"
 ```
 
@@ -185,7 +185,7 @@ way to watch the whole loop before writing a handler.
 For a fixed price with no server, point a button at a [pay link](/docs/guide/pay-links):
 
 ```html
-<a href="https://tegata.84.46.247.92.sslip.io/pay/YOUR_LINK_TOKEN"
+<a href="https://tegata.xyz/pay/YOUR_LINK_TOKEN"
    style="display:inline-flex;align-items:center;gap:8px;padding:12px 20px;border-radius:14px;
           background:#FF4F00;color:#fff;font:600 16px system-ui;text-decoration:none">
   Pay with Tegata

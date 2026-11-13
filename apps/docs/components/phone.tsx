@@ -65,7 +65,7 @@ export function Shot({
   src,
   alt,
   caption,
-  address = "tegata.84.46.247.92.sslip.io",
+  address = "tegata.xyz",
 }: {
   src: string
   alt: string

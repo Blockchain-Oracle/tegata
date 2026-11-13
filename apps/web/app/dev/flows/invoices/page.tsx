@@ -154,7 +154,7 @@ export default function InvoicesFlow() {
           onRetry={() => undefined}
           logo={null}
           today={today}
-          url="https://tegata.84.46.247.92.sslip.io/i/h7Kq2mPx9cRt"
+          url="https://tegata.xyz/i/h7Kq2mPx9cRt"
           justSent={state === "sent"}
           pressSeal={state === "paid"}
           busy={null}

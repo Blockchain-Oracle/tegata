@@ -217,7 +217,7 @@ export default function Home() {
           src="/shots/wide/guest-invoice.webp"
           alt="The invoice builder on a desktop: Studio Kaze billing Northwind Ltd $1,250.00, with the live invoice preview on the stage"
           caption="The invoice builder, open to anyone without an account: the invoice updates as you type."
-          address="tegata.84.46.247.92.sslip.io/invoice/new"
+          address="tegata.xyz/invoice/new"
         />
       </section>
     </main>

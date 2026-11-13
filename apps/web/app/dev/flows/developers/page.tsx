@@ -84,7 +84,7 @@ export default function DevelopersFlow() {
             counter === "keypad"
               ? null
               : {
-                  url: "https://tegata.84.46.247.92.sslip.io/pay/E32DvMBiifrjmx",
+                  url: "https://tegata.xyz/pay/E32DvMBiifrjmx",
                   amount: "4500000",
                 }
           }
