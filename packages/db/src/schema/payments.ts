@@ -59,8 +59,17 @@ export const requests = pgTable(
   ],
 )
 
-/** How a payer pays: from a Tegata balance (gas-free relay), a NEAR wallet, or another chain via NEAR Intents. */
-export const paymentRail = pgEnum("payment_rail", ["tegata", "near_wallet", "oneclick", "manual"])
+/**
+ * How a payer pays: from a Tegata balance (gas-free relay), a NEAR wallet, another chain via NEAR Intents, by hand, or
+ * by bank card through Transak (USDC on NEAR to the business).
+ */
+export const paymentRail = pgEnum("payment_rail", [
+  "tegata",
+  "near_wallet",
+  "oneclick",
+  "manual",
+  "card",
+])
 
 /** One attempt to pay a request (plan section 2, "Paying in"). Only succeeded attempts count. */
 export const paymentStatus = pgEnum("payment_status", [
@@ -109,6 +118,8 @@ export const payments = pgTable(
     swapStatus: text(),
     /** 1Click rail: the payer's deposit transaction on their chain. */
     originTx: text(),
+    /** Card rail: Transak's order id (its status is kept in `swapStatus`). */
+    cardOrderId: text(),
     deadline: timestamp({ withTimezone: true }),
     error: text(),
     settledAt: timestamp({ withTimezone: true }),

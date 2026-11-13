@@ -103,7 +103,7 @@ export type PaymentStatus =
   | "failed"
   | "expired"
 
-export type PaymentRail = "tegata" | "near_wallet" | "oneclick" | "manual"
+export type PaymentRail = "tegata" | "near_wallet" | "oneclick" | "manual" | "card"
 
 export interface ActivityItem {
   id: string
@@ -221,6 +221,8 @@ export interface AttemptView {
     chainMark?: string | null
     payUri: string | null
   } | null
+  /** Paying by card: Transak's order and its status. */
+  card?: { orderId: string | null; orderStatus: string | null } | null
 }
 
 export interface TegataAttempt {

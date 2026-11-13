@@ -29,8 +29,14 @@ export const GET = route(async (_request, context: { params: Promise<{ id: strin
           : null,
     }
   }
+  // A card payment: Transak's order status, so the page can say where the card payment is.
+  const card =
+    payment.rail === "card"
+      ? { orderId: payment.cardOrderId, orderStatus: payment.swapStatus }
+      : null
   return {
     oneclick,
+    card,
     id: payment.id,
     status: payment.status,
     rail: payment.rail,

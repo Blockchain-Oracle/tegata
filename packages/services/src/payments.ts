@@ -214,7 +214,7 @@ export async function startAttempt(
   db: Db,
   input: {
     token: string
-    rail: "tegata" | "near_wallet" | "oneclick"
+    rail: "tegata" | "near_wallet" | "oneclick" | "card"
     amount?: bigint
     payer?: string
     payerEmail?: string
@@ -318,19 +318,23 @@ export async function settlePayment(
   paymentId: string,
   txHash: string,
   senderId: string,
+  /** A card on-ramp delivers without Tegata's memo: then the transfer to the business for the amount is enough. */
+  options: { anyMemo?: boolean } = {},
 ): Promise<SettleResult> {
   const [payment] = await db.select().from(payments).where(eq(payments.id, paymentId))
   if (!payment || payment.status === "succeeded" || payment.status === "failed") return "ignored"
 
   const read = await readUsdcTransfers(payment.network, txHash, senderId)
   if (read.state === "pending") return "pending"
-  const match = read.ok
-    ? matchingTransfer(read.transfers, {
-        to: payment.receiverId,
-        amount: payment.amount,
-        memo: payment.memo,
-      })
-    : undefined
+  const match = !read.ok
+    ? undefined
+    : options.anyMemo
+      ? read.transfers.find((t) => t.to === payment.receiverId && t.amount >= payment.amount)
+      : matchingTransfer(read.transfers, {
+          to: payment.receiverId,
+          amount: payment.amount,
+          memo: payment.memo,
+        })
   if (!match) {
     await db
       .update(payments)

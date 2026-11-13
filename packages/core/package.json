@@ -14,7 +14,8 @@
     "./noah": "./src/noah/index.ts",
     "./solana": "./src/solana/index.ts",
     "./gnosis": "./src/gnosis/index.ts",
-    "./bitnob": "./src/bitnob/index.ts"
+    "./bitnob": "./src/bitnob/index.ts",
+    "./transak": "./src/transak/index.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",

@@ -197,11 +197,7 @@ export function CardsView(p: CardsViewProps) {
           <SandboxPill className="hidden sm:inline-flex">Sandbox · test cards</SandboxPill>
         ) : null}
         {p.issuer && p.cards !== undefined ? (
-          <Button
-            size="sm"
-            className="ml-auto bg-black text-white hover:bg-black/85"
-            onClick={p.onNewCard}
-          >
+          <Button size="sm" className="ml-auto" onClick={p.onNewCard}>
             <Plus /> New card
           </Button>
         ) : null}

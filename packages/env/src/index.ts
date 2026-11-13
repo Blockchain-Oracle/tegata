@@ -64,6 +64,11 @@ const serverSchema = z.object({
   BITNOB_CLIENT_ID: optional(z.string()),
   BITNOB_CLIENT_SECRET: optional(z.string()),
   BITNOB_WEBHOOK_SECRET: optional(z.string()),
+  /** Transak (pay by card): the partner API key and secret, and which environment they belong to. Staging keys take
+   * cards in the Sandbox; production keys (after Transak's business review) take them in Live. */
+  TRANSAK_API_KEY: optional(z.string()),
+  TRANSAK_API_SECRET: optional(z.string()),
+  TRANSAK_ENV: optional(z.enum(["staging", "production"])),
   /** Development only: let webhook endpoints be http://localhost (production always requires public https). */
   ALLOW_LOCAL_WEBHOOKS: optional(z.enum(["true", "false"])),
 })

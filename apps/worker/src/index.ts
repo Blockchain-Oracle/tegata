@@ -3,6 +3,7 @@ import { bitnobClient } from "@tegata/core/bitnob"
 import { Operator } from "@tegata/core/near"
 import { NOAH_TEST_USDC_MINT, noahClient } from "@tegata/core/noah"
 import { sendToken } from "@tegata/core/solana"
+import { transakClient } from "@tegata/core/transak"
 import { createDb, schema } from "@tegata/db"
 import { migrateDb } from "@tegata/db/migrate"
 import {
@@ -24,6 +25,7 @@ import {
   autopilotsToRegister,
   bankPayoutsToMove,
   cardMovesToFund,
+  cardPaymentsToPoll,
   claimEmails,
   creditBankDeposits,
   deliver,
@@ -41,6 +43,7 @@ import {
   payoutsToPoll,
   pendingDeliveries,
   pollBankPayout,
+  pollCardPayment,
   pollOneClickPayment,
   pollPayout,
   processMoveOut,
@@ -437,6 +440,41 @@ await boss.work(QUEUES.bankPoll.name, async ([job]) => {
   }
   await queueBankPayoutEmail(db, payoutId)
 })
+// Pay by card (Transak): follow each order; a completed Sandbox order is delivered by the operator as test USDC.
+const transak =
+  env.TRANSAK_API_KEY && env.TRANSAK_API_SECRET
+    ? transakClient({
+        apiKey: env.TRANSAK_API_KEY,
+        apiSecret: env.TRANSAK_API_SECRET,
+        env: env.TRANSAK_ENV ?? "staging",
+      })
+    : null
+const CARD_POLL_MS = 5_000
+await boss.work(QUEUES.cardPayPoll.name, async ([job]) => {
+  if (!job || !transak) return
+  const { paymentId } = QUEUES.cardPayPoll.payload.parse(job.data)
+  const open = (await cardPaymentsToPoll(db)).find((p) => p.id === paymentId)
+  if (!open) return
+  const result = await pollCardPayment(db, transak, operators.get(open.network) ?? null, paymentId)
+  if (result === "pending") {
+    await enqueue(boss, "cardPayPoll", { paymentId }, `card-pay:${paymentId}`, {
+      startAfter: new Date(Date.now() + CARD_POLL_MS),
+    })
+    return
+  }
+  console.log(`[card-pay] ${paymentId} ${result}`)
+  if (result === "succeeded") {
+    await queueDeliveries()
+    await queuePaymentEmails(db, paymentId)
+  }
+})
+await boss.schedule(QUEUES.cardPaySweep.name, "* * * * *", {})
+await boss.work(QUEUES.cardPaySweep.name, async () => {
+  if (!transak) return
+  for (const open of await cardPaymentsToPoll(db))
+    await enqueue(boss, "cardPayPoll", { paymentId: open.id }, `card-pay:${open.id}`)
+})
+
 // Cards: Bitnob issues or raises a card once its money is in Tegata's card reserve. Purchases arrive by webhook at the
 // web app, which must be public (https), so local runs point Bitnob at the live site.
 const bitnob =

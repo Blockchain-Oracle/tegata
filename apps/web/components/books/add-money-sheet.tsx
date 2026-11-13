@@ -1,8 +1,8 @@
 "use client"
 
-// Add money (plan 6.8 W and C): one chooser instead of a row of stage actions. Your pay address (its QR), from a coin
-// on another chain through NEAR Intents (Live; the Sandbox shows it with the reason, R5), and test dollars in the
-// Sandbox. Each row leads with the real mark of where the money comes from.
+// Add money (plan 6.8 W, C and AD job 2): one chooser instead of a row of stage actions. Your pay address (its QR), a
+// bank card through Transak, a coin on another chain through NEAR Intents (Live; the Sandbox shows it with the reason,
+// R5), and test dollars in the Sandbox. Each row leads with the real mark of where the money comes from.
 import { ArrowLeft, Check, ChevronRight } from "lucide-react"
 import { useEffect, useState } from "react"
 
@@ -13,9 +13,10 @@ import {
 } from "@/components/books/add-from-chain-sheet"
 import { shortAccount } from "@/components/books/movement-mark"
 import { TegataSeal } from "@/components/brand/seal"
-import { Spinner } from "@/components/kit/button"
+import { Button, Spinner } from "@/components/kit/button"
 import { SandboxPill } from "@/components/kit/sandbox-pill"
 import { Mark, MarkStack } from "@/components/marks/mark"
+import { CardNetworksMark } from "@/components/marks/paid-with"
 import { Sheet } from "@/components/shell/sheet"
 import type { TestDollars } from "@/hooks/use-test-dollars"
 import { cn } from "@/lib/utils"
@@ -29,6 +30,7 @@ export function AddMoneySheet({
   testDollars,
   onTestDollars,
   chain,
+  card,
 }: {
   open: boolean
   onOpenChange: (open: boolean) => void
@@ -41,8 +43,10 @@ export function AddMoneySheet({
   testDollars?: TestDollars
   onTestDollars?: () => void
   chain: FromChainProps
+  /** With a card (Transak): open when this network takes cards. */
+  card?: FromChainProps & { open: boolean; reason?: string }
 }) {
-  const [step, setStep] = useState<"choose" | "chain">("choose")
+  const [step, setStep] = useState<"choose" | "chain" | "card">("choose")
   useEffect(() => {
     if (!open) setStep("choose")
   }, [open])
@@ -52,9 +56,26 @@ export function AddMoneySheet({
     <Sheet
       open={open}
       onOpenChange={onOpenChange}
-      title={step === "chain" ? "Add from another chain" : "Add money"}
+      title={
+        step === "chain"
+          ? "Add from another chain"
+          : step === "card"
+            ? "Add with a card"
+            : "Add money"
+      }
     >
-      {step === "chain" ? (
+      {step === "card" && card ? (
+        <div className="flex flex-col gap-4">
+          <button
+            type="button"
+            onClick={() => setStep("choose")}
+            className="press inline-flex items-center gap-1.5 self-start text-[14px] font-semibold text-muted-foreground hover:text-foreground"
+          >
+            <ArrowLeft className="size-4" /> Other ways
+          </button>
+          <CardTopUpForm {...card} />
+        </div>
+      ) : step === "chain" ? (
         <div className="flex flex-col gap-4">
           <button
             type="button"
@@ -76,6 +97,17 @@ export function AddMoneySheet({
               onPayAddress()
             }}
           />
+          {card ? (
+            <Option
+              mark={<CardNetworksMark size={40} />}
+              title="With a card"
+              detail={
+                card.open ? "Visa, Mastercard · fee shown first" : (card.reason ?? "Opening soon")
+              }
+              disabled={!card.open}
+              onClick={() => setStep("card")}
+            />
+          ) : null}
           <Option
             mark={<Mark id="intents" size={40} />}
             title="From another chain"
@@ -115,6 +147,58 @@ export function AddMoneySheet({
         </div>
       )}
     </Sheet>
+  )
+}
+
+/** How much to add with a card; the card checkout (Transak, locked to your own account) opens next. */
+function CardTopUpForm({ busy, problem, onContinue }: FromChainProps) {
+  const [amount, setAmount] = useState("100")
+  const value = Number.parseFloat(amount || "0") || 0
+  return (
+    <form
+      className="flex flex-col gap-4"
+      onSubmit={(e) => {
+        e.preventDefault()
+        if (value > 0) onContinue(amount)
+      }}
+    >
+      <label className="flex items-baseline justify-center rounded-[20px] bg-secondary py-6">
+        <span className="sr-only">Dollars to add</span>
+        <span className={cn("figure text-[44px]", value > 0 ? "" : "text-text-3")}>$</span>
+        <input
+          inputMode="decimal"
+          value={amount}
+          onChange={(e) =>
+            setAmount(e.target.value.replace(/[^0-9.]/g, "").replace(/(\..*)\./g, "$1"))
+          }
+          size={Math.max(1, amount.length || 1)}
+          className="figure min-w-[1ch] bg-transparent text-center text-[56px] outline-none"
+        />
+      </label>
+      <div className="flex justify-center gap-2">
+        {["100", "250", "500"].map((v) => (
+          <button
+            key={v}
+            type="button"
+            onClick={() => setAmount(v)}
+            aria-pressed={amount === v}
+            className={cn(
+              "press rounded-full px-4 py-2 text-[15px] font-semibold",
+              amount === v ? "bg-foreground text-background" : "bg-secondary",
+            )}
+          >
+            ${v}
+          </button>
+        ))}
+      </div>
+      <p className="text-center text-[14px] text-muted-foreground">
+        Lands in your balance as USDC on NEAR in about 2 minutes.
+      </p>
+      {problem ? <p className="text-[15px] font-medium text-down">{problem}</p> : null}
+      <Button type="submit" busy={busy} disabled={value <= 0}>
+        Continue to Transak
+      </Button>
+    </form>
   )
 }
 

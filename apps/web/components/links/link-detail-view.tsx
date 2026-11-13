@@ -240,7 +240,12 @@ function Fact({ label, children }: { label: string; children: React.ReactNode })
 /** How it was paid, in words: the coin and chain for a payment through NEAR Intents. */
 export function railWord(rail: LinkPayment["rail"], assetIn?: string | null): string {
   if (rail === "oneclick") return paidVia(assetIn) ?? "Another chain"
-  return { tegata: "Tegata balance", near_wallet: "NEAR wallet", manual: "Paid by hand" }[rail]
+  return {
+    tegata: "Tegata balance",
+    near_wallet: "NEAR wallet",
+    manual: "Paid by hand",
+    card: "Card",
+  }[rail]
 }
 
 /** One word per state, the same as Activity's (audit pattern 7). */

@@ -1,22 +1,27 @@
 "use client"
 
-// The pay page (plan 6.8 D and D′), phone first: the business and the amount on the stage, then two ways to pay and a price from other chains
-// as large rows with real marks (Tegata balance, a NEAR wallet, another chain through NEAR Intents), then live steps
-// and a sealed slip once NEAR has settled it. No app chrome: the business's seal at the top, NEAR at the foot.
+// The pay page (plan 6.8 D, D′ and AD job 2), phone first: the business and the amount on the stage, then the ways to
+// pay as large rows with real marks (a bank card through Transak, a Tegata balance, a NEAR wallet, another chain through
+// NEAR Intents), then live steps and a sealed slip once NEAR has settled it. No app chrome: the business's seal at the top, NEAR at the foot.
 // Separate from its logic so /dev/flows can show every state.
 import {
+  Check,
   ChevronDown,
   Clock3,
+  Copy,
+  CreditCard,
   ExternalLink,
+  IdCard,
   KeyRound,
   Lock,
   Plus,
   ReceiptText,
   Wallet,
+  X,
 } from "lucide-react"
 import { AnimatePresence, motion, useReducedMotion } from "motion/react"
 import Link from "next/link"
-
+import { useState } from "react"
 import { BusinessSeal, SealPress, TegataSeal } from "@/components/brand/seal"
 import { Button } from "@/components/kit/button"
 import { Field } from "@/components/kit/field"
@@ -27,7 +32,7 @@ import { Paper, Stage } from "@/components/kit/stage"
 import { ErrorState, Skeleton, TextShimmer, WaitingText } from "@/components/kit/states"
 import { TaskSteps } from "@/components/kit/task-steps"
 import { Mark, MarkStack } from "@/components/marks/mark"
-import { PaidWithMark, paidVia } from "@/components/marks/paid-with"
+import { CardNetworksMark, PaidWithMark, paidVia } from "@/components/marks/paid-with"
 import { DepositPanel } from "@/components/pay/deposit-panel"
 import { ReceiptSlip, SlipRow } from "@/components/receipt/receipt-slip"
 import type { TestDollars } from "@/hooks/use-test-dollars"
@@ -99,7 +104,25 @@ export interface PayViewProps {
   /** Sandbox only: today's test dollars, offered when the balance is short. */
   testDollars?: TestDollars
   onAddTestDollars?: () => void
+  /** Paying by card (Transak): whether cards are open here, and what the card pays, fee included. */
+  card?: {
+    open: boolean
+    reason?: string
+    quote?: { fiat: string; total: number; fee: number } | null
+    loading: boolean
+  }
+  onPayCard?: () => void
+  /** Transak's checkout, while it's open in the page. */
+  cardUrl?: string | null
+  onCloseCard?: () => void
 }
+
+/** Card payments, after the checkout: Tegata's own steps. */
+const CARD_STEPS = [
+  { id: "charged", label: "Card charged", icon: <CreditCard /> },
+  { id: "usdc", label: "Sending as USDC on NEAR", mark: "usdc" as const },
+  { id: "paid", label: "Checked on NEAR", mark: "near" as const },
+]
 
 const TEGATA_STEPS = [
   {
@@ -309,6 +332,21 @@ export function PayView(p: PayViewProps) {
           ) : p.step === "choose" ? (
             <motion.section key="choose" className="flex flex-col gap-3" {...slide}>
               <h2 className="px-1 text-section-title font-semibold">How do you want to pay?</h2>
+              {p.card ? (
+                <RailRow
+                  selected={p.rail === "card"}
+                  onSelect={() => p.onRail(p.rail === "card" ? null : "card")}
+                  art={<CardNetworksMark size={48} />}
+                  title="Card"
+                  detail={
+                    p.card.open
+                      ? "Visa, Mastercard · about 2 minutes"
+                      : (p.card.reason ?? "Opening soon")
+                  }
+                >
+                  <CardPayPanel {...p} dollars={dollars} />
+                </RailRow>
+              ) : null}
               <RailRow
                 selected={p.rail === "tegata"}
                 onSelect={() => p.onRail(p.rail === "tegata" ? null : "tegata")}
@@ -343,6 +381,47 @@ export function PayView(p: PayViewProps) {
                 <ChainPanel {...p} dollars={dollars} />
               </RailRow>
             </motion.section>
+          ) : p.step === "paying" && p.usedRail === "card" && p.cardUrl ? (
+            <motion.div key="card-checkout" className="flex flex-col gap-3" {...slide}>
+              <div className="flex items-center justify-between px-1">
+                <span className="flex items-center gap-2 text-[15px] font-semibold">
+                  <CardNetworksMark size={28} /> Pay by card
+                </span>
+                <button
+                  type="button"
+                  onClick={p.onCloseCard}
+                  className="press grid size-9 place-items-center rounded-full bg-secondary"
+                  aria-label="Close the card checkout"
+                >
+                  <X className="size-4" />
+                </button>
+              </div>
+              <Stage className="p-2 sm:p-3" grid={false}>
+                <iframe
+                  src={p.cardUrl}
+                  title="Card checkout by Transak"
+                  allow="camera;microphone;payment;clipboard-write"
+                  className="h-[680px] w-full rounded-[16px] bg-white"
+                />
+              </Stage>
+              <p className="px-1 text-center text-[13px] text-muted-foreground">
+                Your card goes to Transak, not to {p.request.business} or Tegata.
+              </p>
+            </motion.div>
+          ) : p.step === "paying" && p.usedRail === "card" ? (
+            <motion.div key="card-paying" className="flex flex-col gap-4" {...slide}>
+              <Stage className="p-3 sm:p-4" grid={false}>
+                <Paper className="p-2">
+                  <TaskSteps steps={CARD_STEPS} current={p.progress} tone="paper" />
+                </Paper>
+              </Stage>
+              <div className="flex justify-center">
+                <WaitingText
+                  verb={p.progress >= 1 ? "Sending as USDC on NEAR" : "Waiting for the card"}
+                  startedAt={p.startedAt}
+                />
+              </div>
+            </motion.div>
           ) : p.step === "paying" && p.usedRail === "oneclick" && p.attempt?.oneclick ? (
             <motion.div key="deposit" className="flex flex-col gap-4" {...slide}>
               <DepositPanel oneclick={p.attempt.oneclick} business={p.request.business} />
@@ -489,6 +568,83 @@ function RailRow({
 }
 
 type PanelProps = PayViewProps & { dollars: number }
+
+/** Transak's published staging card, so anyone can try paying by card in the Sandbox. */
+const TEST_CARD = "4242 4242 4242 4242"
+
+function CardPayPanel(p: PanelProps) {
+  const [copied, setCopied] = useState(false)
+  const card = p.card
+  if (!card) return null
+  const sandbox = p.request.network === "testnet"
+  const money = (n: number) =>
+    new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: card.quote?.fiat ?? "EUR",
+      currencyDisplay: "narrowSymbol",
+    }).format(n)
+  if (!card.open)
+    return (
+      <p className="rounded-[14px] bg-secondary px-4 py-3 text-[15px] text-muted-foreground">
+        {card.reason ?? "Card payments open soon. The other ways work now."}
+      </p>
+    )
+  return (
+    <>
+      <div className="flex flex-col divide-y divide-border rounded-[16px] bg-secondary px-4">
+        <div className="flex items-center justify-between gap-3 py-3 text-[15px]">
+          <span className="text-muted-foreground">{p.request.business} gets</span>
+          <span className="tnum font-semibold">{usd(p.dollars)}</span>
+        </div>
+        <div className="flex items-center justify-between gap-3 py-3 text-[15px]">
+          <span className="text-muted-foreground">Card fee, set by Transak</span>
+          <span className="tnum font-semibold">
+            {card.quote ? `about ${money(card.quote.fee)}` : card.loading ? "…" : "shown next"}
+          </span>
+        </div>
+        <div className="flex items-center justify-between gap-3 py-3">
+          <span className="text-[15px] font-semibold">You pay</span>
+          <span className="tnum text-[17px] font-bold">
+            {card.quote ? `about ${money(card.quote.total)}` : card.loading ? "…" : "—"}
+          </span>
+        </div>
+      </div>
+      <p className="flex items-center gap-2 text-[14px] text-muted-foreground">
+        <IdCard className="size-4 shrink-0" /> First time? Transak may ask for a photo ID.
+      </p>
+      {sandbox ? (
+        <button
+          type="button"
+          onClick={async () => {
+            await navigator.clipboard.writeText(TEST_CARD.replace(/ /g, ""))
+            fire("tick", { cue: "confirmed" })
+            setCopied(true)
+            setTimeout(() => setCopied(false), 1400)
+          }}
+          className="press flex items-center gap-3 rounded-[14px] border border-dashed border-border px-3 py-2.5 text-left"
+        >
+          <span className="flex min-w-0 flex-1 flex-col">
+            <span className="text-[13px] text-muted-foreground">
+              Sandbox test card · 10/33 · CVV 100
+            </span>
+            <span className="font-mono text-[15px] font-semibold">{TEST_CARD}</span>
+          </span>
+          {copied ? <Check className="size-4" /> : <Copy className="size-4" />}
+        </button>
+      ) : null}
+      <Problem text={p.problem} />
+      <Button busy={p.busy} disabled={p.dollars <= 0} onClick={p.onPayCard}>
+        <CreditCard />{" "}
+        {card.quote
+          ? `Pay about ${money(card.quote.total)} by card`
+          : `Pay ${usd(p.dollars)} by card`}
+      </Button>
+      <p className="text-center text-[13px] text-muted-foreground">
+        Your card goes to Transak, not to {p.request.business} or Tegata.
+      </p>
+    </>
+  )
+}
 
 function Problem({ text }: { text: string | null }) {
   return text ? <p className="text-[15px] font-medium text-down">{text}</p> : null

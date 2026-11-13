@@ -134,6 +134,13 @@
       "when": 1794574515845,
       "tag": "0018_issued_cards",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1794575704861,
+      "tag": "0019_card_rail",
+      "breakpoints": true
     }
   ]
 }

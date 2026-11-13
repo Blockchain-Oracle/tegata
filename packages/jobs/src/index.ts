@@ -93,6 +93,18 @@ export const QUEUES = {
     payload: z.object({ moveId: z.uuid() }),
     options: { retryLimit: 2, retryDelay: 15, expireInSeconds: 120 },
   },
+  /** A card payment (Transak): read the order and move the payment on; re-sent every few seconds until it ends. */
+  cardPayPoll: {
+    name: "card-pay-poll",
+    payload: z.object({ paymentId: z.uuid() }),
+    options: { retryLimit: 2, retryDelay: 10, expireInSeconds: 90 },
+  },
+  /** Every minute: card payments no job is following (a worker restart, a lost job). */
+  cardPaySweep: {
+    name: "card-pay-sweep",
+    payload: z.object({}),
+    options: { retryLimit: 0, expireInSeconds: 120 },
+  },
   /** End a card for good: move what's left on it back, then the issuer ends it. */
   cardRemove: {
     name: "card-remove",

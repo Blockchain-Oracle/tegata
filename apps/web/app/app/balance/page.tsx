@@ -27,6 +27,16 @@ export default function BalancePage() {
       window.history.replaceState(null, "", window.location.pathname)
     }
   }, [])
+  const cardTopUp = useMutation({
+    mutationFn: (amount: string) =>
+      api<{ url: string }>("/api/balance/topup", { body: { amount, via: "card" } }),
+    onSuccess: ({ url }) => router.push(url),
+  })
+  const cards = useQuery({
+    queryKey: ["cards-open", network],
+    queryFn: () => api<{ open: boolean; reason?: string }>("/api/balance/topup?via=card"),
+    staleTime: 60_000,
+  })
   const topUp = useMutation({
     mutationFn: (amount: string) =>
       api<{ url: string }>("/api/balance/topup", { body: { amount } }),
@@ -73,6 +83,18 @@ export default function BalancePage() {
         onPayAddress={openReceive}
         testDollars={sandbox ? testDollars : undefined}
         onTestDollars={sandbox ? testDollars.add : undefined}
+        card={{
+          open: cards.data?.open ?? false,
+          reason: cards.data?.reason,
+          busy: cardTopUp.isPending,
+          problem:
+            cardTopUp.error instanceof ApiError
+              ? cardTopUp.error.message
+              : cardTopUp.error
+                ? "Couldn't start it. Try again."
+                : null,
+          onContinue: (amount) => cardTopUp.mutate(amount),
+        }}
         chain={{
           busy: topUp.isPending,
           problem:

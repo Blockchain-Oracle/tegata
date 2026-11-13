@@ -10,7 +10,7 @@ import { useQuery } from "@tanstack/react-query"
 import { GAS, ONE_YOCTO } from "@tegata/config"
 import { toUnits } from "@tegata/core/money"
 import { useRouter } from "next/navigation"
-import { useEffect, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 
 import { viewDollars } from "@/components/kit/figure"
 import { type PayRoute, type PayStep, PayView, type TegataState } from "@/components/pay/pay-view"
@@ -119,9 +119,11 @@ export function PayClient({
   const network = initial.network
 
   const [rail, setRail] = useState<PaymentRail | null>(network === "testnet" ? "tegata" : null)
-  // "Add money from another chain" (Balance) opens this page with the chain option already chosen.
+  // "Add money from another chain" or "with a card" (Balance) opens this page with that option already chosen.
   useEffect(() => {
-    if (new URLSearchParams(window.location.search).get("rail") === "chain") setRail("oneclick")
+    const asked = new URLSearchParams(window.location.search).get("rail")
+    if (asked === "chain") setRail("oneclick")
+    if (asked === "card") setRail("card")
   }, [])
   const [amount, setAmount] = useState(() =>
     initial.invoice?.allowPartial ? viewDollars(initial.invoice.remaining).toFixed(2) : "",
@@ -137,6 +139,8 @@ export function PayClient({
   const [routeId, setRouteId] = useState(routes[0]?.id ?? "")
   const [refundTo, setRefundTo] = useState("")
   const [receiptEmail, setReceiptEmail] = useState("")
+  /** Transak's checkout, while it's open in the page. */
+  const [cardUrl, setCardUrl] = useState<string | null>(null)
 
   const request = useQuery({
     queryKey: ["pay", initial.token],
@@ -196,6 +200,20 @@ export function PayClient({
       ),
     enabled: rail === "oneclick" && Boolean(dollarsForQuote),
     retry: false,
+    placeholderData: (previous) => previous,
+  })
+
+  // Paying by card: is it open here, and what does the card pay (fee included)?
+  const card = useQuery({
+    queryKey: ["card-quote", request.token, dollarsForQuote],
+    queryFn: () =>
+      api<{
+        open: boolean
+        reason?: string
+        quote?: { fiat: string; total: number; fee: number } | null
+      }>(`/api/pay/${request.token}/card?amount=${encodeURIComponent(dollarsForQuote)}`),
+    retry: false,
+    staleTime: 30_000,
     placeholderData: (previous) => previous,
   })
 
@@ -332,6 +350,76 @@ export function PayClient({
     }
   }
 
+  /** Pay by card: a payment and Transak's checkout, locked to it, opened in the page. */
+  async function payCard() {
+    if (!due) return
+    setBusy(true)
+    setProblem(null)
+    try {
+      const res = await api<{ paymentId: string; widgetUrl: string }>(
+        `/api/pay/${request.token}/card`,
+        {
+          body: { amount: typed ? amount : undefined, email: receiptEmail.trim() },
+        },
+      )
+      fire("press", { cue: "tap" })
+      begin(res.paymentId, "card")
+      setCardUrl(res.widgetUrl)
+    } catch (error) {
+      fire("fail", { cue: "error" })
+      setProblem(
+        error instanceof ApiError
+          ? error.message
+          : "Card payments are down right now. The other ways still work.",
+      )
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  /** Tell Tegata the order the checkout made, so the worker can follow it (it checks the order names this payment). */
+  const sendOrder = useCallback(async (paymentId: string, orderId: string) => {
+    await api(`/api/pay/attempts/${paymentId}/card`, { body: { orderId } }).catch(() => undefined)
+  }, [])
+
+  // Transak's checkout speaks through postMessage: the order it made, and when it's done or closed.
+  useEffect(() => {
+    if (!cardUrl || !attemptId) return
+    const onMessage = (event: MessageEvent) => {
+      if (!/^https:\/\/([a-z0-9-]+\.)*transak\.com$/.test(event.origin)) return
+      const data = event.data as {
+        event_id?: string
+        data?: { id?: string; status?: { id?: string } }
+      }
+      const orderId = data?.data?.id ?? data?.data?.status?.id
+      if (
+        orderId &&
+        (data.event_id === "TRANSAK_ORDER_CREATED" || data.event_id === "TRANSAK_ORDER_SUCCESSFUL")
+      )
+        void sendOrder(attemptId, orderId)
+      if (
+        data.event_id === "TRANSAK_ORDER_SUCCESSFUL" ||
+        data.event_id === "TRANSAK_WIDGET_CLOSE"
+      ) {
+        fire("tick", { cue: "step" })
+        setCardUrl(null)
+      }
+    }
+    window.addEventListener("message", onMessage)
+    return () => window.removeEventListener("message", onMessage)
+  }, [cardUrl, attemptId, sendOrder])
+
+  // Back from Transak's own page (a redirect): `?card=<payment>&orderId=<order>` picks the payment up again.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: once, on arrival.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const paymentId = params.get("card")
+    const orderId = params.get("orderId")
+    if (!paymentId) return
+    begin(paymentId, "card")
+    if (orderId) void sendOrder(paymentId, orderId)
+  }, [])
+
   /** Live: ask NEAR Intents for a deposit address on the chosen coin and chain, then follow it. */
   async function payChain() {
     if (!due) return
@@ -365,8 +453,25 @@ export function PayClient({
   }
 
   const relay = attempt.data?.relayStatus
+  const cardCharged =
+    status === "settling" ||
+    Boolean(
+      attempt.data?.card?.orderStatus?.match(/PAYMENT_DONE|PROCESSING|PENDING_DELIVERY|COMPLETED/),
+    )
   const progress =
-    status === "succeeded" ? 3 : usedRail === "near_wallet" ? 1 : relay === "success" ? 2 : 1
+    status === "succeeded"
+      ? 3
+      : usedRail === "card"
+        ? attempt.data?.card?.orderStatus === "COMPLETED"
+          ? 2
+          : cardCharged
+            ? 1
+            : 0
+        : usedRail === "near_wallet"
+          ? 1
+          : relay === "success"
+            ? 2
+            : 1
 
   return (
     <PayView
@@ -419,6 +524,15 @@ export function PayClient({
         setProblem(null)
       }}
       onPayChain={() => void payChain()}
+      // A payer sees Card only where it's open: no "not set up yet" on someone's pay page.
+      card={
+        card.data?.open
+          ? { open: true, quote: card.data.quote ?? null, loading: card.isFetching }
+          : undefined
+      }
+      onPayCard={() => void payCard()}
+      cardUrl={cardUrl}
+      onCloseCard={() => setCardUrl(null)}
       usedRail={usedRail}
       progress={progress}
       startedAt={startedAt}

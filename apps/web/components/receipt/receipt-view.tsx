@@ -28,6 +28,7 @@ const METHOD_WORD = {
   near_wallet: "NEAR wallet",
   oneclick: "Another chain",
   manual: "By hand · not on NEAR",
+  card: "Card · through Transak",
   reward: "Tegata referral rewards",
   payroll: "Payroll · Tegata balance",
   autopilot: "Autopilot on NEAR",
@@ -177,6 +178,11 @@ export function ReceiptView({ receipt, token }: { receipt: Receipt; token: strin
                 </span>
               </Row>
             ) : null}
+            {receipt.method === "card" ? (
+              <Row label="Card through">
+                {sandbox ? "Transak test checkout · test USDC sent by Tegata" : "Transak"}
+              </Row>
+            ) : null}
             {delivered || receipt.method === "oneclick" ? (
               <Row label="Converted by">
                 <span className="inline-flex items-center gap-1.5">
@@ -268,7 +274,8 @@ function PaidWith({ receipt }: { receipt: Receipt }) {
         rail={
           receipt.method === "near_wallet" ||
           receipt.method === "manual" ||
-          receipt.method === "oneclick"
+          receipt.method === "oneclick" ||
+          receipt.method === "card"
             ? receipt.method
             : "tegata"
         }

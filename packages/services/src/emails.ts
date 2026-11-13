@@ -40,6 +40,7 @@ const RAIL_WORD: Record<string, string> = {
   tegata: "Tegata balance",
   near_wallet: "NEAR wallet",
   manual: "Paid by hand",
+  card: "Card, through Transak",
 }
 
 /** "USDT on Tron → USDC on NEAR" for a payment from another chain. */

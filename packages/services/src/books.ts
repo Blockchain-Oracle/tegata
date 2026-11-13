@@ -78,7 +78,7 @@ export interface Movement {
   } | null
   refunded: bigint
   /** A payment in: how it was paid, and (through NEAR Intents) the 1Click asset the payer sent, for its marks. */
-  rail?: "tegata" | "near_wallet" | "oneclick" | "manual" | null
+  rail?: "tegata" | "near_wallet" | "oneclick" | "manual" | "card" | null
   assetIn?: string | null
   /** A bank movement: the local currency and amount ("NGN", "26765.50"). */
   fiat?: string | null
@@ -567,6 +567,8 @@ export async function draftRefund(
     throw new PayrollError("bad_input", "Marked paid by hand: refund it the way you were paid")
   if (payment.rail === "oneclick")
     throw new PayrollError("wrong_state", "Paid from another chain: refund it to the payer's chain")
+  if (payment.rail === "card")
+    throw new PayrollError("bad_input", "Paid by card: Transak refunds card payments to the card")
   if (!payment.payer) throw new PayrollError("bad_input", "We don't know which account paid")
   const left = payment.amount - payment.refunded
   if (input.amount <= 0n || input.amount > left)

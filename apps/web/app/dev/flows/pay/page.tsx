@@ -26,6 +26,8 @@ type Payer =
   | "live"
   | "live_short"
   | "any"
+  | "card"
+  | "card_off"
 type Step = PayStep | "closed"
 
 const TEGATA: Record<Payer, TegataState> = {
@@ -38,6 +40,8 @@ const TEGATA: Record<Payer, TegataState> = {
   live: { kind: "signed_out" },
   live_short: { kind: "signed_out" },
   any: { kind: "ready", accountId: "northwind.tegata.testnet", balance: 4210 },
+  card: { kind: "signed_out" },
+  card_off: { kind: "signed_out" },
 }
 
 export default function PayFlow() {
@@ -50,13 +54,36 @@ export default function PayFlow() {
   const [startedAt, setStartedAt] = useState(() => Date.now())
   const [replay, setReplay] = useState(0)
   const live = payer === "live" || payer === "live_short"
-  const usedRail: PaymentRail = payer === "wallet" ? "near_wallet" : live ? "oneclick" : "tegata"
+  const cardPayer = payer === "card" || payer === "card_off"
+  const usedRail: PaymentRail =
+    payer === "wallet" ? "near_wallet" : live ? "oneclick" : cardPayer ? "card" : "tegata"
+  const [cardUrl, setCardUrl] = useState<string | null>(null)
   const [refundTo, setRefundTo] = useState("")
   const [swap, setSwap] = useState("PENDING_DEPOSIT")
 
   useEffect(() => {
-    setRail(payer === "wallet" ? "near_wallet" : payer === "chain" || live ? "oneclick" : "tegata")
-  }, [payer, live])
+    setRail(
+      payer === "wallet"
+        ? "near_wallet"
+        : payer === "chain" || live
+          ? "oneclick"
+          : cardPayer
+            ? "card"
+            : "tegata",
+    )
+  }, [payer, live, cardPayer])
+
+  // Card: the checkout opens in the page (a stand-in frame here), then Tegata's three steps.
+  const playCard = () => {
+    setStep("paying")
+    setStartedAt(Date.now())
+    setProgress(0)
+    setCardUrl("about:blank")
+    setTimeout(() => setCardUrl(null), 2400)
+    setTimeout(() => setProgress(1), 2600)
+    setTimeout(() => setProgress(2), 4000)
+    setTimeout(() => setStep("paid"), 5200)
+  }
 
   // Live from another chain: the deposit screen, then the steps NEAR Intents reports, then paid.
   const playLive = () => {
@@ -99,6 +126,8 @@ export default function PayFlow() {
             { value: "live", label: "Live: other chain" },
             { value: "live_short", label: "Live: sent too little" },
             { value: "any", label: "Any amount" },
+            { value: "card", label: "Card" },
+            { value: "card_off", label: "Card: not open" },
           ]}
         />
         <Segmented
@@ -132,6 +161,15 @@ export default function PayFlow() {
           refundTo={refundTo}
           onRefundTo={setRefundTo}
           onPayChain={playLive}
+          // Card shows only where it's open; "Card: not open" is the page without the row.
+          card={
+            payer === "card_off"
+              ? undefined
+              : { open: true, quote: { fiat: "EUR", total: 1196.4, fee: 46.2 }, loading: false }
+          }
+          onPayCard={playCard}
+          cardUrl={cardUrl}
+          onCloseCard={() => setCardUrl(null)}
           amount={amount}
           onAmount={setAmount}
           rail={rail}
