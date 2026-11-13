@@ -187,7 +187,7 @@ if (event.type === "checkout.session.completed") fulfil(event.data.metadata.orde
           <div className="flex flex-col rounded-[20px] bg-card p-2">
             {data.keys.map((k) => (
               <div key={k.id} className="flex items-center gap-3 rounded-[14px] px-3 py-3">
-                <span className="grid size-10 place-items-center rounded-full bg-kin text-black [&_svg]:size-[18px]">
+                <span className="grid size-10 place-items-center rounded-full bg-kin text-field-ink [&_svg]:size-[18px]">
                   <KeyRound />
                 </span>
                 <span className="flex min-w-0 flex-1 flex-col">
@@ -211,7 +211,7 @@ if (event.type === "checkout.session.completed") fulfil(event.data.metadata.orde
           {data.endpoints.map((e) => (
             <div key={e.id} className="flex flex-col gap-2 rounded-[14px] bg-secondary p-3">
               <div className="flex items-center gap-3">
-                <span className="grid size-9 shrink-0 place-items-center rounded-full bg-sora text-black [&_svg]:size-4">
+                <span className="grid size-9 shrink-0 place-items-center rounded-full bg-sora text-field-ink [&_svg]:size-4">
                   {e.inbox ? <Inbox /> : <Webhook />}
                 </span>
                 <span className="flex min-w-0 flex-1 flex-col">

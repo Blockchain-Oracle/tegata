@@ -18,11 +18,11 @@ import {
 import "./invoice-pdf.tsx"
 
 const SHU = "#FF4F00"
-const INK = "#000000"
-const GREY = "#666666"
-const SOFT = "#444444"
-const RULE = "#ECECEC"
-const TILE = "#F5F5F5"
+const INK = "#16130F"
+const GREY = "#5B544A"
+const SOFT = "#3D3730"
+const RULE = "#E9E3D6"
+const TILE = "#F3EFE6"
 const UNITS_PER_DOLLAR = 1e6
 
 export interface PayslipDocument {

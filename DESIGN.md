@@ -202,14 +202,14 @@ The landing is the one surface allowed to perform. The app stays calm; `/` tells
 light and dark, with one real 3D object and motion that always shows something true about the product.
 References studied live (Framer marketplace, 13 Nov 2026) and what each one gives us:
 
-| Reference           | Taken                                                                                        |
-| ------------------- | -------------------------------------------------------------------------------------------- |
-| Cardora Finance     | One 3D object as the hero, a dark field lit by one warm glow, huge type, scroll-lit lines    |
-| FintechX            | The before/after dial, the integration orbit around one mark, the tree from one node to many |
-| Verity              | Live product UI that plays itself ("shows its work"), figures that count up, calm dark mode  |
-| Parallel — Finance  | Printed paper: running heads, words that ink in as you read, sources as numbered footnotes   |
-| Canvas              | Hand-set emphasis: a word set on a coloured block inside a headline; stats inside a grid     |
-| Ballance            | "Who it's for" as tabs that swap one big picture                                             |
+| Reference          | Taken                                                                                        |
+| ------------------ | -------------------------------------------------------------------------------------------- |
+| Cardora Finance    | One 3D object as the hero, a dark field lit by one warm glow, huge type, scroll-lit lines    |
+| FintechX           | The before/after dial, the integration orbit around one mark, the tree from one node to many |
+| Verity             | Live product UI that plays itself ("shows its work"), figures that count up, calm dark mode  |
+| Parallel — Finance | Printed paper: running heads, words that ink in as you read, sources as numbered footnotes   |
+| Canvas             | Hand-set emphasis: a word set on a coloured block inside a headline; stats inside a grid     |
+| Ballance           | "Who it's for" as tabs that swap one big picture                                             |
 
 ### Direction: washi and shu
 
@@ -223,16 +223,16 @@ References studied live (Framer marketplace, 13 Nov 2026) and what each one give
 
 ### Tokens (scoped to `.landing`, so the app is untouched)
 
-| Token          | Light     | Dark      | Use                                     |
-| -------------- | --------- | --------- | --------------------------------------- |
-| washi (page)   | `#F3EFE6` | `#0E0C0A` | background                              |
-| washi-card     | `#FFFCF6` | `#1B1814` | a plate on the page                     |
-| washi-sunk     | `#E9E3D6` | `#262119` | a plate inside a plate, inputs, chips   |
-| ink            | `#16130F` | `#F2EDE4` | text 1, the main action                 |
-| ink-2          | `#5B544A` | `#B8AFA2` | text 2                                  |
-| ink-3          | `#6B6357` | `#968C7F` | text 3, footnotes                       |
-| rule           | `#DCD4C4` | `#2C2620` | print hairlines (running heads, ledger) |
-| shu / shu-ink  | `#FF4F00` / `#B23700` | `#FF4F00` / `#FF8A52` | seal, highlight / shu as text |
+| Token         | Light                 | Dark                  | Use                                     |
+| ------------- | --------------------- | --------------------- | --------------------------------------- |
+| washi (page)  | `#F3EFE6`             | `#0E0C0A`             | background                              |
+| washi-card    | `#FFFCF6`             | `#1B1814`             | a plate on the page                     |
+| washi-sunk    | `#E9E3D6`             | `#262119`             | a plate inside a plate, inputs, chips   |
+| ink           | `#16130F`             | `#F2EDE4`             | text 1, the main action                 |
+| ink-2         | `#5B544A`             | `#B8AFA2`             | text 2                                  |
+| ink-3         | `#6B6357`             | `#968C7F`             | text 3, footnotes                       |
+| rule          | `#DCD4C4`             | `#2C2620`             | print hairlines (running heads, ledger) |
+| shu / shu-ink | `#FF4F00` / `#B23700` | `#FF4F00` / `#FF8A52` | seal, highlight / shu as text           |
 
 Every text pair is 4.5:1 or better (checked); `#FF4F00` is never small text on washi. Hairlines are print rules
 (a running head, a ledger row), never a box around content.

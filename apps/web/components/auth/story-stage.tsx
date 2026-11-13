@@ -367,7 +367,7 @@ function ReceiptScene() {
   const beat = useBeats(RECEIPT_BEATS)
   return (
     <StageObject from={{ y: 30, rotate: 3 }}>
-      <div className="relative w-[290px] rounded-[18px] bg-white text-black shadow-object sm:w-[310px]">
+      <div className="relative w-[290px] rounded-[18px] bg-paper text-[#16130F] shadow-object sm:w-[310px]">
         <div className="p-5 pb-4">
           <div className="flex items-center justify-between">
             <span className="inline-flex items-center gap-2 text-[13px] font-semibold text-paper-text-2">

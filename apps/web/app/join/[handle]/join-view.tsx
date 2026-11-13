@@ -50,7 +50,7 @@ export function JoinView(p: JoinViewProps) {
           </div>
           <StageObject className="mt-6" from={{ y: 20, rotate: -2 }} drift={false}>
             <Paper className="flex items-center gap-4 p-5">
-              <span className="grid size-12 shrink-0 place-items-center rounded-[14px] bg-kin text-black">
+              <span className="grid size-12 shrink-0 place-items-center rounded-[14px] bg-kin text-field-ink">
                 <Gift className="size-6" />
               </span>
               <div className="flex min-w-0 flex-col gap-0.5">
@@ -64,8 +64,8 @@ export function JoinView(p: JoinViewProps) {
         </Stage>
 
         <ul className="grid grid-cols-3 gap-2 text-center">
-          <Fact icon={<Mail />} tone="bg-sora text-black" label="Email sign-in" />
-          <Fact icon={<Zap />} tone="bg-matcha text-black" label="No fees" />
+          <Fact icon={<Mail />} tone="bg-sora text-field-ink" label="Email sign-in" />
+          <Fact icon={<Zap />} tone="bg-matcha text-field-ink" label="No fees" />
           <Fact icon={<Mark id="usdc" chain="near" size={40} />} label="USDC on NEAR" />
         </ul>
 
