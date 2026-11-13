@@ -10,7 +10,8 @@
     "./fixtures": "./src/ops/fixtures.ts",
     "./invoices": "./src/invoices/index.ts",
     "./payroll": "./src/payroll/index.ts",
-    "./oneclick": "./src/oneclick/index.ts"
+    "./oneclick": "./src/oneclick/index.ts",
+    "./noah": "./src/noah/index.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
