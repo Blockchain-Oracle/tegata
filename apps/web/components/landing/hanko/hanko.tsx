@@ -21,7 +21,16 @@ function webglAvailable() {
   }
 }
 
-export function Hanko({ coins, className }: { coins: readonly HankoCoin[]; className?: string }) {
+export function Hanko({
+  coins,
+  className,
+  night = false,
+}: {
+  coins: readonly HankoCoin[]
+  className?: string
+  /** Light the scene for a dark field whatever the page theme (the lacquer stage). */
+  night?: boolean
+}) {
   const host = useRef<HTMLDivElement>(null)
   const reduce = useReducedMotion()
   const [ready, setReady] = useState(false)
@@ -57,6 +66,7 @@ export function Hanko({ coins, className }: { coins: readonly HankoCoin[]; class
         coins,
         fonts,
         autoPress: !reduce,
+        night,
         onContact: (byUser) => {
           if (byUser) fire("press", { cue: "stamp" })
         },
@@ -74,7 +84,7 @@ export function Hanko({ coins, className }: { coins: readonly HankoCoin[]; class
       theme.disconnect()
       scene?.dispose()
     }
-  }, [coins, reduce])
+  }, [coins, reduce, night])
 
   return (
     <div className={cn("relative", className)}>

@@ -5,7 +5,8 @@ import { ImageResponse } from "next/og"
 import { OG, SITE } from "./site"
 
 /*
- * Link previews in the app's look: the lit vermilion stage, the 手形 seal, Archivo for the title. Drawn once at build
+ * Link previews in the app's look: the lacquer stage (sumi lit by a vermilion glow from below), the 手形 seal,
+ * Archivo for the title. Drawn once at build
  * from files on disk, so the build needs no network for them.
  */
 
@@ -37,11 +38,11 @@ export async function ogImage({
         flexDirection: "column",
         justifyContent: "space-between",
         padding: "64px 72px",
-        backgroundColor: "#FF4F00",
-        // Each light fades to its own colour at zero opacity: next/og blends `transparent` as black.
+        backgroundColor: "#120D0A",
+        // Each light fades to the field's own colour at zero opacity: next/og blends `transparent` as black.
         backgroundImage:
-          "radial-gradient(circle at 12% 8%, #FF7A2E 0%, rgba(255,122,46,0) 52%), radial-gradient(circle at 60% 110%, #FFB38A 0%, rgba(255,179,138,0) 55%)",
-        color: "#FFFFFF",
+          "radial-gradient(70% 95% at 85% 125%, #FF4F00 0%, #FF6A1A 28%, rgba(255,122,46,0.45) 52%, rgba(18,13,10,0) 78%), radial-gradient(40% 55% at 0% 0%, rgba(255,122,46,0.32) 0%, rgba(18,13,10,0) 72%)",
+        color: "#F2EDE4",
         fontFamily: "Archivo",
       }}
     >
@@ -49,11 +50,9 @@ export async function ogImage({
         <img src={sealSrc} width={56} height={56} alt="" />
         <span style={{ fontSize: 40, fontWeight: 900, letterSpacing: -0.5 }}>{SITE.name}</span>
         <span
-          style={{ width: 2, height: 32, background: "rgba(255,255,255,0.5)", margin: "0 6px" }}
+          style={{ width: 2, height: 32, background: "rgba(242,237,228,0.35)", margin: "0 6px" }}
         />
-        <span style={{ fontSize: 26, fontWeight: 600, color: "rgba(255,255,255,0.88)" }}>
-          {kicker}
-        </span>
+        <span style={{ fontSize: 26, fontWeight: 600, color: "#B8AFA2" }}>{kicker}</span>
       </div>
       <div style={{ display: "flex", flexDirection: "column", gap: 22, maxWidth: 1000 }}>
         <span
@@ -72,7 +71,7 @@ export async function ogImage({
               fontSize: 30,
               fontWeight: 600,
               lineHeight: 1.3,
-              color: "rgba(255,255,255,0.9)",
+              color: "#B8AFA2",
             }}
           >
             {description}
@@ -85,10 +84,10 @@ export async function ogImage({
           alignItems: "center",
           fontSize: 24,
           fontWeight: 600,
-          color: "rgba(255,255,255,0.88)",
+          color: "#B8AFA2",
         }}
       >
-        <span>USDC on NEAR · gas paid by Tegata</span>
+        <span>USDC on NEAR · fees paid by Tegata</span>
         <span style={{ marginLeft: "auto" }}>{SITE.url.replace("https://", "")}</span>
       </div>
     </div>,

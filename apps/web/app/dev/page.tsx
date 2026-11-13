@@ -138,6 +138,18 @@ const CARDS = [
     note: "The receipt header, the seal that follows the name, every field",
     field: "bg-kin",
   },
+  {
+    href: "/dev/flows/cards",
+    title: "Cards",
+    note: "The fan on the lacquer stage, a card's panel, a new card, loading",
+    field: "bg-sakura",
+  },
+  {
+    href: "/dev/banner?bare=1&kind=banner",
+    title: "README banner and demo cover",
+    note: "The landing's parts at 2:1 and 16:9, with the live 3D seal, captured for the README",
+    field: "bg-sora",
+  },
 ] as const
 
 export default function DevIndex() {
