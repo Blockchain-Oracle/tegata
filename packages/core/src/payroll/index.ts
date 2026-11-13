@@ -159,6 +159,17 @@ export interface PersonRow {
   email: string | null
   role: string | null
   amount: bigint
+  kind: PersonKind
+}
+
+/** An employee gets a payslip; a contractor gets a payment receipt. */
+export type PersonKind = "employee" | "contractor"
+
+/** "Contractor", "freelancer", "1099": a contractor; anything else, or nothing, an employee. */
+export function personKindOf(text: string | null | undefined): PersonKind {
+  return /^(contractor|freelancer|freelance|1099|consultant)/i.test((text ?? "").trim())
+    ? "contractor"
+    : "employee"
 }
 
 export interface CsvProblem {
@@ -194,10 +205,12 @@ const COLUMNS = {
   email: ["email", "e-mail", "email address"],
   role: ["role", "title", "job title"],
   amount: ["amount", "pay", "salary", "pay per run", "usd"],
+  kind: ["type", "kind", "paid as", "employment type"],
 } as const
 
 /**
- * The people CSV: a header row naming `name`, `email`, `role` and `amount` (any order, a few common spellings), then
+ * The people CSV: a header row naming `name`, `email`, `role`, `amount` and optionally `type` (employee or contractor;
+ * any order, a few common spellings), then
  * one person per line. Good rows come back ready to save; every bad row comes back with what to fix, so one typo
  * never blocks the rest.
  */
@@ -210,6 +223,7 @@ export function parsePeopleCsv(text: string): { rows: PersonRow[]; problems: Csv
     email: index(COLUMNS.email),
     role: index(COLUMNS.role),
     amount: index(COLUMNS.amount),
+    kind: index(COLUMNS.kind),
   }
   const problems: CsvProblem[] = []
   if (at.name < 0 || at.amount < 0) {
@@ -249,6 +263,7 @@ export function parsePeopleCsv(text: string): { rows: PersonRow[]; problems: Csv
         email: email || null,
         role: role.slice(0, PAYROLL_LIMITS.role) || null,
         amount,
+        kind: personKindOf(at.kind >= 0 ? cells[at.kind] : null),
       })
     }
   }

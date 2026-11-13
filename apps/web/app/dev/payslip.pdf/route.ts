@@ -2,14 +2,15 @@ import { type PayslipDocument, renderPayslipPdf } from "@tegata/documents"
 
 /**
  * /dev: the payslip PDF on sample data, for design review. `?chain=1` shows a row paid to another chain; `?lines=1`
- * a run with a bonus, a reimbursement and a deduction.
+ * a run with a bonus, a reimbursement and a deduction; `?contractor=1` a contractor's payment receipt.
  */
 export async function GET(request: Request) {
   const params = new URL(request.url).searchParams
   const chain = params.has("chain")
   const withLines = params.has("lines")
+  const contractor = params.has("contractor")
   const doc: PayslipDocument = {
-    kind: "payslip",
+    kind: contractor ? "receipt" : "payslip",
     reference: "PS-7C1E09A4",
     business: {
       name: "Studio Kaze",

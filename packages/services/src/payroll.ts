@@ -111,6 +111,8 @@ export interface PersonInput {
   role?: string | null
   /** USDC base units per run. */
   amount: bigint
+  /** Employee (a payslip) or contractor (a payment receipt); employee when not given. */
+  kind?: "employee" | "contractor"
 }
 
 function cleanPerson(input: PersonInput) {
@@ -127,7 +129,8 @@ function cleanPerson(input: PersonInput) {
   if (input.amount <= 0n) throw new PayrollError("bad_input", "Pay must be above zero")
   if (input.amount > PAYROLL_LIMITS.maxPay)
     throw new PayrollError("bad_input", "That pay is too large")
-  return { name, email, role, amount: input.amount }
+  // Kind only when given: an edit that leaves it out never turns a contractor back into an employee.
+  return { name, email, role, amount: input.amount, ...(input.kind ? { kind: input.kind } : {}) }
 }
 
 async function activeCount(db: Db, workspaceId: string, network: NetworkId) {
@@ -751,6 +754,7 @@ export async function draftRun(
         personId: person.id,
         name: person.name,
         role: person.role,
+        kind: person.kind,
         amount: amount > 0n ? amount : 0n,
         basePay,
         lines,
@@ -1516,7 +1520,7 @@ export async function payslipDocument(db: Db, rowId: string, appUrl: string) {
     }).format(date)
   const chain = payout ? `${payout.symbol} on ${payout.chain}` : null
   return {
-    kind: "payslip" as const,
+    kind: row.kind === "contractor" ? ("receipt" as const) : ("payslip" as const),
     reference: `PS-${row.id.slice(0, 8).toUpperCase()}`,
     business: {
       name: business.name,

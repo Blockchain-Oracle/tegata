@@ -365,7 +365,7 @@ function RowLine({
           href={`/r/slip/${row.id}`}
           className="press inline-flex h-9 items-center gap-1.5 rounded-full bg-up-surface px-3 text-[14px] font-semibold text-up [&_svg]:size-4"
         >
-          <FileText /> Payslip
+          <FileText /> {row.kind === "contractor" ? "Receipt" : "Payslip"}
         </Link>
       ) : row.status === "sending" ? (
         <StatusPill tone="quiet">On its way</StatusPill>

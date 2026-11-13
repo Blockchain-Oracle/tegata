@@ -386,8 +386,13 @@ export function PayslipPdf({ doc }: { doc: PayslipDocument }) {
           </View>
         ))}
         {[
-          ["Income tax", "Not withheld"],
-          ["Pension and social contributions", "Not withheld"],
+          // A contractor's receipt carries no tax lines: they handle their own taxes (said in the note below).
+          ...(doc.kind === "receipt"
+            ? []
+            : [
+                ["Income tax", "Not withheld"],
+                ["Pension and social contributions", "Not withheld"],
+              ]),
           ["Tegata and network fees", "Paid by Tegata"],
         ].map(([line, note]) => (
           <View key={line} style={[s.between, s.td]}>

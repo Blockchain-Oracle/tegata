@@ -162,6 +162,13 @@
       "when": 1794587903858,
       "tag": "0022_pay_row_lines",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1794589062577,
+      "tag": "0023_person_kind",
+      "breakpoints": true
     }
   ]
 }

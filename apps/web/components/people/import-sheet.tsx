@@ -94,7 +94,13 @@ export function ImportSheet({
                         <span className="flex min-w-0 flex-col">
                           <span className="truncate font-semibold">{row.name}</span>
                           <span className="truncate text-[12px] text-muted-foreground">
-                            {[row.email ?? "No email", row.role].filter(Boolean).join(" · ")}
+                            {[
+                              row.email ?? "No email",
+                              row.role,
+                              row.kind === "contractor" ? "Contractor" : null,
+                            ]
+                              .filter(Boolean)
+                              .join(" · ")}
                           </span>
                         </span>
                         <span className="tnum font-semibold">

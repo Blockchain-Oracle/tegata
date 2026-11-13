@@ -32,6 +32,7 @@ export function teamPersonView({ person, ready, pending, setBy }: TeamMember): T
     email: person.email,
     role: person.role,
     amount: person.amount.toString(),
+    kind: person.kind,
     token: person.token,
     claimed: Boolean(person.userId),
     invitedAt: iso(person.invitedAt),
@@ -87,6 +88,7 @@ export async function runView(workspaceId: string, runId: string): Promise<PayRu
       accountId: row.accountId,
       route: row.route,
       amount: row.amount.toString(),
+      kind: row.kind,
       pay: row.basePay?.toString() ?? null,
       usual: usual?.toString() ?? null,
       lines: row.lines,
@@ -145,6 +147,7 @@ export async function payslipView(rowId: string): Promise<ReceiptView | null> {
     logo: slip.logo,
     title: slip.label,
     amount: row.amount.toString(),
+    contractor: row.kind === "contractor",
     lines: row.lines.length
       ? [
           { label: "Pay", amount: rowBasePay(row).toString(), deduction: false },
@@ -191,10 +194,18 @@ export const personBody = z.object({
   role: z.string().trim().max(PAYROLL_LIMITS.role).optional().default(""),
   /** Dollars as typed: "2400" or "2,400.50". */
   amount: z.string().trim(),
+  /** Employee (a payslip) or contractor (a payment receipt). Left out on an edit, it stays as it was. */
+  kind: z.enum(["employee", "contractor"]).optional(),
 })
 
 export function personInput(input: z.infer<typeof personBody>) {
   const amount = parseDollars(input.amount)
   if (amount === null || amount <= 0n) throw badRequest("Enter pay like 2400 or 2,400.50", "amount")
-  return { name: input.name, email: input.email || null, role: input.role || null, amount }
+  return {
+    name: input.name,
+    email: input.email || null,
+    role: input.role || null,
+    amount,
+    kind: input.kind,
+  }
 }

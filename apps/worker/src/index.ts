@@ -574,7 +574,7 @@ async function attachmentsFor(event: EmailEvent, email: { workspaceId: string | 
     if (doc)
       return [
         {
-          filename: `Payslip-${doc.payDate.slice(0, 7)}-${doc.person.name.replace(/[^A-Za-z0-9]+/g, "-")}.pdf`,
+          filename: `${doc.kind === "receipt" ? "Payment-receipt" : "Payslip"}-${doc.payDate.slice(0, 7)}-${doc.person.name.replace(/[^A-Za-z0-9]+/g, "-")}.pdf`,
           content: await renderPayslipPdf(doc),
         },
       ]

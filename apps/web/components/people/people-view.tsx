@@ -111,7 +111,12 @@ export function PeopleView({
                 <span className="flex min-w-0 flex-1 flex-col">
                   <span className="truncate text-[16px] font-semibold">{person.name}</span>
                   <span className="truncate text-detail text-muted-foreground">
-                    {person.role ?? person.email ?? "No email"}
+                    {[
+                      person.role ?? person.email ?? "No email",
+                      person.kind === "contractor" ? "Contractor" : null,
+                    ]
+                      .filter(Boolean)
+                      .join(" · ")}
                   </span>
                 </span>
                 <span className="hidden sm:inline-flex">
