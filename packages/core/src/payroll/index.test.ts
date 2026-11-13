@@ -7,8 +7,11 @@ import {
   nextPayday,
   parsePeopleCsv,
   paydayAfter,
+  payLinesProblem,
   payPeriod,
   periodLabel,
+  rowBreakdown,
+  rowTotal,
 } from "./index.ts"
 
 const USD = 1_000_000n
@@ -79,4 +82,37 @@ test("the people CSV keeps good rows and explains each bad one", () => {
 
 test("a CSV without name and amount columns is refused at the header", () => {
   assert.equal(parsePeopleCsv("email\nmei@studio.example").problems[0]?.line, 1)
+})
+
+test("a row's total is its pay plus bonuses and reimbursements, less deductions", () => {
+  const lines = [
+    { kind: "bonus" as const, label: "Q4 target", amount: 250n * USD },
+    { kind: "reimbursement" as const, label: "Train", amount: 42_500_000n },
+    { kind: "deduction" as const, label: "Advance", amount: 100n * USD },
+  ]
+  assert.equal(rowTotal(2_400n * USD, lines), 2_592_500_000n)
+  assert.deepEqual(rowBreakdown(2_400n * USD, lines), {
+    gross: 2_692_500_000n,
+    deductions: 100n * USD,
+    net: 2_592_500_000n,
+  })
+  assert.equal(payLinesProblem(2_400n * USD, lines), null)
+})
+
+test("pay lines refuse what can't be paid", () => {
+  const deduction = (amount: bigint) => ({ kind: "deduction" as const, label: "", amount })
+  assert.match(payLinesProblem(100n * USD, [deduction(100n * USD)]) ?? "", /can't be more/)
+  assert.match(payLinesProblem(100n * USD, [deduction(0n)]) ?? "", /\$0.01/)
+  assert.match(
+    payLinesProblem(
+      100n * USD,
+      Array.from({ length: 11 }, () => deduction(USD)),
+    ) ?? "",
+    /Up to 10/,
+  )
+  assert.match(
+    payLinesProblem(USD, [{ kind: "bonus", label: "x".repeat(61), amount: USD }]) ?? "",
+    /label/,
+  )
+  assert.equal(payLinesProblem(0n, [{ kind: "bonus", label: "Only a bonus", amount: USD }]), null)
 })

@@ -157,6 +157,15 @@ export function ReceiptView({ receipt, token }: { receipt: Receipt; token: strin
                 receipt.title
               )}
             </Row>
+            {receipt.lines?.map((line, i) => (
+              // biome-ignore lint/suspicious/noArrayIndexKey: a paid payslip's lines are fixed and never reorder
+              <Row key={`${line.label}${i}`} label={line.label}>
+                <span className={line.deduction ? "tnum text-down" : "tnum"}>
+                  {line.deduction ? "−" : i === 0 ? "" : "+"}
+                  {usdUnits(line.amount)}
+                </span>
+              </Row>
+            ))}
             {receipt.refunded ? (
               <Row label="Refunded">
                 <span className="tnum text-down">−{usdUnits(receipt.refunded)}</span>

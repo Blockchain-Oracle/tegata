@@ -58,11 +58,16 @@ export interface PayslipDocument {
   timezone: string
   /** "Monthly", "Fortnightly", "Weekly", or null. */
   frequency: string | null
-  /** USDC base units. */
+  /** USDC base units: pay and additions, the deduction lines, and what arrived. */
   gross: string
+  deductions: string
   net: string
-  /** This person's paid pay from this business in the same calendar year, this one included. */
+  /** This person's gross pay from this business in the same calendar year, this one included. */
   yearToDate: string
+  /** Pay for this run, then each bonus and reimbursement; year to date where it adds up (pay). */
+  earnings: { label: string; amount: string; yearToDate: string | null }[]
+  /** Deductions agreed with the business for this run (Tegata itself withholds nothing). */
+  deductionLines: { label: string; amount: string }[]
   year: number
   how: {
     /** "USDC on NEAR (Circle)", "USDT on Tron, converted by NEAR Intents". */
@@ -326,7 +331,7 @@ export function PayslipPdf({ doc }: { doc: PayslipDocument }) {
 
         <View style={{ flexDirection: "row", gap: 8, alignItems: "center", marginBottom: 12 }}>
           <Figure label="Gross pay" value={usd(doc.gross)} />
-          <Figure label="Deductions" value={usd("0")} />
+          <Figure label="Deductions" value={usd(doc.deductions)} />
           <Figure label="Net pay" value={usd(doc.net)} strong />
           <View style={{ width: 92, alignItems: "center" }}>
             <Stamp name={doc.business.name} />
@@ -341,13 +346,25 @@ export function PayslipPdf({ doc }: { doc: PayslipDocument }) {
           <Text style={[s.th, { width: "25%", textAlign: "right" }]}>This period</Text>
           <Text style={[s.th, { width: "25%", textAlign: "right" }]}>Year to date {doc.year}</Text>
         </View>
-        <View style={[s.between, s.td]}>
-          <Text style={{ width: "50%" }}>Pay{doc.person.role ? ` · ${doc.person.role}` : ""}</Text>
-          <Text style={{ width: "25%", textAlign: "right" }}>{usd(doc.gross)}</Text>
-          <Text style={{ width: "25%", textAlign: "right", color: SOFT }}>
-            {usd(doc.yearToDate)}
-          </Text>
-        </View>
+        {doc.earnings.map((line, i) => (
+          // biome-ignore lint/suspicious/noArrayIndexKey: a PDF renders once and its lines never reorder
+          <View key={`${i}${line.label}`} style={[s.between, s.td]}>
+            <Text style={{ width: "50%" }}>{line.label}</Text>
+            <Text style={{ width: "25%", textAlign: "right" }}>{usd(line.amount)}</Text>
+            <Text style={{ width: "25%", textAlign: "right", color: SOFT }}>
+              {line.yearToDate ? usd(line.yearToDate) : ""}
+            </Text>
+          </View>
+        ))}
+        {doc.earnings.length > 1 ? (
+          <View style={[s.between, s.td, { fontWeight: 700 }]}>
+            <Text style={{ width: "50%" }}>Gross pay</Text>
+            <Text style={{ width: "25%", textAlign: "right" }}>{usd(doc.gross)}</Text>
+            <Text style={{ width: "25%", textAlign: "right", color: SOFT }}>
+              {usd(doc.yearToDate)}
+            </Text>
+          </View>
+        ) : null}
         <View style={{ marginBottom: 12 }} />
 
         <Text style={s.section}>Deductions</Text>
@@ -358,6 +375,16 @@ export function PayslipPdf({ doc }: { doc: PayslipDocument }) {
           <Text style={[s.th, { width: "20%", textAlign: "right" }]}>Amount</Text>
           <Text style={[s.th, { width: "30%", textAlign: "right" }]}>Note</Text>
         </View>
+        {doc.deductionLines.map((line, i) => (
+          // biome-ignore lint/suspicious/noArrayIndexKey: a PDF renders once and its lines never reorder
+          <View key={`${i}${line.label}`} style={[s.between, s.td]}>
+            <Text style={{ width: "50%" }}>{line.label}</Text>
+            <Text style={{ width: "20%", textAlign: "right" }}>{usd(line.amount)}</Text>
+            <Text style={{ width: "30%", textAlign: "right", color: GREY }}>
+              By {doc.business.name}
+            </Text>
+          </View>
+        ))}
         {[
           ["Income tax", "Not withheld"],
           ["Pension and social contributions", "Not withheld"],

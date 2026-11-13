@@ -316,6 +316,8 @@ export interface ReceiptView {
   via?: string | null
   /** Live from another chain: the 1Click asset id the payer sent, for its coin and chain marks. */
   assetIn?: string | null
+  /** A payslip with one-off lines: this run's pay, then each bonus, reimbursement and deduction. */
+  lines?: { label: string; amount: string; deduction: boolean }[] | null
   /** Live to another chain: what NEAR Intents delivered, where, and that chain's transaction. */
   deliveredAs?: {
     route: string
@@ -575,6 +577,13 @@ export interface PayrollOverview {
   emailEnabled: boolean
 }
 
+export interface PayRowLine {
+  kind: "bonus" | "reimbursement" | "deduction"
+  label: string
+  /** USDC base units. */
+  amount: string
+}
+
 export interface PayRunRow {
   id: string
   personId: string
@@ -584,7 +593,14 @@ export interface PayRunRow {
   accountId: string | null
   /** For a row paid to another chain: its route ("usdt-tron"). */
   route?: string | null
+  /** What this row pays: this run's pay plus its lines. */
   amount: string
+  /** This run's pay when the owner changed it, else null (their usual pay). */
+  pay?: string | null
+  /** The person's usual pay, for "Usual $2,400". */
+  usual?: string | null
+  /** Bonuses, reimbursements and deductions for this run only. */
+  lines?: PayRowLine[]
   status: "included" | "excluded" | "skipped" | "paid" | "failed" | "sending"
   skipReason: string | null
   batch: number | null

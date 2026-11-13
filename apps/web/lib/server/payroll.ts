@@ -10,6 +10,7 @@ import {
   nextPaydayFor,
   payslip,
   personPage,
+  rowBasePay,
   type TeamMember,
 } from "@tegata/services"
 
@@ -77,7 +78,7 @@ export async function runView(workspaceId: string, runId: string): Promise<PayRu
     approvedAt: iso(run.approvedAt),
     paidAt: iso(run.paidAt),
     transactions: run.txHashes.map((hash) => ({ hash, url: explorerTx(run.network, hash) })),
-    rows: rows.map(({ row, relayStatus }) => ({
+    rows: rows.map(({ row, relayStatus, usual }) => ({
       id: row.id,
       personId: row.personId,
       name: row.name,
@@ -86,6 +87,9 @@ export async function runView(workspaceId: string, runId: string): Promise<PayRu
       accountId: row.accountId,
       route: row.route,
       amount: row.amount.toString(),
+      pay: row.basePay?.toString() ?? null,
+      usual: usual?.toString() ?? null,
+      lines: row.lines,
       status: row.status,
       skipReason: row.skipReason,
       batch: row.batch,
@@ -123,6 +127,12 @@ export async function personPageView(token: string): Promise<PersonPage | null> 
   }
 }
 
+const LINE_WORD = {
+  bonus: "Bonus",
+  reimbursement: "Reimbursement",
+  deduction: "Deduction",
+} as const
+
 /** The payslip as a receipt of kind payslip. */
 export async function payslipView(rowId: string): Promise<ReceiptView | null> {
   const slip = await payslip(db(), rowId)
@@ -135,6 +145,16 @@ export async function payslipView(rowId: string): Promise<ReceiptView | null> {
     logo: slip.logo,
     title: slip.label,
     amount: row.amount.toString(),
+    lines: row.lines.length
+      ? [
+          { label: "Pay", amount: rowBasePay(row).toString(), deduction: false },
+          ...row.lines.map((line) => ({
+            label: line.label ? `${LINE_WORD[line.kind]} · ${line.label}` : LINE_WORD[line.kind],
+            amount: line.amount,
+            deduction: line.kind === "deduction",
+          })),
+        ]
+      : null,
     method: run.source === "autopilot" ? "autopilot" : "payroll",
     payer: run.senderId,
     payerName: slip.business,

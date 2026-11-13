@@ -22,6 +22,7 @@ import type { PayRun, PayRunRow } from "@/lib/client/types"
 import { fire } from "@/lib/feedback"
 import { cn } from "@/lib/utils"
 import { money, paydayText, RunStatusPill } from "./payroll-view"
+import { rowChangeText } from "./row-pay-sheet"
 
 const STEPS = [
   {
@@ -48,6 +49,7 @@ export function RunView({
   busy,
   problem,
   onToggle,
+  onEdit,
   onPay,
   onRetry,
 }: {
@@ -60,6 +62,8 @@ export function RunView({
   busy: boolean
   problem: string | null
   onToggle: (row: PayRunRow, included: boolean) => void
+  /** Open this run's pay and one-off lines for a row (drafts only). */
+  onEdit?: (row: PayRunRow) => void
   onPay: () => void
   onRetry: () => void
 }) {
@@ -153,7 +157,7 @@ export function RunView({
           ) : null}
           <div className="flex flex-col rounded-[20px] bg-card p-2">
             {run.rows.map((row) => (
-              <RowLine key={row.id} row={row} onToggle={onToggle} />
+              <RowLine key={row.id} row={row} onToggle={onToggle} onEdit={onEdit} />
             ))}
           </div>
           {skipped.length ? (
@@ -286,11 +290,15 @@ export function RunView({
 function RowLine({
   row,
   onToggle,
+  onEdit,
 }: {
   row: PayRunRow
   onToggle?: (row: PayRunRow, included: boolean) => void
+  onEdit?: (row: PayRunRow) => void
 }) {
   const muted = row.status === "skipped" || row.status === "excluded"
+  const editable = onEdit && (row.status === "included" || row.status === "excluded")
+  const change = rowChangeText(row)
   return (
     <div className="flex items-center gap-3 rounded-[14px] px-3 py-3">
       <CustomerDisc name={row.name} size={40} />
@@ -322,12 +330,35 @@ function RowLine({
           </span>
         ) : null}
       </span>
-      <span
-        className={
-          muted ? "tnum text-[16px] font-semibold text-text-3" : "tnum text-[16px] font-semibold"
-        }
-      >
-        {money(row.amount)}
+      <span className="flex shrink-0 flex-col items-end">
+        {editable ? (
+          <button
+            type="button"
+            onClick={() => onEdit(row)}
+            aria-label={`Change ${row.name}'s pay for this run`}
+            className={cn(
+              "tnum rounded-[8px] text-[16px] font-semibold underline decoration-current/30 decoration-dotted underline-offset-[4px] hover:decoration-solid",
+              muted && "text-text-3",
+            )}
+          >
+            {money(row.amount)}
+          </button>
+        ) : (
+          <span
+            className={
+              muted
+                ? "tnum text-[16px] font-semibold text-text-3"
+                : "tnum text-[16px] font-semibold"
+            }
+          >
+            {money(row.amount)}
+          </span>
+        )}
+        {change ? (
+          <span className="tnum max-w-[180px] truncate text-[12px] text-muted-foreground">
+            {change}
+          </span>
+        ) : null}
       </span>
       {row.status === "paid" ? (
         <Link

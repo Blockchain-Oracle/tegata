@@ -419,7 +419,8 @@ export const SAMPLE_PEOPLE: TeamPerson[] = [
     pending: {
       kind: "tegata",
       accountId: "kofi.tegata.testnet",
-      activatesAt: new Date(Date.now() + 20 * HOUR).toISOString(),
+      // On the hour, so the server and the browser print the same time.
+      activatesAt: new Date(Math.ceil(Date.now() / HOUR) * HOUR + 20 * HOUR).toISOString(),
     },
   }),
   person({
@@ -500,11 +501,19 @@ export const SAMPLE_RUN: PayRun = {
   paidAt: null,
   transactions: [],
   rows: [
-    runRow({ id: "1a00-mei", name: "Mei Tanaka", accountId: "mei.tegata.testnet" }),
+    runRow({
+      id: "1a00-mei",
+      name: "Mei Tanaka",
+      accountId: "mei.tegata.testnet",
+      usual: "2400000000",
+    }),
+    // Kofi's usual pay is $2,850; this run adds a $250 bonus.
     runRow({
       id: "1a00-kofi",
       name: "Kofi Mensah",
       amount: "3100000000",
+      usual: "2850000000",
+      lines: [{ kind: "bonus", label: "Q4 target", amount: "250000000" }],
       destinationKind: "near",
       accountId: "kofi-mensah.testnet",
     }),
