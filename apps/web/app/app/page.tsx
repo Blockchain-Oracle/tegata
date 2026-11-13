@@ -16,8 +16,9 @@ export default function HomePage() {
   const { profile } = useProfile()
   const { openReceive, openScan } = useShell()
   const testDollars = useTestDollars()
+  const network = useNetwork()
   const activity = useQuery({
-    queryKey: ["activity"],
+    queryKey: ["activity", network],
     queryFn: () => api<{ items: ActivityItem[] }>("/api/activity"),
     refetchInterval: ACTIVITY_POLL_MS,
   })
@@ -39,7 +40,6 @@ export default function HomePage() {
     staleTime: 60_000,
   }).data?.due
   const by = referrals.data?.referredBy
-  const network = useNetwork()
   // The same pots the Balance page shows (one cache entry per network).
   const pots = useQuery({
     queryKey: ["pots", network],
