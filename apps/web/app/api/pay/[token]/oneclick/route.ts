@@ -47,6 +47,8 @@ export const POST = route(async (request, context: { params: Promise<{ token: st
     ...oneClickView(payment),
     symbol: found.route.symbol,
     chain: found.route.chain,
+    // For the payer's own wallet: the coin's contract on its chain (none for a chain's own coin).
+    tokenContract: found.token.contractAddress ?? null,
     payUri: payUri(
       found.token,
       quote.depositAddress ?? "",

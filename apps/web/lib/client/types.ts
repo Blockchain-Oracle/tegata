@@ -219,6 +219,8 @@ export interface AttemptView {
     /** Mark ids for the coin sent and its chain ("usdt", "tron"). */
     coin?: string | null
     chainMark?: string | null
+    /** The coin's contract on its chain, for paying from the payer's own wallet (null for a chain's own coin). */
+    tokenContract?: string | null
     payUri: string | null
   } | null
   /** Paying by card: Transak's order and its status. */
