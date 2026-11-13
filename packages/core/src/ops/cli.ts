@@ -9,7 +9,7 @@
  *   pnpm ops pay-link <url> [dollars]    pay a Sandbox pay link from the operator, the way a NEAR wallet does
  *   pnpm ops deploy-autopilot testnet    create pay.tegata.testnet, deploy the autopilot contract, register it on USDC
  *   pnpm ops mainnet-address             the address to fund (an implicit account of Tegata's new mainnet key)
- *   pnpm ops create-operator             (run by Abu) create tegata.near from that funded address, with the same key
+ *   pnpm ops create-operator             (run by the owner) create tegata.near from that funded address, with the same key
  *
  * Secret keys are read from and written to files only. They are never printed.
  */
@@ -312,7 +312,7 @@ const AUTOPILOT_WASM = join(ROOT, "contracts/target/near/tegata_autopilot/tegata
 /**
  * Create the autopilot's account under the operator (its key is the operator's first key, so the operator can
  * redeploy during the hackathon, as the README says), deploy the contract and initialise it with USDC and the
- * operator as admin, then register it on USDC. Mainnet spends real NEAR, so it runs only with `--go` (Abu's OK).
+ * operator as admin, then register it on USDC. Mainnet spends real NEAR, so it runs only with `--go`.
  */
 async function deployAutopilot(network: NetworkId, go: boolean) {
   const code = readFileSync(AUTOPILOT_WASM)
@@ -406,7 +406,7 @@ async function mainnetAddress() {
 }
 
 /**
- * Abu runs this: from the funded implicit account, ask the `near` registrar to create tegata.near with the same key
+ * Run by the owner: from the funded implicit account, ask the `near` registrar to create tegata.near with the same key
  * as its only full-access key, moving everything but a small gas reserve into it.
  */
 async function createOperator() {

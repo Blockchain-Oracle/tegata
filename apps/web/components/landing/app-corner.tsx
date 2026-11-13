@@ -1,11 +1,10 @@
 "use client"
 
-// "Tegata on your phone" in the landing's bottom-right corner, for someone meeting Tegata for the first time (Abu, after
-// Kawase's corner card, tamion apps/landing/src/components/landing/corner-card.tsx). Like Kawase's, it waits until the
-// hero has scrolled away, steps aside when the closing section's own call to open an account comes up, and closing it
-// keeps it closed for the visit. On a laptop it is a paper slip with the code to /download for the phone in your other
-// hand; on a phone there is nothing to scan, so it is a small pill that opens /download, which offers what that phone
-// installs (TestFlight on an iPhone, the APK on Android).
+// "Tegata on your phone" in the landing's bottom-right corner, for someone meeting Tegata for the first time. It waits
+// until the hero has scrolled away, steps aside when the closing section's own call to open an account comes up, and
+// closing it keeps it closed for the visit. On a laptop it is a paper slip with the code to /download for the phone in
+// your other hand; on a phone there is nothing to scan, so it is a small pill that opens /download, which offers what
+// that phone installs (TestFlight on an iPhone, the APK on Android).
 import { ArrowRight, X } from "lucide-react"
 import { AnimatePresence, motion, useReducedMotion } from "motion/react"
 import Link from "next/link"

@@ -1,4 +1,4 @@
-// The floating dock (Kawase's dock, plan 6.7 phone): Home · Links · ＋ · Activity · You. Radius 40, the only shadowed
+// The floating dock: Home · Links · ＋ · Activity · You. Radius 40, the only shadowed
 // chrome; the active bubble springs (420/30) under the icon with a tick. "＋" fans out Send, Pay link, Scan and Payroll
 // as white circles over a scrim, with the sheet cue.
 import { router, type Tabs } from "expo-router"

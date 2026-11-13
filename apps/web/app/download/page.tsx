@@ -1,8 +1,8 @@
-// /download (S11): Tegata on your phone. The promise on the lit stage beside the real app, then a card per way in, the
+// /download: Tegata on your phone. The promise on the lit stage beside the real app, then a card per way in, the
 // visitor's own platform first (from the user agent): iPhone through Apple's public TestFlight link (always offered;
 // while Apple reviews the beta it says so in one line), Android as the APK itself with its version, size and
 // SHA-256, and the web app, which works on any phone today. On a desktop each card carries a QR for the phone in your
-// other hand. Release facts live in ./release.ts. Ported from Kawase's /download (the owner's own), in Tegata's design.
+// other hand. Release facts live in ./release.ts.
 import { ArrowRight, ArrowUpRight, Download, Globe } from "lucide-react"
 import type { Metadata } from "next"
 import { headers } from "next/headers"
@@ -169,7 +169,7 @@ function Facts({ facts }: { facts: [string, string][] }) {
 export default async function DownloadPage() {
   const platform = platformOf((await headers()).get("user-agent") ?? "")
   const github = ANDROID && (await githubPublic(ANDROID.github)) ? ANDROID.github : null
-  // The public link is always offered, like Kawase's (Abu, 13 Nov: "just use the normal link"). Until Apple lets testers
+  // The public link is always offered. Until Apple lets testers
   // in, its join page says Not Found, so the card says the beta isn't open yet (not "in review": that is Apple's state
   // to report, and it may not be) and points to Tegata in Safari; the same link works the moment Apple opens it.
   const testflight = isTestflightLink(IOS.testflight) ? IOS.testflight : null

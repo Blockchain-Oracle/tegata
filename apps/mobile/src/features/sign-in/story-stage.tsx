@@ -1,4 +1,4 @@
-// The sign-in story on the lit stage (spec S11-M1; the web's StoryStage and Kawase's pager): three scenes built from
+// The sign-in story on the lit stage (the web's StoryStage): three scenes built from
 // real Tegata objects and real chain marks, auto-advancing with segments that fill linearly, a tap on the left third
 // goes back and the right goes on. Every amount carries an "Example" tag, as on the web.
 import { Check } from "lucide-react-native"

@@ -1,6 +1,5 @@
 // Privy's Expo SDK needs three resolver rules (its setup docs, basics/react-native/installation): `jose` resolves its
 // browser build (the default "node" build imports node:crypto), and `isows` and `zustand` skip their package exports.
-// Same rules as Kawase's mobile app.
 const { getDefaultConfig } = require("expo/metro-config")
 
 const config = getDefaultConfig(__dirname)
