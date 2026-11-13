@@ -26,6 +26,7 @@ import {
   Plus,
   ScanLine,
   Settings,
+  ShoppingBag,
   Store,
   Sun,
   Users,
@@ -228,6 +229,9 @@ export function CommandMenu({
                 </Item>
                 <Item icon={<Landmark />} onSelect={run(() => router.push("/app/bank"))}>
                   Withdraw to a bank · bank details
+                </Item>
+                <Item icon={<ShoppingBag />} onSelect={run(() => router.push("/app/checkout"))}>
+                  Checkout: a pay button for your site
                 </Item>
                 <Item icon={<CreditCard />} onSelect={run(() => router.push("/app/cards"))}>
                   Cards: spend cards for you and your team

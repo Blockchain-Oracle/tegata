@@ -22,6 +22,7 @@ export const DEV_PAGES = [
   { href: "/dev/flows/welcome", label: "Welcome" },
   { href: "/dev/flows/home", label: "Home & Send" },
   { href: "/dev/flows/links", label: "Pay links" },
+  { href: "/dev/flows/checkout", label: "Checkout" },
   { href: "/dev/flows/pay", label: "Pay & receipt" },
   { href: "/dev/flows/invoices", label: "Invoices" },
   { href: "/dev/flows/refer", label: "Refer" },
