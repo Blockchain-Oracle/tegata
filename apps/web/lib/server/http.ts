@@ -65,7 +65,7 @@ function toResponse(error: unknown): Response {
     const status =
       error.code === "not_found"
         ? STATUS.notFound
-        : error.code === "bad_amount"
+        : error.code === "bad_amount" || error.code === "no_route"
           ? STATUS.badRequest
           : STATUS.conflict
     return Response.json({ error: { code: error.code, message: error.message } }, { status })

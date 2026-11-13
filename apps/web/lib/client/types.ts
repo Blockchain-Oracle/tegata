@@ -158,6 +158,23 @@ export interface AttemptView {
   error: string | null
   receiptToken: string | null
   explorerUrl: string | null
+  /** Live, paying from another chain: where to send, how much, and what NEAR Intents reports. */
+  oneclick?: {
+    depositAddress: string | null
+    depositMemo: string | null
+    amountIn: string | null
+    amountInFormatted: string | null
+    minAmountIn: string | null
+    assetIn: string | null
+    refundTo: string | null
+    deadline: string | null
+    swapStatus: string | null
+    originTx: string | null
+    timeEstimate: number | null
+    symbol: string | null
+    chain: string | null
+    payUri: string | null
+  } | null
 }
 
 export interface TegataAttempt {
@@ -203,6 +220,8 @@ export interface ReceiptView {
   forUrl?: string | null
   /** USDC base units refunded so far, when any. */
   refunded?: string | null
+  /** Live from another chain: the coin and chain it was paid in, e.g. "USDT on Tron". */
+  via?: string | null
 }
 
 export interface Customer {

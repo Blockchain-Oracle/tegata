@@ -17,6 +17,8 @@ export interface OneClickToken {
   blockchain: string
   symbol: string
   price: number
+  /** The token's contract on its own chain; absent for a chain's native coin. */
+  contractAddress?: string
 }
 
 /** The routes a payer is most likely to hold, in the order the calculator shows them. Mark ids match public/marks. */
@@ -177,4 +179,50 @@ export async function dryQuote(route: PayerRoute, units: bigint): Promise<DryQuo
   }
   cache.set(key, { at: Date.now(), quote })
   return quote
+}
+
+/** EVM chain ids for EIP-681 links. */
+const EVM_CHAIN_ID: Record<string, number> = { eth: 1, base: 8453, arb: 42161, bsc: 56, pol: 137 }
+
+/**
+ * A payment link a wallet can open from a QR (context/09-realworld-money/live-1click-notes.md §6): EIP-681 on EVM chains,
+ * BIP-21 on Bitcoin, Solana Pay for SOL. Null where no reliable standard exists (Tron, and SPL USDC to a fresh Solana
+ * address, which Solana Pay can't fund): the page then shows the plain address.
+ */
+export function payUri(
+  token: OneClickToken,
+  depositAddress: string,
+  amountIn: string,
+  amountInFormatted: string,
+): string | null {
+  const chainId = EVM_CHAIN_ID[token.blockchain]
+  if (chainId) {
+    return token.contractAddress
+      ? `ethereum:${token.contractAddress}@${chainId}/transfer?address=${depositAddress}&uint256=${amountIn}`
+      : `ethereum:${depositAddress}@${chainId}?value=${amountIn}`
+  }
+  if (token.blockchain === "btc")
+    return `bitcoin:${depositAddress}?amount=${amountInFormatted}&label=Tegata`
+  if (token.blockchain === "sol" && !token.contractAddress)
+    return `solana:${depositAddress}?amount=${amountInFormatted}&label=Tegata`
+  return null
+}
+
+/** The payer route and its 1Click token, by route id. */
+export async function routeToken(routeId: string) {
+  const route = PAYER_ROUTES.find((r) => r.id === routeId)
+  if (!route) return null
+  const token = (await tokens()).find(
+    (t) => t.blockchain === route.blockchain && t.symbol === route.symbol,
+  )
+  return token ? { route, token } : null
+}
+
+/** The route a 1Click asset id belongs to (for a payment already started). */
+export async function routeOfAsset(assetId: string) {
+  const token = (await tokens()).find((t) => t.assetId === assetId)
+  const route = token
+    ? PAYER_ROUTES.find((r) => r.blockchain === token.blockchain && r.symbol === token.symbol)
+    : undefined
+  return token && route ? { route, token } : null
 }

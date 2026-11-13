@@ -149,7 +149,7 @@ export function ReceiptView({ receipt, token }: { receipt: Receipt; token: strin
                     }
                     size={18}
                   />{" "}
-                  {METHOD_WORD[receipt.method]}
+                  {receipt.via ? `${receipt.via} → USDC on NEAR` : METHOD_WORD[receipt.method]}
                 </span>
               </Row>
               <Row label="Settled">{settled}</Row>

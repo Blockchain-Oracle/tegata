@@ -100,6 +100,15 @@ export const payments = pgTable(
     /** For the 1Click rail: the stored, signed quote and its deposit address. */
     quote: jsonb(),
     depositAddress: text(),
+    /** 1Click rail: where a refund goes (the payer's address on the chain they pay from). */
+    refundTo: text(),
+    /** 1Click rail: the coin paid in (a 1Click asset id) and what was asked, in its base units. */
+    assetIn: text(),
+    amountIn: text(),
+    /** 1Click rail: the last status read from 1Click (PENDING_DEPOSIT … SUCCESS / REFUNDED / FAILED). */
+    swapStatus: text(),
+    /** 1Click rail: the payer's deposit transaction on their chain. */
+    originTx: text(),
     deadline: timestamp({ withTimezone: true }),
     error: text(),
     settledAt: timestamp({ withTimezone: true }),

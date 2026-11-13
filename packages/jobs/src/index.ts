@@ -93,6 +93,18 @@ export const QUEUES = {
     payload: z.object({}),
     options: { retryLimit: 0, expireInSeconds: 120 },
   },
+  /** A Live pay-in: read 1Click once and move the payment on; re-queued every few seconds until it's final. */
+  oneclickPoll: {
+    name: "oneclick-poll",
+    payload: z.object({ paymentId: z.uuid() }),
+    options: { retryLimit: 0, expireInSeconds: 60 },
+  },
+  /** Every minute: make sure every open Live pay-in has a poll queued (after a restart, say). */
+  oneclickSweep: {
+    name: "oneclick-sweep",
+    payload: z.object({}),
+    options: { retryLimit: 0, expireInSeconds: 120 },
+  },
   /** Create a user's NEAR account and register it on USDC. Safe to repeat. */
   accountSetup: {
     name: "account-setup",

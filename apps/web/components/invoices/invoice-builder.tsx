@@ -216,6 +216,9 @@ export function InvoiceBuilder({
         problem={null}
         onPayTegata={() => undefined}
         onPayWallet={() => undefined}
+        refundTo=""
+        onRefundTo={() => undefined}
+        onPayChain={() => undefined}
         usedRail={null}
         progress={0}
         startedAt={0}

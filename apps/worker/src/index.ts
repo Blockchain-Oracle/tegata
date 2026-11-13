@@ -21,11 +21,13 @@ import {
   invoiceToken,
   logInvoiceEvent,
   markInvited,
+  oneClickToPoll,
   paidEmail,
   paidRowsToEmail,
   paymentEmails,
   paymentsToVerify,
   pendingDeliveries,
+  pollOneClickPayment,
   processRelay,
   queuedTestDollars,
   registerDestination,
@@ -227,6 +229,31 @@ await boss.work(QUEUES.webhookDeliver.name, async ([job]) => {
     )
 })
 const WEBHOOK_CRON = "* * * * *"
+/** A Live pay-in moves through 1Click in seconds to minutes: read it every few seconds while it's open. */
+const ONECLICK_POLL_MS = 5_000
+await boss.work(QUEUES.oneclickPoll.name, async ([job]) => {
+  if (!job) return
+  const { paymentId } = QUEUES.oneclickPoll.payload.parse(job.data)
+  const result = await pollOneClickPayment(db, paymentId, env.ONECLICK_API_KEY)
+  if (result === "pending") {
+    await enqueue(boss, "oneclickPoll", { paymentId }, `oneclick:${paymentId}`, {
+      startAfter: new Date(Date.now() + ONECLICK_POLL_MS),
+    })
+    return
+  }
+  console.log(`[oneclick] ${paymentId} ${result}`)
+  if (result === "succeeded") {
+    await queueDeliveries()
+    if (mailer) await enqueue(boss, "paymentEmail", { paymentId }, `payment:${paymentId}`)
+  }
+})
+await boss.schedule(QUEUES.oneclickSweep.name, "* * * * *", {})
+await boss.work(QUEUES.oneclickSweep.name, async () => {
+  for (const open of await oneClickToPoll(db)) {
+    await enqueue(boss, "oneclickPoll", { paymentId: open.id }, `oneclick:${open.id}`)
+  }
+})
+
 await boss.schedule(QUEUES.webhookSweep.name, WEBHOOK_CRON, {})
 await boss.work(QUEUES.webhookSweep.name, queueDeliveries)
 

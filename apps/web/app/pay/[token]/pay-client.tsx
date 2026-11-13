@@ -139,6 +139,7 @@ export function PayClient({
   const [walletAccount, setWalletAccount] = useState<string | null>(null)
   const [connecting, setConnecting] = useState(false)
   const [routeId, setRouteId] = useState(routes[0]?.id ?? "")
+  const [refundTo, setRefundTo] = useState("")
 
   const request = useQuery({
     queryKey: ["pay", initial.token],
@@ -333,6 +334,27 @@ export function PayClient({
     }
   }
 
+  /** Live: ask NEAR Intents for a deposit address on the chosen coin and chain, then follow it. */
+  async function payChain() {
+    if (!due) return
+    setBusy(true)
+    setProblem(null)
+    try {
+      const res = await api<{ paymentId: string }>(`/api/pay/${request.token}/oneclick`, {
+        body: { route: routeId, refundTo: refundTo.trim(), amount: typed ? amount : undefined },
+      })
+      fire("press", { cue: "tap" })
+      begin(res.paymentId, "oneclick")
+    } catch (error) {
+      fire("fail", { cue: "error" })
+      setProblem(
+        error instanceof ApiError ? error.message : "NEAR Intents didn't answer. Try again.",
+      )
+    } finally {
+      setBusy(false)
+    }
+  }
+
   async function disconnect() {
     const { disconnectNear } = await import("@/lib/client/near-wallet")
     await disconnectNear(network).catch(() => undefined)
@@ -386,6 +408,12 @@ export function PayClient({
       problem={problem}
       onPayTegata={payTegata}
       onPayWallet={payWallet}
+      refundTo={refundTo}
+      onRefundTo={(value) => {
+        setRefundTo(value)
+        setProblem(null)
+      }}
+      onPayChain={() => void payChain()}
       usedRail={usedRail}
       progress={progress}
       startedAt={startedAt}

@@ -20,12 +20,14 @@ import Link from "next/link"
 
 import { BusinessSeal, SealPress, TegataSeal } from "@/components/brand/seal"
 import { Button } from "@/components/kit/button"
+import { Field } from "@/components/kit/field"
 import { Figure, viewDollars } from "@/components/kit/figure"
 import { HoldButton } from "@/components/kit/hold-button"
 import { Paper, Stage } from "@/components/kit/stage"
 import { ErrorState, Skeleton, TextShimmer, WaitingText } from "@/components/kit/states"
 import { TaskSteps } from "@/components/kit/task-steps"
 import { Mark, type MarkId, MarkStack } from "@/components/marks/mark"
+import { DepositPanel } from "@/components/pay/deposit-panel"
 import type { TestDollars } from "@/hooks/use-test-dollars"
 import type { AttemptView, PaymentRail, PublicRequest } from "@/lib/client/types"
 import { fire } from "@/lib/feedback"
@@ -76,6 +78,10 @@ export interface PayViewProps {
   problem: string | null
   onPayTegata: () => void
   onPayWallet: () => void
+  /** Live: the payer's address on their chain, for a refund; then a deposit address from NEAR Intents. */
+  refundTo: string
+  onRefundTo: (value: string) => void
+  onPayChain: () => void
   /** Which rail the payment in flight uses. */
   usedRail: PaymentRail | null
   /** Index of the active step (TaskSteps). */
@@ -312,6 +318,10 @@ export function PayView(p: PayViewProps) {
                 <ChainPanel {...p} dollars={dollars} />
               </RailRow>
             </motion.section>
+          ) : p.step === "paying" && p.usedRail === "oneclick" && p.attempt?.oneclick ? (
+            <motion.div key="deposit" className="flex flex-col gap-4" {...slide}>
+              <DepositPanel oneclick={p.attempt.oneclick} business={p.request.business} />
+            </motion.div>
           ) : p.step === "paying" ? (
             <motion.div key="paying" className="flex flex-col gap-4" {...slide}>
               <div className="rounded-[20px] bg-secondary p-2">
@@ -645,16 +655,57 @@ function ChainPanel(p: PanelProps) {
           )}
         </div>
       ) : null}
-      <div className="flex items-start gap-3 rounded-[14px] bg-sora/60 px-4 py-3 text-black">
-        <Mark id="intents" size={24} />
-        <p className="text-[14px]">
-          {p.request.network === "testnet"
-            ? "Paying from other chains runs in Live: NEAR Intents has no testnet. The price above is real."
-            : "Deposit addresses open once Live is switched on for this business."}
-        </p>
-      </div>
+      {p.request.network === "mainnet" && route ? (
+        <form
+          className="flex flex-col gap-3"
+          onSubmit={(e) => {
+            e.preventDefault()
+            p.onPayChain()
+          }}
+        >
+          <Field
+            id="refund-to"
+            label={`Your address on ${route.chain}, for a refund if anything goes wrong`}
+            placeholder={REFUND_HINT[route.chainMark] ?? "Your address"}
+            value={p.refundTo}
+            onChange={(e) => p.onRefundTo(e.target.value)}
+            spellCheck={false}
+            autoCapitalize="none"
+            className="font-mono"
+          />
+          <Problem text={p.problem} />
+          <Button
+            type="submit"
+            cue="tap"
+            busy={p.busy}
+            disabled={p.dollars <= 0 || p.refundTo.trim().length < 10 || !p.quote.data}
+          >
+            Get the deposit address
+          </Button>
+        </form>
+      ) : (
+        <div className="flex items-start gap-3 rounded-[14px] bg-sora/60 px-4 py-3 text-black">
+          <Mark id="intents" size={24} />
+          <p className="text-[14px]">
+            Paying from other chains runs in Live: NEAR Intents has no testnet. The price above is
+            real.
+          </p>
+        </div>
+      )}
     </>
   )
+}
+
+/** What an address looks like on each chain, as a placeholder. */
+const REFUND_HINT: Record<string, string> = {
+  eth: "0x…",
+  base: "0x…",
+  arb: "0x…",
+  bnb: "0x…",
+  pol: "0x…",
+  sol: "Your Solana address",
+  btc: "bc1…",
+  tron: "T…",
 }
 
 function eta(seconds: number) {

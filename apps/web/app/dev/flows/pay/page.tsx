@@ -16,7 +16,16 @@ import {
   SAMPLE_SEND_RECEIPT,
 } from "@/lib/dev/sample"
 
-type Payer = "signed_out" | "ready" | "short" | "own" | "wallet" | "chain" | "any"
+type Payer =
+  | "signed_out"
+  | "ready"
+  | "short"
+  | "own"
+  | "wallet"
+  | "chain"
+  | "live"
+  | "live_short"
+  | "any"
 type Step = PayStep | "closed"
 
 const TEGATA: Record<Payer, TegataState> = {
@@ -26,6 +35,8 @@ const TEGATA: Record<Payer, TegataState> = {
   own: { kind: "own_link", accountId: "studio-kaze.tegata.testnet" },
   wallet: { kind: "signed_out" },
   chain: { kind: "signed_out" },
+  live: { kind: "signed_out" },
+  live_short: { kind: "signed_out" },
   any: { kind: "ready", accountId: "northwind.tegata.testnet", balance: 4210 },
 }
 
@@ -38,11 +49,25 @@ export default function PayFlow() {
   const [progress, setProgress] = useState(1)
   const [startedAt, setStartedAt] = useState(() => Date.now())
   const [replay, setReplay] = useState(0)
-  const usedRail: PaymentRail = payer === "wallet" ? "near_wallet" : "tegata"
+  const live = payer === "live" || payer === "live_short"
+  const usedRail: PaymentRail = payer === "wallet" ? "near_wallet" : live ? "oneclick" : "tegata"
+  const [refundTo, setRefundTo] = useState("")
+  const [swap, setSwap] = useState("PENDING_DEPOSIT")
 
   useEffect(() => {
-    setRail(payer === "wallet" ? "near_wallet" : payer === "chain" ? "oneclick" : "tegata")
-  }, [payer])
+    setRail(payer === "wallet" ? "near_wallet" : payer === "chain" || live ? "oneclick" : "tegata")
+  }, [payer, live])
+
+  // Live from another chain: the deposit screen, then the steps NEAR Intents reports, then paid.
+  const playLive = () => {
+    setStep("paying")
+    setSwap(payer === "live_short" ? "INCOMPLETE_DEPOSIT" : "PENDING_DEPOSIT")
+    if (payer === "live_short") return
+    setTimeout(() => setSwap("KNOWN_DEPOSIT_TX"), 2600)
+    setTimeout(() => setSwap("PROCESSING"), 4200)
+    setTimeout(() => setSwap("SUCCESS"), 5800)
+    setTimeout(() => setStep("paid"), 6600)
+  }
 
   const play = () => {
     setStep("paying")
@@ -71,6 +96,8 @@ export default function PayFlow() {
             { value: "own", label: "Own link" },
             { value: "wallet", label: "Wallet" },
             { value: "chain", label: "Other chain" },
+            { value: "live", label: "Live: other chain" },
+            { value: "live_short", label: "Live: sent too little" },
             { value: "any", label: "Any amount" },
           ]}
         />
@@ -100,7 +127,11 @@ export default function PayFlow() {
             title: payer === "any" ? "Tip jar" : SAMPLE_REQUEST.title,
             note: payer === "any" ? null : SAMPLE_REQUEST.note,
             status: step === "closed" ? "closed" : "open",
+            network: live ? "mainnet" : SAMPLE_REQUEST.network,
           }}
+          refundTo={refundTo}
+          onRefundTo={setRefundTo}
+          onPayChain={playLive}
           amount={amount}
           onAmount={setAmount}
           rail={rail}
@@ -139,6 +170,24 @@ export default function PayFlow() {
             error: null,
             receiptToken: "sampleReceipt01",
             explorerUrl: SAMPLE_RECEIPT.explorerUrl,
+            oneclick: live
+              ? {
+                  depositAddress: "TQn9Y2khEsLJW1ChVWFMSMeRDow5KcbLSE",
+                  depositMemo: null,
+                  amountIn: "1251387000",
+                  amountInFormatted: "1251.387",
+                  minAmountIn: "1250125000",
+                  assetIn: "nep141:tron-d28a265909efecdcee7c5028585214ea0b96f015.omft.near",
+                  refundTo: refundTo || "TFxa1pyCnnjrK2hc6UzHhK1Da3WXu53yH8",
+                  deadline: new Date(Date.now() + 18 * 60_000).toISOString(),
+                  swapStatus: swap,
+                  originTx: null,
+                  timeEstimate: 80,
+                  symbol: "USDT",
+                  chain: "Tron",
+                  payUri: null,
+                }
+              : null,
           }}
           onTryAgain={() => setStep("choose")}
         />

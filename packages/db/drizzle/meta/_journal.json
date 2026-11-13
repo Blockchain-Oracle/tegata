@@ -78,6 +78,13 @@
       "when": 1794556772204,
       "tag": "0010_wallet_sign_in",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1794564406379,
+      "tag": "0011_live_payins",
+      "breakpoints": true
     }
   ]
 }

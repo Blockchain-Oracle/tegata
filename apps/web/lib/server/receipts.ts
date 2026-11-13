@@ -4,8 +4,8 @@ import { explorerTx } from "@tegata/core/near"
 import { receiptByToken, rewardReceipt, sendReceipt } from "@tegata/services"
 
 import type { ReceiptView } from "@/lib/client/types"
-
 import { db } from "./context.ts"
+import { routeOfAsset } from "./oneclick.ts"
 
 export async function paymentReceiptView(token: string): Promise<ReceiptView | null> {
   const row = await receiptByToken(db(), token)
@@ -29,8 +29,15 @@ export async function paymentReceiptView(token: string): Promise<ReceiptView | n
     txHash: payment.txHash,
     explorerUrl: payment.txHash ? explorerTx(payment.network, payment.txHash) : null,
     forUrl: request.kind === "invoice" ? `/i/${request.token}` : `/pay/${request.token}`,
+    via: payment.rail === "oneclick" && payment.assetIn ? await viaOf(payment.assetIn) : null,
     refunded: payment.refunded > 0n ? payment.refunded.toString() : null,
   }
+}
+
+/** "USDT on Tron": the coin and chain a Live payment came from. */
+async function viaOf(assetId: string): Promise<string | null> {
+  const found = await routeOfAsset(assetId).catch(() => null)
+  return found ? `${found.route.symbol} on ${found.route.chain}` : null
 }
 
 export async function sendReceiptView(id: string): Promise<ReceiptView | null> {

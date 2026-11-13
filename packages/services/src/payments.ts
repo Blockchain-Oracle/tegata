@@ -36,7 +36,14 @@ export const LINK_LIMITS = {
 
 export class PaymentError extends Error {
   constructor(
-    readonly code: "not_found" | "closed" | "bad_amount" | "not_ready" | "wrong_state" | "unpaid",
+    readonly code:
+      | "not_found"
+      | "closed"
+      | "bad_amount"
+      | "not_ready"
+      | "wrong_state"
+      | "unpaid"
+      | "no_route",
     message: string,
   ) {
     super(message)
@@ -216,7 +223,7 @@ export async function startAttempt(
   db: Db,
   input: {
     token: string
-    rail: "tegata" | "near_wallet"
+    rail: "tegata" | "near_wallet" | "oneclick"
     amount?: bigint
     payer?: string
     payerEmail?: string
