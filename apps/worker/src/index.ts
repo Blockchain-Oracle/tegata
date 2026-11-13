@@ -319,7 +319,7 @@ await boss.work(QUEUES.treasuryOpen.name, async ([job]) => {
   const row = (await treasuriesToCreate(db)).find((t) => t.id === treasuryId)
   const operator = row ? operators.get(row.network) : undefined
   if (!row || !operator) return
-  const made = await createTreasuryOnChain(db, operator, treasuryId)
+  const made = await createTreasuryOnChain(db, operator, treasuryId, env.TREASURY_LIVE === "true")
   console.log(`[treasury] ${row.accountId} ${made?.status ?? "gone"} ${made?.error ?? ""}`)
 })
 

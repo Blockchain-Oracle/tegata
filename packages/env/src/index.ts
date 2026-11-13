@@ -39,6 +39,8 @@ const serverSchema = z.object({
   OPERATOR_KEYS_MAINNET: optional(keyList),
   /** Tells the web server Live is on, without giving it the mainnet keys. */
   LIVE_ENABLED: optional(z.enum(["true", "false"])),
+  /** Team treasuries on mainnet: creating one spends ≈0.1 NEAR of the operator's, so it waits for Abu's OK. */
+  TREASURY_LIVE: optional(z.enum(["true", "false"])),
 
   /** Resend (https://resend.com): invoice and reminder emails. Both unset: Tegata issues links only. */
   RESEND_API_KEY: optional(z.string()),

@@ -251,8 +251,20 @@ export async function joinTeam(db: Db, token: string, user: { id: string; email:
 /** Every approver has joined and k is sensible: record the treasury; the worker creates it on NEAR. */
 export async function openTreasury(
   db: Db,
-  input: { workspaceId: string; ownerId: string; network: NetworkId; threshold: number },
+  input: {
+    workspaceId: string
+    ownerId: string
+    network: NetworkId
+    threshold: number
+    /** Mainnet treasuries cost the operator real NEAR: they open only once switched on. */
+    liveAllowed?: boolean
+  },
 ) {
+  if (input.network === "mainnet" && !input.liveAllowed)
+    throw new TeamError(
+      "not_ready",
+      "Team treasuries open on Live soon. Try one in the Sandbox now.",
+    )
   const existing = await treasuryOf(db, input.workspaceId, input.network)
   if (existing && existing.status !== "failed")
     throw new TeamError("wrong_state", "The treasury is already open")
@@ -309,9 +321,15 @@ export async function openTreasury(
 }
 
 /** Worker: create the treasury on NEAR (testnet: from the shared DAO code; mainnet: the factory), register it for USDC. */
-export async function createTreasuryOnChain(db: Db, operator: Operator, treasuryId: string) {
+export async function createTreasuryOnChain(
+  db: Db,
+  operator: Operator,
+  treasuryId: string,
+  liveAllowed = false,
+) {
   const [t] = await db.select().from(treasuries).where(eq(treasuries.id, treasuryId))
   if (t?.status !== "creating") return t
+  if (t.network === "mainnet" && !liveAllowed) return t
   const [business] = await db
     .select({ name: workspaces.name })
     .from(workspaces)

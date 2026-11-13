@@ -1,3 +1,4 @@
+import { serverEnv } from "@tegata/env"
 import { enqueue } from "@tegata/jobs"
 import { openTreasury } from "@tegata/services"
 import { z } from "zod"
@@ -18,6 +19,7 @@ export const POST = route(async (request) => {
     ownerId: user.id,
     network: requestNetwork(request),
     threshold,
+    liveAllowed: serverEnv().TREASURY_LIVE === "true",
   })
   await enqueue(
     await boss(),
