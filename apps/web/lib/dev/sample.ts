@@ -939,7 +939,10 @@ export const EMAIL_SAMPLES = [
   { kind: "payment.receipt", data: PAYMENT },
   { kind: "payment.receipt", data: { ...PAYMENT, amount: "500000000", remaining: "750000000" } },
   { kind: "invoice.sent", data: INVOICE },
+  { kind: "invoice.reminder", data: { ...INVOICE, offset: -3 } },
+  { kind: "invoice.reminder", data: { ...INVOICE, offset: 0 } },
   { kind: "invoice.reminder", data: { ...INVOICE, offset: 3 } },
+  { kind: "invoice.reminder", data: { ...INVOICE, offset: 7 } },
   { kind: "invoice.overdue", data: { ...INVOICE, ownerUrl: "/app/invoices", daysLate: 3 } },
   { kind: "invoice.void", data: INVOICE },
   {

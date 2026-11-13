@@ -7,7 +7,7 @@ import { assetLabel, type QuoteResponse, routeLabel } from "@tegata/core/oneclic
 import { type Db, schema } from "@tegata/db"
 import type { MoveData, PaymentData } from "@tegata/documents"
 import { and, eq, gte, inArray } from "drizzle-orm"
-
+import { autopilotPays } from "./autopilot.ts"
 import { monthRange, movements, totals } from "./books.ts"
 import { logoPath } from "./business.ts"
 import type { Conn } from "./events.ts"
@@ -808,7 +808,23 @@ export async function queueStatements(db: Db, month: string, network: NetworkId)
   }
 }
 
-/** Payday is today or past and no run exists for it: the owner is asked to review and approve. Once per payday. */
+/** The hour of the day in a time zone (0–23). */
+const localHour = (timezone: string) =>
+  Number(
+    new Intl.DateTimeFormat("en-GB", {
+      hour: "2-digit",
+      hourCycle: "h23",
+      timeZone: timezone,
+    }).format(new Date()),
+  )
+
+/** "Payroll is ready" goes out from this hour of the payday, in the owner's time zone. */
+const PAYROLL_DUE_HOUR = 8
+
+/**
+ * Payday is today or past and no run exists for it: the owner is asked to review and approve, once per payday, from
+ * 08:00 their time (the job runs hourly). A payday the autopilot pays is skipped: there is nothing to approve.
+ */
 export async function queuePayrollDue(db: Db) {
   const schedules = await db.select().from(schema.payrolls)
   for (const schedule of schedules) {
@@ -816,6 +832,8 @@ export async function queuePayrollDue(db: Db) {
     if (!workspace) continue
     const due = await payrollDue(db, schedule.workspaceId, schedule.network, workspace.timezone)
     if (!due?.people) continue
+    if (localHour(workspace.timezone) < PAYROLL_DUE_HOUR) continue
+    if (await autopilotPays(db, schedule.workspaceId, schedule.network, due.payday)) continue
     await queueEmail(db, {
       event: {
         kind: "payroll.due",

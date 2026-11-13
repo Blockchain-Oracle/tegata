@@ -500,6 +500,7 @@ export function InvoiceBuilder({
             />
             <Toggle
               title="Send reminders"
+              hint="3 days before, on the day, then 3 and 7 days late, at 9:00"
               checked={form.reminders}
               onChange={(v) => set("reminders", v)}
             />
@@ -575,16 +576,21 @@ export function InvoiceBuilder({
 
 function Toggle({
   title,
+  hint,
   checked,
   onChange,
 }: {
   title: string
+  hint?: string
   checked: boolean
   onChange: (value: boolean) => void
 }) {
   return (
     <div className="flex min-h-14 items-center justify-between gap-4 py-3">
-      <span className="text-[15px] font-semibold">{title}</span>
+      <span className="flex min-w-0 flex-col">
+        <span className="text-[15px] font-semibold">{title}</span>
+        {hint ? <span className="text-[13px] text-text-2">{hint}</span> : null}
+      </span>
       <Switch checked={checked} onCheckedChange={onChange} label={title} />
     </div>
   )

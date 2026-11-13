@@ -478,7 +478,15 @@ const EVENT: Record<
     text: (e) =>
       `${usdUnits(String(e.detail?.amount ?? "0"))} received${e.detail?.rail === "manual" ? " by hand" : " on NEAR"}`,
   },
-  reminder: { icon: <Bell />, text: () => "Reminder sent" },
+  reminder: {
+    icon: <Bell />,
+    text: (e) => {
+      const offset = Number(e.detail?.offset ?? 0)
+      if (offset < 0) return `Reminder sent, ${-offset} days before it was due`
+      if (offset === 0) return "Reminder sent on the due date"
+      return offset >= 7 ? "Final reminder sent" : `Reminder sent, ${offset} days late`
+    },
+  },
   marked_paid: {
     icon: <HandCoins />,
     text: (e) => `Marked paid by hand${e.detail?.note ? `: ${e.detail.note}` : ""}`,

@@ -39,6 +39,7 @@ import {
   markInvited,
   monthStatement,
   oneClickToPoll,
+  ownerAddress,
   paymentsToVerify,
   payoutsToPoll,
   pendingDeliveries,
@@ -562,14 +563,10 @@ async function attachmentsFor(event: EmailEvent, email: { workspaceId: string | 
   return []
 }
 
-/** Replies to a customer or payroll email reach the business. */
+/** Replies to a customer or payroll email reach the business: its billing email, or else the owner's sign-in email. */
 async function replyToFor(workspaceId: string | null) {
   if (!workspaceId) return null
-  const [row] = await db
-    .select({ email: schema.workspaces.email })
-    .from(schema.workspaces)
-    .where(eq(schema.workspaces.id, workspaceId))
-  return row?.email ?? null
+  return ownerAddress(db, workspaceId)
 }
 
 async function drainEmails() {
@@ -584,6 +581,17 @@ async function drainEmails() {
           : undefined
       if (Date.now() - email.createdAt.getTime() > EMAIL_MAX_AGE_MS) {
         await markEmail(db, email.id, { status: "skipped", reason: "Too old to send" })
+        continue
+      }
+      if (
+        event.kind === "invoice.reminder" &&
+        invoiceId &&
+        !(await reminderTarget(db, invoiceId))
+      ) {
+        await markEmail(db, email.id, {
+          status: "skipped",
+          reason: "Paid, voided or reminders off before it went out",
+        })
         continue
       }
       if (!(await wanted(db, email))) {
@@ -630,7 +638,7 @@ const emailTimer = setInterval(
 )
 
 /** Every morning (UTC): payrolls that are due and not yet run ask their owner to approve. */
-await boss.schedule(QUEUES.payrollDue.name, "0 7 * * *", {})
+await boss.schedule(QUEUES.payrollDue.name, "0 * * * *", {})
 await boss.work(QUEUES.payrollDue.name, async () => {
   await queuePayrollDue(db)
 })

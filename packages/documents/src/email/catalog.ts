@@ -425,24 +425,48 @@ export function compose(event: EmailEvent, assets: string): EmailContent {
       const d = event.data
       const reminder = event.kind === "invoice.reminder"
       const offset = d.offset ?? 0
+      // The last step (+7 days) is the final reminder; nothing is sent after it.
+      const final = reminder && offset >= 7
+      const late = reminder && offset > 0
       const lead = !reminder
         ? `Here is invoice ${d.number} from ${d.business}.`
         : offset < 0
           ? `A reminder: ${d.number} is due on ${longDay(d.dueDate)}.`
           : offset === 0
             ? `${d.number} is due today.`
-            : `${d.number} was due on ${longDay(d.dueDate)}.`
+            : final
+              ? `${d.number} was due on ${longDay(d.dueDate)}. This is the last reminder.`
+              : `${d.number} was due on ${longDay(d.dueDate)}.`
+      const subject = !reminder
+        ? `${d.number} from ${d.business}: ${usd(d.remaining)} due ${longDay(d.dueDate)}`
+        : offset < 0
+          ? `Reminder: ${d.number} from ${d.business}, ${usd(d.remaining)} due ${longDay(d.dueDate)}`
+          : offset === 0
+            ? `${d.number} from ${d.business} is due today: ${usd(d.remaining)}`
+            : final
+              ? `Final reminder: ${d.number} from ${d.business}, ${usd(d.remaining)}`
+              : `${d.number} from ${d.business} is ${offset} days overdue: ${usd(d.remaining)}`
       return {
         ...base,
         shape: "card",
-        subject: reminder
-          ? `Reminder: ${d.number} from ${d.business}, ${usd(d.remaining)}`
-          : `${d.number} from ${d.business}: ${usd(d.remaining)} due ${longDay(d.dueDate)}`,
+        subject,
         preview: `${d.number} for ${usd(d.total)}, due ${longDay(d.dueDate)}`,
         brand: { name: d.business, logo: d.logo },
         label: `Invoice ${d.number}`,
-        hero: `${usd(d.remaining)} due ${longDay(d.dueDate)}`,
-        body: [`Hi ${d.customer},`, lead, ...(d.notes && !reminder ? [d.notes] : [])],
+        hero:
+          !reminder || offset < 0
+            ? `${usd(d.remaining)} due ${longDay(d.dueDate)}`
+            : offset === 0
+              ? `${usd(d.remaining)} due today`
+              : `${usd(d.remaining)} overdue`,
+        body: [
+          `Hi ${d.customer},`,
+          lead,
+          ...(d.notes && !reminder ? [d.notes] : []),
+          ...(late
+            ? ["Already paid? Ignore this. Reminders stop once the payment shows on NEAR."]
+            : []),
+        ],
         rows: [
           { label: "Total", value: usd(d.total) },
           ...(d.remaining !== d.total ? [{ label: "Left to pay", value: usd(d.remaining) }] : []),
