@@ -1124,6 +1124,124 @@ export const EMAIL_SAMPLES = [
       url: "/app/activity",
     },
   },
+  {
+    kind: "payroll.paid",
+    data: {
+      ...SETTLED,
+      person: "Kofi",
+      amount: "3100000000",
+      period: "Pay · 1–30 Nov 2026",
+      account: "kofi-mensah.near",
+      url: "/r/slip/sample",
+      autopilot: false,
+      contractor: true,
+    },
+  },
+  {
+    kind: "account.welcome",
+    data: {
+      business: "Studio Kaze",
+      accountId: "studio-kaze.tegata.near",
+      sandbox: false,
+      url: "/app",
+    },
+  },
+  {
+    kind: "destination.set",
+    data: {
+      business: "Studio Kaze",
+      sandbox: false,
+      person: "Mei",
+      destination: "mei.tegata.near",
+      url: "/app/people",
+    },
+  },
+  {
+    kind: "autopilot.on",
+    data: {
+      business: "Studio Kaze",
+      sandbox: false,
+      people: 3,
+      setAside: "14400000000",
+      paydays: ["2026-11-28", "2026-12-31"],
+      url: "/app/payroll",
+    },
+  },
+  { kind: "send.sent", data: { ...MOVE, title: "Send to Kofi" } },
+  { kind: "refund.sent", data: { ...MOVE, title: "Refund of Invoice INV-0004" } },
+  {
+    kind: "payin.refunded",
+    data: {
+      business: "Studio Kaze",
+      sandbox: false,
+      amount: "250000000",
+      route: "USDT on Tron",
+      title: "Design sprint · Week 2",
+      url: "/app/activity",
+    },
+  },
+  {
+    kind: "bank.paid",
+    data: {
+      ...SETTLED,
+      amount: "100000000",
+      account: "Forrest Green · Access Bank ••0031",
+      fiat: "NGN",
+      fiatAmount: "135180.00",
+      rate: "1351.80",
+      url: "/app/bank",
+    },
+  },
+  {
+    kind: "bank.failed",
+    data: {
+      ...SETTLED,
+      amount: "100000000",
+      account: "Forrest Green · Access Bank ••0031",
+      fiat: "NGN",
+      fiatAmount: "135180.00",
+      rate: "1351.80",
+      reason: "The bank turned the account down",
+      url: "/app/bank",
+    },
+  },
+  {
+    kind: "bank.received",
+    data: { ...SETTLED, amount: "1160000", fiat: "EUR", fiatAmount: "2.00", url: "/app/bank" },
+  },
+  {
+    kind: "referral.joined",
+    data: {
+      business: "Studio Kaze",
+      joined: "Northwind",
+      sandbox: false,
+      threshold: "50000000",
+      reward: "10000000",
+      url: "/app/refer",
+    },
+  },
+  {
+    kind: "referral.qualified",
+    data: {
+      business: "Studio Kaze",
+      other: "Northwind",
+      sandbox: false,
+      reward: "10000000",
+      payAt: "2026-11-15T10:00:00.000Z",
+      url: "/app/refer",
+    },
+  },
+  {
+    kind: "webhook.failing",
+    data: {
+      business: "Studio Kaze",
+      sandbox: false,
+      endpoint: "https://shop.example/webhooks/tegata",
+      event: "payment.succeeded",
+      tries: 4,
+      url: "/app/developers",
+    },
+  },
 ] as const
 
 // --- bank (/dev/flows/bank) ---------------------------------------------------------------------------------------

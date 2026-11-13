@@ -33,8 +33,9 @@ export default function EmailsGallery() {
       <div className="flex flex-col gap-1">
         <span className="display text-[30px]">Emails</span>
         <p className="text-[15px] text-muted-foreground">
-          {EMAIL_SAMPLES.length} samples of the {"~30"} kinds Tegata sends: a slip for money that
-          moved, a card for everything else. Same layout as the inbox gets.
+          {EMAIL_SAMPLES.length} samples of the {new Set(EMAIL_SAMPLES.map((e) => e.kind)).size}{" "}
+          kinds Tegata sends: a slip for money that moved, a card for everything else. Same layout
+          as the inbox gets.
         </p>
       </div>
       <div className="grid gap-6 lg:grid-cols-2">
