@@ -84,7 +84,8 @@
           "recordAudioAndroid": false,
           "barcodeScannerEnabled": true
         }
-      ]
+      ],
+      "./plugins/without-apple-sign-in.js"
     ],
     "experiments": {
       "typedRoutes": false
