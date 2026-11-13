@@ -827,7 +827,21 @@ function ChainPanel(p: PanelProps) {
               </span>
             </span>
           ) : p.quote.error ? (
-            <span className="text-[15px] font-medium text-warn">{p.quote.error}</span>
+            <span className="flex flex-wrap items-center justify-between gap-2">
+              <span className="text-[15px] font-medium text-warn">{p.quote.error}</span>
+              {route.id !== "usdc-base" && p.routes.some((r) => r.id === "usdc-base") ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    fire("tick")
+                    p.onRoute("usdc-base")
+                  }}
+                  className="press inline-flex items-center gap-1.5 rounded-full bg-card px-3 py-1.5 text-[13px] font-semibold"
+                >
+                  <Mark id="usdc" chain="base" size={16} /> Pay in USDC on Base
+                </button>
+              ) : null}
+            </span>
           ) : (
             <TextShimmer className="text-[17px]">Asking NEAR Intents…</TextShimmer>
           )}

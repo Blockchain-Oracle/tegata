@@ -5,7 +5,7 @@ import { cardQuote, publicRequest, startCardPayment } from "@tegata/services"
 import { z } from "zod"
 
 import { boss, db } from "@/lib/server/context.ts"
-import { badRequest, notFound, route } from "@/lib/server/http.ts"
+import { badRequest, clientIp, notFound, route } from "@/lib/server/http.ts"
 import { cardsOpen, transak } from "@/lib/server/transak.ts"
 
 type Params = { params: Promise<{ token: string }> }
@@ -56,7 +56,11 @@ export const POST = route(async (request, context: Params) => {
     amount: amountOf(input.amount),
     payerEmail: input.email || undefined,
     appUrl: serverEnv().APP_URL,
+    userIp: clientIp(request),
   })
-  await enqueue(await boss(), "cardPayPoll", { paymentId: payment.id }, `card-pay:${payment.id}`)
+  // Followed at once if the queue answers; the worker's sweep picks up any open card payment either way.
+  await enqueue(await boss(), "cardPayPoll", { paymentId: payment.id }, `card-pay:${payment.id}`).catch(
+    () => undefined,
+  )
   return { paymentId: payment.id, widgetUrl }
 })

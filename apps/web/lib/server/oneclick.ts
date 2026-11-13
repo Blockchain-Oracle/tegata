@@ -84,8 +84,15 @@ export async function dryQuote(route: PayerRoute, units: bigint): Promise<DryQuo
       timeEstimate: number
     }
   }
-  if (!response.ok || !body.quote)
-    throw new QuoteRefused(body.message ?? "No route for that amount right now")
+  if (!response.ok || !body.quote) {
+    // NEAR Intents words a route's floor as "Temporary swap limits: minimum swap amount is $100".
+    const floor = body.message?.match(/minimum[^$\d]*\$?\s*([\d,.]+)/i)?.[1]
+    throw new QuoteRefused(
+      floor
+        ? `${route.symbol} on ${route.chain} needs at least $${floor} right now`
+        : (body.message ?? "No route for that amount right now"),
+    )
+  }
   const quote: DryQuote = {
     route: route.id,
     amountIn: body.quote.amountIn,

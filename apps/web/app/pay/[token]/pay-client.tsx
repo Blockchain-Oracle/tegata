@@ -142,7 +142,10 @@ export function PayClient({
   const [problem, setProblem] = useState<string | null>(null)
   const [walletAccount, setWalletAccount] = useState<string | null>(null)
   const [connecting, setConnecting] = useState(false)
-  const [routeId, setRouteId] = useState(routes[0]?.id ?? "")
+  // USDC on Base first: fast, cheap and with no floor, where Tron and BNB Chain have $100 and $1,000 minimums.
+  const [routeId, setRouteId] = useState(
+    routes.find((r) => r.id === "usdc-base")?.id ?? routes[0]?.id ?? "",
+  )
   const [refundTo, setRefundTo] = useState("")
   const [receiptEmail, setReceiptEmail] = useState("")
   /** Transak's checkout, while it's open in the page. */

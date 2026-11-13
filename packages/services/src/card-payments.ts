@@ -52,7 +52,14 @@ export async function cardQuote(transak: TransakClient, amount: bigint) {
 export async function startCardPayment(
   db: Db,
   transak: TransakClient,
-  input: { token: string; amount?: bigint; payerEmail?: string; appUrl: string },
+  input: {
+    token: string
+    amount?: bigint
+    payerEmail?: string
+    appUrl: string
+    /** The payer's IP, which Transak requires for a checkout session. */
+    userIp?: string
+  },
 ) {
   const found = await publicRequest(db, input.token)
   if (!found) throw new PaymentError("not_found", "This pay link doesn't exist")
@@ -71,22 +78,25 @@ export async function startCardPayment(
   })
   const appUrl = input.appUrl.replace(/\/$/, "")
   const widgetUrl = await transak
-    .widgetUrl({
-      referrerDomain: new URL(appUrl).hostname,
-      productsAvailed: "BUY",
-      cryptoCurrencyCode: "USDC",
-      network: "near",
-      cryptoAmount: Number(payment.amount) / 1_000_000,
-      fiatCurrency: CARD_FIAT,
-      paymentMethod: "credit_debit_card",
-      walletAddress: payment.receiverId,
-      disableWalletAddressForm: true,
-      partnerOrderId: payment.id,
-      redirectURL: `${appUrl}/pay/${input.token}?card=${payment.id}`,
-      hideMenu: true,
-      themeColor: "000000",
-      ...(input.payerEmail ? { email: input.payerEmail } : {}),
-    })
+    .widgetUrl(
+      {
+        referrerDomain: new URL(appUrl).hostname,
+        productsAvailed: "BUY",
+        cryptoCurrencyCode: "USDC",
+        network: "near",
+        cryptoAmount: Number(payment.amount) / 1_000_000,
+        fiatCurrency: CARD_FIAT,
+        paymentMethod: "credit_debit_card",
+        walletAddress: payment.receiverId,
+        disableWalletAddressForm: true,
+        partnerOrderId: payment.id,
+        redirectURL: `${appUrl}/pay/${input.token}?card=${payment.id}`,
+        hideMenu: true,
+        themeColor: "000000",
+        ...(input.payerEmail ? { email: input.payerEmail } : {}),
+      },
+      { userIp: input.userIp },
+    )
     .catch(async (error) => {
       await db
         .update(payments)
