@@ -9,9 +9,8 @@ import { route } from "@/lib/server/http.ts"
 /** The owner's approval of the seal or a transfer into the treasury: stored, then relayed by the worker. */
 export const POST = route(async (request) => {
   const { user } = await requireOwner(request)
+  // Only a seal or a transfer into the treasury can be approved here, checked before anything is stored.
   const relay = await submitTreasuryAction(db(), user.id, approvalBody.parse(await request.json()))
-  if (!relay.purpose.startsWith("treasury-seal:") && !relay.purpose.startsWith("treasury-fund:"))
-    throw new Error("Not a treasury action")
   await enqueue(await boss(), "relaySend", { relayId: relay.id }, relay.id)
   return { relayId: relay.id }
 })

@@ -426,9 +426,13 @@ export async function draftFund(
   })
 }
 
-/** Store the signer's approval on a treasury action they drafted (seal, fund, vote); the caller queues the relay. */
+/** Store the owner's approval of the seal or a transfer into the treasury; the caller queues the relay. */
 export function submitTreasuryAction(db: Db, userId: string, approval: Approval) {
-  return submitRelaySignature(db, { ...approval, userId })
+  return submitRelaySignature(db, {
+    ...approval,
+    userId,
+    purposes: ["treasury-seal:", "treasury-fund:"],
+  })
 }
 
 /** Worker, before relaying a proposal or a vote: the treasury pays its own storage, so keep it some NEAR. */
@@ -466,6 +470,28 @@ const transfersOf = (rows: (typeof payRows.$inferSelect)[]) =>
 
 /** Same proposal, field for field (the chain stores what was filed; key order is ours on both sides). */
 const sameKind = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b)
+
+/** Slack over a proposal's end for the difference between Tegata's clock and NEAR's block time. */
+const CLOCK_MARGIN_MS = 10 * 60_000
+
+/** The act_proposal call in a drafted treasury action, as signed: its proposal id and action. */
+function draftedAct(draft: unknown): { id?: unknown; action?: unknown } | null {
+  const calls = (draft as { calls?: { method: string; argsJson: string }[] } | null)?.calls ?? []
+  const act = calls.find((c) => c.method === "act_proposal")
+  if (!act) return null
+  try {
+    return JSON.parse(act.argsJson) as { id?: unknown; action?: unknown }
+  } catch {
+    return null
+  }
+}
+
+function draftedProposalId(draft: unknown): number | null {
+  const id = draftedAct(draft)?.id
+  return typeof id === "number" && Number.isInteger(id) && id >= 0 ? id : null
+}
+
+const draftedAction = (draft: unknown) => draftedAct(draft)?.action
 
 /** The run as one proposal, filed with the owner's own yes in the same action. */
 export async function prepareTreasuryRun(
@@ -531,7 +557,6 @@ export async function sendRunForApproval(
     workspaceId: string
     userId: string
     runId: string
-    proposalId: number
     approval: Approval
   },
 ) {
@@ -542,16 +567,21 @@ export async function sendRunForApproval(
   if (run?.status !== "draft") throw new TeamError("wrong_state", "This run is already on its way")
   const t = await treasuryOf(db, input.workspaceId, run.network)
   if (!t) throw new TeamError("wrong_state", "The team treasury isn't ready")
-  const relay = await submitRelaySignature(db, { ...input.approval, userId: input.userId })
-  if (!relay.purpose.startsWith(`treasury-propose:${run.id}:`))
-    throw new TeamError("forbidden", "That approval is for something else")
+  const relay = await submitRelaySignature(db, {
+    ...input.approval,
+    userId: input.userId,
+    purposes: [`treasury-propose:${run.id}:`],
+  })
+  // The id the owner's own yes is cast on, read from the draft they signed: never one sent alongside it.
+  const proposalId = draftedProposalId(relay.draft)
+  if (proposalId === null) throw new TeamError("forbidden", "That approval is for something else")
   await db
     .update(payRuns)
     .set({
       status: "proposed",
       source: "treasury",
       treasuryId: t.id,
-      proposalId: input.proposalId,
+      proposalId,
       senderId: t.accountId,
       error: null,
     })
@@ -659,17 +689,23 @@ export async function submitVote(
   db: Db,
   input: { runId: string; userId: string; vote: "approve" | "reject"; approval: Approval },
 ) {
-  const relay = await submitRelaySignature(db, { ...input.approval, userId: input.userId })
-  if (!relay.purpose.startsWith(`treasury-vote:${input.runId}:`))
-    throw new TeamError("forbidden", "That approval is for something else")
+  const relay = await submitRelaySignature(db, {
+    ...input.approval,
+    userId: input.userId,
+    purposes: [`treasury-vote:${input.runId}:`],
+  })
   const voter = relay.purpose.split(":")[2] ?? ""
+  // The tally records what was signed, not what the request says was signed.
+  const action = draftedAction(relay.draft)
+  const vote =
+    action === "VoteReject" ? "reject" : action === "VoteApprove" ? "approve" : input.vote
   await db
     .insert(runVotes)
     .values({
       runId: input.runId,
       userId: input.userId,
       accountId: voter,
-      vote: input.vote,
+      vote,
       relayId: relay.id,
     })
     .onConflictDoNothing()
@@ -770,6 +806,34 @@ export async function reopenTreasuryRun(db: Db, workspaceId: string, runId: stri
     .where(and(eq(payRuns.id, runId), eq(payRuns.workspaceId, workspaceId)))
   if (!run || !["declined", "expired", "failed"].includes(run.status) || run.source !== "treasury")
     throw new TeamError("wrong_state", "This run can't be sent again")
+  // A fresh proposal for the same rows is safe only once the last one can't pay: a Failed batch can be finalized
+  // again, and an open one approved, until the treasury's voting period ends by NEAR's clock. Read it there.
+  const [t] = run.treasuryId
+    ? await db.select().from(treasuries).where(eq(treasuries.id, run.treasuryId))
+    : []
+  if (t && run.proposalId !== null) {
+    const [proposal, policy] = await Promise.all([
+      treasuryProposal(run.network, t.accountId, run.proposalId),
+      treasuryPolicy(run.network, t.accountId),
+    ])
+    if (!proposal)
+      throw new TeamError("wrong_state", "NEAR couldn't be read just now. Try again in a minute.")
+    if (proposal.status === "Approved")
+      throw new TeamError(
+        "wrong_state",
+        "The treasury approved this run on NEAR, so it can't be sent again",
+      )
+    if (!["Rejected", "Removed", "Expired"].includes(proposal.status)) {
+      const periodNs = BigInt(policy?.proposal_period ?? TREASURY.periodNs)
+      const ends =
+        Number((BigInt(proposal.submission_time) + periodNs) / NS_PER_MS) + CLOCK_MARGIN_MS
+      if (Date.now() < ends)
+        throw new TeamError(
+          "wrong_state",
+          `Its proposal on NEAR could still pay until ${new Date(ends).toISOString().slice(0, 16).replace("T", " ")} UTC. Send it again after that.`,
+        )
+    }
+  }
   await db.delete(runVotes).where(eq(runVotes.runId, run.id))
   await db
     .update(payRuns)
@@ -817,6 +881,25 @@ export async function settleTreasuryRelay(db: Db, relayId: string, operatorId: s
   }
   if (kind === "treasury-propose" && id) {
     if (relay.status === "failed" || relay.status === "expired") {
+      // "Expired" means the outcome was never seen, so the proposal may have landed after all: look on NEAR
+      // before sending the run back, or a second proposal for the same rows could pay them twice.
+      const [run] = await db.select().from(payRuns).where(eq(payRuns.id, id))
+      const [t] = run?.treasuryId
+        ? await db.select().from(treasuries).where(eq(treasuries.id, run.treasuryId))
+        : []
+      const drafted = draftedProposalId(relay.draft)
+      const landed =
+        run && t && drafted !== null
+          ? await treasuryProposal(run.network, t.accountId, drafted)
+          : null
+      if (
+        run &&
+        landed &&
+        sameKind(landed.kind, payrollKind(run.network, transfersOf(await runRows(db, run.id))))
+      ) {
+        await db.update(payRuns).set({ proposalId: drafted, error: null }).where(eq(payRuns.id, id))
+        return syncTreasuryRun(db, id, operatorId)
+      }
       await db.delete(runVotes).where(eq(runVotes.runId, id))
       await db
         .update(payRuns)

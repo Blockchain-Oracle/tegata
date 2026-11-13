@@ -108,10 +108,17 @@ export async function submitRelaySignature(
     signature?: string
     /** Or a NEAR wallet's own signed delegate action for the draft (base64 borsh). */
     signedDelegate?: string
+    /**
+     * The purposes this caller may approve (prefixes). Checked before anything is stored: a signed row is relayed by
+     * the worker's start-up sweep, so approving the wrong draft through the wrong door must never get that far.
+     */
+    purposes?: readonly string[]
   },
 ) {
   const [row] = await db.select().from(relays).where(eq(relays.id, input.relayId))
   if (!row || row.userId !== input.userId) throw new RelayError("not_found", "No such action")
+  if (input.purposes && !input.purposes.some((prefix) => row.purpose.startsWith(prefix)))
+    throw new RelayError("not_found", "That approval is for something else")
   if (row.status !== "drafted") throw new RelayError("wrong_state", "Already approved")
   let draft = row.draft as DelegateDraft
   let signature = input.signature ?? ""

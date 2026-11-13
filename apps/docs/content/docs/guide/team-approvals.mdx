@@ -34,6 +34,9 @@ running the same contract code.
   out as usual.
 - Enough declines end it as **Declined**; a proposal left open for 7 days **Expires**. Nothing moves either way, and
   the owner can send it again.
+- If the approved batch itself fails on NEAR (the treasury was short, say), nothing moves and the run shows
+  **Failed**. Any approver can still retry that same proposal on NEAR until its 7 days end, so Tegata sends it again
+  only after that: a second proposal for the same rows could otherwise pay everyone twice.
 
 Before anyone signs, their browser re-reads the action: the payroll's transfers must be exactly the rows on screen, on
 the USDC contract, on this business's treasury. A vote also names the exact proposal it approves, so it can't land on

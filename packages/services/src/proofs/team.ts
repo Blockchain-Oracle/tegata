@@ -165,7 +165,6 @@ const proposeRelay = await sendRunForApproval(db, {
   workspaceId,
   userId: owner.user.id,
   runId,
-  proposalId: proposed.proposalId,
   approval: { relayId: proposed.relayId, signature: sign(owner.key, proposed.draft) },
 })
 await topUpTreasury(operator, proposed.treasury)

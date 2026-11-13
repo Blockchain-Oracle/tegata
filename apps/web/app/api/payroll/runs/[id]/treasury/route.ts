@@ -26,7 +26,8 @@ export const POST = route(async (request, context: Params) => {
   })
 })
 
-const send = z.object({ proposalId: z.number().int().min(0), approval: approvalBody })
+// proposalId: older clients still send it; the run takes the id from the draft its owner signed.
+const send = z.object({ proposalId: z.number().int().min(0).optional(), approval: approvalBody })
 
 /** The owner signed: the run waits for its approvers (the worker files it on NEAR). */
 export const PUT = route(async (request, context: Params) => {
@@ -36,7 +37,6 @@ export const PUT = route(async (request, context: Params) => {
     workspaceId: workspace.id,
     userId: user.id,
     runId: z.uuid().parse((await context.params).id),
-    proposalId: input.proposalId,
     approval: input.approval,
   })
   await enqueue(await boss(), "relaySend", { relayId }, relayId)

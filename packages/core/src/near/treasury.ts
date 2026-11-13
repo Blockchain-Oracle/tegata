@@ -209,7 +209,11 @@ export const treasuryLastProposalId = (network: NetworkId, treasury: string) =>
 export const treasuryFactoryInfo = (network: NetworkId, treasury: string) =>
   view<{ factory_id: string; auto_update: boolean }>(network, treasury, "get_factory_info")
 export const treasuryPolicy = (network: NetworkId, treasury: string) =>
-  view<{ roles: { name: string; kind: { Group?: string[] } }[] }>(network, treasury, "get_policy")
+  view<{ roles: { name: string; kind: { Group?: string[] } }[]; proposal_period?: string }>(
+    network,
+    treasury,
+    "get_policy",
+  )
 /** NEAR it can spend on new proposals (balance less storage), yocto as a string. */
 export const treasuryAvailable = (network: NetworkId, treasury: string) =>
   view<string>(network, treasury, "get_available_amount")
