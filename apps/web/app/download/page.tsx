@@ -169,8 +169,9 @@ function Facts({ facts }: { facts: [string, string][] }) {
 export default async function DownloadPage() {
   const platform = platformOf((await headers()).get("user-agent") ?? "")
   const github = ANDROID && (await githubPublic(ANDROID.github)) ? ANDROID.github : null
-  // The public link is always offered, like Kawase's (Abu, 13 Nov: "just use the normal link"); while Apple's review
-  // runs, the card says so in one line, and the same link starts taking testers the moment it passes.
+  // The public link is always offered, like Kawase's (Abu, 13 Nov: "just use the normal link"). Until Apple lets testers
+  // in, its join page says Not Found, so the card says the beta isn't open yet (not "in review": that is Apple's state
+  // to report, and it may not be) and points to Tegata in Safari; the same link works the moment Apple opens it.
   const testflight = isTestflightLink(IOS.testflight) ? IOS.testflight : null
   const testersIn = testflight ? await testflightOpen(testflight) : false
 
@@ -180,7 +181,7 @@ export default async function DownloadPage() {
       id="iphone"
       title="iPhone"
       glyph={<AppleGlyph />}
-      state={testersIn ? "Public beta on TestFlight" : "Public beta · in Apple's review"}
+      state={testersIn ? "Public beta on TestFlight" : "Public beta · not open yet"}
       mine={platform === "ios"}
       qr={
         <QrPlate
@@ -204,8 +205,15 @@ export default async function DownloadPage() {
           />
           {testersIn ? null : (
             <p className="text-[14px] text-muted-foreground">
-              Apple is reviewing the beta. If TestFlight says it isn&apos;t taking testers yet, the
-              same link works as soon as it does.
+              Apple hasn&apos;t opened the beta to testers yet, so the link may say Not Found. It
+              works the moment Apple does.{" "}
+              <Link
+                href="/signin"
+                className="font-semibold text-foreground underline-offset-4 hover:underline"
+              >
+                Use Tegata in Safari
+              </Link>{" "}
+              meanwhile.
             </p>
           )}
           <a href={testflight} className={cn(buttonVariants({ size: "lg" }), "mt-auto")}>
