@@ -7,7 +7,8 @@ import { and, eq } from "drizzle-orm"
 
 const { events, webhookEndpoints, webhookDeliveries, payments } = schema
 
-type Conn = Db | Parameters<Parameters<Db["transaction"]>[0]>[0]
+/** A database handle or an open transaction. */
+export type Conn = Db | Parameters<Parameters<Db["transaction"]>[0]>[0]
 
 export const EVENT_TYPES = [
   "checkout.session.completed",

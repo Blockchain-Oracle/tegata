@@ -8,11 +8,12 @@ import type { DelegateDraft } from "@tegata/core/near"
 import { useState } from "react"
 
 import { type ActivityFilter, ActivityView } from "@/components/books/activity-view"
-import { RefundSheet } from "@/components/books/refund-sheet"
+import { type RefundDone, RefundSheet } from "@/components/books/refund-sheet"
+import { useNetwork } from "@/hooks/use-network"
 import { useSigner } from "@/hooks/use-signer"
 import { ApiError, api, download } from "@/lib/client/api"
 import { signAndFollow } from "@/lib/client/sign-relay"
-import type { BooksMonth, MovementView } from "@/lib/client/types"
+import type { BooksMonth, MovementView, PayoutView } from "@/lib/client/types"
 import { fire } from "@/lib/feedback"
 
 const shift = (month: string, by: number) => {
@@ -24,6 +25,7 @@ const shift = (month: string, by: number) => {
 export default function ActivityPage() {
   const queryClient = useQueryClient()
   const signer = useSigner()
+  const network = useNetwork()
   const [month, setMonth] = useState<string | null>(null)
   const [filter, setFilter] = useState<ActivityFilter>("all")
   const [query, setQuery] = useState("")
@@ -31,7 +33,7 @@ export default function ActivityPage() {
   const [refunding, setRefunding] = useState<MovementView | null>(null)
   const [busy, setBusy] = useState(false)
   const [problem, setProblem] = useState<string | null>(null)
-  const [done, setDone] = useState<{ relayId: string; explorerUrl: string | null } | null>(null)
+  const [done, setDone] = useState<RefundDone | null>(null)
 
   const books = useQuery({
     queryKey: ["books", month],
@@ -60,24 +62,35 @@ export default function ActivityPage() {
     setBusy(true)
     setProblem(null)
     try {
-      const relay = await api<{ relayId: string; draft: DelegateDraft }>(
-        `/api/payments/${m.refundable.paymentId}/refund`,
-        { body: { amount } },
-      )
+      const relay = await api<{
+        relayId: string
+        draft: DelegateDraft
+        /** Paid from another chain: the refund goes to this NEAR Intents deposit address. */
+        depositAddress?: string
+        payout?: PayoutView
+      }>(`/api/payments/${m.refundable.paymentId}/refund`, { body: { amount } })
       const units = (
         BigInt(Math.round(Number.parseFloat(amount.replaceAll(",", "")) * 100)) * 10_000n
       ).toString()
+      // Exactly this many USDC: to the payer's NEAR account with the refund memo, or (another chain) to the deposit
+      // address NEAR Intents quoted for the payer's own address, with no memo.
       const status = await signAndFollow(signer.approve, relay, {
-        receiverId: NETWORKS.testnet.usdc,
+        receiverId: NETWORKS[network].usdc,
         method: "ft_transfer",
-        args: {
-          receiver_id: m.refundable.payer,
-          amount: units,
-          memo: `tegata:refund:${m.refundable.paymentId}`,
-        },
+        args: relay.depositAddress
+          ? { receiver_id: relay.depositAddress, amount: units, memo: undefined }
+          : {
+              receiver_id: m.refundable.payer,
+              amount: units,
+              memo: `tegata:refund:${m.refundable.paymentId}`,
+            },
+      })
+      setDone({
+        relayId: relay.relayId,
+        explorerUrl: status.explorerUrl,
+        payout: relay.payout ?? null,
       })
       fire("confirm", { cue: "sent" })
-      setDone({ relayId: relay.relayId, explorerUrl: status.explorerUrl })
       void queryClient.invalidateQueries({ queryKey: ["books"] })
       void queryClient.invalidateQueries({ queryKey: ["me"] })
     } catch (error) {

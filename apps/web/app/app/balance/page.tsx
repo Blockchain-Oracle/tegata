@@ -45,6 +45,7 @@ export default function BalancePage() {
       onReconcile={() => void reconcile.refetch()}
       onReceive={openReceive}
       onTestDollars={account?.network === "testnet" ? testDollars.add : undefined}
+      live={network === "mainnet"}
     />
   )
 }

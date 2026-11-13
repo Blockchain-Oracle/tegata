@@ -8,7 +8,7 @@ import { and, eq, like, or } from "drizzle-orm"
 
 import { BUSINESS_HEADER, headerLogo } from "./payments.ts"
 
-const { relays, referrals, referralPayouts, workspaces, accounts } = schema
+const { relays, referrals, referralPayouts, workspaces, accounts, payouts } = schema
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
@@ -20,9 +20,31 @@ export async function sendReceipt(db: Db, id: string) {
     .from(relays)
     .innerJoin(workspaces, eq(workspaces.ownerId, relays.userId))
     .where(
-      and(eq(relays.id, id), or(like(relays.purpose, "send:%"), like(relays.purpose, "refund:%"))),
+      and(
+        eq(relays.id, id),
+        or(
+          like(relays.purpose, "send:%"),
+          like(relays.purpose, "refund:%"),
+          like(relays.purpose, "payout:%"),
+        ),
+      ),
     )
   if (!row || ["drafted", "failed", "expired"].includes(row.relay.status)) return undefined
+  if (row.relay.purpose.startsWith("payout:")) {
+    // To another chain: the USDC went to a NEAR Intents deposit address; the receipt names the real recipient.
+    const [payout] = await db.select().from(payouts).where(eq(payouts.relayId, row.relay.id))
+    if (!payout) return undefined
+    return {
+      relay: row.relay,
+      business: row.business,
+      logo: headerLogo(row),
+      to: payout.recipient,
+      amount: payout.amount,
+      settled: payout.status === "delivered",
+      refund: payout.kind === "refund",
+      payout,
+    }
+  }
   const call = (row.relay.draft as DelegateDraft).calls[0]
   if (call?.method !== "ft_transfer") return undefined
   const args = JSON.parse(call.argsJson) as { receiver_id: string; amount: string }
@@ -34,6 +56,7 @@ export async function sendReceipt(db: Db, id: string) {
     amount: BigInt(args.amount),
     settled: row.relay.status === "success",
     refund: row.relay.purpose.startsWith("refund:"),
+    payout: null,
   }
 }
 

@@ -3,7 +3,7 @@
 // operator registers that address on USDC in its own transaction (a deposit above 1 yocto never rides inside a user's
 // relayed action), the business's gas-free action sends the USDC there, and the worker follows 1Click to delivery.
 import { NETWORKS } from "@tegata/config"
-import { ftTransfer, isRegistered, type Operator } from "@tegata/core/near"
+import { ftTransfer, isRegistered, type Operator, usdcBalance } from "@tegata/core/near"
 import {
   OneClickError,
   type QuoteRequest,
@@ -14,11 +14,12 @@ import {
   verifyQuote,
 } from "@tegata/core/oneclick"
 import { type Db, schema } from "@tegata/db"
-import { and, eq, inArray } from "drizzle-orm"
+import { and, eq, inArray, sql } from "drizzle-orm"
 
+import { applyRefund } from "./books.ts"
 import { createRelayDraft } from "./relays.ts"
 
-const { payouts, relays } = schema
+const { payouts, relays, payments, requests, accounts } = schema
 
 /** Long enough to review and approve; 1Click refunds to the business if nothing arrives by then. */
 const PAYOUT_WINDOW_MS = 30 * 60_000
@@ -29,7 +30,7 @@ const OPEN = ["sending", "processing"] as const
 
 export class PayoutError extends Error {
   constructor(
-    readonly code: "no_route" | "not_live" | "not_found" | "wrong_state",
+    readonly code: "no_route" | "not_live" | "not_found" | "wrong_state" | "bad_input",
     message: string,
   ) {
     super(message)
@@ -251,15 +252,26 @@ export async function pollPayout(db: Db, id: string, apiKey?: string): Promise<P
   if (!status) return "pending"
   const destination = status.swapDetails?.destinationChainTxHashes?.[0]?.hash ?? null
   if (status.status === "SUCCESS") {
-    await db
-      .update(payouts)
-      .set({
-        status: "delivered",
-        swapStatus: status.status,
-        destinationTx: destination,
-        deliveredAt: new Date(),
-      })
-      .where(and(eq(payouts.id, id), inArray(payouts.status, [...OPEN])))
+    await db.transaction(async (tx) => {
+      const [delivered] = await tx
+        .update(payouts)
+        .set({
+          status: "delivered",
+          swapStatus: status.status,
+          destinationTx: destination,
+          deliveredAt: new Date(),
+        })
+        .where(and(eq(payouts.id, id), inArray(payouts.status, [...OPEN])))
+        .returning()
+      // A refund to the payer's chain counts against the payment once it has arrived, not when it left.
+      if (delivered?.kind === "refund" && delivered.reference)
+        await applyRefund(tx, {
+          paymentId: delivered.reference,
+          amount: delivered.amount,
+          txHash: delivered.txHash,
+          dedupe: `payout:${delivered.id}`,
+        })
+    })
     return "delivered"
   }
   if (status.status === "REFUNDED" || status.status === "FAILED") {
@@ -284,6 +296,76 @@ export async function pollPayout(db: Db, id: string, apiKey?: string): Promise<P
     })
     .where(and(eq(payouts.id, id), inArray(payouts.status, [...OPEN])))
   return "pending"
+}
+
+/**
+ * Refund a payment that came from another chain: the USDC goes back through NEAR Intents to the payer's own address,
+ * in the coin they sent. `describe` names the payer's coin and chain from its 1Click asset id.
+ */
+export async function draftChainRefund(
+  db: Db,
+  input: {
+    workspaceId: string
+    userId: string
+    publicKey: string
+    paymentId: string
+    amount: bigint
+  },
+  describe: (assetId: string) => Promise<{ symbol: string; chain: string; stable: boolean } | null>,
+  apiKey?: string,
+) {
+  const [row] = await db
+    .select({ payment: payments, workspaceId: requests.workspaceId })
+    .from(payments)
+    .innerJoin(requests, eq(requests.id, payments.requestId))
+    .where(eq(payments.id, input.paymentId))
+  if (row?.workspaceId !== input.workspaceId) throw new PayoutError("not_found", "No such payment")
+  const { payment } = row
+  if (payment.rail !== "oneclick" || !payment.refundTo || !payment.assetIn)
+    throw new PayoutError("wrong_state", "This payment didn't come from another chain")
+  if (payment.status !== "succeeded")
+    throw new PayoutError("wrong_state", "Only a received payment can be refunded")
+  // What's left, less refunds already on their way.
+  const [inFlight] = await db
+    .select({ total: sql<string>`coalesce(sum(${payouts.amount}), 0)` })
+    .from(payouts)
+    .where(
+      and(
+        eq(payouts.kind, "refund"),
+        eq(payouts.reference, payment.id),
+        inArray(payouts.status, ["drafted", "sending", "processing"]),
+      ),
+    )
+  const left = payment.amount - payment.refunded - BigInt(inFlight?.total ?? "0")
+  if (input.amount <= 0n || input.amount > left)
+    throw new PayoutError("bad_input", `Refund up to ${(Number(left) / 1e6).toFixed(2)}`)
+  const route = await describe(payment.assetIn)
+  if (!route) throw new PayoutError("no_route", "The payer's coin isn't offered right now")
+  const [owner] = await db
+    .select()
+    .from(accounts)
+    .where(and(eq(accounts.userId, input.userId), eq(accounts.network, "mainnet")))
+  if (!owner?.readyAt) throw new PayoutError("not_live", "Your Live account is still opening")
+  if ((await usdcBalance("mainnet", owner.accountId)) < input.amount)
+    throw new PayoutError("bad_input", "Not enough dollars in your balance for this refund")
+  return createPayout(
+    db,
+    {
+      workspaceId: input.workspaceId,
+      userId: input.userId,
+      senderId: owner.accountId,
+      publicKey: input.publicKey,
+      kind: "refund",
+      amount: input.amount,
+      destinationAsset: payment.assetIn,
+      symbol: route.symbol,
+      chain: route.chain,
+      recipient: payment.refundTo,
+      stable: route.stable,
+      reference: payment.id,
+    },
+    apiKey,
+  )
 }
 
 export async function getPayout(db: Db, workspaceId: string, id: string) {

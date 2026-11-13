@@ -4,6 +4,8 @@ import { explorerTx } from "@tegata/core/near"
 import { receiptByToken, rewardReceipt, sendReceipt } from "@tegata/services"
 
 import type { ReceiptView } from "@/lib/client/types"
+import { chainTxUrl, routeOf } from "@/lib/routes"
+
 import { db } from "./context.ts"
 import { routeOfAsset } from "./oneclick.ts"
 
@@ -43,13 +45,14 @@ async function viaOf(assetId: string): Promise<string | null> {
 export async function sendReceiptView(id: string): Promise<ReceiptView | null> {
   const row = await sendReceipt(db(), id)
   if (!row) return null
-  const { relay } = row
+  const { relay, payout } = row
+  const route = payout ? routeOf(payout.symbol, payout.chain) : null
   return {
     kind: "send",
     number: null,
     business: row.business,
     logo: row.logo,
-    title: row.refund ? "Refund" : "One-off payment",
+    title: row.refund ? "Refund" : payout ? "Payment to another chain" : "One-off payment",
     amount: row.amount.toString(),
     method: "tegata",
     payer: relay.senderId,
@@ -57,10 +60,22 @@ export async function sendReceiptView(id: string): Promise<ReceiptView | null> {
     receiverName: row.to,
     receiverId: row.to,
     network: relay.network,
-    settledAt: row.settled ? relay.updatedAt.toISOString() : null,
+    settledAt: row.settled ? (payout?.deliveredAt ?? relay.updatedAt).toISOString() : null,
     feeBy: "tegata",
     txHash: relay.txHash,
     explorerUrl: relay.txHash ? explorerTx(relay.network, relay.txHash) : null,
+    deliveredAs: payout
+      ? {
+          route: `${payout.symbol} on ${payout.chain}`,
+          coin: route?.coin ?? "unknown",
+          chainMark: route?.chainMark ?? "unknown",
+          amount: payout.amountOutFormatted,
+          txUrl:
+            payout.destinationTx && route
+              ? chainTxUrl(route.chainMark, payout.destinationTx)
+              : null,
+        }
+      : null,
   }
 }
 

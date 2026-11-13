@@ -25,6 +25,10 @@ const TERMINAL: RelayStatus["status"][] = ["success", "failed", "expired"]
 export default function SendPage() {
   const network = useNetwork()
   const [mode, setMode] = useState<"near" | "chain">("near")
+  // Balance's "Move out" in Live opens straight on another chain.
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get("mode") === "chain") setMode("chain")
+  }, [])
   // Live only: NEAR Intents has no testnet, so Sandbox sends stay on NEAR.
   const switcher =
     network === "mainnet" ? (

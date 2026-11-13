@@ -701,7 +701,14 @@ export const SAMPLE_BOOKS: BooksMonth = {
       counterpartyAccount: "northwind.testnet",
       at: "2026-11-12T17:30:00.000Z",
       url: "/dev/flows/pay",
-      refundable: { paymentId: "p1", left: "1250000000", payer: "northwind.testnet" },
+      refundable: {
+        paymentId: "p1",
+        left: "1250000000",
+        payer: "northwind.testnet",
+        rail: "near_wallet",
+        assetIn: null,
+        route: null,
+      },
     }),
     movement({
       id: "b0000000-0000-4000-8000-000000000002",
@@ -740,10 +747,18 @@ export const SAMPLE_BOOKS: BooksMonth = {
       direction: "in",
       amount: "2752500000",
       title: "Logo design",
-      counterpartyAccount: "hikari.testnet",
+      counterpartyAccount: "TQn9Y2khEsLJW1ChVWFMSMeRDow5KcbLSE",
       at: "2026-11-11T14:00:00.000Z",
       refunded: "240000000",
-      refundable: { paymentId: "p2", left: "2512500000", payer: "hikari.testnet" },
+      // Paid from another chain: the refund goes back in USDT on Tron through NEAR Intents.
+      refundable: {
+        paymentId: "p2",
+        left: "2512500000",
+        payer: "TQn9Y2khEsLJW1ChVWFMSMeRDow5KcbLSE",
+        rail: "oneclick",
+        assetIn: "nep141:tron-d28a265909efecdcee7c5028585214ea0b96f015.omft.near",
+        route: { id: "usdt-tron", symbol: "USDT", chain: "Tron", coin: "usdt", chainMark: "tron" },
+      },
     }),
     movement({
       id: "b0000000-0000-4000-8000-000000000006",

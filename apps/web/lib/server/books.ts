@@ -16,6 +16,7 @@ import type { BooksMonth, MovementView } from "@/lib/client/types"
 
 import { db } from "./context.ts"
 import { badRequest } from "./http.ts"
+import { routeOfAsset } from "./oneclick.ts"
 
 const MONTH = /^\d{4}-(0[1-9]|1[0-2])$/
 
@@ -47,8 +48,28 @@ const view = (m: Movement): MovementView => ({
   url: m.url,
   counted: m.counted,
   refunded: m.refunded.toString(),
-  refundable: m.refundable && { ...m.refundable, left: m.refundable.left.toString() },
+  refundable: m.refundable && {
+    ...m.refundable,
+    left: m.refundable.left.toString(),
+    route: null,
+  },
 })
+
+/** A refund to another chain names the payer's coin and chain, read from 1Click's token list. */
+async function withRoutes(list: MovementView[]): Promise<MovementView[]> {
+  return Promise.all(
+    list.map(async (m) => {
+      if (m.refundable?.rail !== "oneclick" || !m.refundable.assetIn) return m
+      const found = await routeOfAsset(m.refundable.assetIn).catch(() => null)
+      if (!found) return { ...m, refundable: null }
+      const { id, symbol, chain, coin, chainMark } = found.route
+      return {
+        ...m,
+        refundable: { ...m.refundable, route: { id, symbol, chain, coin, chainMark } },
+      }
+    }),
+  )
+}
 
 export async function monthOf(
   user: { id: string },
@@ -81,7 +102,7 @@ export async function booksView(
     moneyIn: t.moneyIn.toString(),
     moneyOut: t.moneyOut.toString(),
     net: t.net.toString(),
-    movements: list.map(view),
+    movements: await withRoutes(list.map(view)),
   }
 }
 

@@ -32,6 +32,7 @@ export function BalanceView({
   onReconcile,
   onReceive,
   onTestDollars,
+  live = false,
 }: {
   /** USDC base units on NEAR, or null while loading. */
   balance: string | null
@@ -43,6 +44,8 @@ export function BalanceView({
   onReconcile: () => void
   onReceive: () => void
   onTestDollars?: () => void
+  /** Live: moving out reaches any chain through NEAR Intents. */
+  live?: boolean
 }) {
   const hold = (balance === null ? 0n : BigInt(balance)) + BigInt(setAside)
   return (
@@ -70,7 +73,11 @@ export function BalanceView({
           </div>
           <div className="flex gap-6">
             <StageAction label="Add" icon={<ArrowDownLeft />} onClick={onReceive} />
-            <StageAction label="Move out" icon={<ArrowUpRight />} href="/app/send" />
+            <StageAction
+              label="Move out"
+              icon={<ArrowUpRight />}
+              href={live ? "/app/send?mode=chain" : "/app/send"}
+            />
             {onTestDollars ? (
               <StageAction label="Test $" icon={<Plus />} onClick={onTestDollars} />
             ) : null}
@@ -81,7 +88,9 @@ export function BalanceView({
         </div>
       </Stage>
       <p className="text-detail text-muted-foreground">
-        Adding from or moving to another chain comes with Live: NEAR Intents has no testnet.
+        {live
+          ? "Move out sends your dollars to any chain, converted by NEAR Intents."
+          : "Adding from or moving to another chain comes with Live: NEAR Intents has no testnet."}
       </p>
 
       <section className="flex flex-col gap-3 rounded-[24px] bg-card p-5">

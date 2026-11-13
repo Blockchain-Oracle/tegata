@@ -152,11 +152,44 @@ export function ReceiptView({ receipt, token }: { receipt: Receipt; token: strin
                   {receipt.via ? `${receipt.via} → USDC on NEAR` : METHOD_WORD[receipt.method]}
                 </span>
               </Row>
+              {receipt.deliveredAs ? (
+                <Row label="Delivered as">
+                  <span className="inline-flex items-center gap-1.5">
+                    <Mark
+                      id={receipt.deliveredAs.coin}
+                      chain={receipt.deliveredAs.chainMark}
+                      size={18}
+                    />
+                    {receipt.deliveredAs.amount
+                      ? `${receipt.deliveredAs.amount} ${receipt.deliveredAs.route}`
+                      : receipt.deliveredAs.route}
+                  </span>
+                </Row>
+              ) : null}
+              {receipt.deliveredAs ? (
+                <Row label="Converted by">
+                  <span className="inline-flex items-center gap-1.5">
+                    <Mark id="intents" size={18} /> NEAR Intents
+                  </span>
+                </Row>
+              ) : null}
               <Row label="Settled">{settled}</Row>
               {receipt.feeBy ? <Row label="Network fee">{FEE_WORD[receipt.feeBy]}</Row> : null}
               {receipt.txHash ? (
                 <Row label="Transaction">
                   <TxLink hash={receipt.txHash} network={receipt.network} className="text-[13px]" />
+                </Row>
+              ) : null}
+              {receipt.deliveredAs?.txUrl ? (
+                <Row label={`On ${receipt.deliveredAs.route.split(" on ")[1] ?? "their chain"}`}>
+                  <a
+                    href={receipt.deliveredAs.txUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-1 text-[13px] text-[#B23700] hover:underline"
+                  >
+                    Delivery transaction <ExternalLink className="size-3.5" />
+                  </a>
                 </Row>
               ) : null}
             </dl>

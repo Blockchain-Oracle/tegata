@@ -260,6 +260,14 @@ export interface ReceiptView {
   refunded?: string | null
   /** Live from another chain: the coin and chain it was paid in, e.g. "USDT on Tron". */
   via?: string | null
+  /** Live to another chain: what NEAR Intents delivered, where, and that chain's transaction. */
+  deliveredAs?: {
+    route: string
+    coin: string
+    chainMark: string
+    amount: string | null
+    txUrl: string | null
+  } | null
 }
 
 export interface Customer {
@@ -629,7 +637,16 @@ export interface MovementView {
   /** False for an autopilot payroll: shown, not totalled. */
   counted: boolean
   refunded: string
-  refundable: { paymentId: string; left: string; payer: string } | null
+  refundable: {
+    paymentId: string
+    left: string
+    /** The NEAR account that paid, or the payer's own address on their chain. */
+    payer: string
+    rail: "tegata" | "near_wallet" | "oneclick"
+    assetIn: string | null
+    /** Paid from another chain: the coin and chain the refund goes back in. */
+    route: { id: string; symbol: string; chain: string; coin: string; chainMark: string } | null
+  } | null
 }
 
 export interface BooksMonth {
