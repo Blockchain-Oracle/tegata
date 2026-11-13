@@ -22,7 +22,6 @@ import {
   findAssociatedTokenPda,
   getCreateAssociatedTokenIdempotentInstructionAsync,
   getTransferCheckedInstruction,
-  TOKEN_PROGRAM_ADDRESS,
 } from "@solana-program/token"
 
 export const SOLANA_DEVNET = {
@@ -87,24 +86,29 @@ export async function sendToken(input: {
   const owner = address(input.to)
   const source = balances.tokenAccount
   if (!source) throw new SolanaError("Tegata's Solana test wallet has no test USDC account")
-  const [destination] = await findAssociatedTokenPda({
-    mint,
-    owner,
-    tokenProgram: TOKEN_PROGRAM_ADDRESS,
-  })
+  // The mint's owner is its token program: classic SPL Token or Token-2022 (Noah's test USDC is Token-2022). The
+  // account derivation, the account creation and the transfer all go to that program.
+  const { value: mintAccount } = await rpc.getAccountInfo(mint, { encoding: "base64" }).send()
+  if (!mintAccount) throw new SolanaError("That token doesn't exist on Solana devnet")
+  const tokenProgram = mintAccount.owner
+  const [destination] = await findAssociatedTokenPda({ mint, owner, tokenProgram })
   const create = await getCreateAssociatedTokenIdempotentInstructionAsync({
     payer: signer,
     owner,
     mint,
+    tokenProgram,
   })
-  const transfer = getTransferCheckedInstruction({
-    source,
-    mint,
-    destination,
-    authority: signer,
-    amount: input.amount,
-    decimals: input.decimals,
-  })
+  const transfer = getTransferCheckedInstruction(
+    {
+      source: address(source),
+      mint,
+      destination,
+      authority: signer,
+      amount: input.amount,
+      decimals: input.decimals,
+    },
+    { programAddress: tokenProgram },
+  )
   const { value: blockhash } = await rpc.getLatestBlockhash().send()
   const message = pipe(
     createTransactionMessage({ version: 0 }),
