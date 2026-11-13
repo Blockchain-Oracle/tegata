@@ -196,3 +196,9 @@ export function route<Args extends unknown[]>(
 
 const bigintToString = (_key: string, value: unknown) =>
   typeof value === "bigint" ? value.toString() : value
+
+/** The visitor's IP as the proxy in front of the app saw it (first X-Forwarded-For hop), for partners that need it. */
+export function clientIp(request: Request): string {
+  const forwarded = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim()
+  return forwarded || request.headers.get("x-real-ip")?.trim() || "127.0.0.1"
+}

@@ -52,7 +52,8 @@ export interface TransakOrder {
 export interface TransakClient {
   env: TransakEnv
   apiKey: string
-  widgetUrl(params: Record<string, unknown>): Promise<string>
+  /** `userIp`: the payer's own IP, which Transak requires on every checkout session (x-user-ip). */
+  widgetUrl(params: Record<string, unknown>, options?: { userIp?: string }): Promise<string>
   order(orderId: string): Promise<TransakOrder>
   quote(input: { cryptoAmount: number }): Promise<{ fiatAmount: number; fee: number; fiat: string }>
 }
@@ -117,10 +118,14 @@ export function transakClient(input: {
     env: input.env,
     apiKey: input.apiKey,
     /** A single-use widget URL (five minutes) with everything but the card locked. */
-    async widgetUrl(params) {
+    async widgetUrl(params, options) {
       const data = await request<{ widgetUrl: string }>(`${base.gateway}/api/v2/auth/session`, {
         method: "POST",
-        headers: { "access-token": await accessToken() },
+        headers: {
+          "access-token": await accessToken(),
+          "x-api-key": input.apiKey,
+          ...(options?.userIp ? { "x-user-ip": options.userIp } : {}),
+        },
         body: JSON.stringify({ widgetParams: { apiKey: input.apiKey, ...params } }),
       })
       if (!data.widgetUrl) throw new TransakError("Transak didn't return a checkout", 502)
