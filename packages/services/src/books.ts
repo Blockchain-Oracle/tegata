@@ -77,6 +77,29 @@ export interface Movement {
     assetIn: string | null
   } | null
   refunded: bigint
+  /** A payment in: how it was paid, and (through NEAR Intents) the 1Click asset the payer sent, for its marks. */
+  rail?: "tegata" | "near_wallet" | "oneclick" | "manual" | null
+  assetIn?: string | null
+  /** A bank movement: the local currency and amount ("NGN", "26765.50"). */
+  fiat?: string | null
+  fiatAmount?: string | null
+}
+
+/** "₦26,765.50": local money with its own sign, for titles in Activity, the CSV and the statement. */
+function fiatText(fiat: string, amount: string) {
+  try {
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: fiat,
+      currencyDisplay: "narrowSymbol",
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })
+      .format(Number(amount))
+      .replace(/^([^\d\s-]+)\s+/, "$1")
+  } catch {
+    return `${amount} ${fiat}`
+  }
 }
 
 const SPONSORED = ["signed", "sent", "unknown", "success"] as const
@@ -276,6 +299,8 @@ export async function movements(
       status: "done",
       txHash: payment.txHash,
       url: receiptToken ? `/r/${receiptToken}` : null,
+      rail: payment.rail,
+      assetIn: payment.assetIn,
       refunded: payment.refunded,
       refundable:
         (payment.rail === "tegata" || payment.rail === "near_wallet") && payment.payer && left > 0n
@@ -320,7 +345,9 @@ export async function movements(
       direction: "out",
       at: payout.createdAt,
       amount: payout.amount,
-      title: `To ${label} (${payout.fiatAmount} ${payout.fiat})`,
+      title: `To ${label} · ${fiatText(payout.fiat, payout.fiatAmount)}`,
+      fiat: payout.fiat,
+      fiatAmount: payout.fiatAmount,
       counterparty: label,
       counterpartyAccount: null,
       // Done once Noah paid the bank; a failed one was returned to the balance.
@@ -337,7 +364,9 @@ export async function movements(
       direction: "in",
       at: deposit.createdAt,
       amount: deposit.amount,
-      title: `Bank transfer (${deposit.fiatAmount} ${deposit.fiat})`,
+      title: `Bank transfer · ${fiatText(deposit.fiat, deposit.fiatAmount)}`,
+      fiat: deposit.fiat,
+      fiatAmount: deposit.fiatAmount,
       counterparty: "Bank transfer",
       counterpartyAccount: null,
       status:

@@ -64,6 +64,8 @@ export const GET = route(async (request) => {
       title,
       amount: payment.amount,
       status: payment.status,
+      rail: payment.rail,
+      assetIn: payment.assetIn,
       receiptUrl: receiptToken ? `/r/${receiptToken}` : null,
       at: (payment.settledAt ?? payment.createdAt).toISOString(),
     })),

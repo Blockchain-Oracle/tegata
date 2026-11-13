@@ -123,6 +123,9 @@ export interface ActivityItem {
   /** Its receipt: every movement opens one first, and the receipt links to NEAR. Null until there is one. */
   receiptUrl: string | null
   at: string
+  /** A payment in: how it was paid, and the 1Click asset a payment from another chain came in. */
+  rail?: PaymentRail | null
+  assetIn?: string | null
 }
 
 export interface PayLink {
@@ -707,6 +710,12 @@ export interface MovementView {
   /** False for an autopilot payroll: shown, not totalled. */
   counted: boolean
   refunded: string
+  /** A payment in: how it was paid, and the 1Click asset a payment from another chain came in. */
+  rail?: PaymentRail | null
+  assetIn?: string | null
+  /** A bank movement: its local currency and amount. */
+  fiat?: string | null
+  fiatAmount?: string | null
   refundable: {
     paymentId: string
     left: string

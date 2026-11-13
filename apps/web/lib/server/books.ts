@@ -41,6 +41,10 @@ const view = (m: Movement): MovementView => ({
   url: m.url,
   counted: m.counted,
   refunded: m.refunded.toString(),
+  rail: m.rail ?? null,
+  assetIn: m.assetIn ?? null,
+  fiat: m.fiat ?? null,
+  fiatAmount: m.fiatAmount ?? null,
   refundable: m.refundable && {
     ...m.refundable,
     left: m.refundable.left.toString(),
