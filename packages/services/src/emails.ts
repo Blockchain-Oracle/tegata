@@ -932,3 +932,70 @@ export async function queueReferralsQualified(db: Db) {
     }
   }
 }
+
+// --- bank ----------------------------------------------------------------------------------------------------------
+
+/** A withdrawal to a bank finished: paid (with what the account received), or failed and returned. */
+export async function queueBankPayoutEmail(db: Db, payoutId: string) {
+  const [row] = await db
+    .select({ payout: schema.bankPayouts, label: schema.bankPayoutAccounts.label })
+    .from(schema.bankPayouts)
+    .innerJoin(
+      schema.bankPayoutAccounts,
+      eq(schema.bankPayoutAccounts.id, schema.bankPayouts.payoutAccountId),
+    )
+    .where(eq(schema.bankPayouts.id, payoutId))
+  if (!row || (row.payout.status !== "paid" && row.payout.status !== "failed")) return
+  const workspace = await workspaceOf(db, row.payout.workspaceId)
+  if (!workspace) return
+  const paid = row.payout.status === "paid"
+  await queueEmail(db, {
+    event: {
+      kind: paid ? "bank.paid" : "bank.failed",
+      data: {
+        ...moveBase(
+          workspace,
+          row.payout.network,
+          row.payout.paidAt ?? row.payout.updatedAt,
+          row.payout.nearTx,
+        ),
+        amount: row.payout.amount.toString(),
+        account: row.label,
+        fiat: row.payout.fiat,
+        fiatAmount: row.payout.fiatAmount,
+        rate: row.payout.rate,
+        reason: row.payout.error,
+        url: "/app/bank",
+      },
+    },
+    to: await ownerAddress(db, workspace.id),
+    dedupe: `bank.${row.payout.status}:${row.payout.id}`,
+    workspaceId: workspace.id,
+  })
+}
+
+/** Money that arrived by bank transfer was credited to the business's USDC on NEAR. */
+export async function queueBankDepositEmail(db: Db, depositId: string) {
+  const [deposit] = await db
+    .select()
+    .from(schema.bankDeposits)
+    .where(eq(schema.bankDeposits.id, depositId))
+  if (deposit?.status !== "credited") return
+  const workspace = await workspaceOf(db, deposit.workspaceId)
+  if (!workspace) return
+  await queueEmail(db, {
+    event: {
+      kind: "bank.received",
+      data: {
+        ...moveBase(workspace, deposit.network, deposit.updatedAt, deposit.creditTx),
+        amount: deposit.amount.toString(),
+        fiat: deposit.fiat,
+        fiatAmount: deposit.fiatAmount,
+        url: "/app/bank",
+      },
+    },
+    to: await ownerAddress(db, workspace.id),
+    dedupe: `bank.received:${deposit.id}`,
+    workspaceId: workspace.id,
+  })
+}

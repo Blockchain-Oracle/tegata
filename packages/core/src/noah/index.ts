@@ -39,7 +39,13 @@ export function noahClient(apiKey: string, base = NOAH_SANDBOX): NoahClient {
     if (!response.ok) {
       let detail = text.slice(0, 300)
       try {
-        detail = (JSON.parse(text) as { Detail?: string }).Detail ?? detail
+        const body = JSON.parse(text) as {
+          Detail?: string
+          RequestExtension?: { Body?: { Description?: string; Field?: string }[] }
+        }
+        // Noah's field-level reason ("Account could not be verified at the selected bank") beats "invalid request".
+        const field = body.RequestExtension?.Body?.[0]
+        detail = field?.Description ?? body.Detail ?? detail
       } catch {}
       throw new NoahError(`Noah ${method} ${path.split("?")[0]}: ${detail}`, response.status)
     }
@@ -83,42 +89,89 @@ export function channelForm(noah: NoahClient, channelId: string) {
   )
 }
 
-/** A test customer created directly (Noah's sandbox Reliance model), so a Sandbox user isn't sent through KYC. */
+/**
+ * A test customer created directly (Noah's sandbox Reliance model), so a Sandbox user isn't sent through KYC. Noah's
+ * sandbox wants an email and, for a euro account, an EU address: the test identity is a Berlin one (sandbox data only;
+ * it can still pay out to Nigeria). Live customers go through Noah's hosted KYC instead.
+ */
 export function putSandboxCustomer(
   noah: NoahClient,
   customerId: string,
-  person: { firstName: string; lastName: string; email?: string | null; country: string },
+  person: { firstName: string; lastName: string; email: string },
 ) {
   return noah.send("PUT", `/customers/${encodeURIComponent(customerId)}`, {
     Type: "Individual",
     FullName: { FirstName: person.firstName, LastName: person.lastName },
     DateOfBirth: "1990-01-15",
-    ...(person.email ? { Email: person.email } : {}),
+    Email: person.email,
     Identities: [
       {
-        IssuingCountry: person.country,
-        IDNumber: `TEST${customerId.replace(/[^A-Za-z0-9]/g, "").slice(0, 12)}`,
+        IssuingCountry: "DE",
+        IDNumber: "T22000129",
         IDType: "Passport",
         IssuedDate: "2020-01-01",
         ExpiryDate: "2030-01-01",
       },
     ],
     PrimaryResidence: {
-      Street: "1 Test Street",
-      City: "Lagos",
-      PostCode: "100001",
-      State: "Lagos",
-      Country: person.country,
+      Street: "Hauptstrasse 1",
+      City: "Berlin",
+      PostCode: "10115",
+      State: "Berlin",
+      Country: "DE",
     },
   })
 }
+
+/** Noah's sandbox bank accounts that pass its beneficiary check (Access Bank, Nigeria). */
+export const NOAH_TEST_BANK_ACCOUNTS = [
+  { country: "NG", bank: "Access Bank", accountNumber: "0690000031" },
+] as const
 
 /** Prepare a sale: the form is checked by Noah and a session id comes back for the payout workflow. */
 export function prepareSell(
   noah: NoahClient,
   input: { channelId: string; customerId: string; cryptoAmount: string; form: unknown },
 ) {
-  return noah.send<{ FormSessionID: string; Quote?: { SignedQuote?: string } }>(
+  return noah.send<{
+    FormSessionID?: string
+    Quote?: { SignedQuote?: string }
+    /** A continuation (e.g. a beneficiary check needing more data), not a failure. */
+    NextStep?: { Schema?: unknown }
+  }>("POST", "/transactions/sell/prepare", {
+    ChannelID: input.channelId,
+    CryptoCurrency: NOAH_TEST_USDC.currency,
+    CustomerID: input.customerId,
+    CryptoAmount: input.cryptoAmount,
+    Form: input.form,
+  })
+}
+
+/** The beneficiary name Noah's bank check found, from a prepare's `NextStep` (null when there's no such step). */
+export function beneficiaryName(next: { Schema?: unknown } | undefined): string | null {
+  const ack = (
+    next?.Schema as {
+      properties?: {
+        Acknowledgements?: { properties?: Record<string, { "x-confirmation-value"?: string }> }
+      }
+    }
+  )?.properties?.Acknowledgements?.properties
+  const field = ack ? Object.values(ack)[0] : undefined
+  return field?.["x-confirmation-value"] ?? null
+}
+
+/** Continue a form session once the business confirmed the beneficiary Noah found. */
+export function confirmBeneficiary(
+  noah: NoahClient,
+  input: {
+    channelId: string
+    customerId: string
+    cryptoAmount: string
+    formSessionId: string
+    form: unknown
+  },
+) {
+  return noah.send<{ FormSessionID?: string; NextStep?: { Schema?: unknown } }>(
     "POST",
     "/transactions/sell/prepare",
     {
@@ -126,7 +179,8 @@ export function prepareSell(
       CryptoCurrency: NOAH_TEST_USDC.currency,
       CustomerID: input.customerId,
       CryptoAmount: input.cryptoAmount,
-      Form: input.form,
+      FormSessionID: input.formSessionId,
+      Form: { ...(input.form as object), Acknowledgements: { CoBName: true } },
     },
   )
 }
@@ -158,10 +212,8 @@ export function payoutWorkflow(
       Conditions: [
         {
           Network: NOAH_TEST_USDC.network,
-          AmountConditions: [
-            { Comparison: "GTEQ", Value: input.amount },
-            { Comparison: "LTEQ", Value: input.amount },
-          ],
+          // Exactly this amount (Noah's schema: ComparisonOperator EQ / LTEQ / GTEQ).
+          AmountConditions: [{ ComparisonOperator: "EQ", Value: input.amount }],
         },
       ],
       Nonce: input.nonce,

@@ -9,6 +9,7 @@ import {
   CalendarClock,
   CheckCircle2,
   ExternalLink,
+  Landmark,
   Plus,
   Scale,
 } from "lucide-react"
@@ -78,6 +79,7 @@ export function BalanceView({
               icon={<ArrowUpRight />}
               href={live ? "/app/send?mode=chain" : "/app/send"}
             />
+            <StageAction label="To a bank" icon={<Landmark />} href="/app/bank" />
             {onTestDollars ? (
               <StageAction label="Test $" icon={<Plus />} onClick={onTestDollars} />
             ) : null}

@@ -28,6 +28,9 @@ const {
   payRows,
   people,
   payouts,
+  bankPayouts,
+  bankPayoutAccounts,
+  bankDeposits,
 } = schema
 
 export type MovementKind =
@@ -41,6 +44,8 @@ export type MovementKind =
   | "payslip"
   | "autopilot_set_aside"
   | "autopilot_back"
+  | "bank_out"
+  | "bank_in"
 
 export interface Movement {
   id: string
@@ -108,7 +113,7 @@ export async function movements(
   const { userId, workspaceId, network, from, to } = input
   const inRange = (column: AnyPgColumn) => and(gte(column, from), lt(column, to))
   const operator = NETWORKS[network].operator
-  const [paidIn, paidOut, ownRelays, rewards, grants, runs, slips, chainPayouts] =
+  const [paidIn, paidOut, ownRelays, rewards, grants, runs, slips, chainPayouts, bankOut, bankIn] =
     await Promise.all([
       db
         .select({ payment: payments, title: requests.title, receiptToken: receipts.token })
@@ -228,6 +233,29 @@ export async function movements(
             inRange(payouts.createdAt),
           ),
         ),
+      // Withdrawals to a bank once approved, and bank transfers that arrived.
+      db
+        .select({ payout: bankPayouts, label: bankPayoutAccounts.label })
+        .from(bankPayouts)
+        .innerJoin(bankPayoutAccounts, eq(bankPayoutAccounts.id, bankPayouts.payoutAccountId))
+        .where(
+          and(
+            eq(bankPayouts.workspaceId, workspaceId),
+            eq(bankPayouts.network, network),
+            inArray(bankPayouts.status, ["sending", "converting", "paying", "paid", "failed"]),
+            inRange(bankPayouts.createdAt),
+          ),
+        ),
+      db
+        .select()
+        .from(bankDeposits)
+        .where(
+          and(
+            eq(bankDeposits.workspaceId, workspaceId),
+            eq(bankDeposits.network, network),
+            inRange(bankDeposits.createdAt),
+          ),
+        ),
     ])
 
   const list: Movement[] = []
@@ -282,6 +310,40 @@ export async function movements(
             : "pending",
       txHash: payment.txHash,
       url: receiptToken ? `/r/${receiptToken}` : null,
+    })
+  }
+  for (const { payout, label } of bankOut) {
+    list.push({
+      ...base,
+      id: payout.id,
+      kind: "bank_out",
+      direction: "out",
+      at: payout.createdAt,
+      amount: payout.amount,
+      title: `To ${label} (${payout.fiatAmount} ${payout.fiat})`,
+      counterparty: label,
+      counterpartyAccount: null,
+      // Done once Noah paid the bank; a failed one was returned to the balance.
+      status: payout.status === "paid" ? "done" : payout.status === "failed" ? "failed" : "pending",
+      txHash: payout.nearTx,
+      url: "/app/bank",
+    })
+  }
+  for (const deposit of bankIn) {
+    list.push({
+      ...base,
+      id: deposit.id,
+      kind: "bank_in",
+      direction: "in",
+      at: deposit.createdAt,
+      amount: deposit.amount,
+      title: `Bank transfer (${deposit.fiatAmount} ${deposit.fiat})`,
+      counterparty: "Bank transfer",
+      counterpartyAccount: null,
+      status:
+        deposit.status === "credited" ? "done" : deposit.status === "failed" ? "failed" : "pending",
+      txHash: deposit.creditTx,
+      url: "/app/bank",
     })
   }
   for (const { payout } of chainPayouts) {

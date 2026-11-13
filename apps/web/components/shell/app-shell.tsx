@@ -16,6 +16,7 @@ import {
   FileText,
   Gift,
   Home,
+  Landmark,
   LayoutGrid,
   Link2,
   ListOrdered,
@@ -83,6 +84,7 @@ const GROUPS: { id: string; label: string; places: Place[] }[] = [
     places: [
       { href: "/app/activity", label: "Activity", icon: <ListOrdered /> },
       { href: "/app/balance", label: "Balance", icon: <Wallet /> },
+      { href: "/app/bank", label: "Bank", icon: <Landmark /> },
     ],
   },
 ]

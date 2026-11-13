@@ -51,6 +51,12 @@ function png(svgText, name, size) {
 const face = seal({ inset: 6, radius: 30, ring: 6, pad: 30 })
 // The seal mark for the header (shown at 24 px), and the stamp pressed on a slip (shown at 88 px, ink a little thin).
 png(svg(face), "seal", 96)
+// The seal on paper (white square, vermilion glyphs) for the header on the vermilion stage.
+const paper = face
+  .replace(`fill="${SHU}"`, 'fill="#FFFFFF"')
+  .replace('stroke="#fff"', `stroke="${SHU}"`)
+  .replaceAll('fill="#fff"', `fill="${SHU}"`)
+png(svg(paper), "seal-paper", 96)
 png(
   svg(`<g opacity="0.92" transform="rotate(-8 100 100) translate(14 14) scale(0.86)">${face}</g>`),
   "stamp",

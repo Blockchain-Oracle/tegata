@@ -19,7 +19,9 @@ import {
 } from "@tegata/core/near"
 import {
   bankDetails,
+  beneficiaryName,
   channelForm,
+  confirmBeneficiary,
   NOAH_TEST_USDC_MINT,
   type NoahClient,
   NoahError,
@@ -31,7 +33,7 @@ import {
   simulateDeposit,
 } from "@tegata/core/noah"
 import { type Db, schema } from "@tegata/db"
-import { and, desc, eq, inArray } from "drizzle-orm"
+import { and, desc, eq, inArray, isNull } from "drizzle-orm"
 
 import { createRelayDraft } from "./relays.ts"
 
@@ -52,7 +54,15 @@ const UNITS = 1_000_000n
 
 export class BankError extends Error {
   constructor(
-    readonly code: "not_live" | "no_channel" | "bad_input" | "not_found" | "noah" | "wrong_state",
+    readonly code:
+      | "not_live"
+      | "no_channel"
+      | "bad_input"
+      | "not_found"
+      | "noah"
+      | "wrong_state"
+      /** Noah's bank check found the account holder: the business confirms the name (the message) to continue. */
+      | "confirm",
     message: string,
   ) {
     super(message)
@@ -78,15 +88,27 @@ export function assertBankNetwork(network: NetworkId) {
 const dollars = (units: bigint) => `${units / UNITS}.${(units % UNITS).toString().padStart(6, "0")}`
 const toUnits = (decimal: string) => {
   const [whole = "0", frac = ""] = decimal.split(".")
-  return BigInt(whole) * UNITS + BigInt((frac + "000000").slice(0, 6))
+  return BigInt(whole) * UNITS + BigInt(`${frac}000000`.slice(0, 6))
 }
-const noahError = (error: unknown) =>
-  new BankError(
+const noahError = (error: unknown) => {
+  // Our own answers (confirm this name, check the account) pass through untouched.
+  if (error instanceof BankError) return error
+  if (
+    error instanceof NoahError &&
+    error.httpStatus === 404 &&
+    /balance|not found/i.test(error.message)
+  )
+    return new BankError(
+      "noah",
+      "Noah's sandbox hasn't switched on bank payouts for Tegata yet (they turn it on by request, and it's asked for). Bank details and deposits work now.",
+    )
+  return new BankError(
     "noah",
     error instanceof NoahError
       ? error.message.replace(/^Noah \S+ \S+: /, "")
       : "Noah didn't answer. Try again.",
   )
+}
 
 /** The business's customer at Noah, created on first use (in the Sandbox directly, without a KYC wait). */
 export async function ensureBankCustomer(
@@ -105,13 +127,14 @@ export async function ensureBankCustomer(
     .leftJoin(workspaces, eq(workspaces.ownerId, users.id))
     .where(eq(users.id, input.userId))
   const words = (row?.name ?? "Tegata Business").trim().split(/\s+/)
-  const id = `tegata-${input.userId}`
+  // Noah's sandbox fails on ids much longer than 36 characters: "tg" and the user id without hyphens (34).
+  const id = `tg${input.userId.replaceAll("-", "")}`
   try {
     await putSandboxCustomer(noah, id, {
       firstName: words[0] ?? "Tegata",
       lastName: words.slice(1).join(" ") || "Business",
-      email: row?.business ?? row?.email ?? null,
-      country: "NG",
+      // Noah's sandbox needs an email; it sends none. A wallet owner without one gets a placeholder on Tegata's domain.
+      email: row?.business ?? row?.email ?? `sandbox-${id}@mail.tegata.xyz`,
     })
   } catch (error) {
     throw noahError(error)
@@ -217,6 +240,8 @@ export async function createBankPayout(
     payoutAccountId?: string
     /** Tegata's Solana wallet, the address Noah watches for the deposit. */
     hopAddress: string
+    /** The account holder's name as Noah's bank check found it, once the business confirmed it. */
+    confirmName?: string
   },
 ) {
   assertBankNetwork(input.network)
@@ -260,14 +285,37 @@ export async function createBankPayout(
   let ruleId: string | null
   let depositAddress: string | undefined
   try {
-    formSessionId = (
-      await prepareSell(noah, {
+    const prepared = await prepareSell(noah, {
+      channelId: quote.channelId,
+      customerId,
+      cryptoAmount: amountText,
+      form,
+    })
+    if (!prepared.FormSessionID)
+      throw new BankError(
+        "bad_input",
+        "The bank needs more details for this account. Check the account number.",
+      )
+    formSessionId = prepared.FormSessionID
+    // Confirmation of beneficiary: Noah found who holds the account. The business confirms that name before anything
+    // is committed, the way a bank app asks "pay Forrest Green?".
+    const holder = beneficiaryName(prepared.NextStep)
+    if (holder) {
+      if (input.confirmName !== holder) throw new BankError("confirm", holder)
+      const confirmed = await confirmBeneficiary(noah, {
         channelId: quote.channelId,
         customerId,
         cryptoAmount: amountText,
+        formSessionId,
         form,
       })
-    ).FormSessionID
+      if (!confirmed.FormSessionID || confirmed.NextStep)
+        throw new BankError(
+          "bad_input",
+          "Noah needs more for this account. Try another bank account.",
+        )
+      formSessionId = confirmed.FormSessionID
+    }
     const rule = await payoutWorkflow(noah, {
       customerId,
       formSessionId,
@@ -383,20 +431,16 @@ export async function hopBankPayout(
   const [payout] = await db.select().from(bankPayouts).where(eq(bankPayouts.id, id))
   if (payout?.status !== "converting" || payout.hopTx || !payout.depositAddress)
     return payout?.status ?? null
-  // Claim it first, so two workers never send twice.
+  // Claim it first (hop transaction still empty), so two workers never send twice. A crash after this leaves
+  // "sending", which is never re-sent: the error below says so and the wallet is checked by hand.
   const [claimed] = await db
     .update(bankPayouts)
     .set({ hopTx: "sending" })
     .where(
-      and(
-        eq(bankPayouts.id, id),
-        eq(bankPayouts.status, "converting"),
-        eq(bankPayouts.hopTx, payout.hopTx ?? ""),
-      ),
+      and(eq(bankPayouts.id, id), eq(bankPayouts.status, "converting"), isNull(bankPayouts.hopTx)),
     )
     .returning()
-  const ready = claimed ?? (await db.select().from(bankPayouts).where(eq(bankPayouts.id, id)))[0]
-  if (!ready || (ready.hopTx && ready.hopTx !== "sending")) return ready?.status ?? null
+  if (!claimed) return "converting"
   try {
     const signature = await send({ to: payout.depositAddress, amount: payout.amount })
     await db
@@ -451,8 +495,12 @@ export async function pollBankPayout(db: Db, noah: NoahClient, id: string): Prom
     .where(eq(bankPayouts.id, id))
   if (row?.payout.status !== "paying") return row?.payout.status === "paid" ? "paid" : "pending"
   const items = await customerTransactions(noah, row.customer, row.payout.createdAt)
-  const mine = items.filter(
-    (t) => t.Orchestration?.RuleID && t.Orchestration.RuleID === row.payout.ruleId,
+  // Noah's transactions for this payout: by its rule, or (if Noah gave no rule id) by the exact amount after it began.
+  const amount = Number(dollars(row.payout.amount))
+  const mine = items.filter((t) =>
+    row.payout.ruleId
+      ? t.Orchestration?.RuleID === row.payout.ruleId
+      : Number(t.Amount ?? 0) === amount && new Date(t.Created) >= row.payout.createdAt,
   )
   const payout =
     mine.find((t) => t.Direction === "Out" && t.FiatPayment) ??

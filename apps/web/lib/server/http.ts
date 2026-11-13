@@ -1,4 +1,5 @@
 import {
+  BankError,
   BusinessError,
   DeveloperError,
   InvoiceError,
@@ -90,6 +91,17 @@ function toResponse(error: unknown): Response {
         : error.code === "bad_input"
           ? STATUS.badRequest
           : STATUS.conflict
+    return Response.json({ error: { code: error.code, message: error.message } }, { status })
+  }
+  if (error instanceof BankError) {
+    const status =
+      error.code === "not_found"
+        ? STATUS.notFound
+        : error.code === "wrong_state" || error.code === "confirm"
+          ? STATUS.conflict
+          : error.code === "noah"
+            ? 502
+            : STATUS.badRequest
     return Response.json({ error: { code: error.code, message: error.message } }, { status })
   }
   if (error instanceof PayoutError) {

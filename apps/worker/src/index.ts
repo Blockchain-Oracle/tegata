@@ -1,5 +1,7 @@
 import type { NetworkId } from "@tegata/config"
 import { Operator } from "@tegata/core/near"
+import { NOAH_TEST_USDC_MINT, noahClient } from "@tegata/core/noah"
+import { sendToken } from "@tegata/core/solana"
 import { createDb, schema } from "@tegata/db"
 import { migrateDb } from "@tegata/db/migrate"
 import {
@@ -19,9 +21,12 @@ import { enqueue, QUEUES, startBoss } from "@tegata/jobs"
 import {
   accountsNotReady,
   autopilotsToRegister,
+  bankPayoutsToMove,
   claimEmails,
+  creditBankDeposits,
   deliver,
   destinationsToRegister,
+  hopBankPayout,
   invoiceDocuments,
   invoiceToken,
   logInvoiceEvent,
@@ -32,11 +37,14 @@ import {
   paymentsToVerify,
   payoutsToPoll,
   pendingDeliveries,
+  pollBankPayout,
   pollOneClickPayment,
   pollPayout,
   processRelay,
   queueAccountEmail,
   queueAutopilotOn,
+  queueBankDepositEmail,
+  queueBankPayoutEmail,
   queuedTestDollars,
   queueInviteEmail,
   queueInvoiceEmail,
@@ -55,12 +63,14 @@ import {
   registerPayoutAddress,
   reminderTarget,
   reminderTimes,
+  returnFailedBankPayout,
   runAutopilots,
   runDueSchedules,
   runRelaysToSettle,
   sendTestDollars,
   settleAutopilotAction,
   settleAutopilotRelay,
+  settleBankRelay,
   settlePayment,
   settlePayoutRelay,
   settleRefund,
@@ -68,6 +78,7 @@ import {
   settleRunRelay,
   setupAccount,
   sweepReferrals,
+  USDC_DECIMALS,
   unfinishedRelays,
   WEBHOOK_BACKOFF_MS,
   wanted,
@@ -93,10 +104,18 @@ if (env.OPERATOR_KEYS_MAINNET?.length) {
   operators.set("mainnet", new Operator("mainnet", env.OPERATOR_KEYS_MAINNET))
 }
 
+/**
+ * Where emails load their pictures and point their links: the public site. A mail client can't reach localhost, so a
+ * worker running locally still uses the live site's PNGs and pages.
+ */
+const emailBase = /localhost|127\.0\.0\.1/.test(env.APP_URL)
+  ? "https://tegata.xyz"
+  : env.APP_URL.replace(/\/$/, "")
+
 /** Email goes out only when Resend and a verified sender are set; otherwise invoices are shared by link. */
 const mailer =
   emailConfigured(env) && env.RESEND_API_KEY && env.EMAIL_FROM
-    ? resendMailer(env.RESEND_API_KEY, env.EMAIL_FROM, env.APP_URL.replace(/\/$/, ""))
+    ? resendMailer(env.RESEND_API_KEY, env.EMAIL_FROM, emailBase)
     : null
 
 /** Queue every webhook delivery that is new or due for its next try (one job per delivery attempt). */
@@ -149,6 +168,11 @@ await boss.work(QUEUES.relaySend.name, async ([job]) => {
   if (relay?.purpose.startsWith("payout:")) {
     const payoutId = await settlePayoutRelay(db, relay.id, operator.accountId, env.ONECLICK_API_KEY)
     if (payoutId) await enqueue(boss, "payoutPoll", { payoutId }, `payout:${payoutId}`)
+  }
+  // A withdrawal to a bank: once the USDC reached the operator on NEAR, hand it to Noah.
+  if (relay?.purpose.startsWith("bank:")) {
+    const payoutId = await settleBankRelay(db, relay.id, operator.accountId)
+    if (payoutId) await enqueue(boss, "bankHop", { payoutId }, `bank-hop:${payoutId}`)
   }
   // A payroll batch: its rows are paid only once the USDC events are read from NEAR.
   if (relay?.purpose.startsWith("run:")) {
@@ -356,6 +380,63 @@ async function sweepAllReferrals() {
 }
 await boss.schedule(QUEUES.referralSweep.name, REFERRAL_CRON, {})
 await boss.work(QUEUES.referralSweep.name, sweepAllReferrals)
+
+// --- bank payouts and bank details (Noah) -------------------------------------------------------------------------
+
+const noah = env.NOAH_API_KEY ? noahClient(env.NOAH_API_KEY) : null
+const BANK_POLL_MS = 8_000
+
+/** Tegata's Solana devnet wallet hands Noah's test USDC to Noah (the Sandbox stand-in for NEAR Intents' hop). */
+async function hopToNoah({ to, amount }: { to: string; amount: bigint }) {
+  if (!env.SOLANA_DEVNET_SECRET)
+    throw new Error("Tegata's Solana test wallet isn't set up on this server")
+  return sendToken({
+    secret: env.SOLANA_DEVNET_SECRET,
+    mint: NOAH_TEST_USDC_MINT,
+    decimals: USDC_DECIMALS,
+    to,
+    amount,
+  })
+}
+
+await boss.work(QUEUES.bankHop.name, async ([job]) => {
+  if (!job) return
+  const { payoutId } = QUEUES.bankHop.payload.parse(job.data)
+  const status = await hopBankPayout(db, payoutId, hopToNoah)
+  console.log(`[bank] ${payoutId} ${status}`)
+  if (status === "paying") await enqueue(boss, "bankPoll", { payoutId }, `bank-poll:${payoutId}`)
+})
+await boss.work(QUEUES.bankPoll.name, async ([job]) => {
+  if (!job || !noah) return
+  const { payoutId } = QUEUES.bankPoll.payload.parse(job.data)
+  const result = await pollBankPayout(db, noah, payoutId)
+  if (result === "pending") {
+    await enqueue(boss, "bankPoll", { payoutId }, `bank-poll:${payoutId}`, {
+      startAfter: new Date(Date.now() + BANK_POLL_MS),
+    })
+    return
+  }
+  console.log(`[bank] ${payoutId} ${result}`)
+  if (result === "failed") {
+    const operator = operators.get("testnet")
+    if (operator) await returnFailedBankPayout(db, operator, payoutId)
+  }
+  await queueBankPayoutEmail(db, payoutId)
+})
+await boss.schedule(QUEUES.bankSweep.name, "* * * * *", {})
+await boss.work(QUEUES.bankSweep.name, async () => {
+  for (const moving of await bankPayoutsToMove(db)) {
+    if (moving.status === "converting")
+      await enqueue(boss, "bankHop", { payoutId: moving.id }, `bank-hop:${moving.id}`)
+    else await enqueue(boss, "bankPoll", { payoutId: moving.id }, `bank-poll:${moving.id}`)
+  }
+  const operator = operators.get("testnet")
+  if (noah && operator && env.SOLANA_DEVNET_ADDRESS) {
+    const credited = await creditBankDeposits(db, noah, operator, env.SOLANA_DEVNET_ADDRESS)
+    for (const depositId of credited) await queueBankDepositEmail(db, depositId)
+    if (credited.length) console.log(`[bank] credited ${credited.length} deposit(s)`)
+  }
+})
 
 // --- email: the outbox drain, and the daily and monthly emails ------------------------------------------------------
 

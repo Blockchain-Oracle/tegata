@@ -198,6 +198,22 @@ export type EmailEvent =
   | { kind: "send.received"; data: MoveData }
   | { kind: "referral.paid"; data: MoveData & { other: string } }
   | {
+      kind: "bank.paid" | "bank.failed"
+      data: Settled & {
+        amount: Units
+        account: string
+        fiat: string
+        fiatAmount: string
+        rate: string
+        reason?: string | null
+        url: string
+      }
+    }
+  | {
+      kind: "bank.received"
+      data: Settled & { amount: Units; fiat: string; fiatAmount: string; url: string }
+    }
+  | {
       kind: "referral.joined"
       data: {
         business: string
@@ -742,6 +758,75 @@ export function compose(event: EmailEvent, assets: string): EmailContent {
           `${d.reason} The ${usd(d.amount)} is back in your balance on NEAR; nothing reached ${shortAddress(d.counterparty)}.`,
         ],
         button: d.receiptUrl ? { label: "See what happened", href: d.receiptUrl } : null,
+        audience: "owner",
+        business: d.business,
+        sandbox: d.sandbox,
+      }
+    }
+    case "bank.paid": {
+      const d = event.data
+      return {
+        ...base,
+        shape: "slip",
+        subject: `Paid to ${d.account}: ${d.fiatAmount} ${d.fiat}`,
+        preview: `${usd(d.amount)} from your balance, paid by Noah`,
+        brand: { name: d.business, logo: d.logo },
+        label: "Withdrawn to a bank",
+        hero: usd(d.amount),
+        tone: "out",
+        sub: sub(d.sandbox),
+        stamp: "Paid",
+        rows: [
+          { label: "To", value: d.account },
+          { label: "They received", value: `${d.fiatAmount} ${d.fiat}` },
+          { label: "Rate", value: `${d.rate} ${d.fiat} per dollar` },
+          { label: "Paid out by", value: "Noah, a licensed partner" },
+          ...usdcRows(d),
+        ],
+        button: { label: "Open Bank", href: d.url },
+        audience: "owner",
+        business: d.business,
+        sandbox: d.sandbox,
+      }
+    }
+    case "bank.failed": {
+      const d = event.data
+      return {
+        ...base,
+        shape: "card",
+        subject: `Your withdrawal to ${d.account} didn't go through. The ${usd(d.amount)} is back`,
+        preview: d.reason ?? "Noah couldn't pay the bank account.",
+        brand: { name: d.business },
+        label: "Withdraw to a bank",
+        hero: `${usd(d.amount)} came back`,
+        body: [
+          `${d.reason ?? "Noah couldn't pay the bank account."} The dollars are back in your balance on NEAR.`,
+        ],
+        button: { label: "Open Bank", href: d.url },
+        audience: "owner",
+        business: d.business,
+        sandbox: d.sandbox,
+      }
+    }
+    case "bank.received": {
+      const d = event.data
+      return {
+        ...base,
+        shape: "slip",
+        subject: `${d.fiatAmount} ${d.fiat} arrived by bank transfer: ${usd(d.amount)} in your balance`,
+        preview: "Converted to USDC on NEAR.",
+        brand: { name: d.business, logo: d.logo },
+        label: "Received by bank transfer",
+        hero: usd(d.amount),
+        tone: "in",
+        sub: sub(d.sandbox),
+        stamp: "Paid",
+        rows: [
+          { label: "Bank transfer", value: `${d.fiatAmount} ${d.fiat}` },
+          { label: "Converted by", value: "Noah, to USDC" },
+          ...usdcRows(d),
+        ],
+        button: { label: "Open Bank", href: d.url },
         audience: "owner",
         business: d.business,
         sandbox: d.sandbox,

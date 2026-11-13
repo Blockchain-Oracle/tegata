@@ -17,6 +17,7 @@ import {
   FileText,
   Gift,
   Home,
+  Landmark,
   Link2,
   ListOrdered,
   LogOut,
@@ -222,6 +223,9 @@ export function CommandMenu({
                 </Item>
                 <Item icon={<Wallet />} onSelect={run(() => router.push("/app/balance"))}>
                   Balance
+                </Item>
+                <Item icon={<Landmark />} onSelect={run(() => router.push("/app/bank"))}>
+                  Withdraw to a bank · bank details
                 </Item>
                 <Item icon={<Gift />} onSelect={run(() => router.push("/app/refer"))}>
                   Refer a business

@@ -13,6 +13,7 @@ import {
   FileDown,
   FileSpreadsheet,
   Gift,
+  Landmark,
   Receipt,
   RotateCcw,
   Search,
@@ -52,6 +53,8 @@ const ICON: Record<MovementKind, { icon: React.ReactNode; field: string }> = {
   payslip: { icon: <Banknote />, field: "bg-matcha" },
   autopilot_set_aside: { icon: <CalendarClock />, field: "bg-sora" },
   autopilot_back: { icon: <CalendarClock />, field: "bg-sora" },
+  bank_out: { icon: <Landmark />, field: "bg-kin" },
+  bank_in: { icon: <Landmark />, field: "bg-matcha" },
 }
 
 export function matches(m: MovementView, filter: ActivityFilter, query: string): boolean {

@@ -110,6 +110,8 @@ const KIND_WORD: Record<Movement["kind"], string> = {
   payslip: "Pay received",
   autopilot_set_aside: "Set aside in autopilot",
   autopilot_back: "Back from autopilot",
+  bank_out: "Withdrawn to a bank",
+  bank_in: "Received by bank transfer",
 }
 
 /** A cell a spreadsheet can't run: quoted, and a leading = + - @ neutralised. */

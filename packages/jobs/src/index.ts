@@ -69,6 +69,24 @@ export const QUEUES = {
     payload: z.object({ kind: z.enum(["invite", "paid"]), id: z.uuid() }),
     options: { retryLimit: 3, retryDelay: 30, retryBackoff: true, expireInSeconds: 120 },
   },
+  /** A withdrawal to a bank whose USDC reached the operator: hand Noah's test USDC to Noah (Sandbox hop). */
+  bankHop: {
+    name: "bank-hop",
+    payload: z.object({ payoutId: z.uuid() }),
+    options: { retryLimit: 0, expireInSeconds: 180 },
+  },
+  /** Follow a withdrawal at Noah until the bank is paid (re-queued every few seconds while it moves). */
+  bankPoll: {
+    name: "bank-poll",
+    payload: z.object({ payoutId: z.uuid() }),
+    options: { retryLimit: 2, retryDelay: 10, expireInSeconds: 60 },
+  },
+  /** Every minute: move stuck withdrawals on, and credit bank deposits Noah delivered. */
+  bankSweep: {
+    name: "bank-sweep",
+    payload: z.object({}),
+    options: { retryLimit: 0, expireInSeconds: 120 },
+  },
   /** Every morning: ask owners whose payday has come to approve the run (one email per payday). */
   payrollDue: {
     name: "payroll-due",

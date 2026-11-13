@@ -103,13 +103,6 @@ function Brand({ content }: { content: EmailContent }) {
           {content.brand.name}
         </Text>
       </Column>
-      {content.sandbox ? (
-        <Column align="right" style={{ verticalAlign: "middle" }}>
-          <Text style={{ margin: 0, fontFamily: TEXT, fontSize: 12, fontWeight: 600, color: GREY }}>
-            Sandbox
-          </Text>
-        </Column>
-      ) : null}
     </Row>
   )
 }
@@ -188,7 +181,7 @@ function Perforation() {
     <Row>
       <Column style={{ width: 10 }}>
         <div
-          style={{ width: 10, height: 20, borderRadius: "0 10px 10px 0", backgroundColor: PAPER }}
+          style={{ width: 10, height: 20, borderRadius: "0 10px 10px 0", backgroundColor: SHU }}
         />
       </Column>
       <Column>
@@ -196,7 +189,7 @@ function Perforation() {
       </Column>
       <Column style={{ width: 10 }}>
         <div
-          style={{ width: 10, height: 20, borderRadius: "10px 0 0 10px", backgroundColor: PAPER }}
+          style={{ width: 10, height: 20, borderRadius: "10px 0 0 10px", backgroundColor: SHU }}
         />
       </Column>
     </Row>
@@ -269,132 +262,189 @@ export function TegataEmail({ content }: { content: EmailContent }) {
         />
       </Head>
       <Preview>{content.preview}</Preview>
-      <Body style={{ backgroundColor: PAPER, margin: 0, padding: "32px 12px" }}>
-        <Container style={{ maxWidth: slip ? 440 : 520 }}>
+      <Body style={{ backgroundColor: PAPER, margin: 0, padding: "28px 10px" }}>
+        <Container style={{ maxWidth: slip ? 480 : 540 }}>
+          {/* The stage: Tegata's lit vermilion field, with the paper slip (or card) floating on it. */}
           <Section
             style={{
-              backgroundColor: "#FFFFFF",
-              borderRadius: 20,
-              boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
-              borderTop: slip ? undefined : `5px solid ${SHU}`,
-              overflow: "hidden",
+              backgroundColor: SHU,
+              backgroundImage:
+                "radial-gradient(circle at 18% 0%, #FF7A2E 0%, rgba(255,122,46,0) 55%), radial-gradient(circle at 60% 100%, #FFB38A 0%, rgba(255,179,138,0) 60%)",
+              borderRadius: 28,
+              padding: "20px 16px 16px",
             }}
           >
-            <Section style={{ padding: "24px 26px 18px" }}>
-              <Brand content={content} />
-              <Row>
-                <Column style={{ verticalAlign: "top", paddingTop: 18 }}>
+            <Row style={{ marginBottom: 14 }}>
+              <Column style={{ width: 36, verticalAlign: "middle", paddingLeft: 6 }}>
+                <Img
+                  src={`${content.assets}/email/seal-paper.png`}
+                  width="28"
+                  height="28"
+                  alt="Tegata"
+                  style={{ display: "block", borderRadius: 6 }}
+                />
+              </Column>
+              <Column style={{ verticalAlign: "middle" }}>
+                <Text
+                  style={{
+                    margin: 0,
+                    fontFamily: FIGURE,
+                    fontSize: 20,
+                    fontWeight: 900,
+                    fontStretch: "62%",
+                    color: "#FFFFFF",
+                  }}
+                >
+                  Tegata
+                </Text>
+              </Column>
+              {content.sandbox ? (
+                <Column align="right" style={{ verticalAlign: "middle", paddingRight: 6 }}>
+                  <Text
+                    style={{
+                      display: "inline-block",
+                      margin: 0,
+                      padding: "4px 10px",
+                      borderRadius: 999,
+                      border: "1.5px dashed rgba(255,255,255,0.85)",
+                      fontFamily: TEXT,
+                      fontSize: 12,
+                      fontWeight: 700,
+                      color: "#FFFFFF",
+                    }}
+                  >
+                    Sandbox
+                  </Text>
+                </Column>
+              ) : null}
+            </Row>
+            <Section
+              style={{
+                backgroundColor: "#FFFFFF",
+                borderRadius: 20,
+                boxShadow: "0 10px 28px rgba(80,20,0,0.22)",
+                overflow: "hidden",
+              }}
+            >
+              <Section style={{ padding: "24px 26px 18px" }}>
+                <Brand content={content} />
+                <Row>
+                  <Column style={{ verticalAlign: "top", paddingTop: 18 }}>
+                    <Text
+                      style={{
+                        margin: 0,
+                        fontFamily: TEXT,
+                        fontSize: 14,
+                        fontWeight: 600,
+                        color: GREY,
+                      }}
+                    >
+                      {content.label}
+                    </Text>
+                    {slip ? (
+                      <Figure content={content} />
+                    ) : (
+                      <Text
+                        style={{
+                          margin: "6px 0 0",
+                          fontFamily: TEXT,
+                          fontSize: 26,
+                          lineHeight: "1.2",
+                          fontWeight: 800,
+                          letterSpacing: "-0.01em",
+                          color: INK,
+                        }}
+                      >
+                        {content.hero}
+                      </Text>
+                    )}
+                    {content.sub ? (
+                      <Text
+                        style={{
+                          margin: "6px 0 0",
+                          fontFamily: TEXT,
+                          fontSize: 14,
+                          fontWeight: 500,
+                          color: GREY,
+                        }}
+                      >
+                        {content.sub}
+                      </Text>
+                    ) : null}
+                  </Column>
+                  {slip && content.stamp ? (
+                    <Column
+                      align="right"
+                      style={{ width: 96, verticalAlign: "top", paddingTop: 10 }}
+                    >
+                      <Img
+                        src={`${content.assets}/email/stamp.png`}
+                        width="84"
+                        height="84"
+                        alt=""
+                      />
+                      <Text
+                        style={{
+                          margin: "2px 0 0",
+                          fontFamily: TEXT,
+                          fontSize: 12,
+                          fontWeight: 700,
+                          color: SEAL_INK,
+                          textAlign: "center",
+                        }}
+                      >
+                        {content.stamp}
+                      </Text>
+                    </Column>
+                  ) : null}
+                </Row>
+              </Section>
+              {slip && content.rows?.length ? (
+                <>
+                  <Perforation />
+                  <Section style={{ padding: "12px 26px 6px" }}>
+                    <Rows rows={content.rows} assets={content.assets} />
+                  </Section>
+                </>
+              ) : content.rows?.length ? (
+                <Section style={{ padding: "0 26px 6px" }}>
+                  <Rows rows={content.rows} assets={content.assets} />
+                </Section>
+              ) : null}
+              <Section style={{ padding: "10px 26px 24px" }}>
+                <Main content={content} />
+              </Section>
+              {slip ? (
+                <Section style={{ borderTop: `1px solid ${RULE}`, padding: "12px 26px" }}>
                   <Text
                     style={{
                       margin: 0,
                       fontFamily: TEXT,
-                      fontSize: 14,
-                      fontWeight: 600,
+                      fontSize: 12,
+                      fontWeight: 500,
                       color: GREY,
                     }}
                   >
-                    {content.label}
-                  </Text>
-                  {slip ? (
-                    <Figure content={content} />
-                  ) : (
-                    <Text
-                      style={{
-                        margin: "6px 0 0",
-                        fontFamily: TEXT,
-                        fontSize: 26,
-                        lineHeight: "1.2",
-                        fontWeight: 800,
-                        letterSpacing: "-0.01em",
-                        color: INK,
-                      }}
-                    >
-                      {content.hero}
-                    </Text>
-                  )}
-                  {content.sub ? (
-                    <Text
-                      style={{
-                        margin: "6px 0 0",
-                        fontFamily: TEXT,
-                        fontSize: 14,
-                        fontWeight: 500,
-                        color: GREY,
-                      }}
-                    >
-                      {content.sub}
-                    </Text>
-                  ) : null}
-                </Column>
-                {slip && content.stamp ? (
-                  <Column align="right" style={{ width: 96, verticalAlign: "top", paddingTop: 10 }}>
                     <Img
-                      src={`${content.assets}/email/stamp.png`}
-                      width="84"
-                      height="84"
-                      alt={content.stamp}
+                      src={`${content.assets}/email/marks/near.png`}
+                      width="14"
+                      height="14"
+                      alt=""
+                      style={{ display: "inline-block", verticalAlign: "-2px", marginRight: 5 }}
                     />
-                    <Text
-                      style={{
-                        margin: "2px 0 0",
-                        fontFamily: TEXT,
-                        fontSize: 12,
-                        fontWeight: 700,
-                        color: SEAL_INK,
-                        textAlign: "center",
-                      }}
-                    >
-                      {content.stamp}
-                    </Text>
-                  </Column>
-                ) : null}
-              </Row>
-            </Section>
-            {slip && content.rows?.length ? (
-              <>
-                <Perforation />
-                <Section style={{ padding: "12px 26px 6px" }}>
-                  <Rows rows={content.rows} assets={content.assets} />
+                    Settled on NEAR{"   ·   "}
+                    <Img
+                      src={`${content.assets}/email/marks/circle.png`}
+                      width="14"
+                      height="14"
+                      alt=""
+                      style={{ display: "inline-block", verticalAlign: "-2px", marginRight: 5 }}
+                    />
+                    USDC by Circle
+                  </Text>
                 </Section>
-              </>
-            ) : content.rows?.length ? (
-              <Section style={{ padding: "0 26px 6px" }}>
-                <Rows rows={content.rows} assets={content.assets} />
-              </Section>
-            ) : null}
-            <Section style={{ padding: "10px 26px 24px" }}>
-              <Main content={content} />
+              ) : null}
             </Section>
-            {slip ? (
-              <Section style={{ borderTop: `1px solid ${RULE}`, padding: "12px 26px" }}>
-                <Text
-                  style={{
-                    margin: 0,
-                    fontFamily: TEXT,
-                    fontSize: 12,
-                    fontWeight: 500,
-                    color: GREY,
-                  }}
-                >
-                  <Img
-                    src={`${content.assets}/email/marks/near.png`}
-                    width="14"
-                    height="14"
-                    alt=""
-                    style={{ display: "inline-block", verticalAlign: "-2px", marginRight: 5 }}
-                  />
-                  Settled on NEAR{"   ·   "}
-                  <Img
-                    src={`${content.assets}/email/marks/circle.png`}
-                    width="14"
-                    height="14"
-                    alt=""
-                    style={{ display: "inline-block", verticalAlign: "-2px", marginRight: 5 }}
-                  />
-                  USDC by Circle
-                </Text>
-              </Section>
-            ) : null}
           </Section>
           <Text
             style={{

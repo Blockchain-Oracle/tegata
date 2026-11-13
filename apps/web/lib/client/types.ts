@@ -619,6 +619,8 @@ export type MovementKind =
   | "payslip"
   | "autopilot_set_aside"
   | "autopilot_back"
+  | "bank_out"
+  | "bank_in"
 
 export interface MovementView {
   id: string
