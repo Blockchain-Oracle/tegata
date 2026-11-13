@@ -148,7 +148,8 @@ export async function createSession(
     throw new DeveloperError("bad_input", "amount must be between 0.01 and 1000000")
   if (input.metadata && Object.keys(input.metadata).length > 20)
     throw new DeveloperError("bad_input", "metadata holds at most 20 keys")
-  if (input.apiKeyId && input.idempotencyKey) {
+  const sameKey = async () => {
+    if (!input.apiKeyId || !input.idempotencyKey) return undefined
     const [existing] = await db
       .select()
       .from(requests)
@@ -158,33 +159,51 @@ export async function createSession(
           eq(requests.idempotencyKey, input.idempotencyKey),
         ),
       )
-    if (existing) return existing
+    return existing
   }
+  const existing = await sameKey()
+  if (existing) return existing
   const [account] = await db
     .select()
     .from(accounts)
     .where(and(eq(accounts.userId, input.ownerId), eq(accounts.network, input.network)))
   if (!account?.readyAt)
     throw new PaymentError("not_ready", "The business's account is still being set up")
-  const [row] = await db
-    .insert(requests)
-    .values({
-      workspaceId: input.workspaceId,
-      network: input.network,
-      kind: "session",
-      token: publicToken(SESSION_TOKEN_LENGTH),
-      title: input.description.trim().slice(0, LINK_LIMITS.title) || "Checkout",
-      amount: input.amount,
-      reusable: false,
-      receiverId: account.accountId,
-      successUrl: httpsUrl(input.successUrl),
-      metadata: input.metadata ?? (input.source ? { source: input.source } : null),
-      apiKeyId: input.apiKeyId,
-      idempotencyKey: input.idempotencyKey,
-    })
-    .returning()
-  if (!row) throw new Error("Could not create the session")
-  return row
+  const insert = () =>
+    db
+      .insert(requests)
+      .values({
+        workspaceId: input.workspaceId,
+        network: input.network,
+        kind: "session",
+        token: publicToken(SESSION_TOKEN_LENGTH),
+        title: input.description.trim().slice(0, LINK_LIMITS.title) || "Checkout",
+        amount: input.amount,
+        reusable: false,
+        receiverId: account.accountId,
+        successUrl: httpsUrl(input.successUrl),
+        metadata: input.metadata ?? (input.source ? { source: input.source } : null),
+        apiKeyId: input.apiKeyId,
+        idempotencyKey: input.idempotencyKey,
+      })
+      .returning()
+  try {
+    const [row] = await insert()
+    if (!row) throw new Error("Could not create the session")
+    return row
+  } catch (error) {
+    // Two requests with the same Idempotency-Key at the same moment: the second loses the race on the unique key
+    // and returns the session the first one made.
+    const winner = isUniqueViolation(error) ? await sameKey() : undefined
+    if (winner) return winner
+    throw error
+  }
+}
+
+/** Postgres refused a duplicate on a unique index (code 23505), however drizzle wraps it. */
+function isUniqueViolation(error: unknown): boolean {
+  const code = (e: unknown) => (e as { code?: string } | null)?.code
+  return code(error) === "23505" || code((error as { cause?: unknown } | null)?.cause) === "23505"
 }
 
 export async function getSession(db: Db, workspaceId: string, id: string) {

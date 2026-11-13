@@ -1,0 +1,48 @@
+{
+  "cli": {
+    "version": ">= 16.0.0",
+    "appVersionSource": "remote"
+  },
+  "build": {
+    "base": {
+      "node": "25.9.0",
+      "pnpm": "11.24.0",
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://tegata.xyz",
+        "EXPO_PUBLIC_PRIVY_APP_ID": "cmwddg99502ur0gkw0h3c80bo",
+        "EXPO_PUBLIC_PRIVY_CLIENT_ID": "client-WY6fitJM2cvnMuxfyBywkJ3vp9VB26jbC8LU6s9XSuAyK"
+      }
+    },
+    "development": {
+      "extends": "base",
+      "developmentClient": true,
+      "distribution": "internal"
+    },
+    "preview": {
+      "extends": "base",
+      "distribution": "internal",
+      "android": {
+        "buildType": "apk"
+      },
+      "ios": {
+        "simulator": true
+      },
+      "autoIncrement": true
+    },
+    "production": {
+      "extends": "base",
+      "autoIncrement": true
+    }
+  },
+  "submit": {
+    "production": {
+      "ios": {
+        "appleTeamId": "86C6ZFJ6V6",
+        "ascAppId": "6834349799",
+        "ascApiKeyPath": "/Users/abu/.appstoreconnect/private_keys/AuthKey_7YZASB4749.p8",
+        "ascApiKeyId": "7YZASB4749",
+        "ascApiKeyIssuerId": "911e920f-cd28-49bb-b3fb-37e38abdb43e"
+      }
+    }
+  }
+}

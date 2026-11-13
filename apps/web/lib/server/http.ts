@@ -51,6 +51,13 @@ function toResponse(error: unknown): Response {
       { status: error.status },
     )
   }
+  // request.json() on a body that isn't JSON.
+  // By name: the body is parsed in another realm, so `instanceof SyntaxError` can miss it.
+  if (error instanceof Error && error.name === "SyntaxError")
+    return Response.json(
+      { error: { code: "bad_json", message: "The request body isn't valid JSON" } },
+      { status: STATUS.badRequest },
+    )
   if (error instanceof ZodError) {
     const message = error.issues[0]?.message ?? "Check the details and try again"
     return Response.json({ error: { code: "invalid", message } }, { status: STATUS.badRequest })

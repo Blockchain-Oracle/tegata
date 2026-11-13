@@ -98,7 +98,7 @@ export function CheckoutView({
         {
           id: "react",
           name: "PayButton.tsx",
-          code: `import { useEffect } from "react"\n\nexport function PayButton() {\n  useEffect(() => {\n    const script = document.createElement("script")\n    script.src = "${origin}/checkout.js"\n    document.body.appendChild(script)\n  }, [])\n\n  return <button ${attrs.join(" ")} />\n}`,
+          code: `"use client"\n\nimport { useEffect } from "react"\n\nexport function PayButton() {\n  useEffect(() => {\n    const script = document.createElement("script")\n    script.src = "${origin}/checkout.js"\n    document.body.appendChild(script)\n  }, [])\n\n  return <button ${attrs.join(" ")} />\n}`,
         },
         {
           id: "link",

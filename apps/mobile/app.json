@@ -1,0 +1,111 @@
+{
+  "expo": {
+    "name": "Tegata",
+    "slug": "tegata",
+    "owner": "abu.dev",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/brand/icon.png",
+    "scheme": "tegata",
+    "userInterfaceStyle": "automatic",
+    "backgroundColor": "#F3EFE6",
+    "ios": {
+      "bundleIdentifier": "xyz.tegata.app",
+      "supportsTablet": false,
+      "icon": "./assets/brand/icon.png",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false,
+        "UIViewControllerBasedStatusBarAppearance": true
+      },
+      "config": {
+        "usesNonExemptEncryption": false
+      }
+    },
+    "android": {
+      "package": "xyz.tegata.app",
+      "adaptiveIcon": {
+        "backgroundColor": "#FF4F00",
+        "foregroundImage": "./assets/brand/android-foreground.png",
+        "backgroundImage": "./assets/brand/android-background.png",
+        "monochromeImage": "./assets/brand/android-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false,
+      "blockedPermissions": [
+        "android.permission.SYSTEM_ALERT_WINDOW",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.RECORD_AUDIO"
+      ]
+    },
+    "plugins": [
+      "expo-router",
+      "expo-asset",
+      "expo-secure-store",
+      "expo-web-browser",
+      "expo-localization",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#F3EFE6",
+          "image": "./assets/brand/splash.png",
+          "imageWidth": 120,
+          "dark": {
+            "backgroundColor": "#0E0C0A",
+            "image": "./assets/brand/splash.png"
+          }
+        }
+      ],
+      [
+        "expo-font",
+        {
+          "fonts": [
+            "./assets/fonts/Archivo-ExtraCondensedBlack.ttf",
+            "./assets/fonts/Archivo-Regular.ttf",
+            "./assets/fonts/Archivo-Medium.ttf",
+            "./assets/fonts/Archivo-SemiBold.ttf",
+            "./assets/fonts/Archivo-Bold.ttf",
+            "./assets/fonts/DMMono-Regular.ttf",
+            "./assets/fonts/DMMono-Medium.ttf"
+          ]
+        }
+      ],
+      [
+        "expo-audio",
+        {
+          "microphonePermission": false,
+          "recordAudioAndroid": false,
+          "enableBackgroundPlayback": false
+        }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Tegata uses the camera to scan a code to pay.",
+          "microphonePermission": false,
+          "recordAudioAndroid": false,
+          "barcodeScannerEnabled": true
+        }
+      ],
+      "./plugins/without-apple-sign-in.js",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "buildArchs": ["arm64-v8a", "armeabi-v7a"]
+          }
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": false
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "f4321954-3749-4bc3-93e5-b72797b3499e"
+      }
+    }
+  }
+}
