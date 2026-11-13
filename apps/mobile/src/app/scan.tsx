@@ -5,16 +5,17 @@ import { CameraView, useCameraPermissions } from "expo-camera"
 import { router } from "expo-router"
 import * as WebBrowser from "expo-web-browser"
 import { Flashlight, X } from "lucide-react-native"
-import { useRef, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { Linking, View } from "react-native"
 import Animated, { FadeInDown } from "react-native-reanimated"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 
 import { fire } from "@/feedback/fire"
-import { PAPER, RADIUS, SHU } from "@/theme/tokens"
+import { LACQUER, ON_STAGE, PAPER, RADIUS, SHU } from "@/theme/tokens"
 import { Button } from "@/ui/button"
 import { Mark } from "@/ui/mark"
 import { Press } from "@/ui/press"
+import { StageField } from "@/ui/stage"
 import { T } from "@/ui/text"
 
 const FRAME = 260
@@ -55,6 +56,11 @@ function Corner({ style }: { style: object }) {
 export default function Scan() {
   const insets = useSafeAreaInsets()
   const [permission, requestPermission] = useCameraPermissions()
+  const [asked, setAsked] = useState(false)
+  useEffect(() => {
+    if (permission && !permission.granted && permission.canAskAgain && !asked)
+      void requestPermission().finally(() => setAsked(true))
+  }, [permission, asked, requestPermission])
   const [torch, setTorch] = useState(false)
   const [found, setFound] = useState<Found | null>(null)
   const last = useRef("")
@@ -68,25 +74,54 @@ export default function Scan() {
     else fire("filled", { cue: "confirmed" })
   }
 
-  if (!permission) return <View style={{ flex: 1, backgroundColor: "#000" }} />
+  // First visit: iOS asks with its own prompt; the explainer below shows only after a "no".
+  const undecided = !permission || (!permission.granted && permission.canAskAgain && !asked)
+  if (undecided) return <View style={{ flex: 1, backgroundColor: LACQUER.base }} />
   if (!permission.granted)
     return (
       <View
         style={{
           flex: 1,
-          backgroundColor: "#000",
           padding: 24,
           paddingTop: insets.top + 24,
-          justifyContent: "center",
+          paddingBottom: insets.bottom + 24,
+          justifyContent: "flex-end",
           gap: 16,
         }}
       >
+        <StageField tone="lacquer" />
+        <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
+          <View style={{ width: 200, height: 200, alignItems: "center", justifyContent: "center" }}>
+            {(["tl", "tr", "bl", "br"] as const).map((corner) => (
+              <View
+                key={corner}
+                style={{
+                  position: "absolute",
+                  width: 44,
+                  height: 44,
+                  borderColor: ON_STAGE.soft,
+                  ...(corner[0] === "t"
+                    ? { top: 0, borderTopWidth: 4 }
+                    : { bottom: 0, borderBottomWidth: 4 }),
+                  ...(corner[1] === "l"
+                    ? { left: 0, borderLeftWidth: 4 }
+                    : { right: 0, borderRightWidth: 4 }),
+                  ...(corner === "tl" ? { borderTopLeftRadius: 22 } : {}),
+                  ...(corner === "tr" ? { borderTopRightRadius: 22 } : {}),
+                  ...(corner === "bl" ? { borderBottomLeftRadius: 22 } : {}),
+                  ...(corner === "br" ? { borderBottomRightRadius: 22 } : {}),
+                }}
+              />
+            ))}
+            <Mark id="near" size={56} />
+          </View>
+        </View>
         <T role="stepTitle" tone="white">
-          Tegata needs the camera to scan a code.
+          Scan a Tegata or NEAR code with the camera.
         </T>
         <Button
           variant="white"
-          label={permission.canAskAgain ? "Allow the camera" : "Open Settings"}
+          label={permission.canAskAgain ? "Allow the camera" : "Allow it in Settings"}
           onPress={() =>
             permission.canAskAgain ? void requestPermission() : void Linking.openSettings()
           }

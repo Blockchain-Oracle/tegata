@@ -52,7 +52,7 @@ export default function Activity() {
   }, [activity.data, filter])
 
   return (
-    <Screen dock refreshing={activity.isRefetching} onRefresh={() => void activity.refetch()}>
+    <Screen dock onRefresh={() => activity.refetch()}>
       <Header title="Activity" back={false} />
       <Segmented
         options={[

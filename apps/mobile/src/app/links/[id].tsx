@@ -26,7 +26,7 @@ export default function LinkScreen() {
   const business = profile?.workspace?.name ?? "Your business"
   const link = detail.data?.request
   return (
-    <Screen refreshing={detail.isRefetching} onRefresh={() => void detail.refetch()}>
+    <Screen onRefresh={() => detail.refetch()}>
       <Header title={link?.title ?? "Pay link"} />
       {detail.isError ? (
         <Problem

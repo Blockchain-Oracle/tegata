@@ -148,7 +148,7 @@ export default function Run() {
   const paid = data.status === "paid"
 
   return (
-    <Screen refreshing={run.isRefetching} onRefresh={() => void run.refetch()}>
+    <Screen onRefresh={() => run.refetch()}>
       <Header title={data.label} />
       <View
         style={{

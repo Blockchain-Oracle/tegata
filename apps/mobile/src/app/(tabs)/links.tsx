@@ -26,7 +26,7 @@ export default function Links() {
     select: (data) => data.links.filter((link) => link.network === network),
   })
   return (
-    <Screen dock refreshing={links.isRefetching} onRefresh={() => void links.refetch()}>
+    <Screen dock onRefresh={() => links.refetch()}>
       <Header title="Pay links" back={false} />
       <View style={{ backgroundColor: p.sora, borderRadius: 20, padding: 16, gap: 12 }}>
         <T role="rowTitle" color={p.fieldInk}>

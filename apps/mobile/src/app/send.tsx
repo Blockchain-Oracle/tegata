@@ -18,7 +18,7 @@ import { ReceiptSlip } from "@/features/receipt/receipt-slip"
 import { fire } from "@/feedback/fire"
 import { amountOk, toUnits, typedAmount, usd } from "@/lib/money"
 import { checkSend } from "@/near/draft"
-import { FONT, RADIUS, usePalette } from "@/theme/tokens"
+import { FONT, ON_STAGE, PAPER, RADIUS, usePalette } from "@/theme/tokens"
 import { Button } from "@/ui/button"
 import { Figure } from "@/ui/figure"
 import { HoldButton } from "@/ui/hold-button"
@@ -26,6 +26,7 @@ import { Keypad } from "@/ui/keypad"
 import { Header, Problem, Screen } from "@/ui/layout"
 import { Mark } from "@/ui/mark"
 import { Press } from "@/ui/press"
+import { Stage } from "@/ui/stage"
 import { TaskSteps } from "@/ui/task-steps"
 import { T } from "@/ui/text"
 
@@ -38,6 +39,12 @@ export default function Send() {
   const { account, network, profile, sign } = useSession()
   const [step, setStep] = useState<Step>(params.to ? "amount" : "to")
   const [to, setTo] = useState((params.to ?? "").toLowerCase())
+  // The field keeps its own text (fast typing and paste never drop keys); a paste or a chip remounts it with the value.
+  const [toField, setToField] = useState(0)
+  const fillTo = (value: string) => {
+    setTo(value.trim().toLowerCase())
+    setToField((n) => n + 1)
+  }
   const [amount, setAmount] = useState(params.amount ?? "")
   const [busy, setBusy] = useState(false)
   const [problem, setProblem] = useState<string | null>(null)
@@ -186,7 +193,7 @@ export default function Send() {
   if (step === "review" && send)
     return (
       <Screen>
-        <Header title="Review" />
+        <Header title="Review" onBack={() => setStep("amount")} />
         <Animated.View entering={FadeInDown.duration(320)} style={{ gap: 16 }}>
           <View
             style={{ backgroundColor: p.card, borderRadius: RADIUS.group, padding: 20, gap: 16 }}
@@ -253,40 +260,59 @@ export default function Send() {
   if (step === "amount")
     return (
       <Screen scroll={false}>
-        <Header title={`To ${recipient}`} />
+        <Header title={`To ${recipient}`} onBack={() => setStep("to")} />
         <Animated.View
           key="amount"
           entering={FadeInDown.duration(320)}
           exiting={FadeOutUp.duration(160)}
           style={{ flex: 1, justifyContent: "space-between" }}
         >
-          <View style={{ alignItems: "center", gap: 10, paddingTop: 20 }}>
+          <Stage
+            style={{ alignItems: "center", gap: 12, paddingVertical: 24, paddingHorizontal: 20 }}
+          >
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+              <Mark id="usdc" chain="near" size={20} />
+              <T role="detailMedium" color={ON_STAGE.soft}>
+                Arrives as USDC on NEAR
+              </T>
+            </View>
             <Figure
               text={`$${typedAmount(amount)}`}
               size={72}
-              color={short ? p.down : amount ? p.ink : p.text3}
+              color={amount ? ON_STAGE.ink : ON_STAGE.faint}
             />
             <View style={{ flexDirection: "row", gap: 16, alignItems: "center" }}>
-              <T role="detailMedium" tone={short ? "down" : "text2"}>
-                {short ? "More than your balance" : `${usd(balance)} available`}
-              </T>
+              <View
+                style={{
+                  backgroundColor: short ? PAPER.face : "transparent",
+                  borderRadius: 999,
+                  paddingHorizontal: short ? 10 : 0,
+                  paddingVertical: 4,
+                }}
+              >
+                <T role="detailMedium" color={short ? p.down : ON_STAGE.soft}>
+                  {short ? "More than your balance" : `${usd(balance)} available`}
+                </T>
+              </View>
               <Press
                 haptic="tick"
                 onPress={() =>
                   setAmount((Number(balance / 10_000n) / 100).toFixed(2).replace(/\.00$/, ""))
                 }
                 style={{
-                  backgroundColor: p.plate,
+                  backgroundColor: ON_STAGE.veil,
                   borderRadius: 999,
                   paddingHorizontal: 12,
                   height: 30,
                   justifyContent: "center",
                 }}
               >
-                <T role="detailMedium">Max</T>
+                <T role="detailMedium" color={ON_STAGE.ink}>
+                  Max
+                </T>
               </Press>
             </View>
-          </View>
+          </Stage>
           <View style={{ gap: 12 }}>
             {problem ? <Problem text={problem} /> : null}
             <Keypad
@@ -315,6 +341,15 @@ export default function Send() {
     >
       <Screen>
         <Header title="Send" />
+        <Stage style={{ padding: 18, gap: 4 }}>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+            <Mark id="usdc" chain="near" size={20} />
+            <T role="detailMedium" color={ON_STAGE.soft}>
+              Available · fees paid by Tegata
+            </T>
+          </View>
+          <Figure units={balance} size={44} color={ON_STAGE.ink} />
+        </Stage>
         <Animated.View entering={FadeInDown.duration(320)} style={{ gap: 14 }}>
           <T role="detailMedium" tone="text2">
             To a NEAR account
@@ -333,7 +368,8 @@ export default function Send() {
           >
             <Mark id="near" size={22} />
             <TextInput
-              value={to}
+              key={toField}
+              defaultValue={to}
               onChangeText={(text) => {
                 setTo(text.toLowerCase().trim())
                 setProblem(null)
@@ -350,9 +386,7 @@ export default function Send() {
             <Press
               haptic="tick"
               accessibilityLabel="Paste"
-              onPress={async () =>
-                setTo(((await Clipboard.getStringAsync()) ?? "").trim().toLowerCase())
-              }
+              onPress={async () => fillTo((await Clipboard.getStringAsync()) ?? "")}
               style={{ width: 44, height: 44, alignItems: "center", justifyContent: "center" }}
             >
               <ClipboardPaste size={20} color={p.text2} />
@@ -382,7 +416,7 @@ export default function Send() {
                   key={person.id}
                   haptic="tick"
                   onPress={() => {
-                    setTo(person.accountId)
+                    fillTo(person.accountId)
                     setStep("amount")
                   }}
                   style={{

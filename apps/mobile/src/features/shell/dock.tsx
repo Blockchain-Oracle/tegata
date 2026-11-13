@@ -193,7 +193,7 @@ function Fan({ open, onClose, bottom }: { open: boolean; onClose: () => void; bo
         <Animated.View
           entering={FadeIn.duration(200)}
           exiting={FadeOut.duration(160)}
-          style={{ flex: 1, backgroundColor: p.scrim }}
+          style={{ flex: 1, backgroundColor: `${p.ink === "#16130F" ? "#16130F" : "#000000"}E6` }}
         >
           <Pressable style={{ flex: 1 }} onPress={close} accessibilityLabel="Close" />
           <View
@@ -261,32 +261,34 @@ function FanItem({
   }, [index, rise])
   const style = useAnimatedStyle(() => ({ transform: [{ translateY: rise.value }] }))
   return (
-    <Animated.View entering={ZoomIn.delay(index * 40).springify()} style={style}>
-      <Press
-        haptic="tick"
-        onPress={onPress}
-        accessibilityLabel={label}
-        style={{ alignItems: "center", gap: 8, width: 68 }}
-      >
-        <View
-          style={[
-            {
-              width: 60,
-              height: 60,
-              borderRadius: 30,
-              backgroundColor: PAPER.face,
-              alignItems: "center",
-              justifyContent: "center",
-            },
-            SHADOW.object,
-          ]}
+    <Animated.View entering={ZoomIn.delay(index * 40).springify()}>
+      <Animated.View style={style}>
+        <Press
+          haptic="tick"
+          onPress={onPress}
+          accessibilityLabel={label}
+          style={{ alignItems: "center", gap: 8, width: 68 }}
         >
-          {icon}
-        </View>
-        <T role="detailMedium" tone="white">
-          {label}
-        </T>
-      </Press>
+          <View
+            style={[
+              {
+                width: 60,
+                height: 60,
+                borderRadius: 30,
+                backgroundColor: PAPER.face,
+                alignItems: "center",
+                justifyContent: "center",
+              },
+              SHADOW.object,
+            ]}
+          >
+            {icon}
+          </View>
+          <T role="detailMedium" tone="white">
+            {label}
+          </T>
+        </Press>
+      </Animated.View>
     </Animated.View>
   )
 }

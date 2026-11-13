@@ -87,13 +87,13 @@ export function LinkCard({
               {url.replace(/^https?:\/\//, "")}
             </T>
           </View>
-          <View style={{ position: "absolute", right: -12, top: -20 }}>
+          <View style={{ position: "absolute", right: 10, top: 8 }}>
             <SealPress
               play={Boolean(fresh)}
               delay={350}
               identity={fresh ? `link-${link.id}` : undefined}
             >
-              <BusinessSeal name={business} size={76} />
+              <BusinessSeal name={business} size={68} />
             </SealPress>
           </View>
         </Paper>

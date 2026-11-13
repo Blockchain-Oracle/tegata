@@ -2,7 +2,7 @@
 // a back chevron with the title in display type (no breadcrumbs), and chips that say status in words.
 import { router } from "expo-router"
 import { ChevronLeft, ChevronRight } from "lucide-react-native"
-import type { ReactNode } from "react"
+import { type ReactNode, useState } from "react"
 import { RefreshControl, ScrollView, type StyleProp, View, type ViewStyle } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 
@@ -17,7 +17,6 @@ export const DOCK_CLEARANCE = 112
 
 export function Screen({
   children,
-  refreshing,
   onRefresh,
   dock = false,
   padded = true,
@@ -25,8 +24,8 @@ export function Screen({
   style,
 }: {
   children: ReactNode
-  refreshing?: boolean
-  onRefresh?: () => void
+  /** Pull to refresh: the spinner shows until the returned promise settles. */
+  onRefresh?: () => Promise<unknown> | void
   /** A tab screen: leave room for the dock. */
   dock?: boolean
   padded?: boolean
@@ -35,6 +34,7 @@ export function Screen({
 }) {
   const p = usePalette()
   const insets = useSafeAreaInsets()
+  const [pulling, setPulling] = useState(false)
   const content: ViewStyle = {
     paddingTop: insets.top + 8,
     paddingBottom: (dock ? DOCK_CLEARANCE : 32) + insets.bottom,
@@ -54,10 +54,13 @@ export function Screen({
       refreshControl={
         onRefresh ? (
           <RefreshControl
-            refreshing={Boolean(refreshing)}
+            refreshing={pulling}
             onRefresh={() => {
               fire("snap")
-              onRefresh()
+              setPulling(true)
+              void Promise.resolve(onRefresh())
+                .catch(() => undefined)
+                .finally(() => setPulling(false))
             }}
             tintColor={p.text3}
           />
@@ -73,10 +76,13 @@ export function Header({
   title,
   right,
   back = true,
+  onBack,
 }: {
   title: string
   right?: ReactNode
   back?: boolean
+  /** A step inside one screen: Back goes to the step before instead of leaving. */
+  onBack?: () => void
 }) {
   const p = usePalette()
   return (
@@ -85,7 +91,9 @@ export function Header({
         <Press
           haptic="tick"
           accessibilityLabel="Back"
-          onPress={() => (router.canGoBack() ? router.back() : router.replace("/"))}
+          onPress={() =>
+            onBack ? onBack() : router.canGoBack() ? router.back() : router.replace("/")
+          }
           style={{
             width: 40,
             height: 40,

@@ -72,7 +72,7 @@ export default function NewLink() {
         behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
         <Screen>
-          <Header title="Name the link" />
+          <Header title="Name the link" onBack={() => setStep("amount")} />
           <Animated.View entering={FadeInDown.duration(320)} style={{ gap: 14 }}>
             <View
               style={{

@@ -136,15 +136,12 @@ export default function Home() {
   }, [grantStatus.data?.status, grant])
 
   const opening = account && !account.readyAt
-  const refreshing = activity.isRefetching
   return (
     <Screen
       dock
-      refreshing={refreshing}
       onRefresh={() => {
         refetchProfile()
-        void activity.refetch()
-        void due.refetch()
+        return Promise.all([activity.refetch(), due.refetch()])
       }}
     >
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>

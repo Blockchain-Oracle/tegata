@@ -49,7 +49,7 @@ export default function Payroll() {
   const open = runs.find((run) => run.status === "draft")
 
   return (
-    <Screen refreshing={overview.isRefetching} onRefresh={() => void overview.refetch()}>
+    <Screen onRefresh={() => overview.refetch()}>
       <Header title="Payroll" />
       {overview.isPending ? (
         <Skeleton width="100%" height={88} radius={20} />
@@ -89,7 +89,7 @@ export default function Payroll() {
             />
           ) : (
             <StoryTile
-              field="sora"
+              field="kin"
               icon={<Users size={24} color={PAPER.ink} />}
               title={
                 overview.data?.schedule
