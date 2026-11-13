@@ -13,6 +13,7 @@ import { useRouter } from "next/navigation"
 import { useCallback, useEffect, useState } from "react"
 
 import { viewDollars } from "@/components/kit/figure"
+import { openPayWindow } from "@/components/pay/checkout-frame"
 import { type PayRoute, type PayStep, PayView, type TegataState } from "@/components/pay/pay-view"
 import { useDebounced } from "@/hooks/use-debounced"
 import { useProfile } from "@/hooks/use-profile"
@@ -190,6 +191,36 @@ export function PayClient({
   })
 
   const status = attempt.data?.status
+
+  // A pay window opened from a checkout frame: tell that frame (same origin only) which payment started here.
+  useEffect(() => {
+    if (!attemptId || !window.opener) return
+    if (new URLSearchParams(window.location.search).get("opener") !== "1") return
+    try {
+      window.opener.postMessage(
+        { type: "tegata:pay.started", token: initial.token, attemptId },
+        window.location.origin,
+      )
+    } catch {
+      // The opener went away: the merchant's page still gets the signed webhook.
+    }
+  }, [attemptId, initial.token])
+
+  // The checkout frame: a payment started in its pay window is followed here like its own.
+  useEffect(() => {
+    if (!embed) return
+    const onMessage = (event: MessageEvent) => {
+      if (event.origin !== window.location.origin) return
+      const data = event.data as { type?: string; token?: string; attemptId?: string }
+      if (data?.type !== "tegata:pay.started" || data.token !== initial.token || !data.attemptId)
+        return
+      setAttemptId(data.attemptId)
+      setStep("paying")
+    }
+    window.addEventListener("message", onMessage)
+    return () => window.removeEventListener("message", onMessage)
+  }, [embed, initial.token])
+
   // Embedded: tell the merchant's page it was paid, for its own screens only (proof is the signed webhook).
   const paidAttempt = step === "paid" ? attempt.data : undefined
   useEffect(() => {
@@ -519,10 +550,25 @@ export function PayClient({
       step={step}
       tegata={tegata}
       onSignIn={() => {
+        // Inside another site's frame, sign-in can't run (Tegata's pages refuse to be framed, and the browser keeps a
+        // framed site's storage apart): it opens in the pay window, which reports the payment back to this frame.
+        if (embed) {
+          const back = new URLSearchParams({ opener: "1" })
+          if (typed && amount) back.set("amount", amount)
+          openPayWindow(
+            request.token,
+            `/signin?next=${encodeURIComponent(`/pay/${request.token}?${back}`)}`,
+          )
+          return
+        }
         rememberNext(`/pay/${request.token}`)
         router.push("/signin")
       }}
       onFinishAccount={() => {
+        if (embed) {
+          openPayWindow(request.token)
+          return
+        }
         rememberNext(`/pay/${request.token}`)
         router.push("/welcome")
       }}

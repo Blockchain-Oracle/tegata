@@ -13,7 +13,7 @@ import {
   signInWithNearWallet,
   WalletSignInError,
 } from "@/lib/client/near-account"
-import { takeNext } from "@/lib/client/next-path"
+import { rememberNext, takeNext } from "@/lib/client/next-path"
 import { fire } from "@/lib/feedback"
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
@@ -37,6 +37,13 @@ export default function SignInPage() {
   const [sealed, setSealed] = useState(false)
   const [walletState, setWalletState] = useState<"idle" | "waiting" | "done">("idle")
   const [walletProblem, setWalletProblem] = useState<string | null>(null)
+
+  // Sent here with ?next= (a checkout's pay window): come back to that path after signing in. Only ever a path on
+  // this site (rememberNext refuses anything else). Declared first, so the redirect below already sees it.
+  useEffect(() => {
+    const next = new URLSearchParams(window.location.search).get("next")
+    if (next) rememberNext(next)
+  }, [])
 
   // Already signed in (a returning visit, by email or with a wallet): go straight in.
   useEffect(() => {
