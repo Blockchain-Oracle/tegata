@@ -23,3 +23,6 @@ out/
 .idea/
 .vscode/
 .claude/
+
+# Local key files (provider signing keys)
+.secrets/

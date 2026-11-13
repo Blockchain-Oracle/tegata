@@ -704,6 +704,7 @@ const REFUND_HINT: Record<string, string> = {
   arb: "0x…",
   bnb: "0x…",
   pol: "0x…",
+  gnosis: "0x…",
   sol: "Your Solana address",
   btc: "bc1…",
   tron: "T…",

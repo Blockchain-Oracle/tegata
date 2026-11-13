@@ -83,6 +83,15 @@ export const PAYER_ROUTES = [
     coin: "usdc",
     chainMark: "pol",
   },
+  // USDC.e on Gnosis: the coin a Gnosis Pay card account (a Safe on Gnosis) spends, so a payout here tops up a card.
+  {
+    id: "usdc-gnosis",
+    symbol: "USDC",
+    blockchain: "gnosis",
+    chain: "Gnosis",
+    coin: "usdc",
+    chainMark: "gnosis",
+  },
 ] as const
 
 export type PayerRoute = (typeof PAYER_ROUTES)[number]
@@ -101,6 +110,7 @@ export const ADDRESS_HINT: Record<string, string> = {
   arb: "0x…",
   bnb: "0x…",
   pol: "0x…",
+  gnosis: "0x… (a Gnosis Pay card account works)",
   sol: "Their Solana address",
   btc: "bc1…",
   tron: "T…",
@@ -121,6 +131,7 @@ export function addressLooksRight(chainMark: string, value: string): boolean {
     case "arb":
     case "bnb":
     case "pol":
+    case "gnosis":
       return EVM.test(v)
     case "sol":
       return v.length >= 32 && v.length <= 44 && BASE58.test(v)
@@ -141,6 +152,7 @@ export function chainTxUrl(chainMark: string, hash: string): string | null {
     arb: "https://arbiscan.io/tx/",
     bnb: "https://bscscan.com/tx/",
     pol: "https://polygonscan.com/tx/",
+    gnosis: "https://gnosisscan.io/tx/",
     sol: "https://solscan.io/tx/",
     btc: "https://mempool.space/tx/",
     tron: "https://tronscan.org/#/transaction/",

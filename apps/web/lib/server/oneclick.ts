@@ -100,7 +100,14 @@ export async function dryQuote(route: PayerRoute, units: bigint): Promise<DryQuo
 }
 
 /** EVM chain ids for EIP-681 links. */
-const EVM_CHAIN_ID: Record<string, number> = { eth: 1, base: 8453, arb: 42161, bsc: 56, pol: 137 }
+const EVM_CHAIN_ID: Record<string, number> = {
+  eth: 1,
+  base: 8453,
+  arb: 42161,
+  bsc: 56,
+  pol: 137,
+  gnosis: 100,
+}
 
 /**
  * A payment link a wallet can open from a QR (context/09-realworld-money/live-1click-notes.md §6): EIP-681 on EVM chains,
