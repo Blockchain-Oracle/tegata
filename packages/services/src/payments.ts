@@ -6,6 +6,7 @@ import { type Db, schema } from "@tegata/db"
 import { and, desc, eq, inArray, sql } from "drizzle-orm"
 
 import { emitEvent, paymentObject } from "./events.ts"
+import { applySplit } from "./pots.ts"
 import { createRelayDraft } from "./relays.ts"
 
 const { requests, payments, receipts, workspaces, accounts, relays, invoices, invoiceEvents } =
@@ -415,6 +416,16 @@ export async function applyPayment(
     token: publicToken(RECEIPT_TOKEN_LENGTH),
     number: counter.next - 1,
   })
+  // The business's own split: a share of every payment that reached NEAR set aside as Tax and Savings (never one
+  // marked paid by hand: that money isn't on the account).
+  if (payment.rail !== "manual")
+    await applySplit(tx, {
+      workspaceId: request.workspaceId,
+      network: request.network,
+      amount: payment.amount,
+      sourceType: "payment",
+      sourceId: payment.id,
+    })
   // Webhook events: stored in this same transaction, so a payment and its event are never apart.
   const [row] = await tx.select().from(payments).where(eq(payments.id, payment.id))
   if (row) {

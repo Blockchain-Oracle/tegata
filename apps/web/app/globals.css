@@ -69,6 +69,8 @@
   --color-sora: var(--sora);
   --color-sakura: var(--sakura);
   --color-kin: var(--kin);
+  --color-pot-tax: var(--pot-tax);
+  --color-pot-savings: var(--pot-savings);
   --color-ai: var(--ai);
   --color-field-ink: var(--field-ink);
   --color-near: var(--near);
@@ -270,6 +272,9 @@
   --sora: #a9d8ff;
   --sakura: #ffc2d6;
   --kin: #ffd23f;
+  /* Pots keep their full colour in both themes (the story fields above darken to washes in dark mode). */
+  --pot-tax: #ffd23f;
+  --pot-savings: #c8f06a;
   --ai: #1b1f5e;
   --field-ink: #16130f;
   --near: #00ec97;

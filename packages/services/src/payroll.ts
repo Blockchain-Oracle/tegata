@@ -35,6 +35,7 @@ import {
   quotePayout,
   registerDepositAddresses,
 } from "./payouts.ts"
+import { applySplitToAccount } from "./pots.ts"
 import { type Approval, approvalMatches, createRelayDraft, submitRelaySignature } from "./relays.ts"
 
 const {
@@ -1128,6 +1129,15 @@ export async function settleRunRelay(
                 : { status: "paid", txHash: relay.txHash, paidAt: new Date() },
           )
           .where(eq(payRows.id, row.id))
+        // Pay that landed in a person's own Tegata account: their own split rule sets their share aside.
+        if (hit && !row.payoutId && row.destinationKind === "tegata" && row.accountId)
+          await applySplitToAccount(db, {
+            accountId: row.accountId,
+            network: relay.network,
+            amount: row.amount,
+            sourceType: "payslip",
+            sourceId: row.id,
+          })
       }
     } else {
       return "pending"

@@ -9,6 +9,7 @@ import {
   PaymentError,
   PayoutError,
   PayrollError,
+  PotError,
   ReferralError,
   RelayError,
   SandboxError,
@@ -119,6 +120,11 @@ function toResponse(error: unknown): Response {
             : STATUS.badRequest
     return Response.json({ error: { code: error.code, message: error.message } }, { status })
   }
+  if (error instanceof PotError)
+    return Response.json(
+      { error: { code: error.code, message: error.message } },
+      { status: error.code === "not_found" ? STATUS.notFound : STATUS.badRequest },
+    )
   if (error instanceof PayoutError) {
     const status =
       error.code === "not_found"

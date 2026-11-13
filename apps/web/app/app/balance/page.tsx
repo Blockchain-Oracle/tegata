@@ -1,17 +1,19 @@
 "use client"
 
-import { useMutation, useQuery } from "@tanstack/react-query"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
 
 import { AddMoneySheet } from "@/components/books/add-money-sheet"
 import { BalanceView } from "@/components/books/balance-view"
+import { type PotKind, PotsCard, type PotsView } from "@/components/books/pots-card"
 import { useShell } from "@/components/shell/shell-context"
 import { useNetwork } from "@/hooks/use-network"
 import { useProfile } from "@/hooks/use-profile"
 import { useTestDollars } from "@/hooks/use-test-dollars"
 import { ApiError, api } from "@/lib/client/api"
 import type { AutopilotView, Reconciliation } from "@/lib/client/types"
+import { fire } from "@/lib/feedback"
 
 export default function BalancePage() {
   const { profile } = useProfile()
@@ -20,6 +22,29 @@ export default function BalancePage() {
   const network = useNetwork()
   const router = useRouter()
   const [adding, setAdding] = useState(false)
+  const queryClient = useQueryClient()
+  const pots = useQuery({
+    queryKey: ["pots", network],
+    queryFn: () => api<PotsView>("/api/pots"),
+    refetchInterval: 15_000,
+  })
+  const potAction = useMutation({
+    mutationFn: (
+      action:
+        | { kind: "rule"; rule: PotsView["rule"] }
+        | { kind: "move"; pot: PotKind; direction: "to_spending" | "to_pot"; amount: string },
+    ) =>
+      action.kind === "rule"
+        ? api("/api/pots", { method: "PATCH", body: action.rule })
+        : api("/api/pots/move", {
+            body: { kind: action.pot, direction: action.direction, amount: action.amount },
+          }),
+    onSuccess: () => {
+      fire("tick", { cue: "confirmed" })
+      void queryClient.invalidateQueries({ queryKey: ["pots", network] })
+    },
+    onError: () => fire("fail", { cue: "error" }),
+  })
   // Home's "Add money" lands here with ?add=1: open the chooser, then drop the flag so a refresh doesn't reopen it.
   useEffect(() => {
     if (new URLSearchParams(window.location.search).get("add")) {
@@ -74,6 +99,23 @@ export default function BalancePage() {
         onReconcile={() => void reconcile.refetch()}
         onAddMoney={() => setAdding(true)}
         live={network === "mainnet"}
+        pots={
+          <PotsCard
+            view={pots.data}
+            busy={potAction.isPending}
+            problem={
+              potAction.error
+                ? potAction.error instanceof ApiError
+                  ? potAction.error.message
+                  : "That didn't save. Try again."
+                : null
+            }
+            onRule={(rule) => potAction.mutate({ kind: "rule", rule })}
+            onMove={({ kind, direction, amount }) =>
+              potAction.mutate({ kind: "move", pot: kind, direction, amount })
+            }
+          />
+        }
       />
       <AddMoneySheet
         open={adding}
