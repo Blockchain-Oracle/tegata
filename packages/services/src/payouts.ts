@@ -270,6 +270,7 @@ export async function pollPayout(db: Db, id: string, apiKey?: string): Promise<P
           amount: delivered.amount,
           txHash: delivered.txHash,
           dedupe: `payout:${delivered.id}`,
+          receiptUrl: delivered.relayId ? `/r/send/${delivered.relayId}` : null,
         })
     })
     return "delivered"

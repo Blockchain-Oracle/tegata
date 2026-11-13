@@ -82,6 +82,9 @@ export interface PayViewProps {
   /** Live: the payer's address on their chain, for a refund; then a deposit address from NEAR Intents. */
   refundTo: string
   onRefundTo: (value: string) => void
+  /** Optional: where a wallet or other-chain payer wants their receipt (a Tegata payer gets it at their sign-in). */
+  receiptEmail?: string
+  onReceiptEmail?: (value: string) => void
   onPayChain: () => void
   /** Which rail the payment in flight uses. */
   usedRail: PaymentRail | null
@@ -595,6 +598,7 @@ function WalletPanel(p: PanelProps) {
           </button>
         }
       />
+      <ReceiptEmailField p={p} />
       <Problem text={p.problem} />
       <Button onClick={p.onPayWallet} busy={p.busy} disabled={p.dollars <= 0} cue="tap">
         {p.dollars > 0 ? `Pay $${p.dollars.toFixed(2)} from your wallet` : "Enter an amount"}
@@ -674,6 +678,7 @@ function ChainPanel(p: PanelProps) {
             autoCapitalize="none"
             className="font-mono"
           />
+          <ReceiptEmailField p={p} />
           <Problem text={p.problem} />
           <Button
             type="submit"
@@ -694,6 +699,23 @@ function ChainPanel(p: PanelProps) {
         </div>
       )}
     </>
+  )
+}
+
+/** "Email me a receipt", optional: the receipt (and any refund notice) goes there. */
+function ReceiptEmailField({ p }: { p: PanelProps }) {
+  if (!p.onReceiptEmail) return null
+  return (
+    <Field
+      id="receipt-email"
+      label="Email me a receipt (optional)"
+      type="email"
+      inputMode="email"
+      autoComplete="email"
+      placeholder="you@example.com"
+      value={p.receiptEmail ?? ""}
+      onChange={(e) => p.onReceiptEmail?.(e.target.value)}
+    />
   )
 }
 

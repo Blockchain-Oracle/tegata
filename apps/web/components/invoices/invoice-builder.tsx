@@ -625,7 +625,7 @@ function EmailPreview({ data }: { data: InvoiceEmailData }) {
     let live = true
     const t = setTimeout(() => {
       void import("@tegata/documents/preview")
-        .then(({ invoiceEmailHtml }) => invoiceEmailHtml(data))
+        .then(({ invoiceEmailHtml }) => invoiceEmailHtml(data, window.location.origin))
         .then((out) => {
           if (live) setHtml(out)
         })

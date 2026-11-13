@@ -1,4 +1,4 @@
-import { voidInvoice } from "@tegata/services"
+import { queueInvoiceEmail, voidInvoice } from "@tegata/services"
 import { z } from "zod"
 
 import { requireOwner } from "@/lib/server/auth.ts"
@@ -9,5 +9,7 @@ import { route } from "@/lib/server/http.ts"
 export const POST = route(async (request, context: { params: Promise<{ id: string }> }) => {
   const { workspace } = await requireOwner(request)
   const invoice = await voidInvoice(db(), workspace.id, z.uuid().parse((await context.params).id))
+  // Its customer hears there's nothing to pay.
+  await queueInvoiceEmail(db(), invoice.id, "invoice.void")
   return { invoice }
 })

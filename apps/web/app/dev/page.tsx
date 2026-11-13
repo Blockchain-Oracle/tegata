@@ -43,6 +43,12 @@ const CARDS = [
     field: "bg-ai text-white",
   },
   {
+    href: "/dev/emails",
+    title: "Emails",
+    note: "Every email: receipts, payslips, invoices, payouts, alerts, in the real layout",
+    field: "bg-kin",
+  },
+  {
     href: "/dev/flows/signin",
     title: "Sign-in",
     note: "Story stage, email, the six-cell code, a NEAR wallet (refused, then in), the seal",

@@ -24,6 +24,7 @@ import { nextPayday, payPeriod } from "@tegata/core/payroll"
 import { type Db, schema } from "@tegata/db"
 import { and, desc, eq, inArray } from "drizzle-orm"
 
+import { queueAutopilotUnderfunded, queueRunEmails } from "./emails.ts"
 import { listPeople, nextPaydayFor, PayrollError } from "./payroll.ts"
 import { type Approval, approvalMatches, createRelayDraft, submitRelaySignature } from "./relays.ts"
 
@@ -461,6 +462,7 @@ async function recordRun(
         },
       })
       .where(eq(autopilotPlans.id, row.id))
+    await queueAutopilotUnderfunded(db, row.id)
     return
   }
   const workspaceId = row.workspaceId
@@ -471,7 +473,7 @@ async function recordRun(
       and(eq(schema.payrolls.workspaceId, workspaceId), eq(schema.payrolls.network, row.network)),
     )
   const period = payPeriod(schedule?.cadence ?? "monthly", payday)
-  await db.transaction(async (tx) => {
+  const runId = await db.transaction(async (tx) => {
     // A manual draft for this payday gives way: the autopilot has paid it.
     await tx
       .delete(payRuns)
@@ -510,7 +512,7 @@ async function recordRun(
           eq(payRuns.payday, payday),
         ),
       )
-    if (run?.source !== "autopilot") return
+    if (run?.source !== "autopilot") return null
     for (const event of events) {
       if (event.event !== "payout_paid" && event.event !== "payout_failed") continue
       const index = Number(event.data.row)
@@ -553,8 +555,11 @@ async function recordRun(
           : {}),
       })
       .where(eq(payRuns.id, run.id))
+    return run.id
   })
   await db.update(autopilotPlans).set({ underfunded: null }).where(eq(autopilotPlans.id, row.id))
+  // Paid with nobody online: each person still gets their payslip, and the business hears the run went out.
+  if (runId) await queueRunEmails(db, runId)
 }
 
 /** Rows waiting on the operator's registration (the worker sweeps these at start). */

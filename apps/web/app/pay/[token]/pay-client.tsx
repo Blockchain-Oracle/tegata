@@ -132,6 +132,7 @@ export function PayClient({
   const [connecting, setConnecting] = useState(false)
   const [routeId, setRouteId] = useState(routes[0]?.id ?? "")
   const [refundTo, setRefundTo] = useState("")
+  const [receiptEmail, setReceiptEmail] = useState("")
 
   const request = useQuery({
     queryKey: ["pay", initial.token],
@@ -265,6 +266,7 @@ export function PayClient({
           rail: "near_wallet",
           amount: typed ? amount : undefined,
           payer: walletAccount,
+          email: receiptEmail.trim(),
         },
       })
       if (res.receiverId !== request.receiverId || res.amount !== due.toString()) {
@@ -333,7 +335,12 @@ export function PayClient({
     setProblem(null)
     try {
       const res = await api<{ paymentId: string }>(`/api/pay/${request.token}/oneclick`, {
-        body: { route: routeId, refundTo: refundTo.trim(), amount: typed ? amount : undefined },
+        body: {
+          route: routeId,
+          refundTo: refundTo.trim(),
+          amount: typed ? amount : undefined,
+          email: receiptEmail.trim(),
+        },
       })
       fire("press", { cue: "tap" })
       begin(res.paymentId, "oneclick")
@@ -401,6 +408,8 @@ export function PayClient({
       onPayTegata={payTegata}
       onPayWallet={payWallet}
       refundTo={refundTo}
+      receiptEmail={receiptEmail}
+      onReceiptEmail={setReceiptEmail}
       onRefundTo={(value) => {
         setRefundTo(value)
         setProblem(null)

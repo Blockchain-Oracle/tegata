@@ -12,6 +12,8 @@ const body = z.object({
   amount: z.string().trim().optional(),
   /** The NEAR account a wallet payer is paying from. */
   payer: z.string().trim().toLowerCase().optional(),
+  /** Where to send the receipt, if the payer wants one. */
+  email: z.email().max(200).optional().or(z.literal("")),
 })
 
 /**
@@ -59,6 +61,7 @@ export const POST = route(async (request, context: { params: Promise<{ token: st
     rail: "near_wallet",
     amount,
     payer: input.payer,
+    payerEmail: input.email || undefined,
   })
   return {
     paymentId: attempt.id,

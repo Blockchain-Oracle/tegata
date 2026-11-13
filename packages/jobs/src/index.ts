@@ -69,6 +69,18 @@ export const QUEUES = {
     payload: z.object({ kind: z.enum(["invite", "paid"]), id: z.uuid() }),
     options: { retryLimit: 3, retryDelay: 30, retryBackoff: true, expireInSeconds: 120 },
   },
+  /** Every morning: ask owners whose payday has come to approve the run (one email per payday). */
+  payrollDue: {
+    name: "payroll-due",
+    payload: z.object({}),
+    options: { retryLimit: 0, expireInSeconds: 300 },
+  },
+  /** The 1st of each month: last month's statement to each business that had movements. */
+  statementMonthly: {
+    name: "statement-monthly",
+    payload: z.object({}),
+    options: { retryLimit: 0, expireInSeconds: 600 },
+  },
   /** Register a business on the autopilot contract (the operator pays its storage). Safe to repeat. */
   autopilotRegister: {
     name: "autopilot-register",

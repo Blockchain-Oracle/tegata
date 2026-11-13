@@ -17,6 +17,7 @@ export const DEV_PAGES = [
   { href: "/dev/states", label: "States" },
   { href: "/dev/motion", label: "Motion & sound" },
   { href: "/dev/marks", label: "Logos" },
+  { href: "/dev/emails", label: "Emails" },
   { href: "/dev/flows/signin", label: "Sign-in" },
   { href: "/dev/flows/welcome", label: "Welcome" },
   { href: "/dev/flows/home", label: "Home & Send" },

@@ -10,6 +10,7 @@ import {
   type BusinessFieldName,
   BusinessView,
 } from "@/components/settings/business-view"
+import { EmailsCard } from "@/components/settings/emails-card"
 import { useNetwork } from "@/hooks/use-network"
 import { useProfile } from "@/hooks/use-profile"
 import { ApiError, api } from "@/lib/client/api"
@@ -63,33 +64,36 @@ export default function SettingsPage() {
       : null
 
   return (
-    <BusinessView
-      // A fresh form after each save, so "changed" is measured against what was stored.
-      key={`${workspace.name}|${workspace.logo}|${workspace.address}|${workspace.taxId}|${workspace.email}|${workspace.timezone}`}
-      initial={{
-        name: workspace.name,
-        address: workspace.address ?? "",
-        taxId: workspace.taxId ?? "",
-        email: workspace.email ?? "",
-        timezone: workspace.timezone,
-        logo: workspace.logo,
-      }}
-      accountId={account.accountId}
-      signInEmail={
-        profile.user.walletAccountId
-          ? `${profile.user.walletAccountId} (NEAR wallet)`
-          : profile.user.email
-      }
-      saving={save.isPending}
-      problem={
-        error
-          ? {
-              field,
-              message: error instanceof ApiError ? error.message : "Couldn't save. Try again.",
-            }
-          : null
-      }
-      onSave={(draft, logoChanged) => save.mutate({ draft, logoChanged })}
-    />
+    <div className="flex flex-col gap-6">
+      <BusinessView
+        // A fresh form after each save, so "changed" is measured against what was stored.
+        key={`${workspace.name}|${workspace.logo}|${workspace.address}|${workspace.taxId}|${workspace.email}|${workspace.timezone}`}
+        initial={{
+          name: workspace.name,
+          address: workspace.address ?? "",
+          taxId: workspace.taxId ?? "",
+          email: workspace.email ?? "",
+          timezone: workspace.timezone,
+          logo: workspace.logo,
+        }}
+        accountId={account.accountId}
+        signInEmail={
+          profile.user.walletAccountId
+            ? `${profile.user.walletAccountId} (NEAR wallet)`
+            : profile.user.email
+        }
+        saving={save.isPending}
+        problem={
+          error
+            ? {
+                field,
+                message: error instanceof ApiError ? error.message : "Couldn't save. Try again.",
+              }
+            : null
+        }
+        onSave={(draft, logoChanged) => save.mutate({ draft, logoChanged })}
+      />
+      <EmailsCard />
+    </div>
   )
 }

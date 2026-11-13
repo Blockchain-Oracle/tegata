@@ -1,5 +1,5 @@
 import { enqueue } from "@tegata/jobs"
-import { chooseDestination } from "@tegata/services"
+import { chooseDestination, queueDestinationEmails } from "@tegata/services"
 import { z } from "zod"
 
 import { requireUser } from "@/lib/server/auth.ts"
@@ -34,5 +34,7 @@ export const POST = route(async (request, context: { params: Promise<{ token: st
       destination.id,
     )
   }
+  // A change that waits 24 hours is told to the person and the business, so nobody moves pay unseen.
+  await queueDestinationEmails(db(), destination.id)
   return { page: await personPageView(token) }
 })

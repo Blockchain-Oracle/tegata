@@ -65,6 +65,8 @@ export const workspaces = pgTable("workspaces", {
   address: text(),
   taxId: text(),
   email: text(),
+  /** Email kinds the owner switched off, e.g. `{"payment.received.counter": false}`. Security emails ignore it. */
+  emailPrefs: jsonb().$type<Record<string, boolean>>().notNull().default({}),
   /** The next invoice and receipt numbers. Taken with one atomic UPDATE … RETURNING, so two at once never collide. */
   nextInvoiceNumber: integer().notNull().default(1),
   nextReceiptNumber: integer().notNull().default(1),

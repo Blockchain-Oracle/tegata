@@ -215,3 +215,52 @@ export function verifyQuote(response: QuoteResponse, managerKey = ONECLICK_MANAG
     return false
   }
 }
+
+// --- names for 1Click assets -------------------------------------------------------------------------------------
+
+/** 1Click's chain codes, as people say them. */
+export const CHAIN_NAMES: Record<string, string> = {
+  eth: "Ethereum",
+  base: "Base",
+  arb: "Arbitrum",
+  sol: "Solana",
+  btc: "Bitcoin",
+  tron: "Tron",
+  bsc: "BNB Chain",
+  pol: "Polygon",
+  gnosis: "Gnosis",
+  op: "Optimism",
+  avax: "Avalanche",
+  near: "NEAR",
+  ton: "TON",
+  sui: "Sui",
+  xrp: "XRP Ledger",
+  doge: "Dogecoin",
+  ltc: "Litecoin",
+  zec: "Zcash",
+  stellar: "Stellar",
+  aptos: "Aptos",
+  bera: "Berachain",
+}
+
+const TOKENS_TTL_MS = 10 * 60_000
+let tokenCache: {
+  at: number
+  list: { assetId: string; symbol: string; blockchain: string }[]
+} | null = null
+
+/** "USDT" on "Tron" for a 1Click asset id (the token list, cached ten minutes); null when 1Click doesn't list it. */
+export async function assetLabel(
+  assetId: string,
+): Promise<{ symbol: string; chain: string } | null> {
+  if (!tokenCache || Date.now() - tokenCache.at > TOKENS_TTL_MS) {
+    const response = await fetch(`${ONECLICK_BASE}/v0/tokens`)
+    if (!response.ok)
+      throw new OneClickError(`1Click tokens: HTTP ${response.status}`, response.status)
+    tokenCache = { at: Date.now(), list: await response.json() }
+  }
+  const token = tokenCache.list.find((t) => t.assetId === assetId)
+  return token
+    ? { symbol: token.symbol, chain: CHAIN_NAMES[token.blockchain] ?? token.blockchain }
+    : null
+}

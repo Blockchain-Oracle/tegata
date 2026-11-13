@@ -1,5 +1,5 @@
 import { parseDollars } from "@tegata/core/invoices"
-import { markPaidByHand } from "@tegata/services"
+import { markPaidByHand, queueInvoiceEmail } from "@tegata/services"
 import { z } from "zod"
 
 import { requireOwner } from "@/lib/server/auth.ts"
@@ -14,14 +14,16 @@ export const POST = route(async (request, context: { params: Promise<{ id: strin
   const input = body.parse(await request.json())
   const amount = parseDollars(input.amount)
   if (amount === null) throw badRequest("Enter an amount like 250 or 250.50", "amount")
-  const payment = await markPaidByHand(
-    db(),
-    workspace.id,
-    z.uuid().parse((await context.params).id),
-    {
-      amount,
-      note: input.note ?? null,
-    },
-  )
+  const invoiceId = z.uuid().parse((await context.params).id)
+  const payment = await markPaidByHand(db(), workspace.id, invoiceId, {
+    amount,
+    note: input.note ?? null,
+  })
+  // The customer gets a receipt that says it was paid outside Tegata.
+  await queueInvoiceEmail(db(), invoiceId, "invoice.paid_by_hand", {
+    amount,
+    note: input.note ?? null,
+    paymentId: payment.id,
+  })
   return { payment }
 })

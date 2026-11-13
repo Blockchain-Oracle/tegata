@@ -8,6 +8,8 @@ import { type Db, schema } from "@tegata/db"
 import { and, eq, gte, inArray, like, lt, or, sql } from "drizzle-orm"
 import type { AnyPgColumn } from "drizzle-orm/pg-core"
 
+import { businessLogo } from "./business.ts"
+import { queueRefundEmails } from "./emails.ts"
 import { type Conn, emitEvent, paymentObject } from "./events.ts"
 import { PayrollError } from "./payroll.ts"
 import { createRelayDraft } from "./relays.ts"
@@ -527,6 +529,7 @@ export async function settleRefund(db: Db, relayId: string) {
       amount: transfer.amount,
       txHash: relay.txHash,
       dedupe: relay.id,
+      receiptUrl: `/r/send/${relay.id}`,
     })
   })
 }
@@ -537,7 +540,14 @@ export async function settleRefund(db: Db, relayId: string) {
  */
 export async function applyRefund(
   tx: Conn,
-  input: { paymentId: string; amount: bigint; txHash: string | null; dedupe: string },
+  input: {
+    paymentId: string
+    amount: bigint
+    txHash: string | null
+    dedupe: string
+    /** The refund's own receipt. */
+    receiptUrl: string | null
+  },
 ) {
   const [payment] = await tx
     .update(payments)
@@ -563,6 +573,7 @@ export async function applyRefund(
         },
         dedupe: `payment.refunded:${input.dedupe}`,
       })
+    await queueRefundEmails(tx, input)
   }
   return payment ?? null
 }
@@ -663,4 +674,77 @@ export async function reconcile(
   ])
   const outside = transfers.filter((t) => !known.has(t.txHash))
   return { accountId: account.accountId, balance, checked: transfers.length, outside }
+}
+
+// --- the monthly statement -----------------------------------------------------------------------------------------
+
+const monthLabel = (month: string) =>
+  new Date(`${month}-15T12:00:00Z`).toLocaleDateString("en-GB", {
+    month: "long",
+    year: "numeric",
+    timeZone: "UTC",
+  })
+
+function stampIn(at: Date, timezone: string) {
+  const date = at.toLocaleDateString("en-CA", { timeZone: timezone })
+  const time = at.toLocaleTimeString("en-GB", {
+    timeZone: timezone,
+    hour: "2-digit",
+    minute: "2-digit",
+  })
+  return `${date} ${time}`
+}
+
+/** A month's statement for a business (the PDF's content): every movement, the totals and the balance on NEAR. */
+export async function monthStatement(
+  db: Db,
+  workspaceId: string,
+  month: string,
+  network: NetworkId,
+) {
+  const [workspace] = await db.select().from(workspaces).where(eq(workspaces.id, workspaceId))
+  if (!workspace) return null
+  const { from, to } = monthRange(month, workspace.timezone)
+  const list = await movements(db, {
+    userId: workspace.ownerId,
+    workspaceId,
+    network,
+    from,
+    to,
+  })
+  const t = totals(list)
+  const [account] = await db
+    .select()
+    .from(accounts)
+    .where(and(eq(accounts.userId, workspace.ownerId), eq(accounts.network, network)))
+  const balance = account ? await usdcBalance(network, account.accountId) : 0n
+  const logo = await businessLogo(db, workspaceId)
+  return {
+    business: workspace.name,
+    address: workspace.address,
+    taxId: workspace.taxId,
+    logo:
+      logo && (logo.type === "image/png" || logo.type === "image/jpeg")
+        ? `data:${logo.type};base64,${logo.bytes.toString("base64")}`
+        : null,
+    month: monthLabel(month),
+    timezone: workspace.timezone,
+    accountId: account?.accountId ?? "",
+    usdc: NETWORKS[network].usdc,
+    network,
+    moneyIn: t.moneyIn.toString(),
+    moneyOut: t.moneyOut.toString(),
+    net: t.net.toString(),
+    balance: balance.toString(),
+    madeAt: stampIn(new Date(), workspace.timezone),
+    lines: [...list].reverse().map((m) => ({
+      when: stampIn(m.at, workspace.timezone),
+      title: m.title,
+      counterparty: m.counterparty ?? m.counterpartyAccount ?? "",
+      amount: (m.direction === "in" ? m.amount : -m.amount).toString(),
+      status: m.status,
+      counted: m.counted,
+      tx: m.txHash,
+    })),
+  }
 }

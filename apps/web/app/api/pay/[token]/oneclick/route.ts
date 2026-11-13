@@ -14,6 +14,8 @@ const body = z.object({
   refundTo: z.string().trim().min(10).max(120),
   /** Only for an any-amount link or a part-payment: dollars as typed. */
   amount: z.string().trim().optional(),
+  /** Where to send the receipt, if the payer wants one. */
+  email: z.email().max(200).optional().or(z.literal("")),
 })
 
 /** Live: a signed 1Click deposit address for this payment, from the payer's chosen coin and chain. */
@@ -36,6 +38,7 @@ export const POST = route(async (request, context: { params: Promise<{ token: st
     stable: found.route.symbol === "USDC" || found.route.symbol === "USDT",
     refundTo: input.refundTo,
     amount,
+    payerEmail: input.email || undefined,
     apiKey: serverEnv().ONECLICK_API_KEY,
   })
   await enqueue(await boss(), "oneclickPoll", { paymentId: payment.id }, `oneclick:${payment.id}`)

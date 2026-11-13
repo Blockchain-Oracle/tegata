@@ -1,5 +1,5 @@
 import { enqueue } from "@tegata/jobs"
-import { setDestinationByOwner } from "@tegata/services"
+import { queueDestinationEmails, setDestinationByOwner } from "@tegata/services"
 import { z } from "zod"
 
 import { requireOwner } from "@/lib/server/auth.ts"
@@ -26,5 +26,6 @@ export const PUT = route(async (request, context: { params: Promise<{ id: string
       destination.id,
     )
   }
+  await queueDestinationEmails(db(), destination.id)
   return { ready: Boolean(destination.readyAt) }
 })

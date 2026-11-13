@@ -1,0 +1,842 @@
+// Every email Tegata sends, as data → content (context/09-realworld-money/email-audit.md §3). Services queue an
+// `EmailEvent` in the same transaction as the event it tells about; the worker composes it here and renders it with
+// the one layout. The subject is the Activity row's words; the facts are the receipt page's rows.
+import type { EmailContent, EmailRow } from "./layout.tsx"
+
+/** USDC base units, as a string. */
+type Units = string
+
+export const usd = (units: Units) =>
+  (Number(BigInt(units)) / 1e6).toLocaleString("en-US", { style: "currency", currency: "USD" })
+
+export const longDay = (iso: string) =>
+  new Date(iso.length === 10 ? `${iso}T12:00:00Z` : iso).toLocaleDateString("en-GB", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  })
+
+const when = (iso: string, timezone: string) =>
+  new Date(iso).toLocaleString("en-GB", {
+    timeZone: timezone,
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZoneName: "short",
+  })
+
+const shortHash = (hash: string) => `${hash.slice(0, 6)}…${hash.slice(-5)}`
+const shortAddress = (a: string) => (a.length > 20 ? `${a.slice(0, 8)}…${a.slice(-6)}` : a)
+
+/** What every money email knows about where it settled. */
+interface Settled {
+  business: string
+  logo: string | null
+  sandbox: boolean
+  timezone: string
+  at: string
+  txHash: string | null
+  explorerUrl: string | null
+}
+
+export interface PaymentData extends Settled {
+  amount: Units
+  title: string
+  /** The payer's account or address, when known. */
+  from: string | null
+  /** "Tegata balance", "NEAR wallet", "USDT on Tron → USDC on NEAR"… */
+  paidWith: string
+  receiptUrl: string
+  receiptNumber: number | null
+  /** An invoice paid in part: what's left. */
+  remaining: Units | null
+  invoiceNumber: string | null
+  /** The owner's page for it (the invoice or the link). */
+  ownerUrl: string | null
+}
+
+export interface InvoiceData {
+  business: string
+  logo?: string | null
+  customer: string
+  number: string
+  total: Units
+  remaining: Units
+  dueDate: string
+  url: string
+  notes: string | null
+  sandbox: boolean
+  /** Reminders: days from the due date (−3, 0, 3, 7). */
+  offset?: number
+  /** The invoice, so the worker can attach its PDF and log the email on its timeline. */
+  invoiceId?: string
+}
+
+export interface PayslipData extends Settled {
+  person: string
+  amount: Units
+  period: string
+  account: string
+  url: string
+  autopilot: boolean
+}
+
+export interface MoveData extends Settled {
+  amount: Units
+  /** The other side: an account or an address. */
+  counterparty: string
+  /** Why it moved, e.g. "Refund of Invoice INV-0004". */
+  title: string
+  receiptUrl: string | null
+  /** To another chain through NEAR Intents. */
+  delivered?: {
+    route: string
+    coin: string
+    chainMark: string
+    amountOut: string | null
+    txUrl: string | null
+  } | null
+}
+
+export type EmailEvent =
+  | { kind: "payment.received"; data: PaymentData }
+  | { kind: "payment.receipt"; data: PaymentData }
+  | { kind: "invoice.sent"; data: InvoiceData }
+  | { kind: "invoice.reminder"; data: InvoiceData }
+  | { kind: "invoice.void"; data: InvoiceData }
+  | { kind: "invoice.overdue"; data: InvoiceData & { ownerUrl: string; daysLate: number } }
+  | {
+      kind: "invoice.paid_by_hand"
+      data: InvoiceData & { amount: Units; note: string | null; receiptUrl: string | null }
+    }
+  | {
+      kind: "payroll.invite"
+      data: {
+        business: string
+        logo: string | null
+        person: string
+        role: string | null
+        amount: Units
+        cadence: string
+        url: string
+        sandbox: boolean
+        reminder?: boolean
+      }
+    }
+  | { kind: "payroll.paid"; data: PayslipData }
+  | {
+      kind: "payroll.run"
+      data: {
+        business: string
+        sandbox: boolean
+        status: "paid" | "failed"
+        paid: number
+        failed: number
+        total: Units
+        payday: string
+        url: string
+        autopilot: boolean
+      }
+    }
+  | {
+      kind: "payroll.due"
+      data: {
+        business: string
+        sandbox: boolean
+        people: number
+        total: Units
+        payday: string
+        url: string
+      }
+    }
+  | {
+      kind: "destination.pending"
+      data: {
+        business: string
+        sandbox: boolean
+        person: string
+        destination: string
+        activatesAt: string
+        timezone: string
+        url: string
+        to: "person" | "owner"
+      }
+    }
+  | {
+      kind: "destination.set"
+      data: { business: string; sandbox: boolean; person: string; destination: string; url: string }
+    }
+  | {
+      kind: "autopilot.underfunded"
+      data: {
+        business: string
+        sandbox: boolean
+        needed: Units
+        available: Units
+        payday: string
+        url: string
+      }
+    }
+  | {
+      kind: "autopilot.on"
+      data: {
+        business: string
+        sandbox: boolean
+        people: number
+        setAside: Units
+        paydays: string[]
+        url: string
+      }
+    }
+  | { kind: "payout.delivered"; data: MoveData }
+  | { kind: "payout.returned"; data: MoveData & { reason: string } }
+  | { kind: "refund.sent"; data: MoveData }
+  | { kind: "refund.received"; data: MoveData }
+  | { kind: "send.sent"; data: MoveData }
+  | { kind: "send.received"; data: MoveData }
+  | { kind: "referral.paid"; data: MoveData & { other: string } }
+  | {
+      kind: "account.welcome" | "account.live"
+      data: { business: string; accountId: string; sandbox: boolean; url: string }
+    }
+  | {
+      kind: "payin.refunded"
+      data: {
+        business: string
+        sandbox: boolean
+        amount: Units
+        route: string
+        title: string
+        url: string
+      }
+    }
+  | {
+      kind: "apikey.created"
+      data: { business: string; sandbox: boolean; name: string; prefix: string; url: string }
+    }
+  | {
+      kind: "webhook.failing"
+      data: {
+        business: string
+        sandbox: boolean
+        endpoint: string
+        event: string
+        tries: number
+        url: string
+      }
+    }
+  | {
+      kind: "statement.monthly"
+      data: {
+        business: string
+        sandbox: boolean
+        month: string
+        label: string
+        moneyIn: Units
+        moneyOut: Units
+        net: Units
+        count: number
+        url: string
+      }
+    }
+
+export type EmailKind = EmailEvent["kind"]
+
+/** Emails an owner can switch off in Business → Emails. Security and money-out notices always go. */
+export const OPTIONAL_EMAILS: { kind: EmailKind; label: string }[] = [
+  { kind: "payment.received", label: "You got paid (one email per payment)" },
+  { kind: "payroll.due", label: "Payroll is ready to approve" },
+  { kind: "invoice.overdue", label: "An invoice is overdue" },
+  { kind: "statement.monthly", label: "Monthly statement" },
+]
+
+const usdcRows = (d: Settled): EmailRow[] => [
+  { label: "Settled", value: when(d.at, d.timezone) },
+  { label: "Network fee", value: "Paid by Tegata" },
+  ...(d.txHash && d.explorerUrl
+    ? [
+        {
+          label: "Transaction",
+          value: shortHash(d.txHash),
+          href: d.explorerUrl,
+          mono: true,
+          mark: "near",
+        },
+      ]
+    : []),
+]
+
+const sub = (sandbox: boolean) => `USDC on NEAR${sandbox ? " · Sandbox" : ""}`
+
+/** The subject, the shape and everything on the page, for one event. */
+export function compose(event: EmailEvent, assets: string): EmailContent {
+  const base = { assets, links: [] as { label: string; href: string }[] }
+  switch (event.kind) {
+    case "payment.received": {
+      const d = event.data
+      const part = d.remaining && BigInt(d.remaining) > 0n
+      return {
+        ...base,
+        shape: "slip",
+        subject: part
+          ? `You got paid ${usd(d.amount)} for ${d.invoiceNumber} (${usd(d.remaining ?? "0")} left)`
+          : `You got paid ${usd(d.amount)}: ${d.title}`,
+        preview: `${d.title} · ${d.paidWith}`,
+        brand: { name: d.business, logo: d.logo },
+        label: "You got paid",
+        hero: usd(d.amount),
+        tone: "in",
+        sub: sub(d.sandbox),
+        stamp: "Paid",
+        rows: [
+          { label: "For", value: d.title },
+          ...(d.from ? [{ label: "From", value: shortAddress(d.from), mono: true }] : []),
+          { label: "Paid with", value: d.paidWith },
+          ...(part ? [{ label: "Left to pay", value: usd(d.remaining ?? "0") }] : []),
+          ...usdcRows(d),
+        ],
+        button: { label: "Open the receipt", href: d.receiptUrl },
+        links: d.ownerUrl
+          ? [
+              {
+                label: d.invoiceNumber ? "Open the invoice" : "Open it in Tegata",
+                href: d.ownerUrl,
+              },
+            ]
+          : [],
+        audience: "owner",
+        business: d.business,
+        sandbox: d.sandbox,
+      }
+    }
+    case "payment.receipt": {
+      const d = event.data
+      const part = d.remaining && BigInt(d.remaining) > 0n
+      return {
+        ...base,
+        shape: "slip",
+        subject: d.invoiceNumber
+          ? part
+            ? `Thanks: ${usd(d.amount)} received for ${d.invoiceNumber}. ${usd(d.remaining ?? "0")} left`
+            : `${d.invoiceNumber} is paid. Your receipt from ${d.business}`
+          : `Your receipt from ${d.business}: ${usd(d.amount)}`,
+        preview: `${usd(d.amount)} to ${d.business} for ${d.title}`,
+        brand: { name: d.business, logo: d.logo },
+        label: d.receiptNumber ? `Receipt · No. ${d.receiptNumber}` : "Receipt",
+        hero: usd(d.amount),
+        tone: "plain",
+        sub: sub(d.sandbox),
+        stamp: "Paid",
+        rows: [
+          { label: "Paid to", value: d.business },
+          { label: "For", value: d.title },
+          { label: "Paid with", value: d.paidWith },
+          ...(part ? [{ label: "Left to pay", value: usd(d.remaining ?? "0") }] : []),
+          ...usdcRows(d),
+        ],
+        button: { label: "View your receipt", href: d.receiptUrl },
+        audience: "customer",
+        business: d.business,
+        sandbox: d.sandbox,
+      }
+    }
+    case "invoice.sent":
+    case "invoice.reminder": {
+      const d = event.data
+      const reminder = event.kind === "invoice.reminder"
+      const offset = d.offset ?? 0
+      const lead = !reminder
+        ? `Here is invoice ${d.number} from ${d.business}.`
+        : offset < 0
+          ? `A reminder: ${d.number} is due on ${longDay(d.dueDate)}.`
+          : offset === 0
+            ? `${d.number} is due today.`
+            : `${d.number} was due on ${longDay(d.dueDate)}.`
+      return {
+        ...base,
+        shape: "card",
+        subject: reminder
+          ? `Reminder: ${d.number} from ${d.business}, ${usd(d.remaining)}`
+          : `${d.number} from ${d.business}: ${usd(d.remaining)} due ${longDay(d.dueDate)}`,
+        preview: `${d.number} for ${usd(d.total)}, due ${longDay(d.dueDate)}`,
+        brand: { name: d.business, logo: d.logo },
+        label: `Invoice ${d.number}`,
+        hero: `${usd(d.remaining)} due ${longDay(d.dueDate)}`,
+        body: [`Hi ${d.customer},`, lead, ...(d.notes && !reminder ? [d.notes] : [])],
+        rows: [
+          { label: "Total", value: usd(d.total) },
+          ...(d.remaining !== d.total ? [{ label: "Left to pay", value: usd(d.remaining) }] : []),
+          { label: "Pay with", value: "Any coin, any chain, or a NEAR wallet" },
+        ],
+        button: { label: "View and pay", href: d.url },
+        links: reminder ? [] : [{ label: "The PDF is attached", href: d.url }],
+        audience: "customer",
+        business: d.business,
+        sandbox: d.sandbox,
+      }
+    }
+    case "invoice.void": {
+      const d = event.data
+      return {
+        ...base,
+        shape: "card",
+        subject: `${d.number} from ${d.business} was cancelled`,
+        preview: `You don't need to pay ${d.number}.`,
+        brand: { name: d.business, logo: d.logo },
+        label: `Invoice ${d.number}`,
+        hero: "This invoice was cancelled",
+        body: [
+          `Hi ${d.customer},`,
+          `${d.business} cancelled ${d.number} (${usd(d.total)}). There's nothing to pay.`,
+        ],
+        button: { label: "View the invoice", href: d.url },
+        audience: "customer",
+        business: d.business,
+        sandbox: d.sandbox,
+      }
+    }
+    case "invoice.overdue": {
+      const d = event.data
+      return {
+        ...base,
+        shape: "card",
+        subject: `${d.number} from ${d.customer} is ${d.daysLate} days overdue: ${usd(d.remaining)}`,
+        preview: `Due ${longDay(d.dueDate)}. ${d.customer} got a reminder too.`,
+        brand: { name: d.business, logo: d.logo },
+        label: `Invoice ${d.number} · ${d.customer}`,
+        hero: `${usd(d.remaining)} is ${d.daysLate} days overdue`,
+        body: [`It was due on ${longDay(d.dueDate)}. Tegata has sent ${d.customer} a reminder.`],
+        button: { label: "Open the invoice", href: d.ownerUrl },
+        audience: "owner",
+        business: d.business,
+        sandbox: d.sandbox,
+      }
+    }
+    case "invoice.paid_by_hand": {
+      const d = event.data
+      return {
+        ...base,
+        shape: "card",
+        subject: `${d.business} marked ${d.number} paid`,
+        preview: `${usd(d.amount)} recorded as paid outside Tegata.`,
+        brand: { name: d.business, logo: d.logo },
+        label: `Invoice ${d.number}`,
+        hero: `${usd(d.amount)} marked paid`,
+        body: [
+          `Hi ${d.customer},`,
+          `${d.business} recorded ${usd(d.amount)} on ${d.number} as paid outside Tegata.`,
+          ...(d.note ? [d.note] : []),
+        ],
+        button: d.receiptUrl
+          ? { label: "View your receipt", href: d.receiptUrl }
+          : { label: "View the invoice", href: d.url },
+        audience: "customer",
+        business: d.business,
+        sandbox: d.sandbox,
+      }
+    }
+    case "payroll.invite": {
+      const d = event.data
+      return {
+        ...base,
+        shape: "card",
+        subject: d.reminder
+          ? `Reminder: choose where your pay from ${d.business} lands`
+          : `${d.business} added you to payroll`,
+        preview: `${usd(d.amount)} ${d.cadence}. Choose where it lands.`,
+        brand: { name: d.business, logo: d.logo },
+        label: `${d.business} added you to payroll`,
+        hero: "Choose where your pay lands",
+        body: [
+          `Hi ${d.person},`,
+          "Pick a Tegata account (sign in with this email; no wallet, no fees) or a NEAR account you already have. You only do this once.",
+        ],
+        rows: [
+          ...(d.role ? [{ label: "Role", value: d.role }] : []),
+          { label: "Pay", value: `${usd(d.amount)} ${d.cadence}` },
+          { label: "Paid in", value: "USDC on NEAR", mark: "usdc" },
+        ],
+        button: { label: "Choose where pay lands", href: d.url },
+        audience: "person",
+        business: d.business,
+        sandbox: d.sandbox,
+      }
+    }
+    case "payroll.paid": {
+      const d = event.data
+      return {
+        ...base,
+        shape: "slip",
+        subject: `You've been paid ${usd(d.amount)} by ${d.business}`,
+        preview: `${d.period}${d.autopilot ? " · paid by autopilot" : ""}`,
+        brand: { name: d.business, logo: d.logo },
+        label: "Payslip",
+        hero: usd(d.amount),
+        tone: "in",
+        sub: sub(d.sandbox),
+        stamp: "Payslip",
+        rows: [
+          { label: "For", value: d.period },
+          { label: "From", value: d.business },
+          { label: "Paid to", value: d.account, mono: true },
+          { label: "Paid with", value: d.autopilot ? "Payroll, by autopilot on NEAR" : "Payroll" },
+          ...usdcRows(d),
+        ],
+        button: { label: "Open your payslip", href: d.url },
+        audience: "person",
+        business: d.business,
+        sandbox: d.sandbox,
+      }
+    }
+    case "payroll.run": {
+      const d = event.data
+      const paid = d.status === "paid"
+      return {
+        ...base,
+        shape: "card",
+        subject: paid
+          ? `Payroll paid: ${d.paid} ${d.paid === 1 ? "person" : "people"}, ${usd(d.total)}`
+          : "Payroll: a batch didn't go through. Nothing in it moved",
+        preview: `Payday ${longDay(d.payday)}${d.autopilot ? " · by autopilot" : ""}`,
+        brand: { name: d.business },
+        label: `Payroll · ${longDay(d.payday)}${d.autopilot ? " · by autopilot" : ""}`,
+        hero: paid
+          ? `${usd(d.total)} paid to ${d.paid} ${d.paid === 1 ? "person" : "people"}`
+          : `${d.failed} not paid`,
+        body: paid
+          ? ["Everyone in this run got their payslip."]
+          : [
+              `${d.paid} paid, ${d.failed} not. The rows that failed moved nothing; retry them from the run.`,
+            ],
+        button: { label: "Open the run", href: d.url },
+        audience: "owner",
+        business: d.business,
+        sandbox: d.sandbox,
+      }
+    }
+    case "payroll.due": {
+      const d = event.data
+      return {
+        ...base,
+        shape: "card",
+        subject: `Payroll for ${longDay(d.payday)} is ready: ${d.people} ${d.people === 1 ? "person" : "people"}, ${usd(d.total)}`,
+        preview: "Review it and approve with one hold.",
+        brand: { name: d.business },
+        label: `Payday · ${longDay(d.payday)}`,
+        hero: `${usd(d.total)} to ${d.people} ${d.people === 1 ? "person" : "people"}`,
+        body: ["Review the run and approve it: one gas-free approval pays everyone at once."],
+        button: { label: "Review and approve", href: d.url },
+        audience: "owner",
+        business: d.business,
+        sandbox: d.sandbox,
+      }
+    }
+    case "destination.pending": {
+      const d = event.data
+      const person = d.to === "person"
+      return {
+        ...base,
+        shape: "card",
+        subject: person
+          ? `Your pay will go to ${d.destination} from ${when(d.activatesAt, d.timezone)}`
+          : `${d.person} changed where their pay lands`,
+        preview: person
+          ? `Not you? Tell ${d.business} before then.`
+          : `It takes effect ${when(d.activatesAt, d.timezone)}.`,
+        brand: { name: d.business },
+        label: "Where pay lands",
+        hero: d.destination,
+        body: person
+          ? [
+              `Hi ${d.person}, your pay from ${d.business} will land in ${d.destination} from ${when(d.activatesAt, d.timezone)}.`,
+              `If you didn't make this change, tell ${d.business} now: the 24-hour wait is there so nobody can move your pay unseen.`,
+            ]
+          : [
+              `${d.person} asked for their pay to land in ${d.destination}. It takes effect ${when(d.activatesAt, d.timezone)}; until then, payroll pays the old destination.`,
+            ],
+        button: { label: person ? "See where your pay lands" : "Review the change", href: d.url },
+        audience: person ? "person" : "owner",
+        business: d.business,
+        sandbox: d.sandbox,
+      }
+    }
+    case "destination.set": {
+      const d = event.data
+      return {
+        ...base,
+        shape: "card",
+        subject: `${d.business} set your pay to land in ${d.destination}`,
+        preview: "You can change it on your page.",
+        brand: { name: d.business },
+        label: "Where pay lands",
+        hero: d.destination,
+        body: [
+          `Hi ${d.person}, ${d.business} set your pay to land in ${d.destination}. You can choose somewhere else on your page.`,
+        ],
+        button: { label: "See where your pay lands", href: d.url },
+        audience: "person",
+        business: d.business,
+        sandbox: d.sandbox,
+      }
+    }
+    case "autopilot.underfunded": {
+      const d = event.data
+      const short = BigInt(d.needed) - BigInt(d.available)
+      return {
+        ...base,
+        shape: "card",
+        subject: `Autopilot couldn't pay ${longDay(d.payday)}'s payroll: ${usd(short.toString())} short`,
+        preview: `It needs ${usd(d.needed)}; ${usd(d.available)} is set aside.`,
+        brand: { name: d.business },
+        label: "Autopilot",
+        hero: `${usd(short.toString())} short`,
+        body: [
+          `${longDay(d.payday)}'s payroll needs ${usd(d.needed)} and ${usd(d.available)} is set aside. Nothing was paid. Add money and it runs on its own.`,
+        ],
+        button: { label: "Add money to autopilot", href: d.url },
+        audience: "owner",
+        business: d.business,
+        sandbox: d.sandbox,
+      }
+    }
+    case "autopilot.on": {
+      const d = event.data
+      return {
+        ...base,
+        shape: "card",
+        subject: `Autopilot is on: pays ${d.people} ${d.people === 1 ? "person" : "people"}, ${usd(d.setAside)} set aside`,
+        preview: d.paydays[0] ? `First payday ${longDay(d.paydays[0])}` : "It runs on its own.",
+        brand: { name: d.business },
+        label: "Autopilot",
+        hero: `${usd(d.setAside)} set aside`,
+        body: [
+          "Tegata's contract on NEAR pays your team each payday, with everyone offline, and confirms every row.",
+          ...(d.paydays.length ? [`Paydays: ${d.paydays.map(longDay).join(", ")}.`] : []),
+        ],
+        button: { label: "Open payroll", href: d.url },
+        audience: "owner",
+        business: d.business,
+        sandbox: d.sandbox,
+      }
+    }
+    case "payout.delivered":
+    case "refund.sent":
+    case "refund.received":
+    case "send.sent":
+    case "send.received":
+    case "referral.paid": {
+      const d = event.data
+      const incoming =
+        event.kind === "refund.received" ||
+        event.kind === "send.received" ||
+        event.kind === "referral.paid"
+      const word =
+        event.kind === "payout.delivered"
+          ? "Delivered"
+          : event.kind.startsWith("refund")
+            ? "Refunded"
+            : event.kind === "referral.paid"
+              ? "Paid"
+              : "Sent"
+      const delivered = d.delivered
+      const subject =
+        event.kind === "payout.delivered"
+          ? `Delivered: ${usd(d.amount)} → ${delivered?.amountOut ?? ""} ${delivered?.route ?? ""}`.replace(
+              /\s+/g,
+              " ",
+            )
+          : event.kind === "refund.sent"
+            ? `Refund sent: ${usd(d.amount)} to ${shortAddress(d.counterparty)}`
+            : event.kind === "refund.received"
+              ? `${d.business} refunded you ${usd(d.amount)}`
+              : event.kind === "send.sent"
+                ? `Sent ${usd(d.amount)} to ${shortAddress(d.counterparty)}`
+                : event.kind === "send.received"
+                  ? `${d.business} sent you ${usd(d.amount)}`
+                  : `You earned ${usd(d.amount)}: ${(event.data as { other: string }).other}`
+      return {
+        ...base,
+        shape: "slip",
+        subject,
+        preview: d.title,
+        brand: {
+          name: event.kind === "referral.paid" ? "Tegata" : d.business,
+          logo: event.kind === "referral.paid" ? null : d.logo,
+        },
+        label: incoming
+          ? event.kind === "referral.paid"
+            ? "Referral reward"
+            : "You received"
+          : "You sent",
+        hero: usd(d.amount),
+        tone: incoming ? "in" : "out",
+        sub: sub(d.sandbox),
+        stamp: word,
+        rows: [
+          { label: "For", value: d.title },
+          {
+            label: incoming ? "From" : "To",
+            value: incoming ? d.business : shortAddress(d.counterparty),
+            mono: !incoming,
+          },
+          ...(delivered
+            ? [
+                {
+                  label: "Delivered as",
+                  value: `${delivered.amountOut ?? ""} ${delivered.route}`.trim(),
+                  mark: delivered.coin,
+                },
+                { label: "Converted by", value: "NEAR Intents", mark: "intents" },
+              ]
+            : []),
+          ...usdcRows(d),
+          ...(delivered?.txUrl
+            ? [{ label: "Delivery", value: "On the other chain", href: delivered.txUrl }]
+            : []),
+        ],
+        button: d.receiptUrl ? { label: "Open the receipt", href: d.receiptUrl } : null,
+        audience: incoming
+          ? event.kind === "send.received" || event.kind === "refund.received"
+            ? "customer"
+            : "owner"
+          : "owner",
+        business: d.business,
+        sandbox: d.sandbox,
+      }
+    }
+    case "payout.returned": {
+      const d = event.data
+      return {
+        ...base,
+        shape: "card",
+        subject: `Your ${usd(d.amount)} to ${d.delivered?.route ?? "another chain"} didn't arrive. It's back in your balance`,
+        preview: d.reason,
+        brand: { name: d.business },
+        label: "Payment to another chain",
+        hero: `${usd(d.amount)} came back`,
+        body: [
+          `${d.reason} The ${usd(d.amount)} is back in your balance on NEAR; nothing reached ${shortAddress(d.counterparty)}.`,
+        ],
+        button: d.receiptUrl ? { label: "See what happened", href: d.receiptUrl } : null,
+        audience: "owner",
+        business: d.business,
+        sandbox: d.sandbox,
+      }
+    }
+    case "account.welcome":
+    case "account.live": {
+      const d = event.data
+      const live = event.kind === "account.live"
+      return {
+        ...base,
+        shape: "card",
+        subject: live
+          ? `Live is on: ${d.accountId} can take real dollars`
+          : `${d.business} is open on Tegata`,
+        preview: live
+          ? "Real USDC on NEAR. Tegata pays every network fee."
+          : "Send an invoice or a pay link and get paid from any chain.",
+        brand: { name: d.business },
+        label: live ? "Live" : "Welcome to Tegata",
+        hero: d.accountId,
+        body: live
+          ? [
+              "Your Live account holds real USDC on NEAR. Customers can pay from any coin on any chain through NEAR Intents, and you never pay a network fee.",
+            ]
+          : [
+              "Your pay address is ready. Send an invoice or share a pay link: customers pay from any chain, and you receive dollars on NEAR. No wallet, no fees.",
+            ],
+        button: {
+          label: live ? "Make your first pay link" : "Send your first invoice",
+          href: d.url,
+        },
+        audience: "owner",
+        business: d.business,
+        sandbox: d.sandbox,
+      }
+    }
+    case "payin.refunded": {
+      const d = event.data
+      return {
+        ...base,
+        shape: "card",
+        subject: `A ${usd(d.amount)} payment from ${d.route} didn't complete. The payer was refunded`,
+        preview: d.title,
+        brand: { name: d.business },
+        label: d.title,
+        hero: "Payment refunded to the payer",
+        body: [
+          `NEAR Intents couldn't complete a ${usd(d.amount)} payment from ${d.route} in time, so it returned the payer's coins to their address. Nothing reached your balance; the link is still open.`,
+        ],
+        button: { label: "Open it in Tegata", href: d.url },
+        audience: "owner",
+        business: d.business,
+        sandbox: d.sandbox,
+      }
+    }
+    case "apikey.created": {
+      const d = event.data
+      return {
+        ...base,
+        shape: "card",
+        subject: `A new ${d.sandbox ? "Sandbox" : "Live"} API key was created: ${d.prefix}…`,
+        preview: `"${d.name}". If this wasn't you, revoke it.`,
+        brand: { name: d.business },
+        label: "Developers",
+        hero: `${d.prefix}…`,
+        body: [
+          `An API key named "${d.name}" was created for ${d.business}. If this wasn't you, revoke it now.`,
+        ],
+        button: { label: "Review your keys", href: d.url },
+        audience: "owner",
+        business: d.business,
+        sandbox: d.sandbox,
+      }
+    }
+    case "webhook.failing": {
+      const d = event.data
+      return {
+        ...base,
+        shape: "card",
+        subject: `Your webhook to ${d.endpoint} is failing (${d.tries} tries)`,
+        preview: `${d.event} couldn't be delivered.`,
+        brand: { name: d.business },
+        label: "Developers",
+        hero: `${d.event} wasn't delivered`,
+        body: [
+          `Tegata tried ${d.tries} times to deliver ${d.event} to ${d.endpoint} and got no 2xx answer. You can resend it from the delivery log once the endpoint is back.`,
+        ],
+        button: { label: "Open Developers", href: d.url },
+        audience: "owner",
+        business: d.business,
+        sandbox: d.sandbox,
+      }
+    }
+    case "statement.monthly": {
+      const d = event.data
+      return {
+        ...base,
+        shape: "card",
+        subject: `${d.business}, ${d.label}: in ${usd(d.moneyIn)}, out ${usd(d.moneyOut)}`,
+        preview: `${d.count} movements. The statement PDF is attached.`,
+        brand: { name: d.business },
+        label: `Statement · ${d.label}`,
+        hero: `${BigInt(d.net) < 0n ? "−" : "+"}${usd((BigInt(d.net) < 0n ? -BigInt(d.net) : BigInt(d.net)).toString())} net`,
+        rows: [
+          { label: "Money in", value: usd(d.moneyIn) },
+          { label: "Money out", value: usd(d.moneyOut) },
+          { label: "Movements", value: String(d.count) },
+        ],
+        body: [
+          "The statement PDF is attached. Every line links to its NEAR transaction in Activity.",
+        ],
+        button: { label: "Open the books", href: d.url },
+        audience: "owner",
+        business: d.business,
+        sandbox: d.sandbox,
+      }
+    }
+  }
+}

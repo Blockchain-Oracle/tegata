@@ -45,6 +45,8 @@ export async function startOneClickPayment(
     stable: boolean
     refundTo: string
     amount?: bigint
+    /** Where the payer wants their receipt. */
+    payerEmail?: string
     apiKey?: string
   },
 ) {
@@ -61,6 +63,7 @@ export async function startOneClickPayment(
     rail: "oneclick",
     amount: input.amount,
     payer: input.refundTo,
+    payerEmail: input.payerEmail,
   })
   const deadline = new Date(Date.now() + PAYER_WINDOW_MS).toISOString()
   let response: QuoteResponse

@@ -92,6 +92,13 @@
       "when": 1794564806586,
       "tag": "0012_payouts",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1794567406322,
+      "tag": "0013_notifications",
+      "breakpoints": true
     }
   ]
 }

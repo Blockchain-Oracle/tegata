@@ -890,3 +890,213 @@ export const SAMPLE_COUNTER_SALES = [
     createdAt: "2026-11-12T08:02:00.000Z",
   },
 ]
+
+// --- emails (/dev/emails): one sample of every email Tegata sends -------------------------------------------------
+
+const SETTLED = {
+  business: "Studio Kaze",
+  logo: null,
+  sandbox: false,
+  timezone: "Africa/Lagos",
+  at: "2026-11-13T12:04:00.000Z",
+  txHash: "4a5U9osgJrXKN5EDT3mvrWGT6NrFXoQXwH4bYZjqH6TX",
+  explorerUrl: "https://nearblocks.io/txns/4a5U9osgJrXKN5EDT3mvrWGT6NrFXoQXwH4bYZjqH6TX",
+}
+const PAYMENT = {
+  ...SETTLED,
+  amount: "1250000000",
+  title: "Invoice INV-0007",
+  from: "TQn9Y2khEsLJW1ChVWFMSMeRDow5KcbLSE",
+  paidWith: "USDT on Tron → USDC on NEAR",
+  receiptUrl: "/r/sample",
+  receiptNumber: 12,
+  remaining: null,
+  invoiceNumber: "INV-0007",
+  ownerUrl: "/app/invoices",
+}
+const INVOICE = {
+  business: "Studio Kaze",
+  customer: "Northwind",
+  number: "INV-0007",
+  total: "1250000000",
+  remaining: "1250000000",
+  dueDate: "2026-11-30",
+  url: "/i/sample",
+  notes: "Logo design and brand guide, as agreed. Thank you!",
+  sandbox: false,
+}
+const MOVE = {
+  ...SETTLED,
+  amount: "240000000",
+  counterparty: "TQn9Y2khEsLJW1ChVWFMSMeRDow5KcbLSE",
+  title: "USDT on Tron",
+  receiptUrl: "/r/send/sample",
+}
+
+/** Every email kind with believable data, in the order the email audit ranks them. */
+export const EMAIL_SAMPLES = [
+  { kind: "payment.received", data: PAYMENT },
+  { kind: "payment.receipt", data: PAYMENT },
+  { kind: "payment.receipt", data: { ...PAYMENT, amount: "500000000", remaining: "750000000" } },
+  { kind: "invoice.sent", data: INVOICE },
+  { kind: "invoice.reminder", data: { ...INVOICE, offset: 3 } },
+  { kind: "invoice.overdue", data: { ...INVOICE, ownerUrl: "/app/invoices", daysLate: 3 } },
+  { kind: "invoice.void", data: INVOICE },
+  {
+    kind: "invoice.paid_by_hand",
+    data: {
+      ...INVOICE,
+      amount: "1250000000",
+      note: "Bank transfer, 12 Nov",
+      receiptUrl: "/r/sample",
+    },
+  },
+  {
+    kind: "payroll.invite",
+    data: {
+      business: "Studio Kaze",
+      person: "Mei",
+      role: "Designer",
+      amount: "2400000000",
+      cadence: "a month",
+      url: "/p/sample",
+      sandbox: false,
+    },
+  },
+  {
+    kind: "payroll.paid",
+    data: {
+      ...SETTLED,
+      person: "Mei",
+      amount: "2400000000",
+      period: "Pay · 1–30 Nov 2026",
+      account: "mei.tegata.near",
+      url: "/r/slip/sample",
+      autopilot: true,
+    },
+  },
+  {
+    kind: "payroll.run",
+    data: {
+      business: "Studio Kaze",
+      sandbox: false,
+      status: "paid",
+      paid: 3,
+      failed: 0,
+      total: "7200000000",
+      payday: "2026-11-28",
+      url: "/app/payroll",
+      autopilot: false,
+    },
+  },
+  {
+    kind: "payroll.due",
+    data: {
+      business: "Studio Kaze",
+      sandbox: false,
+      people: 3,
+      total: "7200000000",
+      payday: "2026-11-28",
+      url: "/app/payroll",
+    },
+  },
+  {
+    kind: "destination.pending",
+    data: {
+      business: "Studio Kaze",
+      sandbox: false,
+      person: "Mei",
+      destination: "mei.near",
+      activatesAt: "2026-11-14T10:00:00.000Z",
+      timezone: "Africa/Lagos",
+      url: "/p/sample",
+      to: "person",
+    },
+  },
+  {
+    kind: "autopilot.underfunded",
+    data: {
+      business: "Studio Kaze",
+      sandbox: false,
+      needed: "7200000000",
+      available: "3000000000",
+      payday: "2026-11-28",
+      url: "/app/payroll",
+    },
+  },
+  {
+    kind: "payout.delivered",
+    data: {
+      ...MOVE,
+      delivered: {
+        route: "USDT on Tron",
+        coin: "usdt",
+        chainMark: "tron",
+        amountOut: "239.71",
+        txUrl: null,
+      },
+    },
+  },
+  {
+    kind: "payout.returned",
+    data: {
+      ...MOVE,
+      reason: "NEAR Intents couldn't complete the conversion in time.",
+      delivered: {
+        route: "USDT on Tron",
+        coin: "usdt",
+        chainMark: "tron",
+        amountOut: null,
+        txUrl: null,
+      },
+    },
+  },
+  { kind: "refund.received", data: { ...MOVE, title: "Refund of Invoice INV-0007" } },
+  {
+    kind: "send.received",
+    data: { ...MOVE, counterparty: "kofi.tegata.near", title: "One-off payment" },
+  },
+  {
+    kind: "referral.paid",
+    data: {
+      ...MOVE,
+      amount: "10000000",
+      title: "Referral reward for inviting Northwind",
+      other: "Northwind got paid with your link",
+      receiptUrl: "/r/reward/sample",
+    },
+  },
+  {
+    kind: "account.live",
+    data: {
+      business: "Studio Kaze",
+      accountId: "studio-kaze.tegata.near",
+      sandbox: false,
+      url: "/app/links",
+    },
+  },
+  {
+    kind: "apikey.created",
+    data: {
+      business: "Studio Kaze",
+      sandbox: false,
+      name: "Shop checkout",
+      prefix: "tk_live_ab12",
+      url: "/app/developers",
+    },
+  },
+  {
+    kind: "statement.monthly",
+    data: {
+      business: "Studio Kaze",
+      sandbox: false,
+      month: "2026-10",
+      label: "October 2026",
+      moneyIn: "12400000000",
+      moneyOut: "9800000000",
+      net: "2600000000",
+      count: 41,
+      url: "/app/activity",
+    },
+  },
+] as const

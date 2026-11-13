@@ -1,8 +1,13 @@
 import type { NetworkId } from "@tegata/config"
 import { Operator } from "@tegata/core/near"
-import { createDb } from "@tegata/db"
+import { createDb, schema } from "@tegata/db"
 import { migrateDb } from "@tegata/db/migrate"
-import { renderInvoicePdf, resendMailer } from "@tegata/documents"
+import {
+  type EmailEvent,
+  renderInvoicePdf,
+  renderStatementPdf,
+  resendMailer,
+} from "@tegata/documents"
 import {
   allowLocalWebhooks,
   emailConfigured,
@@ -14,24 +19,36 @@ import { enqueue, QUEUES, startBoss } from "@tegata/jobs"
 import {
   accountsNotReady,
   autopilotsToRegister,
+  claimEmails,
   deliver,
   destinationsToRegister,
-  inviteEmail,
   invoiceDocuments,
   invoiceToken,
   logInvoiceEvent,
+  markEmail,
   markInvited,
+  monthStatement,
   oneClickToPoll,
-  paidEmail,
-  paidRowsToEmail,
-  paymentEmails,
   paymentsToVerify,
   payoutsToPoll,
   pendingDeliveries,
   pollOneClickPayment,
   pollPayout,
   processRelay,
+  queueAccountEmail,
+  queueAutopilotOn,
   queuedTestDollars,
+  queueInviteEmail,
+  queueInvoiceEmail,
+  queuePayinRefundedEmail,
+  queuePaymentEmails,
+  queuePayoutEmail,
+  queuePayrollDue,
+  queueReferralEmails,
+  queueRunEmails,
+  queueSendEmails,
+  queueStatements,
+  queueWebhookFailing,
   registerDestination,
   registerForAutopilot,
   registerPayoutAddress,
@@ -52,7 +69,9 @@ import {
   sweepReferrals,
   unfinishedRelays,
   WEBHOOK_BACKOFF_MS,
+  wanted,
 } from "@tegata/services"
+import { and, eq } from "drizzle-orm"
 
 loadDotEnv(new URL("../../../.env", import.meta.url).pathname)
 const env = serverEnv()
@@ -76,7 +95,7 @@ if (env.OPERATOR_KEYS_MAINNET?.length) {
 /** Email goes out only when Resend and a verified sender are set; otherwise invoices are shared by link. */
 const mailer =
   emailConfigured(env) && env.RESEND_API_KEY && env.EMAIL_FROM
-    ? resendMailer(env.RESEND_API_KEY, env.EMAIL_FROM)
+    ? resendMailer(env.RESEND_API_KEY, env.EMAIL_FROM, env.APP_URL.replace(/\/$/, ""))
     : null
 
 /** Queue every webhook delivery that is new or due for its next try (one job per delivery attempt). */
@@ -105,13 +124,13 @@ await boss.work(QUEUES.relaySend.name, async ([job]) => {
     const settled = await settleRelayedPayment(db, relay.id, operator.accountId)
     console.log(`[payment] ${relay.purpose} ${settled}`)
     const paymentId = relay.purpose.slice("pay:".length)
-    if (settled === "succeeded" && mailer)
-      await enqueue(boss, "paymentEmail", { paymentId }, `payment:${paymentId}`)
+    if (settled === "succeeded") await queuePaymentEmails(db, paymentId)
   }
   // Autopilot: once the plan's relay lands, read its id from the contract; turning it off ends it.
   if (relay?.purpose.startsWith("autopilot:")) {
     const on = await settleAutopilotRelay(db, relay.id)
     await settleAutopilotAction(db, relay.id)
+    if (on === "on") await queueAutopilotOn(db, relay.purpose.split(":")[1] ?? "")
     console.log(`[autopilot] ${relay.purpose} ${relay.status} ${on}`)
   }
   // A refund: once it lands, it counts against the payment.
@@ -119,6 +138,9 @@ await boss.work(QUEUES.relaySend.name, async ([job]) => {
     const payment = await settleRefund(db, relay.id)
     if (payment) console.log(`[refund] ${payment.id} refunded ${payment.refunded}`)
   }
+  // A one-off send on NEAR: the business gets its copy; a Tegata account on the other end hears it arrived.
+  if (relay?.purpose.startsWith("send:") && relay.status === "success")
+    await queueSendEmails(db, relay.id)
   // A settled payment or refund may have raised webhook events: send them now rather than at the next sweep.
   if (relay?.purpose.startsWith("pay:") || relay?.purpose.startsWith("refund:"))
     await queueDeliveries()
@@ -131,11 +153,9 @@ await boss.work(QUEUES.relaySend.name, async ([job]) => {
   if (relay?.purpose.startsWith("run:")) {
     const settled = await settleRunRelay(db, relay.id, operator.accountId)
     console.log(`[payroll] ${relay.purpose} ${settled}`)
-    if (settled === "paid" && mailer) {
-      for (const row of await paidRowsToEmail(db, relay.purpose.split(":")[1] ?? "")) {
-        await enqueue(boss, "payrollEmail", { kind: "paid", id: row.id }, `paid:${row.id}`)
-      }
-    }
+    // Paid, or a batch failed: payslips go to everyone who was paid, and the business hears how the run went.
+    if (settled === "paid" || settled === "failed")
+      await queueRunEmails(db, relay.purpose.split(":")[1] ?? "")
   }
 })
 
@@ -161,6 +181,7 @@ await boss.work(QUEUES.accountSetup.name, async ([job]) => {
   if (!row || !operator) return
   const ready = await setupAccount(db, operator, accountRowId)
   if (ready) console.log(`[account] ${ready.accountId} ready`)
+  if (ready?.readyAt) await queueAccountEmail(db, accountRowId)
 })
 
 await boss.work(QUEUES.paymentVerify.name, async ([job]) => {
@@ -171,8 +192,7 @@ await boss.work(QUEUES.paymentVerify.name, async ([job]) => {
   const settled = await settlePayment(db, payment.id, payment.txHash, payment.payer)
   console.log(`[payment] ${payment.id} ${settled}`)
   if (settled === "succeeded") await queueDeliveries()
-  if (settled === "succeeded" && mailer)
-    await enqueue(boss, "paymentEmail", { paymentId: payment.id }, `payment:${payment.id}`)
+  if (settled === "succeeded") await queuePaymentEmails(db, payment.id)
   // Not final yet: throw so the queue tries again with backoff.
   if (settled === "pending") throw new Error("Transaction not final yet")
 })
@@ -186,28 +206,16 @@ await boss.work(QUEUES.testDollars.name, async ([job]) => {
   console.log(`[test-dollars] ${grantId} ${status}`)
 })
 
+/** Invoice emails: queued in the outbox at their time; the drain attaches the PDF and logs them on the timeline. */
 await boss.work(QUEUES.invoiceEmail.name, async ([job]) => {
-  if (!job || !mailer) return
+  if (!job) return
   const { invoiceId, kind, offset } = QUEUES.invoiceEmail.payload.parse(job.data)
   const sent = await invoiceToken(db, invoiceId)
   if (!sent) return
   if (kind === "reminder" && !(await reminderTarget(db, invoiceId))) return
-  const docs = await invoiceDocuments(db, sent.token, env.APP_URL)
-  if (!docs?.to || docs.document.status !== "open") return
-  if (kind === "invoice") {
-    const pdf = await renderInvoicePdf(docs.document)
-    await mailer.invoice({ to: docs.to, data: docs.email, pdf, key: `${invoiceId}:invoice` })
-    await logInvoiceEvent(db, invoiceId, "emailed", { to: docs.to })
-  } else {
-    await mailer.reminder({
-      to: docs.to,
-      data: docs.email,
-      offset: offset ?? 0,
-      key: `${invoiceId}:remind:${offset}`,
-    })
-    await logInvoiceEvent(db, invoiceId, "reminder", { to: docs.to, offset: offset ?? 0 })
-  }
-  console.log(`[email] ${kind} for ${docs.document.number} sent`)
+  await queueInvoiceEmail(db, invoiceId, kind === "invoice" ? "invoice.sent" : "invoice.reminder", {
+    offset: offset ?? 0,
+  })
 })
 
 await boss.work(QUEUES.autopilotRegister.name, async ([job]) => {
@@ -234,6 +242,7 @@ await boss.work(QUEUES.webhookDeliver.name, async ([job]) => {
   if (!job) return
   const { deliveryId } = QUEUES.webhookDeliver.payload.parse(job.data)
   const result = await deliver(db, deliveryId, allowLocalWebhooks(env))
+  if (result?.status === "failed") await queueWebhookFailing(db, deliveryId)
   if (result)
     console.log(
       `[webhook] ${deliveryId} ${result.status}${result.retryInMs ? ` (next in ${result.retryInMs / 1000}s)` : ""}`,
@@ -255,8 +264,9 @@ await boss.work(QUEUES.oneclickPoll.name, async ([job]) => {
   console.log(`[oneclick] ${paymentId} ${result}`)
   if (result === "succeeded") {
     await queueDeliveries()
-    if (mailer) await enqueue(boss, "paymentEmail", { paymentId }, `payment:${paymentId}`)
+    await queuePaymentEmails(db, paymentId)
   }
+  if (result === "refunded") await queuePayinRefundedEmail(db, paymentId)
 })
 await boss.work(QUEUES.payoutPoll.name, async ([job]) => {
   if (!job) return
@@ -269,6 +279,7 @@ await boss.work(QUEUES.payoutPoll.name, async ([job]) => {
     return
   }
   console.log(`[payout] ${payoutId} ${result}`)
+  await queuePayoutEmail(db, payoutId)
 })
 await boss.schedule(QUEUES.payoutSweep.name, "* * * * *", {})
 await boss.work(QUEUES.payoutSweep.name, async () => {
@@ -285,30 +296,23 @@ await boss.work(QUEUES.oneclickSweep.name, async () => {
 await boss.schedule(QUEUES.webhookSweep.name, WEBHOOK_CRON, {})
 await boss.work(QUEUES.webhookSweep.name, queueDeliveries)
 
-/** Payroll emails: "added you to payroll" when someone is added, "you've been paid" for each paid row. */
+/** Older queue names that still arrive: each now writes to the outbox. */
 await boss.work(QUEUES.paymentEmail.name, async ([job]) => {
-  if (!job || !mailer) return
+  if (!job) return
   const { paymentId } = QUEUES.paymentEmail.payload.parse(job.data)
-  const { business, payer } = await paymentEmails(db, paymentId, env.APP_URL)
-  if (business) await mailer.received({ ...business, key: `received:${paymentId}` })
-  if (payer) await mailer.receipt({ ...payer, key: `receipt:${paymentId}` })
-  console.log(`[email] payment ${paymentId}: ${business ? "business" : ""} ${payer ? "payer" : ""}`)
+  await queuePaymentEmails(db, paymentId)
 })
-
 await boss.work(QUEUES.payrollEmail.name, async ([job]) => {
-  if (!job || !mailer) return
+  if (!job) return
   const { kind, id } = QUEUES.payrollEmail.payload.parse(job.data)
   if (kind === "invite") {
-    const email = await inviteEmail(db, id, env.APP_URL)
-    if (!email) return
-    await mailer.payrollInvite({ ...email, key: `invite:${id}` })
+    const schedule = await payrollCadence(id)
+    await queueInviteEmail(db, id, { cadence: schedule })
     await markInvited(db, id)
   } else {
-    const email = await paidEmail(db, id, env.APP_URL)
-    if (!email) return
-    await mailer.paid({ ...email, key: `paid:${id}` })
+    const runId = await runOfRow(id)
+    if (runId) await queueRunEmails(db, runId)
   }
-  console.log(`[email] payroll ${kind} ${id} sent`)
 })
 
 /** Repeating invoices: every ten minutes, issue and send those that are due. */
@@ -317,7 +321,6 @@ await boss.schedule(QUEUES.invoiceRepeat.name, REPEAT_CRON, {})
 await boss.work(QUEUES.invoiceRepeat.name, async () => {
   for (const issued of await runDueSchedules(db)) {
     console.log(`[repeat] issued ${issued.invoiceId}`)
-    if (!mailer) continue
     await enqueue(
       boss,
       "invoiceEmail",
@@ -343,12 +346,155 @@ const REFERRAL_CRON = "*/5 * * * *"
 async function sweepAllReferrals() {
   for (const operator of operators.values()) {
     const { checked, paid } = await sweepReferrals(db, operator)
+    for (const referralId of paid) await queueReferralEmails(db, referralId)
     if (paid.length)
       console.log(`[referrals] ${operator.network}: ${checked} checked, ${paid.length} paid`)
   }
 }
 await boss.schedule(QUEUES.referralSweep.name, REFERRAL_CRON, {})
 await boss.work(QUEUES.referralSweep.name, sweepAllReferrals)
+
+// --- email: the outbox drain, and the daily and monthly emails ------------------------------------------------------
+
+const EMAIL_DRAIN_MS = 3_000
+/** Something queued while email was off (or stuck a day) is stale news: skip it rather than send it late. */
+const EMAIL_MAX_AGE_MS = 24 * 3_600_000
+let draining = false
+
+/** The PDF an email carries: an invoice when it goes out, the month's statement. */
+async function attachmentsFor(event: EmailEvent, email: { workspaceId: string | null }) {
+  if (event.kind === "invoice.sent" && event.data.invoiceId) {
+    const sent = await invoiceToken(db, event.data.invoiceId)
+    const docs = sent ? await invoiceDocuments(db, sent.token, env.APP_URL) : undefined
+    if (docs)
+      return [
+        { filename: `${docs.document.number}.pdf`, content: await renderInvoicePdf(docs.document) },
+      ]
+  }
+  if (event.kind === "statement.monthly") {
+    const doc = email.workspaceId
+      ? await monthStatement(
+          db,
+          email.workspaceId,
+          event.data.month,
+          event.data.sandbox ? "testnet" : "mainnet",
+        )
+      : null
+    if (doc)
+      return [
+        {
+          filename: `Tegata-statement-${event.data.month}.pdf`,
+          content: await renderStatementPdf(doc),
+        },
+      ]
+  }
+  return []
+}
+
+/** Replies to a customer or payroll email reach the business. */
+async function replyToFor(workspaceId: string | null) {
+  if (!workspaceId) return null
+  const [row] = await db
+    .select({ email: schema.workspaces.email })
+    .from(schema.workspaces)
+    .where(eq(schema.workspaces.id, workspaceId))
+  return row?.email ?? null
+}
+
+async function drainEmails() {
+  if (!mailer || draining) return
+  draining = true
+  try {
+    for (const email of await claimEmails(db)) {
+      const event = { kind: email.kind, data: email.data } as EmailEvent
+      const invoiceId =
+        event.kind === "invoice.sent" || event.kind === "invoice.reminder"
+          ? event.data.invoiceId
+          : undefined
+      if (Date.now() - email.createdAt.getTime() > EMAIL_MAX_AGE_MS) {
+        await markEmail(db, email.id, { status: "skipped", reason: "Too old to send" })
+        continue
+      }
+      if (!(await wanted(db, email))) {
+        await markEmail(db, email.id, {
+          status: "skipped",
+          reason: "Turned off in Business → Emails",
+        })
+        continue
+      }
+      try {
+        const id = await mailer.deliver(event, {
+          to: email.to,
+          key: email.id,
+          replyTo: await replyToFor(email.workspaceId),
+          attachments: await attachmentsFor(event, email),
+        })
+        await markEmail(db, email.id, { status: "sent", providerId: id })
+        if (invoiceId)
+          await logInvoiceEvent(
+            db,
+            invoiceId,
+            event.kind === "invoice.sent" ? "emailed" : "reminder",
+            {
+              to: email.to,
+              ...(event.kind === "invoice.reminder" ? { offset: event.data.offset ?? 0 } : {}),
+            },
+          )
+        console.log(`[email] ${email.kind} sent`)
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error)
+        await markEmail(db, email.id, { status: "retry", error: message, attempts: email.attempts })
+        if (email.attempts >= 6 && invoiceId)
+          await logInvoiceEvent(db, invoiceId, "email_failed", { to: email.to })
+        console.error(`[email] ${email.kind} failed (try ${email.attempts}): ${message}`)
+      }
+    }
+  } finally {
+    draining = false
+  }
+}
+const emailTimer = setInterval(
+  () => void drainEmails().catch((e) => console.error("[email] drain", e)),
+  EMAIL_DRAIN_MS,
+)
+
+/** Every morning (UTC): payrolls that are due and not yet run ask their owner to approve. */
+await boss.schedule(QUEUES.payrollDue.name, "0 7 * * *", {})
+await boss.work(QUEUES.payrollDue.name, async () => {
+  await queuePayrollDue(db)
+})
+/** The 1st of each month: last month's statement, for each business that had movements, on each network. */
+await boss.schedule(QUEUES.statementMonthly.name, "0 8 1 * *", {})
+await boss.work(QUEUES.statementMonthly.name, async () => {
+  const last = new Date()
+  last.setUTCDate(0)
+  const month = last.toISOString().slice(0, 7)
+  for (const network of operators.keys()) await queueStatements(db, month, network)
+})
+
+/** The run a payroll row belongs to. */
+async function runOfRow(rowId: string) {
+  const [row] = await db
+    .select({ runId: schema.payRows.runId })
+    .from(schema.payRows)
+    .where(eq(schema.payRows.id, rowId))
+  return row?.runId ?? null
+}
+/** The cadence of the payroll a person is on, for their invite. */
+async function payrollCadence(personId: string) {
+  const [row] = await db
+    .select({ cadence: schema.payrolls.cadence })
+    .from(schema.people)
+    .innerJoin(
+      schema.payrolls,
+      and(
+        eq(schema.payrolls.workspaceId, schema.people.workspaceId),
+        eq(schema.payrolls.network, schema.people.network),
+      ),
+    )
+    .where(eq(schema.people.id, personId))
+  return row?.cadence ?? null
+}
 
 // Anything approved or mid-send when the last worker stopped is picked up again.
 const leftover = await unfinishedRelays(db)
@@ -375,6 +521,13 @@ for (const { relayId, network } of await runRelaysToSettle(db)) {
   if (relayId && operator) {
     const settled = await settleRunRelay(db, relayId, operator.accountId).catch(() => "pending")
     console.log(`[payroll] resumed ${relayId} ${settled}`)
+    const [runId] = (
+      await db
+        .select({ purpose: schema.relays.purpose })
+        .from(schema.relays)
+        .where(eq(schema.relays.id, relayId))
+    ).map((r) => r.purpose.split(":")[1])
+    if (runId && (settled === "paid" || settled === "failed")) await queueRunEmails(db, runId)
   }
 }
 for (const account of await accountsNotReady(db)) {
@@ -392,6 +545,7 @@ console.log(
 )
 
 async function stop() {
+  clearInterval(emailTimer)
   await boss.stop({ graceful: true, timeout: STOP_TIMEOUT_MS })
   await sql.end({ timeout: DB_CLOSE_SECONDS })
   process.exit(0)

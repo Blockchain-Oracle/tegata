@@ -1,4 +1,4 @@
-import { createApiKey } from "@tegata/services"
+import { createApiKey, queueApiKeyEmail } from "@tegata/services"
 import { z } from "zod"
 
 import { requireOwner } from "@/lib/server/auth.ts"
@@ -18,5 +18,7 @@ export const POST = route(async (request) => {
     network: network,
     name,
   })
+  // A security notice: if this wasn't the owner, they can revoke it.
+  await queueApiKeyEmail(db(), row)
   return { key, id: row.id, prefix: row.prefix }
 })

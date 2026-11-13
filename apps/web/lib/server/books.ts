@@ -1,16 +1,9 @@
 // Books on the server: a month of movements shaped for the screen, the CSV an accountant opens, and the statement.
-import { NETWORKS, type NetworkId } from "@tegata/config"
+import type { NetworkId } from "@tegata/config"
 import { localToday } from "@tegata/core/invoices"
-import { explorerTx, usdcBalance } from "@tegata/core/near"
+import { explorerTx } from "@tegata/core/near"
 import type { StatementDocument } from "@tegata/documents"
-import {
-  accountFor,
-  businessLogo,
-  type Movement,
-  monthRange,
-  movements,
-  totals,
-} from "@tegata/services"
+import { type Movement, monthRange, monthStatement, movements, totals } from "@tegata/services"
 
 import type { BooksMonth, MovementView } from "@/lib/client/types"
 
@@ -177,52 +170,12 @@ export function booksCsv(list: readonly Movement[], timezone: string, appUrl: st
 }
 
 export async function statementDocument(
-  user: { id: string },
-  workspace: {
-    id: string
-    name: string
-    timezone: string
-    address: string | null
-    taxId: string | null
-  },
+  _user: { id: string },
+  workspace: { id: string },
   month: string,
   network: NetworkId,
 ): Promise<StatementDocument> {
-  const { list, totals: t } = await monthOf(user, workspace, month, network)
-  const account = await accountFor(db(), user.id, network)
-  const balance = account ? await usdcBalance(network, account.accountId) : 0n
-  const logo = await businessLogo(db(), workspace.id)
-  const now = new Date()
-  const stamp = (at: Date) => {
-    const { date, time } = partsIn(at, workspace.timezone)
-    return `${date} ${time}`
-  }
-  return {
-    business: workspace.name,
-    address: workspace.address,
-    taxId: workspace.taxId,
-    logo:
-      logo && (logo.type === "image/png" || logo.type === "image/jpeg")
-        ? `data:${logo.type};base64,${logo.bytes.toString("base64")}`
-        : null,
-    month: monthName(month),
-    timezone: workspace.timezone,
-    accountId: account?.accountId ?? "",
-    usdc: NETWORKS[network].usdc,
-    network: network,
-    moneyIn: t.moneyIn.toString(),
-    moneyOut: t.moneyOut.toString(),
-    net: t.net.toString(),
-    balance: balance.toString(),
-    madeAt: stamp(now),
-    lines: [...list].reverse().map((m) => ({
-      when: stamp(m.at),
-      title: m.title,
-      counterparty: m.counterparty ?? m.counterpartyAccount ?? "",
-      amount: (m.direction === "in" ? m.amount : -m.amount).toString(),
-      status: m.status,
-      counted: m.counted,
-      tx: m.txHash,
-    })),
-  }
+  const doc = await monthStatement(db(), workspace.id, month, network)
+  if (!doc) throw badRequest("No such business")
+  return doc
 }
