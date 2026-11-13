@@ -86,7 +86,18 @@
           "barcodeScannerEnabled": true
         }
       ],
-      "./plugins/without-apple-sign-in.js"
+      "./plugins/without-apple-sign-in.js",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "buildArchs": [
+              "arm64-v8a",
+              "armeabi-v7a"
+            ]
+          }
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": false
