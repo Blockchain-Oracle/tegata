@@ -132,7 +132,7 @@ export default function Welcome() {
           <Animated.View key="name" entering={FadeInDown.duration(320)} exiting={FadeOutUp.duration(160)} style={{ gap: 16 }}>
             <T role="stepTitle">What's the business called?</T>
             <TextInput
-              value={business}
+              defaultValue={business}
               onChangeText={setBusiness}
               placeholder="Business name"
               placeholderTextColor={p.text3}

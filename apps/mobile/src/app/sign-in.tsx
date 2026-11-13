@@ -3,8 +3,8 @@
 import { router } from "expo-router"
 import { StatusBar } from "expo-status-bar"
 import { useEffect, useState } from "react"
-import { KeyboardAvoidingView, Platform, TextInput, useWindowDimensions, View } from "react-native"
-import Animated, { FadeInDown, FadeOutUp } from "react-native-reanimated"
+import { Keyboard, KeyboardAvoidingView, Platform, TextInput, useWindowDimensions, View } from "react-native"
+import Animated, { Easing, FadeInDown, FadeOutUp, useAnimatedStyle, withTiming } from "react-native-reanimated"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 
 import { useSession } from "@/auth/session"
@@ -96,15 +96,21 @@ export default function SignIn() {
   }
 
   const stageHeight = Math.round(height * 0.5) + insets.top
+  // With the keyboard up, the stage folds to its headline so the field and the button stay in view.
+  const keyboard = useKeyboardOpen()
+  const folded = insets.top + 132
+  const stageStyle = useAnimatedStyle(() => ({
+    height: withTiming(keyboard ? folded : stageHeight, { duration: 320, easing: Easing.bezier(0.32, 0.72, 0, 1) }),
+  }))
   return (
     <KeyboardAvoidingView style={{ flex: 1, backgroundColor: p.page }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
       <StatusBar style="light" />
-      <View style={{ height: stageHeight, overflow: "hidden" }}>
+      <Animated.View style={[{ overflow: "hidden" }, stageStyle]}>
         <StageField />
         <View style={{ paddingTop: insets.top + 8 }}>
           <StoryStage height={stageHeight - insets.top - 8} />
         </View>
-      </View>
+      </Animated.View>
       <View
         style={{
           flex: 1,
@@ -129,10 +135,10 @@ export default function SignIn() {
               </View>
             </View>
             <TextInput
-              value={email}
+              defaultValue={email}
               onChangeText={(text) => {
                 setEmail(text)
-                setProblem(null)
+                if (problem) setProblem(null)
               }}
               placeholder="you@business.com"
               placeholderTextColor={p.text3}
@@ -222,4 +228,19 @@ export default function SignIn() {
       </View>
     </KeyboardAvoidingView>
   )
+}
+
+function useKeyboardOpen() {
+  const [open, setOpen] = useState(false)
+  useEffect(() => {
+    const showEvent = Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow"
+    const hideEvent = Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide"
+    const show = Keyboard.addListener(showEvent, () => setOpen(true))
+    const hide = Keyboard.addListener(hideEvent, () => setOpen(false))
+    return () => {
+      show.remove()
+      hide.remove()
+    }
+  }, [])
+  return open
 }
