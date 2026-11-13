@@ -329,31 +329,35 @@ export function TeamView({
 
       {!live ? (
         <section className="flex flex-col gap-4 rounded-[20px] bg-card p-5">
-          <div className="flex flex-wrap items-center gap-3">
-            <span className="text-[17px] font-semibold">Payroll needs</span>
-            <span className="inline-flex items-center gap-1 rounded-full bg-secondary p-1">
-              <button
-                type="button"
-                aria-label="Fewer approvals"
-                disabled={threshold <= 2}
-                onClick={() => setThreshold((k) => k - 1)}
-                className="press grid size-9 place-items-center rounded-full bg-card disabled:opacity-40 [&_svg]:size-4"
-              >
-                <Minus />
-              </button>
-              <span className="tnum w-8 text-center text-[17px] font-semibold">{threshold}</span>
-              <button
-                type="button"
-                aria-label="More approvals"
-                disabled={threshold >= n}
-                onClick={() => setThreshold((k) => k + 1)}
-                className="press grid size-9 place-items-center rounded-full bg-card disabled:opacity-40 [&_svg]:size-4"
-              >
-                <Plus />
-              </button>
-            </span>
-            <span className="text-[17px] font-semibold">of {n} approvals</span>
-          </div>
+          {members.length ? (
+            <div className="flex flex-wrap items-center gap-3">
+              <span className="text-[17px] font-semibold">Payroll needs</span>
+              <span className="inline-flex items-center gap-1 rounded-full bg-secondary p-1">
+                <button
+                  type="button"
+                  aria-label="Fewer approvals"
+                  disabled={threshold <= 2}
+                  onClick={() => setThreshold((k) => k - 1)}
+                  className="press grid size-9 place-items-center rounded-full bg-card disabled:opacity-40 [&_svg]:size-4"
+                >
+                  <Minus />
+                </button>
+                <span className="tnum w-8 text-center text-[17px] font-semibold">{threshold}</span>
+                <button
+                  type="button"
+                  aria-label="More approvals"
+                  disabled={threshold >= n}
+                  onClick={() => setThreshold((k) => k + 1)}
+                  className="press grid size-9 place-items-center rounded-full bg-card disabled:opacity-40 [&_svg]:size-4"
+                >
+                  <Plus />
+                </button>
+              </span>
+              <span className="text-[17px] font-semibold">of {n} approvals</span>
+            </div>
+          ) : (
+            <span className="text-[17px] font-semibold">The rule</span>
+          )}
           <span className="text-[14px] text-muted-foreground">
             {members.length === 0
               ? "Add at least one approver first."
