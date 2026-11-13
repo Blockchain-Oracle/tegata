@@ -1,4 +1,4 @@
-// Time zones as people say them (audit S7): "British time", "West Africa time", never "Europe/London".
+// Time zones as people say them: "British time", "West Africa time", never "Europe/London".
 
 /** "British time (London)" from an IANA zone; the zone id itself if the browser can't name it. */
 export function zoneLabel(timeZone: string): string {

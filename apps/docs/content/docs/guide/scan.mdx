@@ -1,0 +1,35 @@
+---
+title: Scan to pay
+description: Point your phone at any Tegata QR code, a NEAR account or a wallet address on another chain, and Tegata opens the right page to pay it.
+icon: ScanLine
+---
+
+<Phones>
+  <Phone src="/shots/phone/scan-paylink.webp" alt="The Scan a QR code sheet over Home: it read A pay link, /pay/SvGVad4rxQ9A, with Open it and Scan another" caption="A pay link: Open it." eager />
+  <Phone src="/shots/phone/scan-near.webp" alt="The Scan a QR code sheet over Home: it read A NEAR account, tegata.testnet, with Send to tegata.testnet and Scan another" caption="A NEAR account: Send to it." eager />
+</Phones>
+
+Open it from **Scan** on Home, **Scan a QR code** in the rail, **Scan to pay** under the phone's **+** button, or
+**Scan a QR code to pay** in ⌘K. The sheet, **Scan a QR code**, uses your rear camera while it's open. No camera, or
+blocked? **Choose a photo** reads a picture or a screenshot of the code instead.
+
+## What it reads
+
+| You scan | It shows | The button |
+| --- | --- | --- |
+| A Tegata pay link or counter sale (`/pay/…`) | A pay link | **Open it** |
+| A Tegata invoice, receipt, payroll page or join link | An invoice, A receipt, A payroll page, A join link | **Open it** |
+| A NEAR account (`near:…`, `name.near`, `name.testnet` or a 64-character implicit account) | A NEAR account | **Send to** the account, in [Send](/docs/guide/send) |
+| An Ethereum-style payment code (Base, Ethereum, Arbitrum, BNB Chain, Polygon, Gnosis), a Bitcoin code, a Solana Pay code, or a bare Tron, `0x`, Bitcoin or Solana address | An address on that chain | **Send** that coin on that chain, in [Send to another chain](/docs/guide/send#to-another-chain) |
+| Any other web link | A web link | **Open the link** |
+| Anything else | Some text | None: "Tegata can't pay this code." |
+
+A bare `0x` address is read as USDC on Base, and a bare Tron address as USDT on Tron. In the Sandbox, an address on
+another chain is marked "Live only · NEAR Intents has no testnet": sending to it runs in Live.
+
+Both screens above are real: the codes were read through **Choose a photo** on the live app, one from Studio
+Kaze's own pay link and one from Tegata's testnet account.
+
+Where Tegata draws QR codes for others to scan: **Get paid** (your pay address, `near:<account>`), every
+[pay link](/docs/guide/pay-links), every [counter](/docs/guide/counter) sale and your [referral](/docs/guide/refer)
+link.

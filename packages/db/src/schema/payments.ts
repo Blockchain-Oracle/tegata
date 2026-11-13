@@ -71,7 +71,7 @@ export const paymentRail = pgEnum("payment_rail", [
   "card",
 ])
 
-/** One attempt to pay a request (plan section 2, "Paying in"). Only succeeded attempts count. */
+/** One attempt to pay a request. Only succeeded attempts count. */
 export const paymentStatus = pgEnum("payment_status", [
   "awaiting",
   "detected",
@@ -94,7 +94,7 @@ export const payments = pgTable(
     status: paymentStatus().notNull().default("awaiting"),
     /** USDC base units the business must receive. */
     amount: money().notNull(),
-    /** What the business has refunded to the payer so far (plan 6.8 X). */
+    /** What the business has refunded to the payer so far. */
     refunded: money().notNull().default(sql`0`),
     /** The transfer memo that ties an on-chain transfer to this attempt: `tegata:pay:<id>`. */
     memo: text().notNull(),

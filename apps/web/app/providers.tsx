@@ -32,7 +32,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
         loginMethods: ["email"],
         // Tegata shows its own review screen; Privy never opens a wallet prompt.
         embeddedWallets: { showWalletUIs: false },
-        appearance: { theme: "light", accentColor: "#000000" },
+        appearance: { theme: "light", accentColor: "#16130F" },
       }}
     >
       <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>

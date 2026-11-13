@@ -1,4 +1,4 @@
-// Bank payouts and bank details through Noah (plan 6.8 AC). Per network like everything else: the Sandbox runs on
+// Bank payouts and bank details through Noah. Per network like everything else: the Sandbox runs on
 // Noah's sandbox, Live on Noah's production once its business review is done.
 import {
   index,

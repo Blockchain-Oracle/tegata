@@ -1,4 +1,4 @@
-// Linked cards (plan 6.8 AD): a Gnosis Pay card account a business tops up from NEAR through NEAR Intents.
+// Linked cards: a Gnosis Pay card account a business tops up from NEAR through NEAR Intents.
 import type { NetworkId } from "@tegata/config"
 import { isGnosisAddress } from "@tegata/core/gnosis"
 import { type Db, schema } from "@tegata/db"

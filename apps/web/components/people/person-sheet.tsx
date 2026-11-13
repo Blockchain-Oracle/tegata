@@ -1,8 +1,8 @@
 "use client"
 
-// Adding someone, and everything about one person afterwards (plan 6.8 O): their link to share, where their pay
+// Adding someone, and everything about one person afterwards: their link to share, where their pay
 // lands (or a change waiting out its 24 hours), a NEAR account the owner can set, their details, payslips, remove.
-import { Check, Copy, ExternalLink, Mail, Share2, Trash2 } from "lucide-react"
+import { Check, Copy, Download, ExternalLink, Mail, Share2, Trash2 } from "lucide-react"
 import Link from "next/link"
 import { useEffect, useState } from "react"
 import { BusinessSeal } from "@/components/brand/seal"
@@ -375,15 +375,28 @@ export function PersonSheet({
             </span>
           ) : (
             slips.map((slip) => (
-              <Link
+              <div
                 key={slip.id}
-                href={`/r/slip/${slip.id}`}
-                className="press flex items-center gap-3 rounded-[12px] bg-secondary px-3 py-2.5 text-[15px] hover:bg-plate-pressed"
+                className="flex items-center rounded-[12px] bg-secondary text-[15px] hover:bg-plate-pressed"
               >
-                <BusinessSeal name={business ?? person.name} band="Paid" size={32} tilt={0} />
-                <span className="flex-1">{slip.label}</span>
-                <span className="tnum font-semibold">{usdUnits(slip.amount)}</span>
-              </Link>
+                <Link
+                  href={`/r/slip/${slip.id}`}
+                  className="press flex min-w-0 flex-1 items-center gap-3 px-3 py-2.5"
+                >
+                  <BusinessSeal name={business ?? person.name} band="Paid" size={32} tilt={0} />
+                  <span className="flex-1">{slip.label}</span>
+                  <span className="tnum font-semibold">{usdUnits(slip.amount)}</span>
+                </Link>
+                <a
+                  href={`/r/slip/${slip.id}/pdf`}
+                  target="_blank"
+                  rel="noreferrer"
+                  aria-label={`Download ${slip.label} as a PDF`}
+                  className="press mr-1 grid size-9 shrink-0 place-items-center rounded-full text-text-2 [&_svg]:size-4"
+                >
+                  <Download />
+                </a>
+              </div>
             ))
           )}
         </section>

@@ -1,4 +1,4 @@
-// The autopilot contract from the app's side (plan section 2, 6.8 T): the calls a business signs (gas-free, relayed),
+// The autopilot contract from the app's side (6.8 T): the calls a business signs (gas-free, relayed),
 // the operator's calls, the views, and its NEP-297 events read back from a transaction.
 import { AUTOPILOT, GAS, NETWORKS, type NetworkId, ONE_YOCTO } from "@tegata/config"
 

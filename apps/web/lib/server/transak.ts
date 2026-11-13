@@ -1,4 +1,4 @@
-// Pay by card on the server (plan 6.8 AD, job 2): Transak's client from env, and whether cards are open on a network.
+// Pay by card on the server: Transak's client from env, and whether cards are open on a network.
 import type { NetworkId } from "@tegata/config"
 import { transakClient } from "@tegata/core/transak"
 import { serverEnv } from "@tegata/env"

@@ -1,6 +1,6 @@
 /** @jsxRuntime automatic */
 /** @jsxImportSource react */
-// The monthly statement (plan 6.8 V): the business header and seal, the month, money in, money out and net, every
+// The monthly statement: the business header and seal, the month, money in, money out and net, every
 // movement in order, and the balance on NEAR when it was made. Drawn with @react-pdf/renderer on the server, in the
 // invoice's own fonts (registered in invoice-pdf.tsx).
 import { Document, Image, Page, renderToBuffer, StyleSheet, Text, View } from "@react-pdf/renderer"
@@ -8,9 +8,9 @@ import { Document, Image, Page, renderToBuffer, StyleSheet, Text, View } from "@
 import "./invoice-pdf.tsx"
 
 const SHU = "#FF4F00"
-const INK = "#000000"
-const GREY = "#666666"
-const RULE = "#ECECEC"
+const INK = "#16130F"
+const GREY = "#5B544A"
+const RULE = "#E9E3D6"
 const UP = "#2F7A00"
 const UNITS_PER_DOLLAR = 1e6
 
@@ -73,7 +73,7 @@ const s = StyleSheet.create({
 
 function Figure({ label, value, tone }: { label: string; value: string; tone?: string }) {
   return (
-    <View style={{ flex: 1, backgroundColor: "#F5F5F5", borderRadius: 10, padding: 12 }}>
+    <View style={{ flex: 1, backgroundColor: "#F3EFE6", borderRadius: 10, padding: 12 }}>
       <Text style={s.label}>{label}</Text>
       <Text style={{ fontSize: 18, fontWeight: 800, color: tone ?? INK }}>{value}</Text>
     </View>
@@ -111,8 +111,8 @@ export function StatementPdf({ doc }: { doc: StatementDocument }) {
             )}
             <View>
               <Text style={{ fontSize: 13, fontWeight: 800 }}>{doc.business}</Text>
-              {doc.address ? <Text style={{ color: "#444" }}>{doc.address}</Text> : null}
-              {doc.taxId ? <Text style={{ color: "#444" }}>Tax ID {doc.taxId}</Text> : null}
+              {doc.address ? <Text style={{ color: "#3D3730" }}>{doc.address}</Text> : null}
+              {doc.taxId ? <Text style={{ color: "#3D3730" }}>Tax ID {doc.taxId}</Text> : null}
             </View>
           </View>
           <View style={{ alignItems: "flex-end" }}>
@@ -150,7 +150,7 @@ export function StatementPdf({ doc }: { doc: StatementDocument }) {
                 style={[s.between, s.td]}
                 wrap={false}
               >
-                <Text style={{ width: "20%", color: "#444" }}>{line.when}</Text>
+                <Text style={{ width: "20%", color: "#3D3730" }}>{line.when}</Text>
                 <View style={{ width: "38%" }}>
                   <Text>{line.title}</Text>
                   {line.status !== "done" || !line.counted ? (
@@ -161,7 +161,9 @@ export function StatementPdf({ doc }: { doc: StatementDocument }) {
                     </Text>
                   ) : null}
                 </View>
-                <Text style={{ width: "22%", color: "#444", fontFamily: "DM Mono", fontSize: 7.5 }}>
+                <Text
+                  style={{ width: "22%", color: "#3D3730", fontFamily: "DM Mono", fontSize: 7.5 }}
+                >
                   {line.counterparty}
                 </Text>
                 <Text

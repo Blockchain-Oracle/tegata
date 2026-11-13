@@ -78,7 +78,7 @@ export default function MotionPage() {
               <div key={scene} className="absolute inset-0 grid place-items-center">
                 <StageObject delay={0.05} from={{ y: 30, rotate: -4 }}>
                   <Paper className="w-60 p-4">
-                    <p className="text-meta font-semibold text-[#666]">Pay link · Example</p>
+                    <p className="text-meta font-semibold text-[#5B544A]">Pay link · Example</p>
                     <p className="figure mt-1 text-[36px]">$1,250.00</p>
                     <div className="mt-2 flex items-center gap-2 text-[13px] font-semibold text-[#2F7A00]">
                       <Mark id="usdc" chain="base" size={22} /> Paid from Base

@@ -1,61 +1,68 @@
 ---
 title: The app
-description: Home shows your balance and every movement as a row that opens its receipt; everything else is one tap or one keyboard shortcut away.
+description: Home shows your balance and every movement as a row that opens its receipt; getting paid, paying people, bank, cards and scanning are each one tap or one keyboard shortcut away.
 icon: LayoutDashboard
 ---
 
 <Phones>
-  <Phone src="/shots/phone/home.webp" alt="Home: Abu Studio's $5.75 balance with Get paid, Send, Copy and On NEAR, then Latest" caption="Home: the balance on the stage, then Latest." eager />
-  <Phone src="/shots/phone/get-paid.webp" alt="The Get paid sheet: a QR code of abu-studio.tegata.testnet with the business seal, Copy and Share" caption="Get paid: your pay address as a QR code." eager />
-  <Phone src="/shots/phone/mode.webp" alt="The Sandbox and Live sheet: Sandbox on; Live not open yet, still being built" caption="The Sandbox / Live switch explains itself." eager />
+  <Phone src="/shots/phone/app-home.webp" alt="Home for Studio Kaze on a phone: a $1.25 balance in USDC on NEAR with Get paid, Send, Add money and Scan, then Latest: Order #1042 paid, a send to tegata.testnet, a payroll run, invoice INV-0001 paid" caption="Home: the balance on the stage, then Latest." eager />
+  <Phone src="/shots/phone/get-paid.webp" alt="The Get paid sheet: a QR code of studio-kaze-5601a94a.testnet with the business seal, USDC on NEAR, Sandbox test dollars, Copy and Share" caption="Get paid: your pay address as a QR code." eager />
+  <Phone src="/shots/phone/app-menu.webp" alt="The phone Menu sheet titled Everything: Search, Home, Get paid with Invoices, Pay links, Counter, Customers, Pay people with Send, People, Payroll, then Money with Activity and Balance" caption="On a phone, Menu opens every place." eager />
 </Phones>
 
 ## Home
 
-<Shot src="/shots/wide/app-home.webp" alt="Home for Studio Kaze, a demo business on testnet: the grouped rail on the left, a $1.25 balance with Get paid, Send, Copy and On NEAR, the pay address card, and Latest: Order #1042 paid, a send, a payroll run, invoice INV-0001 paid, Design sprint paid" caption="Home on a laptop, for a demo business signed in with a NEAR wallet." address="tegata.xyz/app" />
+<Shot src="/shots/wide/app-home.webp" alt="Home for Studio Kaze, a demo business on testnet: the grouped rail on the left with Scan a QR code at the top and Bank and Cards under Money; a $1.25 balance with Get paid, Send, Add money and Scan; the pay address card with Copy and Show QR; Latest: Order #1042 paid, a send, a payroll run, invoice INV-0001 paid, Design sprint paid" caption="Home on a laptop, for a demo business signed in with a NEAR wallet." address="tegata.xyz/app" />
 
 | Part | What it does |
 | --- | --- |
-| Balance | Your USDC on NEAR, read live from the USDC contract |
+| Balance | Your USDC on NEAR, read live from the USDC contract. It opens [Balance](/docs/guide/balance) |
 | **Get paid** | Your pay address as a QR code, with **Copy** and **Share** |
 | **Send** | Opens [Send](/docs/guide/send) |
-| **Copy** | Copies your pay address |
-| **On NEAR** | Opens your account on the NEAR explorer |
-| Latest | Payments in, payments out, sends, rewards, payroll runs and payslips, newest first. Each row opens its [receipt](/docs/guide/receipts); the receipt links to NEAR |
+| **Add money** | Your pay address, a card, another chain, or (in the Sandbox) test dollars: [Balance](/docs/guide/balance#add-money) |
+| **Scan** | Opens the camera: [Scan to pay](/docs/guide/scan) |
+| Your pay address | **Copy**, and **Show QR** |
+| Latest | Payments in, sends, rewards, payroll runs and payslips, newest first. Each row opens its [receipt](/docs/guide/receipts); the receipt links to NEAR |
 | Get started | Tiles for a new account: your first invoice, your first pay link, your people, and test dollars while your balance is under $1. Each retires once it's done |
 | **Payroll due** | On or after payday, when no run has paid it: what it pays and to how many people |
 
 ## Places
 
-On a desktop the rail groups places by job: **Home**, then **Get paid** (Invoices, Pay links, Counter, Customers),
-**Pay people** (Send, People, Payroll) and **Money** (Activity, Balance), with Refer, Developers and Business at the
-foot. A group folds with its chevron, and the rail remembers it. On a phone the dock holds Home, Invoices, **+** (New
-invoice, New pay link, Send, Run payroll, Counter, Add people, Get paid), Pay links and **Menu**, which opens every
-place, with search on top.
+On a desktop the rail starts with the [Sandbox / Live](/docs/guide/sandbox) switch, **Search ⌘K** and **Scan a QR
+code**, then groups places by job: **Home**, then **Get paid** (Invoices, Pay links, Counter, Customers), **Pay
+people** (Send, People, Payroll) and **Money** (Activity, Balance, Bank, Cards), with Refer, Developers and Business at
+the foot. A group folds with its chevron, and the rail remembers it.
 
-<Phone src="/shots/phone/app-menu.webp" alt="The phone Menu sheet titled Everything: a Search row, Home, then Get paid with Invoices, Pay links, Counter, Customers, then Pay people with Send, People, Payroll, then Money" caption="On a phone, Menu opens every place." />
+On a phone the dock holds Home, Invoices, **+**, Pay links and **Menu**. **+** opens New invoice, New pay link, Send,
+Run payroll, Counter, Add people, **Scan to pay** and Get paid (QR); **Menu** opens every place, with search on top.
 
 | Place | For |
 | --- | --- |
 | Home | Balance and Latest |
-| Get paid | Your pay address and QR code |
 | Invoices | [Invoices](/docs/guide/invoices) |
 | Pay links | [Pay links](/docs/guide/pay-links) |
 | Counter | [Take a payment in person](/docs/guide/counter): keypad, QR code, paid |
 | Customers | [Customers](/docs/guide/customers) |
-| Activity | Every movement by month, filters, search, the CSV and the statement ([for bookkeepers](/docs/start/bookkeepers)) |
-| Balance | What you hold and the books checked against NEAR ([for bookkeepers](/docs/start/bookkeepers)) |
+| Send | [Send](/docs/guide/send), to a NEAR account or another chain |
 | People | [Your team and where their pay lands](/docs/guide/pay-people) |
 | Payroll | [The schedule, runs and payslips](/docs/guide/pay-people#run-payroll) |
-| Send | [Send](/docs/guide/send) |
+| Activity | Every movement by month, filters, search, refunds, the CSV and the statement ([for bookkeepers](/docs/start/bookkeepers)) |
+| Balance | [What you hold, Add money, Move out, and the books checked against NEAR](/docs/guide/balance) |
+| Bank | [Withdraw to a bank, and a euro account](/docs/guide/bank) |
+| Cards | [Cards for you and your team, and a crypto card you already have](/docs/guide/cards) |
 | Refer | [Referrals](/docs/guide/refer) |
-| Business | [Your business profile](/docs/guide/business) |
 | Developers | [API keys, checkout sessions and webhooks](/docs/build/developers) |
+| Business | [Your business profile](/docs/guide/business) and its [emails](/docs/guide/emails) |
 
-**⌘K** (or Search on a phone) opens every action and place from the keyboard.
+**⌘K** (or Search on a phone) opens every action and place from the keyboard, including **Scan a QR code to pay**
+and **Withdraw to a bank · bank details**.
 
 ## Sandbox and Live
 
-The switch at the top of the rail (and of the phone bar) says you're in the **Sandbox**: test dollars on NEAR
-testnet. **Live** carries a lock: it isn't built yet. See
-[Sandbox and Live](/docs/guide/sandbox).
+The switch at the top says which you're in: the **Sandbox**, test dollars on NEAR testnet, or **Live**, real
+dollars on NEAR mainnet, paid in from any chain. See [Sandbox and Live](/docs/guide/sandbox).
+
+A page that isn't there gets a returned bill: "Bill No. 404 · A page that isn't here", stamped **Returned**, with
+**Open Tegata** and **Home**.
+
+<Phone src="/shots/phone/not-found.webp" alt="The 404 page: a Tegata bill on the vermilion stage, Pay to the order of A page that isn't here, amount Nothing moved, why It expired, or a letter went missing, stamped Returned, with Open Tegata and Home" caption="The 404: a bill, returned." />

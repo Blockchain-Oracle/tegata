@@ -36,6 +36,8 @@ export const QUEUES = {
       invoiceId: z.uuid(),
       kind: z.enum(["invoice", "reminder"]),
       offset: z.number().int().optional(),
+      /** A reminder the owner sent by hand: the business's local date, so it goes at most once a day. */
+      manualDay: z.string().optional(),
     }),
     options: { retryLimit: 3, retryDelay: 30, retryBackoff: true, expireInSeconds: 120 },
   },
@@ -118,6 +120,12 @@ export const QUEUES = {
     options: { retryLimit: 0, expireInSeconds: 120 },
   },
   /** Every morning: ask owners whose payday has come to approve the run (one email per payday). */
+  /** Hourly: queue each invoice reminder due in the next hour (catches invoices sent while email was off). */
+  invoiceReminderSweep: {
+    name: "invoice-reminder-sweep",
+    payload: z.object({}),
+    options: { retryLimit: 0, expireInSeconds: 300 },
+  },
   payrollDue: {
     name: "payroll-due",
     payload: z.object({}),

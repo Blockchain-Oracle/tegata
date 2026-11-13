@@ -1,6 +1,6 @@
 "use client"
 
-// Business profile (plan 6.8 I): on the stage, the header every receipt and invoice will carry, filling in as you
+// Business profile: on the stage, the header every receipt and invoice will carry, filling in as you
 // type, with the round seal beside it (it follows the name); beside it, one card of fields. Save appears only when
 // something changed. Separate from its logic so /dev/flows can show every state.
 import { Check, Copy, ImagePlus, Trash2 } from "lucide-react"
@@ -97,7 +97,7 @@ export function BusinessView(p: BusinessViewProps) {
   return (
     <div className="flex flex-col gap-6">
       <h1 className="display text-page-title">Business</h1>
-      <div className="grid gap-6 lg:grid-cols-[1fr_1.1fr] lg:items-start">
+      <div className="grid grid-cols-[minmax(0,1fr)] gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] lg:items-start">
         <Stage className="p-5 sm:p-7 lg:sticky lg:top-6">
           <Paper className="p-5 sm:p-6">
             <div className="flex items-start gap-4">

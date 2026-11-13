@@ -1,6 +1,6 @@
 "use client"
 
-// Route change inside the app: the page fades up 8 px in 240 ms (plan 6.5). Reduced motion: a plain fade.
+// Route change inside the app: the page fades up 8 px in 240 ms. Reduced motion: a plain fade.
 import { motion, useReducedMotion } from "motion/react"
 
 export default function AppTemplate({ children }: { children: React.ReactNode }) {

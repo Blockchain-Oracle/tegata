@@ -1,6 +1,6 @@
 "use client"
 
-// The mode the person chose (plan 6.8 AB): a cookie the server reads on every request (`lib/server/mode.ts`).
+// The mode the person chose: a cookie the server reads on every request (`lib/server/mode.ts`).
 import type { NetworkId } from "@tegata/config"
 
 export type Mode = "sandbox" | "live"

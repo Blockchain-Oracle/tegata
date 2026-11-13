@@ -1,6 +1,6 @@
 "use client"
 
-// Hold to confirm (21st ddoemonn/hold-to-confirm 23527, ported from Senryo's web kit): the plate sweeps a darker fill
+// Hold to confirm (21st ddoemonn/hold-to-confirm 23527, from our earlier Senryo kit): the plate sweeps a darker fill
 // while held and fires only when the sweep completes; letting go early drains it 2.5× faster. A keyboard or
 // assistive-tech activation confirms at once. When it can't fire, the label names what's missing.
 import { animate, motion, useMotionValue, useReducedMotion, useTransform } from "motion/react"

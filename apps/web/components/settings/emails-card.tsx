@@ -92,7 +92,7 @@ export function EmailsCard({ businessName }: { businessName: string }) {
   return (
     <section className="flex flex-col gap-4 rounded-[24px] bg-card p-5 sm:p-6">
       <div className="flex items-center gap-3">
-        <span className="grid size-11 shrink-0 place-items-center rounded-full bg-sora text-black">
+        <span className="grid size-11 shrink-0 place-items-center rounded-full bg-sora text-field-ink">
           <Mail className="size-5" />
         </span>
         <div className="flex min-w-0 flex-col">

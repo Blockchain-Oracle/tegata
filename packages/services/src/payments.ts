@@ -415,7 +415,7 @@ export async function applyPayment(
     token: publicToken(RECEIPT_TOKEN_LENGTH),
     number: counter.next - 1,
   })
-  // Webhook events (plan 6.8 Y): stored in this same transaction, so a payment and its event are never apart.
+  // Webhook events: stored in this same transaction, so a payment and its event are never apart.
   const [row] = await tx.select().from(payments).where(eq(payments.id, payment.id))
   if (row) {
     const base = { workspaceId: request.workspaceId, network: request.network }

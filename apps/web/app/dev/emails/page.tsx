@@ -1,6 +1,6 @@
 "use client"
 
-// Every email Tegata sends, rendered with the real layout and words (plan 6.9: /dev shows every part). Sample data
+// Every email Tegata sends, rendered with the real layout and words (/dev shows every part). Sample data
 // lives in lib/dev/sample.ts.
 import type { EmailEvent } from "@tegata/documents"
 import { useEffect, useState } from "react"
@@ -47,7 +47,7 @@ export default function EmailsGallery() {
             <iframe
               title={email.subject}
               srcDoc={email.html}
-              className="h-[760px] w-full rounded-[20px] bg-[#F5F5F5] shadow-object"
+              className="h-[760px] w-full rounded-[20px] bg-[#F3EFE6] shadow-object"
             />
           </figure>
         ))}

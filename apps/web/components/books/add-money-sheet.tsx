@@ -1,6 +1,6 @@
 "use client"
 
-// Add money (plan 6.8 W, C and AD job 2): one chooser instead of a row of stage actions. Your pay address (its QR), a
+// Add money (C and AD job 2): one chooser instead of a row of stage actions. Your pay address (its QR), a
 // bank card through Transak, a coin on another chain through NEAR Intents (Live; the Sandbox shows it with the reason,
 // R5), and test dollars in the Sandbox. Each row leads with the real mark of where the money comes from.
 import { ArrowLeft, Check, ChevronRight } from "lucide-react"

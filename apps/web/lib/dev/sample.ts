@@ -1,4 +1,4 @@
-// Sample names and figures for /dev only (plan 6.9). Nothing outside app/dev imports this file.
+// Sample names and figures for /dev only. Nothing outside app/dev imports this file.
 import type {
   AutopilotPreview,
   AutopilotView,
@@ -373,6 +373,19 @@ export const SAMPLE_INVOICE: InvoiceDetail = {
   remaining: "943990000",
   status: "partly_paid",
   draft: null,
+  reminders: {
+    on: true,
+    next: {
+      at: "2026-11-30T08:00:00.000Z",
+      offset: 0,
+      label: "Mon 30 Nov, 09:00 · on the due date",
+    },
+    left: 3,
+    canSend: true,
+    why: null,
+    email: "accounts@northwind.example",
+    remindedToday: false,
+  },
 }
 
 // --- pay people -------------------------------------------------------------------------------------------------
@@ -939,7 +952,10 @@ export const EMAIL_SAMPLES = [
   { kind: "payment.receipt", data: PAYMENT },
   { kind: "payment.receipt", data: { ...PAYMENT, amount: "500000000", remaining: "750000000" } },
   { kind: "invoice.sent", data: INVOICE },
+  { kind: "invoice.reminder", data: { ...INVOICE, offset: -3 } },
+  { kind: "invoice.reminder", data: { ...INVOICE, offset: 0 } },
   { kind: "invoice.reminder", data: { ...INVOICE, offset: 3 } },
+  { kind: "invoice.reminder", data: { ...INVOICE, offset: 7 } },
   { kind: "invoice.overdue", data: { ...INVOICE, ownerUrl: "/app/invoices", daysLate: 3 } },
   { kind: "invoice.void", data: INVOICE },
   {
@@ -1310,7 +1326,7 @@ export const SAMPLE_BANK = {
   ],
 }
 
-// --- cards (plan 6.8 AD): sample spend cards for /dev/flows/cards only ---------------------------------------------
+// --- cards: sample spend cards for /dev/flows/cards only ---------------------------------------------
 const CARD_BASE = {
   frozenBy: null,
   error: null,

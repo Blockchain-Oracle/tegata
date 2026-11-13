@@ -46,7 +46,7 @@ export function Sheet({
   return (
     <Drawer.Root open={open} onOpenChange={onOpenChange} direction={desktop ? "right" : "bottom"}>
       <Drawer.Portal>
-        <Drawer.Overlay className="fixed inset-0 z-50 bg-black/50" />
+        <Drawer.Overlay className="fixed inset-0 z-50 bg-scrim" />
         <Drawer.Content
           aria-describedby={undefined}
           className={cn(

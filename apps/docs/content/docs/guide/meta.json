@@ -14,10 +14,16 @@
     "customers",
     "---Pay people---",
     "pay-people",
-    "---Your business---",
     "send",
-    "refer",
+    "---Money---",
+    "balance",
+    "bank",
+    "cards",
+    "scan",
+    "---Your business---",
     "business",
+    "emails",
+    "refer",
     "sandbox"
   ]
 }

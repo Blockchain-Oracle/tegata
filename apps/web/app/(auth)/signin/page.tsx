@@ -1,6 +1,6 @@
 "use client"
 
-// Sign-in (plan 6.8 A): email, then a six-cell code, inside our own page (Privy runs headless). The stage beside the
+// Sign-in: email, then a six-cell code, inside our own page (Privy runs headless). The stage beside the
 // form tells the story; when the code is accepted the cells turn vermilion and the Tegata seal presses on the stage.
 import { useLoginWithEmail, usePrivy } from "@privy-io/react-auth"
 import { useRouter } from "next/navigation"

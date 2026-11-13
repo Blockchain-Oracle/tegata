@@ -628,7 +628,107 @@ export async function getInvoice(db: Db, workspaceId: string, id: string) {
         : 0n,
     status: displayStatus(row.invoice, paidTotal, localToday(row.timezone)),
     draft: row.invoice.status === "draft" ? await draftInputOf(db, row.invoice) : null,
+    timezone: row.timezone,
   }
+}
+
+// --- reminders on a sent invoice -----------------------------------------------------------------------------------
+
+/** How a reminder step reads: "3 days before it's due", "on the due date", "3 days late", "final". */
+export function reminderStepWord(offset: number) {
+  const days = (n: number) => `${n} day${n === 1 ? "" : "s"}`
+  if (offset < 0) return `${days(-offset)} before it's due`
+  if (offset === 0) return "on the due date"
+  return offset >= 7 ? "final" : `${days(offset)} late`
+}
+
+/** What the invoice page says about reminders: the next one, how many are left, and whether one can go now. */
+export function reminderState(
+  d: {
+    invoice: typeof invoices.$inferSelect
+    events: (typeof invoiceEvents.$inferSelect)[]
+    remaining: bigint
+    timezone: string
+  },
+  emailOn: boolean,
+  now = new Date(),
+) {
+  if (d.invoice.status !== "open" || d.remaining <= 0n) return null
+  const why = !emailOn
+    ? "Email isn't set up here"
+    : !d.invoice.billTo?.email
+      ? "No email for this customer"
+      : null
+  const ahead = reminderTimes(d.invoice.dueDate, d.timezone, now)
+  const today = localToday(d.timezone, now)
+  const remindedToday = d.events.some(
+    (e) =>
+      e.kind === "reminder" &&
+      e.detail?.source === "manual" &&
+      localToday(d.timezone, e.createdAt) === today,
+  )
+  const next = d.invoice.reminders ? ahead[0] : undefined
+  return {
+    on: d.invoice.reminders,
+    next: next
+      ? {
+          at: next.at.toISOString(),
+          offset: next.offset,
+          label: `${new Intl.DateTimeFormat("en-GB", {
+            weekday: "short",
+            day: "numeric",
+            month: "short",
+            hour: "2-digit",
+            minute: "2-digit",
+            timeZone: d.timezone,
+          }).format(next.at)} · ${reminderStepWord(next.offset)}`,
+        }
+      : null,
+    left: ahead.length,
+    canSend: why === null,
+    why,
+    email: d.invoice.billTo?.email ?? null,
+    remindedToday,
+    /** Days from the due date today, for a reminder sent now. */
+    offsetToday: daysBetween(d.invoice.dueDate, today),
+    today,
+  }
+}
+
+export type ReminderState = NonNullable<ReturnType<typeof reminderState>>
+
+/** Switch an open invoice's scheduled reminders on or off; the worker reads the flag before each one. */
+export async function setInvoiceReminders(db: Db, workspaceId: string, id: string, on: boolean) {
+  const [row] = await db
+    .update(invoices)
+    .set({ reminders: on })
+    .where(
+      and(eq(invoices.id, id), eq(invoices.workspaceId, workspaceId), eq(invoices.status, "open")),
+    )
+    .returning()
+  if (!row) throw new InvoiceError("wrong_state", "Reminders change only on a sent, unpaid invoice")
+  return row
+}
+
+/**
+ * Every reminder step that falls in the next `windowMs`, for every open invoice with reminders on and a customer
+ * email. The hourly sweep queues these at their time; the outbox's per-step key means a step queued twice (here and
+ * at send) still goes once.
+ */
+export async function remindersDue(db: Db, now = new Date(), windowMs = 60 * 60 * 1000) {
+  const rows = await db
+    .select({ invoice: invoices, request: requests, timezone: workspaces.timezone })
+    .from(invoices)
+    .innerJoin(requests, eq(requests.id, invoices.requestId))
+    .innerJoin(workspaces, eq(workspaces.id, invoices.workspaceId))
+    .where(and(eq(invoices.status, "open"), eq(invoices.reminders, true)))
+  const until = now.getTime() + windowMs
+  return rows.flatMap((r) => {
+    if (!r.invoice.billTo?.email || (r.request.amount ?? 0n) <= r.request.paidTotal) return []
+    return reminderTimes(r.invoice.dueDate, r.timezone, now)
+      .filter((t) => t.at.getTime() <= until)
+      .map((t) => ({ invoiceId: r.invoice.id, offset: t.offset, at: t.at }))
+  })
 }
 
 /** The public invoice page: the document as sent, never a draft, plus what is left to pay. */
@@ -676,14 +776,17 @@ export async function publicInvoice(db: Db, token: string) {
   }
 }
 
-/** For the worker: is this invoice still worth a reminder, and to whom. */
-export async function reminderTarget(db: Db, invoiceId: string) {
+/**
+ * For the worker: is this invoice still worth a reminder, and to whom. A reminder the owner sends by hand
+ * (`manual`) goes even with the scheduled ones switched off.
+ */
+export async function reminderTarget(db: Db, invoiceId: string, { manual = false } = {}) {
   const [row] = await db
     .select({ invoice: invoices, request: requests })
     .from(invoices)
     .innerJoin(requests, eq(requests.id, invoices.requestId))
     .where(eq(invoices.id, invoiceId))
-  if (row?.invoice.status !== "open" || !row.invoice.reminders) return undefined
+  if (row?.invoice.status !== "open" || (!row.invoice.reminders && !manual)) return undefined
   const remaining = (row.request.amount ?? 0n) - row.request.paidTotal
   if (remaining <= 0n || !row.invoice.billTo?.email) return undefined
   return { invoice: row.invoice, token: row.request.token, remaining }

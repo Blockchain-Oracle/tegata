@@ -1,8 +1,8 @@
 "use client"
 
-// Refund (plan 6.8 X): all of a received payment, or part of it, back to the NEAR account that paid. One gas-free
+// Refund: all of a received payment, or part of it, back to the NEAR account that paid. One gas-free
 // transfer with the memo `tegata:refund:<payment>`; the sheet follows it to NEAR, then links its receipt. A payment
-// from another chain goes back the way it came (plan 6.8 AB): NEAR Intents converts the USDC to the payer's coin and
+// from another chain goes back the way it came: NEAR Intents converts the USDC to the payer's coin and
 // delivers it to the address they gave; it counts as refunded once it arrives.
 import { Check, ExternalLink } from "lucide-react"
 import Link from "next/link"

@@ -30,7 +30,7 @@ const EVENT_PREFIX = "EVENT_JSON:"
 
 /**
  * Read a transaction from NEAR and list the USDC transfers it made, from the token contract's own NEP-297 events.
- * This is the proof a payment arrived (plan section 2, "Paying in"): an event from the USDC contract, not a claim
+ * This is the proof a payment arrived: an event from the USDC contract, not a claim
  * from the browser. A transaction NEAR doesn't know yet, or that isn't final, reads as pending.
  */
 export async function readUsdcTransfers(

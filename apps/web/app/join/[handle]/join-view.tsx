@@ -1,6 +1,6 @@
 "use client"
 
-// The join link (plan 6.8 H): "Studio Kaze invited you", the reward on a paper card on the stage with the rule of this
+// The join link: "Studio Kaze invited you", the reward on a paper card on the stage with the rule of this
 // network in one line, three facts, and one button. The invite is kept on this device and attached when the account
 // is opened.
 import { ArrowRight, Gift, Mail, Zap } from "lucide-react"
@@ -32,7 +32,7 @@ export function JoinView(p: JoinViewProps) {
   return (
     <div className="min-h-dvh bg-background">
       <div className="mx-auto flex w-full max-w-[520px] flex-col gap-5 px-4 pt-6 pb-10 sm:pt-12">
-        <Stage className="px-5 pt-8 pb-6 sm:px-6">
+        <Stage tone="lacquer" className="px-5 pt-8 pb-6 sm:px-6">
           <div className="flex flex-col items-center gap-4 text-center">
             <span className="grid size-24 place-items-center rounded-full bg-white shadow-object">
               <BusinessSeal name={p.business} size={84} tilt={-6} />
@@ -50,7 +50,7 @@ export function JoinView(p: JoinViewProps) {
           </div>
           <StageObject className="mt-6" from={{ y: 20, rotate: -2 }} drift={false}>
             <Paper className="flex items-center gap-4 p-5">
-              <span className="grid size-12 shrink-0 place-items-center rounded-[14px] bg-kin text-black">
+              <span className="grid size-12 shrink-0 place-items-center rounded-[14px] bg-kin text-field-ink">
                 <Gift className="size-6" />
               </span>
               <div className="flex min-w-0 flex-col gap-0.5">
@@ -64,8 +64,8 @@ export function JoinView(p: JoinViewProps) {
         </Stage>
 
         <ul className="grid grid-cols-3 gap-2 text-center">
-          <Fact icon={<Mail />} tone="bg-sora text-black" label="Email sign-in" />
-          <Fact icon={<Zap />} tone="bg-matcha text-black" label="No fees" />
+          <Fact icon={<Mail />} tone="bg-sora text-field-ink" label="Email sign-in" />
+          <Fact icon={<Zap />} tone="bg-matcha text-field-ink" label="No fees" />
           <Fact icon={<Mark id="usdc" chain="near" size={40} />} label="USDC on NEAR" />
         </ul>
 

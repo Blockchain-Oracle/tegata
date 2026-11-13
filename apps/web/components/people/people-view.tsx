@@ -1,6 +1,6 @@
 "use client"
 
-// People (plan 6.8 O): what one run pays everyone on the stage, then one row per person with their pay and where it
+// People: what one run pays everyone on the stage, then one row per person with their pay and where it
 // lands. Each row opens the person's sheet. Empty: a matcha tile. Separate from its data so /dev/flows can show every
 // state.
 import { ChevronRight, FileUp, Plus, Users } from "lucide-react"

@@ -1,6 +1,6 @@
 "use client"
 
-// Light and dark (plan 6.2): a class on <html>, remembered on the device. The layout's inline script applies it before
+// Light and dark: a class on <html>, remembered on the device. The layout's inline script applies it before
 // the first paint so nothing flashes; this hook reads and changes it. Replaces next-themes, whose client-rendered
 // <script> React 19 warns about.
 import { useSyncExternalStore } from "react"

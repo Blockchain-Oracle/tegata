@@ -1,0 +1,155 @@
+---
+title: Any chain, in and out
+description: In Live, a customer pays in any of 11 coins on 9 chains and you receive exact USDC on NEAR; you send, refund and pay your team back out the same way, all through NEAR Intents.
+icon: Waypoints
+---
+
+<Diagram name="anychain" alt="A payment from another chain: the payer picks USDT on Tron and gives a refund address; Tegata asks NEAR Intents for a signed exact-output quote and checks it; the payer sends USDT to the deposit address; NEAR Intents converts it and delivers exact USDC to the business on NEAR; Tegata reads the delivery on NEAR and marks it paid; if it can't complete, NEAR Intents refunds the payer on Tron" caption="Paying from another chain, in Live, with example values. The business always receives the exact amount in USDC on NEAR." />
+
+Every balance in Tegata is USDC on NEAR. NEAR Intents' 1Click API is the bridge to everything else: it swaps a coin
+on another chain into USDC on NEAR, and back. Tegata uses it four ways, all in [Live](/docs/guide/sandbox):
+
+| | Direction | Quote | If it can't complete |
+| --- | --- | --- | --- |
+| A customer pays you | In | **Exact output**: you receive exactly the amount due | The payer is refunded on their own chain |
+| You send to another chain | Out | **Exact input**: you send exactly what you approved; they receive about the quoted amount | The USDC comes back to your balance |
+| You refund a payment from another chain | Out | Exact input, to the payer's refund address | Back to your balance |
+| A payroll row on another chain | Out | Quoted when you approve the run: **exact output** for USDT and USDC (they get exactly their pay), exact input for BTC, ETH and SOL | Back to your balance; the row can be paid again |
+
+NEAR Intents has no testnet. In the Sandbox the pay page still shows NEAR Intents' real, live price and stops there;
+sending, refunds, payroll and adding money from another chain are locked. Each is marked "Live only".
+
+## The routes
+
+| Coin | Chains |
+| --- | --- |
+| USDT | Tron, Ethereum, BNB Chain |
+| USDC | Base, Solana, Arbitrum, Polygon, Gnosis |
+| BTC | Bitcoin |
+| ETH | Ethereum |
+| SOL | Solana |
+
+Eleven routes on nine chains, fixed in code (`apps/web/lib/routes.ts`); each one's asset is looked up in 1Click's
+token list. USDC on Gnosis is the coin a Gnosis Pay card spends, so [topping up a card](/docs/guide/cards#a-crypto-card-you-already-have)
+is a send to Gnosis. 1Click sets its own minimums: on 13 Nov 2026 its live answer was "Temporary swap limits:
+minimum swap amount is $100".
+
+## A customer pays from another chain
+
+<Phones>
+  <Phone src="/shots/phone/ex-pay-live.webp" alt="Example: the Live pay page after Get the deposit address: send exactly 1,251.387 USDT on Tron, pay within 17:59, to this address, with its QR code" caption="Example: the deposit address, its QR code and the countdown." />
+  <Phone src="/shots/phone/ex-pay-live-steps.webp" alt="Example: the steps after the payer sent USDT: Waiting for your USDT done, Seen on Tron done, Converting on NEAR Intents in progress, Paid to Studio Kaze on NEAR still to come; Refunds to TFxa…3yH8" caption="Example: seen on Tron, converting on NEAR Intents." />
+  <Phone src="/shots/phone/ex-pay-live-paid.webp" alt="Example: the paid slip: $1,250.00 to Studio Kaze stamped PAID, paid with USDT on Tron, converted by NEAR Intents, network fee in the price you sent" caption="Example: paid, with the coin it came in." />
+</Phones>
+
+<Steps>
+<Step>
+### Choose a coin and give a refund address
+
+On the [pay page](/docs/guide/pay-page), **Another chain** shows the coins, and for the chosen one "You would send"
+with a **Live quote**. The payer types a **Refund address on Tron** (or whichever chain) and, if they want, **Email me
+a receipt (optional)**, then presses **Get the deposit address**.
+</Step>
+<Step>
+### Tegata asks for a signed quote, and checks it
+
+The quote is `EXACT_OUTPUT`: the business receives exactly the amount due as USDC on NEAR, and the route's cost sits
+on the payer's side. Slippage is 0.1% for dollar coins and 1% for the rest; refunds go to the payer's address on their
+own chain; the deadline is 20 minutes. Tegata shows the payer a quote only if 1Click signed it and its recipient,
+amount, destination (USDC on NEAR), type and deposit address all match what was asked.
+</Step>
+<Step>
+### The payer sends
+
+The panel says **Send exactly** the amount, **Pay within** a countdown, the coin and chain, **To this address**, a
+memo where the chain needs one, and a QR code. On Ethereum-style chains, Bitcoin and SOL the QR code carries the
+amount ("Amount filled in"); on Tron and for USDC on Solana it carries the address only ("Address only · type the
+amount").
+</Step>
+<Step>
+### NEAR Intents converts, NEAR settles
+
+The steps read **Waiting for your USDT**, **Seen on Tron**, **Converting on NEAR Intents** and **Paid to Studio Kaze on
+NEAR**. Tegata's worker reads 1Click every 5 seconds. The payment counts only when 1Click reports success **and** the
+delivery transaction on NEAR holds a USDC transfer to the business for at least the amount due.
+</Step>
+</Steps>
+
+| What happens | What the payer and you see |
+| --- | --- |
+| Too little arrives | "Less than 1,251.387 USDT arrived. Send the rest to the same address before 15:58, or it's refunded." |
+| It can't complete in time | NEAR Intents refunds the payer on their own chain. The payment shows the refund, and you get an email: "A $… payment from … didn't complete. The payer was refunded" |
+| Nothing arrives | 72 hours after the window, the payment closes as expired |
+
+The receipt reads **Paid with:** USDT on Tron → USDC on NEAR, **Converted by:** NEAR Intents, **Network fee:** Paid
+by the payer, and **From** is the payer's refund address. In Activity the row carries the coin the payer actually
+sent.
+
+<Phone src="/shots/phone/ex-pay-live-short.webp" alt="Example: Less than 1,251.387 USDT arrived. Send the rest to the same address before 15:58, or it's refunded; the steps waiting for the USDT" caption="Example: when too little arrives." />
+
+## You send to another chain
+
+<Phones>
+  <Phone src="/shots/phone/send-chain.webp" alt="Send with Another chain chosen on the live app in the Sandbox: you send $1, the eleven coins, Their address on Base, They get, Live only · NEAR Intents has no testnet, and Runs in Live" caption="Real, in the Sandbox: the coins, and Live only." />
+  <Phone src="/shots/phone/ex-send-chain-review.webp" alt="Example: Send review: you send exactly $240.00 to TQn9Y2…bLSE, they receive about 239.71 USDT, arrives about 3 min on Tron, converted by NEAR Intents, network fee paid by Tegata, Hold to send $240.00" caption="Example: the review, before you hold." />
+  <Phone src="/shots/phone/ex-send-chain-delivered.webp" alt="Example: Receipt · Delivered: $240.00, route USDC on NEAR to USDT on Tron, quoted to arrive 239.71 USDT, converted by NEAR Intents, with On NEAR and On Tron links" caption="Example: delivered, with both transactions." />
+</Phones>
+
+**Send → Another chain**: pick the coin and chain, paste **Their address on Base** (or another chain), and the
+**Live quote from NEAR Intents** shows what they get. The review says **You send exactly**, **They receive** about,
+**Arrives**, **Converted by** NEAR Intents and **Network fee: Paid by Tegata**.
+
+Press and hold **Hold to send**. Your key signs one gas-free USDC transfer to the quote's deposit address, a NEAR
+account 1Click made for this send. Before signing, the page checks that transfer against the quote; Tegata's operator
+registers the deposit address for USDC (0.00125 NEAR) and pays the fee. The steps read **Approved with your key**,
+**Sent from your balance**, **Picked up by NEAR Intents** and **Delivered on Tron**, and the receipt links both
+transactions. If NEAR Intents can't deliver within 30 minutes, the USDC comes back: "$240.00 is back in your
+balance."
+
+## You refund a payment from another chain
+
+In **Activity**, a payment that came from another chain refunds the way it came. The **Refund** sheet shows how much
+can go back, and "USDT on Tron to" the payer's refund address; **Hold to refund** sends it out as above. It counts
+against the payment once it's delivered. A refund to a NEAR account is refused for these payments: "Paid from
+another chain: refund it to the payer's chain".
+
+## Your team, paid on another chain
+
+In Live, a person can choose **Another chain** on their pay page ("USDT, USDC, BTC… through NEAR Intents"): a coin
+and chain and their address there. You can set it for them with **Pay them on another chain**. See
+[Pay people](/docs/guide/pay-people#where-their-pay-lands).
+
+<Phones>
+  <Phone src="/shots/phone/ex-person-chain.webp" alt="Example: Mei Tanaka's pay page in Live with Another chain open: a grid of coins and chains, USDT on Tron, USDC on Base chosen, USDT on Ethereum and more" caption="Example: choosing a coin and a chain." />
+  <Phone src="/shots/phone/ex-person-chain-set.webp" alt="Example: Mei Tanaka's pay page: You're set, Paid in USDT on Tron to TQn9Y2…bLSE, with Change where it lands and her payslips" caption="Example: set, and paid there every payday." />
+</Phones>
+
+When you approve a run, each chain row gets its own fresh, signed quote, and its USDC goes to that quote's deposit
+address inside the same signed batch as everyone else's.
+
+- **USDT or USDC** on another chain: the quote is exact output, so the person receives exactly their pay, and you
+  cover NEAR Intents' conversion on top: "Rows on another chain arrive in full. NEAR Intents' conversion, at most 2%
+  or $1 each, is added to what you send." The limit is 2% of the pay or $1, whichever is more, checked again in your
+  browser before you sign; a route that costs more is named instead of paid.
+- **BTC, ETH or SOL**: exact input. The pay leaves your balance, and they receive its worth at the quoted rate.
+
+After the hold, a chain row reads **On its way** until NEAR Intents reports it delivered; only then is it **Paid**,
+with its payslip (adding **Delivered as**) and its email. If NEAR Intents sends it back, the row reads **Not paid**,
+the USDC is back in your balance, the run says "…'s pay couldn't be delivered on Tron; the USDC came back to your
+balance. Pay again to send it.", and paying the run again sends only that row.
+
+[Autopilot](/docs/how-money-moves/autopilot) never pays chain rows: a quote needs someone to approve it.
+
+## Add money from another chain
+
+**Balance → Add money → From another chain** asks for the dollars to add, then opens a one-time pay page to your own
+account with **Another chain** ready: the same flow as a customer's, paid by you.
+
+| Piece | Code |
+| --- | --- |
+| Routes | `apps/web/lib/routes.ts` |
+| Live prices (dry quotes) and QR payment links | `apps/web/lib/server/oneclick.ts` |
+| Pay-ins: quote, check, follow, settle | `packages/services/src/oneclick-payments.ts` |
+| Sends, refunds and their delivery | `packages/services/src/payouts.ts` |
+| Payroll rows on another chain | `packages/services/src/payroll.ts` (`prepareRun`, `settleRunRelay`) |
+| The 1Click client and quote signature check | `packages/core/src/oneclick` |

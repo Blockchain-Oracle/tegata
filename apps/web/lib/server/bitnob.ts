@@ -1,4 +1,6 @@
-// Spend cards on the server (plan 6.8 AD): Bitnob's client from env, and the views the Cards screens read.
+// Spend cards on the server: Bitnob's client from env, and the views the Cards screens read.
+
+import type { NetworkId } from "@tegata/config"
 import { bitnobClient } from "@tegata/core/bitnob"
 import { serverEnv } from "@tegata/env"
 import { CardError, type getIssuedCard, type listIssuedCards } from "@tegata/services"
@@ -13,9 +15,14 @@ export function bitnob() {
   return bitnobClient(env.BITNOB_CLIENT_ID, env.BITNOB_CLIENT_SECRET)
 }
 
-export const issuerReady = () => {
+/**
+ * Whether cards can be issued on this network. Bitnob's keys here are sandbox keys, so cards run in the Sandbox
+ * only: in Live a fill would move real USDC to the card reserve against a test card. Live opens with a production
+ * key and Bitnob's own review.
+ */
+export const issuerReady = (network: NetworkId) => {
   const env = serverEnv()
-  return Boolean(env.BITNOB_CLIENT_ID && env.BITNOB_CLIENT_SECRET)
+  return Boolean(env.BITNOB_CLIENT_ID && env.BITNOB_CLIENT_SECRET) && network === "testnet"
 }
 
 type Listed = Exclude<Awaited<ReturnType<typeof listIssuedCards>>, never[]>

@@ -1,0 +1,106 @@
+---
+title: Bank
+description: A euro IBAN whose transfers land in your balance as USDC, and withdrawals to banks in Nigeria, Ghana and South Africa at Noah's live rate with the bank naming the holder, in the Sandbox on Noah.
+icon: Landmark
+---
+
+<Phones>
+  <Phone src="/shots/phone/bank-withdraw.webp" alt="Bank on the live app in the Sandbox: you send $1.2 USDC, 1 USD = ₦1,351.70, Noah's fee ₦270.50, arrives in about a minute, they get ₦1,351.54 with the Nigerian flag" caption="Noah's live rate and fee, in naira." eager />
+  <Phone src="/shots/phone/bank-banks.webp" alt="The Recipient in Nigeria sheet: Search 571 banks, then Access Bank, Guaranty Trust Bank, Zenith Bank, First Bank, United Bank for Africa, Opay, Moniepoint, PalmPay, Kuda, Wema Bank and Fidelity Bank, each with its logo" caption="Noah's banks in Nigeria, with their real logos." eager />
+  <Phone src="/shots/phone/bank-holder.webp" alt="The Recipient in Nigeria sheet with Access Bank and account number 0690 000 031: a green chip, FORREST GREEN, from the bank" caption="The bank names who holds the account." eager />
+</Phones>
+
+Open **Bank** under **Money** (or **Withdraw to a bank · bank details** in ⌘K, or **To a bank** on
+[Balance](/docs/guide/balance)). Two tabs: **Withdraw** and **Receive**. Only the owner can use them.
+
+Bank runs in the Sandbox on Noah's test bank, marked **Sandbox · Noah's test bank**. The rates, fees, bank lists and
+account names on this page are Noah's own Sandbox answers, live. In Live the page says "Live bank payouts open after
+Noah's business review. Try it in the Sandbox."
+
+## Withdraw to a bank
+
+<Shot src="/shots/wide/bank-withdraw.webp" alt="Bank on a laptop, in the Sandbox: Withdraw chosen, you send $1.2 USDC with balance $1.25 and Use all, 1 USD = ₦1,351.70, Noah's fee ₦270.50, arrives in about a minute, they get ₦1,351.54 NGN; To: New recipient, Add a bank account in Nigeria" caption="Withdraw, on a laptop: Noah's live rate and fee." address="tegata.xyz/app/bank" />
+
+| Country | Money | Banks |
+| --- | --- | --- |
+| Nigeria | Naira, ₦ (NGN) | Noah's full list (571 in the Sandbox), with **Test account** for Noah's test bank account |
+| Ghana | Cedi, GH₵ (GHS) | Noah's list |
+| South Africa | Rand, R (ZAR) | Noah's list |
+
+<Steps>
+<Step>
+### Type the dollars
+
+**You send** in dollars (or **Use all**). Under it, Noah's rate ("1 USD = ₦1,351.70"), **Noah's fee** in local money
+and "Arrives in about a minute"; **They get** shows what lands in the bank. Below Noah's minimum it says how much
+at least ("At least $1.10 to this bank"). The flag pill changes the country.
+</Step>
+<Step>
+### Add who you're paying
+
+**New recipient** opens **Recipient in Nigeria**: **Choose their bank** (popular banks first, every one with its
+logo, or its initials when it has none), then the account number. In Nigeria the bank names the holder: after ten
+digits Tegata asks Noah, and the name comes back in a green chip, "from the bank". A wrong number says "The bank
+didn't find this account. Check the number."
+
+In Ghana and South Africa you say who holds it (**A person** or **A business**) and their name; South Africa also asks
+their email, phone and address. Then **What it's for** (Salary, Supplier, Services, Family, Other), an optional
+reference for their statement, and **Use this account**.
+</Step>
+<Step>
+### Review and hold
+
+**Continue** checks the account with Noah. If the bank names someone else, or nobody was named yet, Tegata asks "The
+bank says it's …" with **Not them** and **Pay them** first. Then the review shows what they get, the rate, Noah's
+fee, "Network fee · Paid by Tegata" and when it arrives. Press and hold **Hold to withdraw**.
+</Step>
+<Step>
+### On its way
+
+**Approved** (with your key, on this device), **Left your balance** (on NEAR, fee paid by Tegata), **On its way to
+Noah** (as USDC on Solana) and **Paid to** the holder. Then a **Paid to a bank** slip, stamped with your seal, with
+links **On NEAR** and **To Noah**. If it doesn't go through, the dollars come back to your balance.
+</Step>
+</Steps>
+
+<Phones>
+  <Phone src="/shots/phone/ex-bank-review.webp" alt="Example: the review: you withdraw $20.00 to Forrest Green at Access Bank ••0031, they get ₦26,765.50, rate 1 USD = ₦1,351.80, Noah's fee ₦270.50, network fee paid by Tegata, arrives in about a minute, Hold to withdraw $20.00" caption="Example: the review." />
+  <Phone src="/shots/phone/ex-bank-onway.webp" alt="Example: ₦26,765.50 to Forrest Green, $20.00 from your balance: Approved, Left your balance, On its way to Noah, Paid to Forrest Green" caption="Example: the four steps." />
+  <Phone src="/shots/phone/ex-bank-paid.webp" alt="Example: Paid to a bank, ₦26,765.50, $20.00 from Studio Kaze, stamped PAID, to Forrest Green at Access Bank ••0031, with On NEAR and To Noah, Withdraw again and Activity" caption="Example: paid, with both transactions." />
+</Phones>
+
+<Callout title="Where a withdrawal stops today" type="warn">
+Noah switches bank payouts on for each sandbox account by request, and it hasn't yet for Tegata's. So **Continue**
+stops at Noah's last step, before any money moves, with this message:
+
+<Phone src="/shots/phone/bank-stop.webp" alt="Bank on the live app: Forrest Green at Access Bank ••0031 chosen, and in red: Noah's sandbox hasn't switched on bank payouts for Tegata yet (they turn it on by request, and it's asked for)" caption="Real, on the live app today." />
+
+Everything before that step is Noah answering for real. The three Example screens above show the rest of the flow
+on sample data.
+</Callout>
+
+## Receive: a euro account
+
+<Shot src="/shots/wide/ex-bank-receive.webp" alt="Example: Receive on a laptop: Euro account, IBAN · SEPA transfers, Active; account holder Studio Kaze, an IBAN, a BIC and the bank, with Copy all and Share; Euro transfers arrive as dollars in your balance; US dollar account, ACH and wire, Live; Send a test transfer with €2, €5 and €10; Arrived: €2.00, +$1.16, in your balance" caption="Example: the euro account and a test transfer that arrived as dollars." address="tegata.xyz/app/bank" />
+
+**Get euro bank details** opens a euro account at Noah in your business's name: an IBAN for SEPA transfers, with the
+account holder, BIC and bank, each tap-to-copy, **Copy all** and **Share**. "Euro transfers arrive as dollars in your
+balance": Noah turns each one into USDC, and Tegata credits the same dollars to your USDC on NEAR within about a
+minute. Each deposit is listed under **Arrived**, as **In your balance** once it's credited.
+
+In the Sandbox, **Send a test transfer** sends €2, €5 or €10 through Noah's own deposit flow. A US dollar account (ACH
+and wire) is shown locked for Live.
+
+<Callout title="A real one" type="success">
+A simulated €2.00 transfer to a business's Noah euro account arrived as 1.16 USDC in its NEAR balance:
+<Tx hash="CGQr6SEf3P5spDqohfH91PGCMABGjA1RGDpiYyczHe6F" />, from Tegata's operator with the memo `tegata:bankin:…`.
+</Callout>
+
+## In your books
+
+Withdrawals and deposits are rows in **Activity** with the country's flag: "To Access Bank ••0031 · ₦…" and "Bank
+transfer · €…", each opening **Bank**. The in-page slip is the receipt. Emails tell you when a withdrawal is paid,
+when one didn't go through, and when a bank transfer arrived ([Emails](/docs/guide/emails)).
+
+Who holds the money at each step, and why the Sandbox goes through Solana:
+[Bank and cards](/docs/how-money-moves/bank-and-cards).

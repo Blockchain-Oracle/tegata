@@ -1,6 +1,6 @@
 "use client"
 
-// Customers (plan 6.8 N): what customers owe on the stage (one hero figure, two facts, as on Invoices), then everyone
+// Customers: what customers owe on the stage (one hero figure, two facts, as on Invoices), then everyone
 // the business bills, each on a disc coloured from their name, with what they still owe. A row opens a sheet to edit
 // them or start an invoice for them. Empty: a sora tile; a search that finds no one offers to add them.
 import { ChevronRight, FileText, Plus, Search, Users } from "lucide-react"

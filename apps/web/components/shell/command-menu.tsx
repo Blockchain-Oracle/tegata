@@ -99,7 +99,7 @@ export function CommandMenu({
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 z-50 bg-black/40 data-[state=open]:animate-in data-[state=open]:fade-in-0" />
+        <Dialog.Overlay className="fixed inset-0 z-50 bg-scrim/70 data-[state=open]:animate-in data-[state=open]:fade-in-0" />
         <Dialog.Content
           aria-describedby={undefined}
           className="fixed top-[14vh] left-1/2 z-50 w-[min(560px,calc(100vw-32px))] -translate-x-1/2 overflow-hidden rounded-[20px] bg-popover shadow-float data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95"
@@ -230,7 +230,7 @@ export function CommandMenu({
                   Withdraw to a bank · bank details
                 </Item>
                 <Item icon={<CreditCard />} onSelect={run(() => router.push("/app/cards"))}>
-                  Cards: top up your Gnosis Pay card
+                  Cards: spend cards for you and your team
                 </Item>
                 <Item icon={<Gift />} onSelect={run(() => router.push("/app/refer"))}>
                   Refer a business

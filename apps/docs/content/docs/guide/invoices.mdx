@@ -20,7 +20,7 @@ draft stays on your device and opens in your account when you sign in to send it
 | Dates | Issue date, and a due date from the terms chips or a date |
 | Notes | Up to 1,000 characters |
 | **Allow part-payments** | The customer may pay any amount up to what's left |
-| **Send reminders** | Emails the customer 3 days before, on, and 3 and 7 days after the due date, at 09:00 in your time zone. Needs email switched on and a customer email, so it's off on the live Sandbox |
+| **Send reminders** | "3 days before, on the day, then 3 and 7 days late, at 9:00" in your time zone, by email to the customer (needs a customer email). Each step has its own words, below |
 | **Repeat** | Weekly or monthly: the next invoice issues itself (a number and a link) shortly after 09:00 in your time zone; with email on, it is also sent to the customer |
 
 The preview has three tabs: **Invoice** (the paper), **Pay page** (the real page your customer opens) and
@@ -29,7 +29,7 @@ The preview has three tabs: **Invoice** (the paper), **Pay page** (the real page
 <Phones>
   <Phone src="/shots/phone/guest-invoice.webp" alt="The builder on a phone: Studio Kaze's invoice to Northwind Ltd, Edit tab" caption="Edit, on a phone." />
   <Phone src="/shots/phone/guest-invoice-preview.webp" alt="The builder's Preview tab: the invoice from Studio Kaze to Northwind Ltd, due 26 Nov 2026" caption="Preview: the invoice your customer gets." />
-  <Phone src="/shots/phone/invoices.webp" alt="The Invoices list: customers owe you $0.00, paid in the last 30 days $0.50, INV-0001 paid" caption="The list, with totals and tabs." />
+  <Phone src="/shots/phone/invoices.webp" alt="The Invoices list for Studio Kaze: customers owe you $0.15, overdue $0.00, paid in the last 30 days $0.00; tabs All, Unpaid 1, Overdue, Paid, Drafts; Northwind Ltd, INV-0001, due in 14 days, $0.30 with $0.15 left" caption="The list, with totals and tabs." />
 </Phones>
 
 ## Money rules
@@ -57,14 +57,35 @@ Viewed, Partly paid and Overdue are worked out each time the invoice is read, so
 
 <Shot src="/shots/wide/app-invoice.webp" alt="Invoice INV-0001, partly paid: the invoice from Studio Kaze to Northwind Ltd for $0.30 on the stage; beside it $0.15 received and $0.15 left to pay, Billed to Northwind Ltd, the actions, one payment from a NEAR wallet, and the timeline: drafted, sent, $0.15 received on NEAR" caption="A real invoice paid in part: what's left, who it's billed to, the payment and the timeline." address="tegata.xyz/app/invoices/…" />
 
-- **Copy link** and **Share**: the customer's link opens the invoice with a **Pay** button for what's left, and
-  **Download PDF**.
-- **Mark paid by hand**: records money received another way, with an amount and a note. Its receipt says it isn't
-  on NEAR.
+- **Copy link**, **Share** and **Open**: the customer's link opens the invoice with a **Pay** button for what's left
+  (from a Tegata balance, a NEAR wallet, or in Live any coin on another chain), and **Download PDF**.
+- **Paid by hand**: opens **Mark paid by hand**, which records money **Received outside Tegata**, with an amount and
+  a note. Its receipt says it isn't on NEAR.
 - **Duplicate**: a fresh draft with the same customer and items.
 - **Void**: cancels it; the number stays used.
 
-<Callout title="Email is off on the live site" type="info">
-Invoice and reminder emails are built but switched off on the live Sandbox until a sending domain is set up, so
-reminders don't go out either. Sending an invoice still gives you its link to share.
-</Callout>
+## Emails and reminders
+
+Sending an invoice emails it to the customer with its PDF attached ("INV-0007 from Studio Kaze: $1,250.00 due 30
+November 2026"), when they have an email; either way you get its link to share. With **Send reminders** on, each step
+has its own subject:
+
+| When | Subject |
+| --- | --- |
+| 3 days before | Reminder: INV-0007 from Studio Kaze, $1,250.00 due 30 November 2026 |
+| On the day | INV-0007 from Studio Kaze is due today: $1,250.00 |
+| 3 days late | INV-0007 from Studio Kaze is 3 days overdue: $1,250.00 |
+| 7 days late | Final reminder: INV-0007 from Studio Kaze, $1,250.00 |
+
+Each reminder asks for what's still left, and the ones after the due date add "Already paid? Ignore this. Reminders
+stop once the payment shows on NEAR." Right before one goes out, Tegata checks again: a paid or voided invoice, or one
+with reminders switched off since, gets none.
+
+On a sent invoice, the **Reminders** row shows the next one ("Next: Mon 30 Nov, 09:00 · on the due date"), "Off" or
+"All sent", with a switch for the scheduled ones and **Remind now**, which sends today's reminder at once, worded by
+how late the invoice is, at most once a day. A customer without an email gets none, and the row says why.
+
+The invoice's timeline names each one ("Reminder sent, 3 days before it was due", "Reminder sent on the due date",
+"Reminder sent, 3 days late", "Final reminder sent", "Reminder sent by you"). Once a reminder goes out after the due
+date, you get "An invoice is overdue" too, unless you've switched it off in [Emails](/docs/guide/emails). Replies to
+any of these reach you: your billing email, or else the email you sign in with.

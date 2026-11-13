@@ -1,4 +1,4 @@
-// Money out to another chain through NEAR Intents 1Click (plan 6.8 AB): Send, a payroll row, a refund to the payer's
+// Money out to another chain through NEAR Intents 1Click: Send, a payroll row, a refund to the payer's
 // chain, or Move out. The business pays exactly `amount` of USDC (EXACT_INPUT); the person receives what the quote
 // says on their chain.
 import { index, jsonb, pgEnum, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core"

@@ -1,4 +1,4 @@
-// NEAR Intents 1Click, server side (plan 6.8 AB; context/09-realworld-money/live-1click-notes.md): non-dry quotes for
+// NEAR Intents 1Click, server side: non-dry quotes for
 // Live pay-ins and payouts, the status of a deposit address, and the check that a quote really came from 1Click.
 // No SDK: the SDK pulls in axios; the signature check is a few lines, mirrored from its `quote-signature.ts`.
 import { sha256 } from "@noble/hashes/sha2.js"
@@ -243,10 +243,40 @@ export const CHAIN_NAMES: Record<string, string> = {
   bera: "Berachain",
 }
 
+/**
+ * Dollars in USDC's 6 decimals as the same dollars in a stablecoin with `decimals` (USDT on BNB Chain has 18): what
+ * an exact delivery asks NEAR Intents for. Rounds down below 6 decimals, so it never asks for more than the pay.
+ */
+export function usdcToTokenUnits(usdcUnits: bigint, decimals: number): bigint {
+  const USDC = 6
+  return decimals >= USDC
+    ? usdcUnits * 10n ** BigInt(decimals - USDC)
+    : usdcUnits / 10n ** BigInt(USDC - decimals)
+}
+
+/** Explorers for the chains NEAR Intents delivers to, by the chain's display name (as payouts store it). */
+const DELIVERY_EXPLORERS: Record<string, string> = {
+  Ethereum: "https://etherscan.io/tx/",
+  Base: "https://basescan.org/tx/",
+  Arbitrum: "https://arbiscan.io/tx/",
+  "BNB Chain": "https://bscscan.com/tx/",
+  Polygon: "https://polygonscan.com/tx/",
+  Gnosis: "https://gnosisscan.io/tx/",
+  Solana: "https://solscan.io/tx/",
+  Bitcoin: "https://mempool.space/tx/",
+  Tron: "https://tronscan.org/#/transaction/",
+}
+
+/** The delivery transaction on its own chain's explorer ("Tron", hash), or null for a chain without one here. */
+export function deliveryTxUrl(chain: string, hash: string): string | null {
+  const base = DELIVERY_EXPLORERS[chain]
+  return base ? `${base}${hash}` : null
+}
+
 const TOKENS_TTL_MS = 10 * 60_000
 let tokenCache: {
   at: number
-  list: { assetId: string; symbol: string; blockchain: string }[]
+  list: { assetId: string; symbol: string; blockchain: string; decimals?: number }[]
 } | null = null
 
 /** 1Click's token list, cached ten minutes. */
@@ -287,6 +317,7 @@ export async function routeAsset(routeId: string) {
         blockchain,
         chain: CHAIN_NAMES[blockchain] ?? blockchain,
         stable: symbol === "USDC" || symbol === "USDT",
+        decimals: token.decimals ?? null,
       }
     : null
 }

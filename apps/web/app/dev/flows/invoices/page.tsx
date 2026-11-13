@@ -1,6 +1,6 @@
 "use client"
 
-// Invoices in every state (plan 6.9): the list, the builder (live), one invoice (sent, partly paid, paid, void) and
+// Invoices in every state: the list, the builder (live), one invoice (sent, partly paid, paid, void) and
 // the public invoice the customer opens, on sample data that lives only under /dev.
 import { localToday } from "@tegata/core/invoices"
 import { useState } from "react"
@@ -20,7 +20,7 @@ import {
 } from "@/lib/dev/sample"
 
 type ListState = "full" | "empty" | "loading" | "error"
-type InvoiceState = "sent" | "partly" | "paid" | "void"
+type InvoiceState = "sent" | "partly" | "paid" | "void" | "reminders_off" | "no_email"
 
 function detailFor(state: InvoiceState): InvoiceDetail {
   const base = SAMPLE_INVOICE
@@ -33,9 +33,22 @@ function detailFor(state: InvoiceState): InvoiceDetail {
       status: "viewed",
       events: base.events.slice(0, 4),
     }
+  if (state === "reminders_off")
+    return { ...base, reminders: base.reminders && { ...base.reminders, on: false, next: null } }
+  if (state === "no_email")
+    return {
+      ...base,
+      reminders: base.reminders && {
+        ...base.reminders,
+        canSend: false,
+        why: "No email for this customer",
+        email: null,
+      },
+    }
   if (state === "paid")
     return {
       ...base,
+      reminders: null,
       invoice: { ...base.invoice, status: "paid", paidAt: new Date().toISOString() },
       paidTotal: base.invoice.total,
       remaining: "0",
@@ -49,6 +62,7 @@ function detailFor(state: InvoiceState): InvoiceDetail {
     return {
       ...base,
       invoice: { ...base.invoice, status: "void", voidedAt: new Date().toISOString() },
+      reminders: null,
       remaining: "0",
       status: "void",
       events: [
@@ -144,6 +158,8 @@ export default function InvoicesFlow() {
               { value: "partly", label: "Partly paid" },
               { value: "paid", label: "Paid" },
               { value: "void", label: "Void" },
+              { value: "reminders_off", label: "Reminders off" },
+              { value: "no_email", label: "No email" },
             ]}
           />
         </div>
@@ -162,6 +178,8 @@ export default function InvoicesFlow() {
           onVoid={() => setState("void")}
           onMarkPaid={() => setState("paid")}
           onDuplicate={() => undefined}
+          onRemind={() => undefined}
+          onReminders={(on) => setState(on ? "partly" : "reminders_off")}
         />
       </section>
 

@@ -1,4 +1,4 @@
-// The 404 (audit top 10 #10; R6, D-R2). Tegata is named after the old Japanese bill of exchange, so a link that leads
+// The 404 (audit top 10 #10; R6). Tegata is named after the old Japanese bill of exchange, so a link that leads
 // nowhere is a bill that came back: a paper bill on the stage, numbered 404, stamped "Returned" in seal ink, with one
 // way back. Every bad or expired pay, receipt, invoice, person or join link lands here; never Next's bare 404.
 import type { Metadata } from "next"
@@ -21,7 +21,7 @@ export default function NotFound() {
         inner="flex min-h-dvh flex-col items-center justify-center gap-8 px-4 py-14"
       >
         <div className="relative w-full max-w-[480px] -rotate-2">
-          <div className="relative rounded-[18px] bg-white text-black shadow-object">
+          <div className="relative rounded-[18px] bg-paper text-[#16130F] shadow-object">
             <div className="flex items-center justify-between gap-3 px-6 pt-6">
               <span className="flex items-center gap-2.5">
                 <TegataSeal size={34} tilt={-4} />

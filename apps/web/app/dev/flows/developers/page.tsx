@@ -1,6 +1,6 @@
 "use client"
 
-// Developers and the counter in every state (plan 6.9), on sample data only.
+// Developers and the counter in every state, on sample data only.
 import { useState } from "react"
 
 import { CounterView } from "@/components/counter/counter-view"

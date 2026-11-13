@@ -20,7 +20,7 @@ const SEND_HAS_RECEIPT = new Set(["signed", "sent", "unknown", "success"])
 /**
  * The person's latest money movements: payments into their pay links and invoices, links they paid, their one-off
  * sends, their referral rewards, payroll runs and payslips, newest first. Each opens its receipt, which then links to NEAR. The full ledger
- * with filters arrives with Books (S06).
+ * with filters arrives with Books.
  */
 export const GET = route(async (request) => {
   const user = await requireUser(request)

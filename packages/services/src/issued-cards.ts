@@ -1,4 +1,4 @@
-// Spend cards Tegata issues (plan 6.8 AD, job 1; context/09-realworld-money/cards-ux-brief.md, cards-v2.md): a virtual
+// Spend cards Tegata issues: a virtual
 // Visa for the owner or a person, issued by Bitnob, with its own balance filled from the business's USDC on NEAR.
 //
 // Money in: the business approves one gas-free USDC transfer to Tegata's card reserve (the operator) with memo

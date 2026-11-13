@@ -1,6 +1,6 @@
 "use client"
 
-// Refer (plan 6.8 H; Wise's invite screens, Copperx's stablecoin referral panel): your join link and its QR on the
+// Refer: your join link and its QR on the
 // stage, what you've earned, a tracker for each business you invited with its progress to the threshold, who invited
 // you, and the terms in five lines. Separate from its logic so /dev/flows can show every state.
 import {
@@ -61,7 +61,7 @@ function payoutWords(error: string | null): string {
     : "Trying again shortly"
 }
 
-/** The rules in five short lines (plan 6.8 H), each with its own colour so the block isn't grey (D-R2). */
+/** The rules in five short lines, each with its own colour so the block isn't grey. */
 function terms(rules: ReferralRules, sandbox: boolean) {
   const hold = sandbox ? `${rules.holdMinutes} min` : `${Math.round(rules.holdMinutes / 60)} h`
   return [
@@ -135,7 +135,7 @@ export function ReferView(p: ReferViewProps) {
       <h1 className="display text-page-title">Refer</h1>
 
       <Stage className="p-5 sm:p-8">
-        <div className="grid items-center gap-8 md:grid-cols-[1fr_auto]">
+        <div className="grid grid-cols-[minmax(0,1fr)] items-center gap-8 md:grid-cols-[minmax(0,1fr)_auto]">
           <div className="flex flex-col gap-5">
             <div className="flex flex-col gap-1">
               <span className="text-[15px] font-medium text-white/85">
@@ -282,7 +282,7 @@ export function ReferView(p: ReferViewProps) {
             >
               <span
                 className={cn(
-                  "grid size-8 shrink-0 place-items-center rounded-full text-black [&_svg]:size-4",
+                  "grid size-8 shrink-0 place-items-center rounded-full text-field-ink [&_svg]:size-4",
                   term.field,
                 )}
               >

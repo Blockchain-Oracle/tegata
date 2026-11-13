@@ -1,5 +1,5 @@
 /**
- * Payroll's pure logic (plan 6.8 O–S): paydays in the business's own calendar, the period a run pays for, batches that
+ * Payroll's pure logic: paydays in the business's own calendar, the period a run pays for, batches that
  * fit one all-or-nothing NEAR action list, and the people CSV with an error per row. No I/O; the services call this.
  */
 

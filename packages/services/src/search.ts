@@ -1,4 +1,4 @@
-// ⌘K search across one business's invoices (by number or customer), customers, people and pay links (plan 6.7).
+// ⌘K search across one business's invoices (by number or customer), customers, people and pay links.
 import { invoiceNumber } from "@tegata/core/invoices"
 import { type Db, schema } from "@tegata/db"
 import { and, desc, eq, ilike, ne, or } from "drizzle-orm"

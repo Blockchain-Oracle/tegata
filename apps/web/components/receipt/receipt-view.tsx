@@ -1,10 +1,10 @@
 "use client"
 
-// A receipt (plan 6.8 E, rule R1): a paper slip on the stage for every money movement, a customer payment (numbered,
+// A receipt: a paper slip on the stage for every money movement, a customer payment (numbered,
 // stamped PAID with the business seal), a send (stamped SENT) or a referral reward (Tegata's own seal), with the
 // amount, who paid whom, how (with the real mark of the coin and chain), when, and the NEAR transaction that proves
 // it. Share it, save it as a PDF, then NEAR. The slip itself is `ReceiptSlip`, shared with the pay page.
-import { Check, ExternalLink, Printer, Share2 } from "lucide-react"
+import { Check, Download, ExternalLink, Printer, Share2 } from "lucide-react"
 import Link from "next/link"
 import { useState } from "react"
 
@@ -224,9 +224,20 @@ export function ReceiptView({ receipt, token }: { receipt: Receipt; token: strin
           <Pill onClick={share}>
             {copied ? <Check /> : <Share2 />} {copied ? "Link copied" : "Share"}
           </Pill>
-          <Pill onClick={() => window.print()}>
-            <Printer /> Save as PDF
-          </Pill>
+          {receipt.kind === "payslip" && token.startsWith("slip:") ? (
+            <a
+              href={`/r/slip/${token.slice("slip:".length)}/pdf`}
+              target="_blank"
+              rel="noreferrer"
+              className="press inline-flex h-11 items-center gap-2 rounded-full bg-white px-4 text-[15px] font-semibold text-black shadow-object [&_svg]:size-4"
+            >
+              <Download /> Download PDF
+            </a>
+          ) : (
+            <Pill onClick={() => window.print()}>
+              <Printer /> Save as PDF
+            </Pill>
+          )}
           {receipt.explorerUrl ? (
             <a
               href={receipt.explorerUrl}
@@ -253,7 +264,7 @@ export function ReceiptView({ receipt, token }: { receipt: Receipt; token: strin
   )
 }
 
-/** How the money moved, with its real mark: the coin and chain it came from for NEAR Intents (audit S3). */
+/** How the money moved, with its real mark: the coin and chain it came from for NEAR Intents. */
 function PaidWith({ receipt }: { receipt: Receipt }) {
   if (receipt.method === "oneclick") {
     const route = routeOfAsset(receipt.assetIn)

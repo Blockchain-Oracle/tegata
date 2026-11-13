@@ -1,6 +1,6 @@
 /** @jsxRuntime automatic */
 /** @jsxImportSource react */
-// One layout for every Tegata email (context/09-realworld-money/email-audit.md §4), so no email can drift. Two shapes:
+// One layout for every Tegata email, so no email can drift. Two shapes:
 // the slip, for money that moved (the receipt page on paper: header, hero figure, the seal pressed, a perforation,
 // receipt rows, the NEAR transaction), and the card, for everything else (a vermilion rule, a headline, a few lines).
 // Tables and inline styles only, light only, a black main button (DESIGN.md: the one main action is black; vermilion is
@@ -72,10 +72,10 @@ export interface EmailContent {
 /** Data keeps app paths ("/r/…"); the email needs absolute links. */
 const abs = (assets: string, href: string) => (href.startsWith("/") ? `${assets}${href}` : href)
 
-const INK = "#000000"
-const GREY = "#666666"
-const PAPER = "#F5F5F5"
-const RULE = "#ECECEC"
+const INK = "#16130F"
+const GREY = "#5B544A"
+const PAPER = "#F3EFE6"
+const RULE = "#E9E3D6"
 const UP = "#2F7A00"
 const SHU = "#FF4F00"
 const SEAL_INK = "#B23700"
@@ -158,7 +158,10 @@ function Rows({ rows, assets }: { rows: EmailRow[]; assets: string }) {
                   fontSize: row.mono ? 13 : 14,
                   fontWeight: 600,
                   color: INK,
-                  wordBreak: "break-all",
+                  // Only an account or hash may break anywhere; words wrap between words.
+                  ...(row.mono
+                    ? { wordBreak: "break-all" as const }
+                    : { overflowWrap: "break-word" as const }),
                 }}
               >
                 {picture ? (
@@ -203,7 +206,7 @@ function Perforation() {
         />
       </Column>
       <Column>
-        <div style={{ borderTop: "2px dashed #E2E2E2", height: 0, margin: "0 6px" }} />
+        <div style={{ borderTop: "2px dashed #E2DBCD", height: 0, margin: "0 6px" }} />
       </Column>
       <Column style={{ width: 10 }}>
         <div
@@ -338,7 +341,7 @@ export function TegataEmail({ content }: { content: EmailContent }) {
             </Row>
             <Section
               style={{
-                backgroundColor: "#FFFFFF",
+                backgroundColor: "#FFFCF6",
                 borderRadius: 20,
                 boxShadow: "0 10px 28px rgba(80,20,0,0.22)",
                 overflow: "hidden",

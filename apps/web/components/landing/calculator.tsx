@@ -1,6 +1,6 @@
 "use client"
 
-// The landing calculator (plan 6.8 F): type what you want to receive, pick the coin your customer holds, and see a
+// The landing calculator: type what you want to receive, pick the coin your customer holds, and see a
 // live NEAR Intents quote for what they send. EXACT_OUTPUT: the business always receives exactly the amount.
 import NumberFlow from "@number-flow/react"
 import { useQuery } from "@tanstack/react-query"

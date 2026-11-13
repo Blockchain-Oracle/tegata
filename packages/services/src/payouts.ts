@@ -1,8 +1,8 @@
-// Money out to another chain through NEAR Intents 1Click (plan 6.8 AB; context/09-realworld-money/live-1click-notes.md §2).
+// Money out to another chain through NEAR Intents 1Click.
 // The business sends exactly `amount` of USDC (EXACT_INPUT) to a fresh 1Click deposit address on NEAR. Tegata's
 // operator registers that address on USDC in its own transaction (a deposit above 1 yocto never rides inside a user's
 // relayed action), the business's gas-free action sends the USDC there, and the worker follows 1Click to delivery.
-import { NETWORKS } from "@tegata/config"
+import { maxConversionExtra, NETWORKS } from "@tegata/config"
 import { ftTransfer, isRegistered, type Operator, usdcBalance } from "@tegata/core/near"
 import {
   OneClickError,
@@ -11,6 +11,7 @@ import {
   requestQuote,
   submitDeposit,
   swapStatus,
+  usdcToTokenUnits,
   verifyQuote,
 } from "@tegata/core/oneclick"
 import { type Db, schema } from "@tegata/db"
@@ -44,15 +45,17 @@ function payoutRequest(input: {
   recipient: string
   stable: boolean
   dry: boolean
+  /** The exact amount to deliver, in the destination coin's own units (EXACT_OUTPUT). */
+  amountOut?: bigint
 }): QuoteRequest {
   return {
     dry: input.dry,
-    swapType: "EXACT_INPUT",
+    swapType: input.amountOut === undefined ? "EXACT_INPUT" : "EXACT_OUTPUT",
     slippageTolerance: input.stable ? STABLE_SLIPPAGE_BPS : SLIPPAGE_BPS,
     originAsset: `nep141:${NETWORKS.mainnet.usdc}`,
     depositType: "ORIGIN_CHAIN",
     destinationAsset: input.destinationAsset,
-    amount: input.amount.toString(),
+    amount: (input.amountOut ?? input.amount).toString(),
     // If the swap can't complete, the USDC comes back to the business.
     refundTo: input.senderId,
     refundType: "ORIGIN_CHAIN",
@@ -107,16 +110,26 @@ export interface PayoutInput {
   recipient: string
   stable: boolean
   reference?: string
+  /**
+   * Deliver exactly `amount` dollars in a stablecoin (EXACT_OUTPUT), with the coin's decimals on its chain: a payroll
+   * row, so the person receives their pay in full. The business sends what the quote asks, a little more.
+   */
+  exactOut?: { decimals: number }
 }
 
 /**
- * A signed EXACT_INPUT quote with its own deposit address on NEAR, checked and saved as a drafted payout. The caller
- * drafts the transfer to that address (alone, or inside a payroll batch).
+ * A signed quote with its own deposit address on NEAR, checked and saved as a drafted payout: EXACT_INPUT (the
+ * business sends exactly `amount`), or EXACT_OUTPUT for a stablecoin payroll row (the person receives exactly
+ * `amount`; the payout's own amount is what the business sends). The caller drafts the transfer to that address
+ * (alone, or inside a payroll batch).
  */
 export async function quotePayout(db: Db, input: PayoutInput, apiKey?: string) {
+  const amountOut = input.exactOut
+    ? usdcToTokenUnits(input.amount, input.exactOut.decimals)
+    : undefined
   let response: QuoteResponse
   try {
-    response = await requestQuote(payoutRequest({ ...input, dry: false }), apiKey)
+    response = await requestQuote(payoutRequest({ ...input, dry: false, amountOut }), apiKey)
   } catch (error) {
     throw new PayoutError(
       "no_route",
@@ -125,15 +138,26 @@ export async function quotePayout(db: Db, input: PayoutInput, apiKey?: string) {
   }
   const echo = response.quoteRequest
   const deposit = response.quote.depositAddress ?? ""
+  const amountIn = BigInt(response.quote.amountIn ?? "0")
   const honest =
     verifyQuote(response) &&
     echo.originAsset === `nep141:${NETWORKS.mainnet.usdc}` &&
-    echo.amount === input.amount.toString() &&
     echo.recipient === input.recipient &&
-    echo.swapType === "EXACT_INPUT" &&
-    response.quote.amountIn === input.amount.toString() &&
-    IMPLICIT.test(deposit)
+    IMPLICIT.test(deposit) &&
+    (amountOut === undefined
+      ? echo.swapType === "EXACT_INPUT" &&
+        echo.amount === input.amount.toString() &&
+        amountIn === input.amount
+      : echo.swapType === "EXACT_OUTPUT" &&
+        echo.amount === amountOut.toString() &&
+        amountIn >= input.amount)
   if (!honest) throw new PayoutError("no_route", "NEAR Intents' quote didn't check out. Try again.")
+  // Delivering exactly the pay costs a little more; past the cap, say so instead of paying it.
+  if (amountOut !== undefined && amountIn - input.amount > maxConversionExtra(input.amount))
+    throw new PayoutError(
+      "no_route",
+      `Delivering on ${input.chain} costs ${(Number(amountIn - input.amount) / 1e6).toFixed(2)} extra right now. Try another chain, or try again later.`,
+    )
   const [payout] = await db
     .insert(payouts)
     .values({
@@ -142,7 +166,8 @@ export async function quotePayout(db: Db, input: PayoutInput, apiKey?: string) {
       network: "mainnet",
       kind: input.kind,
       senderId: input.senderId,
-      amount: input.amount,
+      // What the business sends: the amount, or for an exact delivery what the quote asks.
+      amount: amountOut === undefined ? input.amount : amountIn,
       destinationAsset: input.destinationAsset,
       symbol: input.symbol,
       chain: input.chain,

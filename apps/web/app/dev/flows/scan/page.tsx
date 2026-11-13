@@ -1,6 +1,6 @@
 "use client"
 
-// Scan in every state (plan 6.9): real QR codes for each kind Tegata reads, decoded by the same code the camera uses
+// Scan in every state: real QR codes for each kind Tegata reads, decoded by the same code the camera uses
 // (once with the browser's reader, once forced through jsQR, which iPhones use), and the scanner itself.
 import { QRCodeSVG } from "qrcode.react"
 import { useState } from "react"

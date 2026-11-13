@@ -1,4 +1,4 @@
-// Every text colour on every surface it's used on, in light and dark, must reach WCAG AA (4.5:1) (plan 6.2).
+// Every text colour on every surface it's used on, in light and dark, must reach WCAG AA (4.5:1).
 // Reads the tokens straight from apps/web/app/globals.css, so a token change that breaks contrast fails here.
 import { readFileSync } from "node:fs"
 
@@ -39,9 +39,7 @@ const PAIRS = [
 /** Large display text (24 px and up) only needs 3:1 under WCAG AA. */
 const LARGE = [["#ffffff", "#ff4f00", "white figures on the stage (display, 60 px and up)"]]
 /** Known gaps, printed but not failed: decided in the plan, not by this script. */
-const KNOWN = [
-  ["#ffffff", "#ff4f00", "small white labels on the stage (plan 6.2: a brand decision for Abu)"],
-]
+const KNOWN = [["#ffffff", "#ff4f00", "small white labels on the stage (a brand decision)"]]
 /** Fixed pairs that don't change with the theme (the stage is lit in both). */
 const FIXED = [
   ["#000000", "#ff4f00", "ink on the shu button"],

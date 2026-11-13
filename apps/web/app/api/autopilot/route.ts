@@ -22,7 +22,7 @@ const body = z.object({ count: z.number().int(), setAside: z.string().trim() })
 export const POST = route(async (request) => {
   const network = requestNetwork(request)
   const { user, workspace } = await requireOwner(request)
-  // The autopilot contract runs on testnet; `pay.tegata.near` isn't deployed on mainnet yet (plan item 5).
+  // The autopilot contract runs on testnet; `pay.tegata.near` isn't deployed on mainnet yet.
   if (network === "mainnet")
     throw badRequest(
       "Autopilot in Live opens when its contract is on NEAR mainnet. It runs in the Sandbox now.",

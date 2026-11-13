@@ -1,6 +1,6 @@
 "use client"
 
-// Pay links in every state (plan 6.9): the list (empty, loading, full, error), the new-link sheet, and one link's
+// Pay links in every state: the list (empty, loading, full, error), the new-link sheet, and one link's
 // page (just created with the seal press, with payments, with none), on sample data that lives only under /dev.
 import { useState } from "react"
 

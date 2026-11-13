@@ -1,8 +1,7 @@
-// Noah (https://docs.noah.com), the licensed partner behind bank payouts and bank details (plan 6.8 AC). Crypto-native:
+// Noah (https://docs.noah.com), the licensed partner behind bank payouts and bank details. Crypto-native:
 // it takes USDC and pays a local bank (Nigeria, NGN, first), and gives a business bank details whose deposits arrive as
 // USDC. Server only; the key never reaches a browser. Sandbox: api.sandbox.noah.com with `X-Api-Key` (request signing is
-// optional while the key has no public key). Shapes verified against the sandbox on 2026-11-13
-// (context/09-realworld-money/bank-alternatives.md §1.4–1.5).
+// optional while the key has no public key). Shapes verified against the sandbox on 2026-11-13.
 
 export const NOAH_SANDBOX = "https://api.sandbox.noah.com/v1"
 /** Noah's own sandbox USDC (not Circle's), on Solana devnet. */

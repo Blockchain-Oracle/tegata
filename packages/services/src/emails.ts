@@ -1,4 +1,4 @@
-// Who gets which email, for every event (context/09-realworld-money/email-audit.md §3). Each function reads what the
+// Who gets which email, for every event. Each function reads what the
 // email shows from the database, captures it as the event's data, and queues it in the outbox (notify.ts) with a
 // dedupe key, so calling it twice sends once. Links are app paths; the layout makes them absolute.
 import { NETWORKS, type NetworkId, REFERRALS } from "@tegata/config"
@@ -7,7 +7,7 @@ import { assetLabel, type QuoteResponse, routeLabel } from "@tegata/core/oneclic
 import { type Db, schema } from "@tegata/db"
 import type { MoveData, PaymentData } from "@tegata/documents"
 import { and, eq, gte, inArray } from "drizzle-orm"
-
+import { autopilotPays } from "./autopilot.ts"
 import { monthRange, movements, totals } from "./books.ts"
 import { logoPath } from "./business.ts"
 import type { Conn } from "./events.ts"
@@ -445,6 +445,7 @@ export async function queueRunEmails(db: Db, runId: string) {
           period: periodLabel(run.periodFrom, run.periodTo),
           account: row.accountId ?? "",
           url: `/r/slip/${row.id}`,
+          rowId: row.id,
           autopilot,
         },
       },
@@ -635,6 +636,8 @@ export async function queueInvoiceEmail(
     note?: string | null
     /** The payment marked by hand, for its receipt link. */
     paymentId?: string
+    /** A reminder the owner sent with "Remind now": their local date, so it goes at most once that day. */
+    manualDay?: string
   } = {},
 ) {
   const [row] = await db
@@ -646,12 +649,20 @@ export async function queueInvoiceEmail(
   const docs = await invoiceDocuments(db, row.token, "")
   const workspace = await workspaceOf(db, row.workspaceId)
   if (!docs || !workspace) return
-  const data = { ...docs.email, logo: logoPath(workspace), invoiceId, offset: options.offset }
+  const data = {
+    ...docs.email,
+    logo: logoPath(workspace),
+    invoiceId,
+    offset: options.offset,
+    ...(options.manualDay ? { manual: true } : {}),
+  }
   const dedupe =
     kind === "invoice.sent"
       ? `invoice.sent:${invoiceId}`
       : kind === "invoice.reminder"
-        ? `invoice.reminder:${invoiceId}:${options.offset ?? 0}`
+        ? options.manualDay
+          ? `invoice.reminder:${invoiceId}:now:${options.manualDay}`
+          : `invoice.reminder:${invoiceId}:${options.offset ?? 0}`
         : kind === "invoice.void"
           ? `invoice.void:${invoiceId}`
           : `invoice.paid_by_hand:${invoiceId}:${options.paymentId ?? Date.now()}`
@@ -678,7 +689,7 @@ export async function queueInvoiceEmail(
     })
   else
     await queueEmail(db, { event: { kind, data }, to: docs.to, dedupe, workspaceId: workspace.id })
-  if (kind === "invoice.reminder" && (options.offset ?? 0) > 0)
+  if (kind === "invoice.reminder" && !options.manualDay && (options.offset ?? 0) > 0)
     await queueEmail(db, {
       event: {
         kind: "invoice.overdue",
@@ -808,7 +819,23 @@ export async function queueStatements(db: Db, month: string, network: NetworkId)
   }
 }
 
-/** Payday is today or past and no run exists for it: the owner is asked to review and approve. Once per payday. */
+/** The hour of the day in a time zone (0–23). */
+const localHour = (timezone: string) =>
+  Number(
+    new Intl.DateTimeFormat("en-GB", {
+      hour: "2-digit",
+      hourCycle: "h23",
+      timeZone: timezone,
+    }).format(new Date()),
+  )
+
+/** "Payroll is ready" goes out from this hour of the payday, in the owner's time zone. */
+const PAYROLL_DUE_HOUR = 8
+
+/**
+ * Payday is today or past and no run exists for it: the owner is asked to review and approve, once per payday, from
+ * 08:00 their time (the job runs hourly). A payday the autopilot pays is skipped: there is nothing to approve.
+ */
 export async function queuePayrollDue(db: Db) {
   const schedules = await db.select().from(schema.payrolls)
   for (const schedule of schedules) {
@@ -816,6 +843,8 @@ export async function queuePayrollDue(db: Db) {
     if (!workspace) continue
     const due = await payrollDue(db, schedule.workspaceId, schedule.network, workspace.timezone)
     if (!due?.people) continue
+    if (localHour(workspace.timezone) < PAYROLL_DUE_HOUR) continue
+    if (await autopilotPays(db, schedule.workspaceId, schedule.network, due.payday)) continue
     await queueEmail(db, {
       event: {
         kind: "payroll.due",

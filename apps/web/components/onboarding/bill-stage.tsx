@@ -1,6 +1,6 @@
 "use client"
 
-// The welcome stage (plan 6.8 B): the person's own objects build live as they answer. The business name types onto
+// The welcome stage: the person's own objects build live as they answer. The business name types onto
 // a bill and its round seal cuts its ring text; the pay address fills a card and its QR assembles; while the account
 // opens the steps run on paper; at the end the seal presses onto the bill.
 import { motion, useReducedMotion } from "motion/react"

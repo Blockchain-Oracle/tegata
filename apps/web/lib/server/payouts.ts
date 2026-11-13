@@ -1,4 +1,4 @@
-// Payouts to another chain as the screens see them (plan 6.8 AB).
+// Payouts to another chain as the screens see them.
 import type { QuoteResponse } from "@tegata/core/oneclick"
 import type { schema } from "@tegata/db"
 

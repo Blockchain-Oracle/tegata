@@ -1,6 +1,6 @@
 "use client"
 
-// Pay links (plan 6.8 G): what the business has received through links on the stage, then one row per link with
+// Pay links: what the business has received through links on the stage, then one row per link with
 // its amount, times paid and total. Empty: a sora tile that names the next action. Separate from its data so
 // /dev/flows can show every state.
 import { ChevronRight, Link2, Plus } from "lucide-react"
@@ -101,7 +101,7 @@ export function LinksView({
                 >
                   <span
                     className={cn(
-                      "grid size-11 shrink-0 place-items-center rounded-[14px] text-black [&_svg]:size-5",
+                      "grid size-11 shrink-0 place-items-center rounded-[14px] text-field-ink [&_svg]:size-5",
                       fieldOf(link.id),
                     )}
                   >

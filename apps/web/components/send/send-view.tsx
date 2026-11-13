@@ -1,7 +1,7 @@
 "use client"
 
 import type { NetworkId } from "@tegata/config"
-// Send (plan 6.8, Kawase's money lifecycle): one big amount and a NEAR name; a review card that says the fee is paid
+// Send (Kawase's money lifecycle): one big amount and a NEAR name; a review card that says the fee is paid
 // by Tegata; hold to send (the Privy key signs underneath); live steps; a receipt slip that lands when NEAR settles,
 // or a failure card that says no money moved. Separate from its logic so /dev/flows can show every state.
 import {
@@ -325,7 +325,7 @@ function Row({ label, children }: { label: string; children: React.ReactNode }) 
   )
 }
 
-/** The receipt slip (the one slip, audit S4) on the stage: the business seal pressed once with the "sent" cue. */
+/** The receipt slip (the one slip) on the stage: the business seal pressed once with the "sent" cue. */
 function Receipt({
   value,
   to,

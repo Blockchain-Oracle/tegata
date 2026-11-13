@@ -1,8 +1,8 @@
 "use client"
 
 /**
- * Sound and touch (plan 6.6): the one call site, `fire(event, { cue, identity })`, ported from Senryo's web feedback
- * (metropolis/apps/web/src/lib/feedback) and Kawase's `fire()`. Cues are Kawase's processed SND kits in
+ * Sound and touch: the one call site, `fire(event, { cue, identity })`, from our earlier Senryo and
+ * Kawase apps. Cues are Kawase's processed SND kits in
  * public/sounds (piano for money, sine for the interface, the industrial "button" for the seal). Web Audio buffers,
  * unlocked on the first gesture; `navigator.vibrate` on phones, a hidden native switch on iPhone.
  *

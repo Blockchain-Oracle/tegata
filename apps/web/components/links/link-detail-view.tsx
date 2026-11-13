@@ -1,6 +1,6 @@
 "use client"
 
-// One pay link (plan 6.8 G): the link card and its QR on the stage with Copy, Share and Open; then what it has
+// One pay link: the link card and its QR on the stage with Copy, Share and Open; then what it has
 // received and every payment, newest first. A link made a moment ago lands with the business seal pressed once.
 import { ArrowLeft, Check, Copy, ExternalLink, ReceiptText, Share2 } from "lucide-react"
 import { motion, useReducedMotion } from "motion/react"
@@ -90,7 +90,7 @@ export function LinkDetailView(p: LinkDetailViewProps) {
       ) : (
         <>
           <Stage className="p-5 sm:p-8">
-            <div className="grid items-center gap-8 md:grid-cols-[1fr_auto]">
+            <div className="grid grid-cols-[minmax(0,1fr)] items-center gap-8 md:grid-cols-[minmax(0,1fr)_auto]">
               <div className="flex flex-col gap-6">
                 <StageObject from={{ y: 16, rotate: -2 }} drift={false}>
                   <Paper className="relative p-5 sm:p-6">
@@ -248,7 +248,7 @@ export function railWord(rail: LinkPayment["rail"], assetIn?: string | null): st
   }[rail]
 }
 
-/** One word per state, the same as Activity's (audit pattern 7). */
+/** One word per state, the same as Activity's. */
 const PAYMENT_WORD: Record<LinkPayment["status"], string> = {
   awaiting: "Waiting",
   detected: "On its way",

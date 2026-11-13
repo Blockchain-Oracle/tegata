@@ -1,4 +1,4 @@
-// Events (plan 6.8 Y): what happened, stored once and queued for every webhook endpoint that wants it. Kept apart from
+// Events: what happened, stored once and queued for every webhook endpoint that wants it. Kept apart from
 // developers.ts so payment settlement can raise events without importing the whole developer service.
 import type { NetworkId } from "@tegata/config"
 import { formatUsd } from "@tegata/core/money"

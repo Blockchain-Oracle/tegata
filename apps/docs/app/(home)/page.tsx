@@ -55,14 +55,14 @@ export default function Home() {
         <Stage className="px-6 pt-10 pb-0 sm:px-10">
           <div className="flex items-end justify-center gap-4 sm:gap-6">
             <Phone
-              src="/shots/phone/home.webp"
-              alt="Tegata Home on a phone: Abu Studio's $5.75 balance in USDC on NEAR, and its latest payments, each opening its receipt"
+              src="/shots/phone/app-home.webp"
+              alt="Tegata Home on a phone: Studio Kaze's $1.25 balance in USDC on NEAR with Get paid, Send, Add money and Scan, and its latest payments, each opening its receipt"
               eager
               className="w-[46%] translate-y-6"
             />
             <Phone
               src="/shots/phone/receipt.webp"
-              alt="Receipt No. 0003 from Abu Studio: $0.30 for invoice INV-0001, stamped PAID, with its NEAR transaction"
+              alt="Receipt No. 0002 from Studio Kaze: $0.15 for invoice INV-0001, stamped PAID, with its NEAR transaction"
               eager
               className="w-[46%] -translate-y-2"
             />
@@ -72,7 +72,7 @@ export default function Home() {
 
       <section className="flex flex-col gap-3">
         <span className="text-center text-[13px] font-semibold text-fd-muted-foreground">
-          Settled in USDC on NEAR · live NEAR Intents prices from other chains
+          Settled in USDC on NEAR · paid in and out across 9 chains through NEAR Intents
         </span>
         <Marquee />
       </section>
@@ -86,7 +86,8 @@ export default function Home() {
             costs about $68 (2.9% + 30¢, plus 1.5% international and 1% conversion). By wire, $6.11
             just to receive it. In stablecoins, the studio has to ask which coin and chain the
             client holds, send an address for that exact chain, match the transfer by its amount,
-            and buy that chain&apos;s token before the money can move again.
+            and buy that chain&apos;s token before the money can move again. Paying its own people
+            is the same problem backwards.
           </p>
         </div>
         <div className="flex flex-col gap-4">
@@ -94,8 +95,10 @@ export default function Home() {
           <p className="text-[17px] text-fd-muted-foreground">
             The studio signs in with email and Tegata opens a NEAR account named after it, with no
             wallet and no NEAR to buy: Tegata pays every network fee. The client opens the invoice
-            and pays in USDC on NEAR. The studio receives exactly $1,250.00, the invoice turns Paid
-            when NEAR itself shows the transfer, and both sides get a sealed, numbered receipt.
+            and pays the way they can: a Tegata balance, any NEAR wallet, or a coin on another
+            chain that NEAR Intents converts. The studio receives exactly $1,250.00, the invoice
+            turns Paid when NEAR itself shows the transfer, and both sides get a sealed, numbered
+            receipt. One approval then pays the whole team, each person where they chose.
           </p>
           <Link
             href={DOCS.money}
@@ -109,10 +112,11 @@ export default function Home() {
       {/* Every feature, each with its real screen. */}
       <section className="flex flex-col gap-6">
         <div className="flex flex-col gap-2">
-          <h2 className="display text-[2.6rem] leading-none">Everything in the Sandbox today</h2>
+          <h2 className="display text-[2.6rem] leading-none">Everything Tegata does</h2>
           <p className="max-w-[60ch] text-[17px] text-fd-muted-foreground">
-            The whole app runs on NEAR testnet with test USDC, free. Every screen below is a real
-            capture of the app on testnet.
+            The Sandbox is the whole app on NEAR testnet with test USDC, free; Live is the same app
+            with real dollars on NEAR mainnet. Every screen below is a real capture of the app,
+            except those marked Example, which show the finished design on sample data.
           </p>
         </div>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -130,40 +134,99 @@ export default function Home() {
             line="One link for a fixed or any amount, with a QR code. Paid the moment NEAR settles it."
             href={`${DOCS.guide}/pay-links`}
             src="/shots/phone/link-detail.webp"
-            alt="The pay link Studio test payment for $0.25 with Copy, Share and Open"
+            alt="The pay link Design sprint · Week 2 for $0.25 with Copy, Share and Open"
             field="bg-sora"
           />
           <Tile
             title="The pay page"
-            line="Pay from a Tegata balance or any NEAR wallet; other chains show a live NEAR Intents price."
+            line="Pay from a Tegata balance, any NEAR wallet, or in Live any of 11 coins on 9 chains."
             href={`${DOCS.guide}/pay-page`}
-            src="/shots/phone/pay-other-chain.webp"
-            alt="The pay page for $0.25 with Another chain open: USDT on Tron, USDC on Base, Solana, Arbitrum and more"
+            src="/shots/phone/pay-chain-sandbox.webp"
+            alt="The pay page for $0.25 with Another chain open: USDT on Tron, USDC on Base, Solana, Arbitrum, Polygon, Gnosis and more, with NEAR Intents' live answer"
             field="bg-matcha"
           />
           <Tile
             title="Receipts"
-            line="A sealed receipt for every movement: payments, sends and rewards, each linked to NEAR."
+            line="A sealed receipt for every movement: payments, sends, payslips and rewards, each linked to NEAR."
             href={`${DOCS.guide}/receipts`}
             src="/shots/phone/receipt-send.webp"
-            alt="A receipt stamped SENT for $15.00 sent from Abu Studio to tegata.testnet"
+            alt="A receipt stamped SENT for $0.05 sent from Studio Kaze to tegata.testnet"
             field="bg-kin"
           />
           <Tile
             title="Pay people"
             line="Add your team by email or CSV. They choose where pay lands; one approval pays everyone."
             href={`${DOCS.guide}/pay-people`}
-            src="/shots/phone/person-choose.webp"
-            alt="A person's page: added to payroll, $20.00 a month, and where should your pay land"
+            src="/shots/phone/person-set.webp"
+            alt="Mei Tanaka's payroll page from Studio Kaze: you're set, your NEAR account, and her payslip"
             field="bg-matcha"
           />
           <Tile
             title="Send"
-            line="Dollars to any NEAR account that can hold USDC, in one hold. Tegata pays the fee."
+            line="Dollars to any NEAR account, or in Live to an address on another chain. Tegata pays the fee."
             href={`${DOCS.guide}/send`}
-            src="/shots/phone/send.webp"
-            alt="The Send screen: you send $0, you have $5.75, to a name.tegata.testnet account"
+            src="/shots/phone/send-chain.webp"
+            alt="Send with Another chain chosen: you send $1, the eleven coins, and Their address on Base"
             field="bg-sora"
+          />
+          <Tile
+            title="Bank"
+            line="In the Sandbox on Noah: a euro IBAN in, and withdrawals to banks in three countries at live rates."
+            href={`${DOCS.guide}/bank`}
+            src="/shots/phone/bank-withdraw.webp"
+            alt="Bank: you send $1.2 USDC, 1 USD = ₦1,351.70, Noah's fee, they get ₦1,351.54"
+            field="bg-sakura"
+          />
+          <Tile
+            title="Cards (Example)"
+            line="Virtual Visa cards for you and your team, filled from your dollars. Opening soon."
+            href={`${DOCS.guide}/cards`}
+            src="/shots/phone/ex-cards-team.webp"
+            alt="Example: three virtual Visa cards, $271.40 on cards, yours and your team's"
+            field="bg-kin"
+          />
+          <Tile
+            title="Any chain (Example)"
+            line="In Live, a deposit address for exactly the amount; NEAR Intents delivers exact USDC."
+            href={`${DOCS.money}/any-chain`}
+            src="/shots/phone/ex-pay-live.webp"
+            alt="Example: send exactly 1,251.387 USDT on Tron to a deposit address, with its QR code"
+            field="bg-sora"
+            focus="50% 70%"
+          />
+          <Tile
+            title="Counter"
+            line="Type an amount, show the QR code; the screen turns green with your seal when it settles."
+            href={`${DOCS.guide}/counter`}
+            src="/shots/phone/app-counter.webp"
+            alt="The counter: Charge $0.00 on the stage, What it's for, and the keypad"
+            field="bg-kin"
+          />
+          <Tile
+            title="Balance"
+            line="Add money from your pay address, another chain or test dollars; move it out; books checked against NEAR."
+            href={`${DOCS.guide}/balance`}
+            src="/shots/phone/add-money.webp"
+            alt="The Add money sheet: To your pay address, With a card, From another chain, Test dollars"
+            field="bg-sakura"
+            focus="50% 100%"
+          />
+          <Tile
+            title="Emails (Example)"
+            line="An email each time money moves: receipts, invoices, reminders, payslips, payouts and statements."
+            href={`${DOCS.guide}/emails`}
+            src="/shots/phone/ex-email-payslip.webp"
+            alt="Example: a You've been paid email, a payslip of $2,400.00 from Studio Kaze"
+            field="bg-sora"
+          />
+          <Tile
+            title="Scan to pay"
+            line="Any Tegata QR code, NEAR account or address on another chain opens the right page."
+            href={`${DOCS.guide}/scan`}
+            src="/shots/phone/scan-paylink.webp"
+            alt="The Scan a QR code sheet: it read a pay link, with Open it"
+            field="bg-matcha"
+            focus="50% 100%"
           />
           <Tile
             title="For developers"
@@ -178,7 +241,7 @@ export default function Home() {
             line="Invite a business; you both get a reward once real customers pay it."
             href={`${DOCS.guide}/refer`}
             src="/shots/phone/refer.webp"
-            alt="The Refer page: you both get $1, with Abu Studio's join link and its QR code"
+            alt="The Refer page: you both get $1.00, with Studio Kaze's join link and its QR code"
             field="bg-sakura"
           />
         </div>
@@ -211,7 +274,7 @@ export default function Home() {
         <h2 className="display text-[2.6rem] leading-none">How it&apos;s built</h2>
         <Diagram
           name="system"
-          alt="Tegata's parts: the web app, Postgres, and the worker that alone holds the operator keys, relays signed actions to NEAR and reads USDC events; live quotes come from NEAR Intents"
+          alt="Tegata's parts: the web app, Postgres, and the worker that alone holds the operator keys, relays signed actions to NEAR and reads USDC events; at the edge, NEAR Intents for other chains, Noah for banks, Bitnob for spend cards and Transak for card payments"
         />
         <Shot
           src="/shots/wide/guest-invoice.webp"

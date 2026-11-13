@@ -1,6 +1,6 @@
 "use client"
 
-// An invoice built before signing in (plan 6.8 K, guest mode): kept on this device only, then picked up after
+// An invoice built before signing in (guest mode): kept on this device only, then picked up after
 // sign-in and saved as a real draft. Nothing leaves the browser until the person has an account.
 import type { DraftForm } from "@/lib/client/types"
 

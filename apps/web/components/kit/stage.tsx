@@ -1,8 +1,9 @@
 "use client"
 
-// The stage (plan 6.2): a lit vermilion field with soft light and fine grain, where real product objects float.
-// Privy's "luminous interface stage", in seal ink. Used on sign-in, onboarding, the landing hero, the Home balance
-// tile and the pay page header. It stays lit in dark mode.
+// The stage: a lit field with soft light and fine grain, where real product objects float. Two tones (DESIGN.md
+// palette): `shu`, the vermilion field for money moments (the balance, the pay page header, a receipt), and
+// `lacquer`, sumi black lit by a vermilion glow rising from below with the landing's dot grid, for big surfaces
+// (sign-in, onboarding, cards, bank). Both stay lit in dark mode; `paid` turns the field green for money arrived.
 import { motion, useReducedMotion } from "motion/react"
 import Link from "next/link"
 
@@ -40,8 +41,14 @@ export function Stage({
   grid?: boolean
   rounded?: boolean
   /** `paid` lights the field green for money that has arrived (the counter's paid moment). */
-  tone?: "shu" | "paid"
+  tone?: "shu" | "paid" | "lacquer"
 }) {
+  if (tone === "lacquer")
+    return (
+      <Lacquer className={className} inner={inner} rounded={rounded} grid={grid}>
+        {children}
+      </Lacquer>
+    )
   const light = LIGHTS[tone]
   return (
     <div
@@ -84,6 +91,63 @@ export function Stage({
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0 opacity-[0.22] mix-blend-overlay"
+        style={{ backgroundImage: GRAIN }}
+      />
+      <div className={cn("relative z-10 size-full", inner)}>{children}</div>
+    </div>
+  )
+}
+
+/** Sumi lit from below: the landing hero's night, as a stage. */
+function Lacquer({
+  children,
+  className,
+  inner,
+  rounded,
+  grid,
+}: {
+  children?: React.ReactNode
+  className?: string
+  inner?: string
+  rounded: boolean
+  grid: boolean
+}) {
+  return (
+    <div
+      className={cn(
+        "relative isolate overflow-hidden bg-[#120D0A] text-white",
+        rounded && "rounded-[24px]",
+        className,
+      )}
+    >
+      {/* The light: one vermilion glow rising behind the objects, a warm rim at the top. */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -bottom-[45%] left-1/2 aspect-square w-[150%] max-w-[1400px] -translate-x-1/2 rounded-full opacity-90 blur-[70px]"
+        style={{
+          background:
+            "radial-gradient(closest-side, #FF4F00 0%, #FF6A1A 30%, rgba(255,122,46,0.45) 52%, rgba(255,79,0,0.12) 72%, transparent 100%)",
+        }}
+      />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -top-1/3 -left-1/4 aspect-square w-[70%] rounded-full opacity-30 blur-[90px]"
+        style={{ background: "radial-gradient(closest-side, #FF7A2E, transparent 70%)" }}
+      />
+      {grid ? (
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 opacity-50"
+          style={{
+            backgroundImage: "radial-gradient(rgba(255,255,255,0.16) 1px, transparent 1.2px)",
+            backgroundSize: "22px 22px",
+            maskImage: "radial-gradient(85% 75% at 50% 45%, #000 0%, transparent 80%)",
+          }}
+        />
+      ) : null}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 opacity-[0.18] mix-blend-overlay"
         style={{ backgroundImage: GRAIN }}
       />
       <div className={cn("relative z-10 size-full", inner)}>{children}</div>
@@ -143,7 +207,7 @@ export function StageObject({
 /** The white paper card objects are made of. */
 export function Paper({ children, className }: { children: React.ReactNode; className?: string }) {
   return (
-    <div className={cn("rounded-[20px] bg-white text-black shadow-object", className)}>
+    <div className={cn("rounded-[20px] bg-paper text-[#16130F] shadow-object", className)}>
       {children}
     </div>
   )

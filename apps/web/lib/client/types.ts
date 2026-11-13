@@ -55,7 +55,7 @@ export interface SendDraft {
   amount: string
 }
 
-/** A payout to another chain through NEAR Intents (plan 6.8 AB), as the screens see it. */
+/** A payout to another chain through NEAR Intents, as the screens see it. */
 export interface PayoutView {
   id: string
   status: "drafted" | "sending" | "processing" | "delivered" | "refunded" | "failed"
@@ -93,7 +93,7 @@ export interface PayoutPreview {
   timeEstimate: number | null
 }
 
-/** Where one attempt to pay a request stands (plan section 2, "Paying in"). */
+/** Where one attempt to pay a request stands. */
 export type PaymentStatus =
   | "awaiting"
   | "detected"
@@ -219,6 +219,8 @@ export interface AttemptView {
     /** Mark ids for the coin sent and its chain ("usdt", "tron"). */
     coin?: string | null
     chainMark?: string | null
+    /** The coin's contract on its chain, for paying from the payer's own wallet (null for a chain's own coin). */
+    tokenContract?: string | null
     payUri: string | null
   } | null
   /** Paying by card: Transak's order and its status. */
@@ -242,7 +244,7 @@ export interface WalletAttempt {
 }
 
 /** A receipt for any money movement: a customer payment (numbered), a send, or a referral reward. */
-// --- spend cards (plan 6.8 AD) -----------------------------------------------------------------------------------
+// --- spend cards -----------------------------------------------------------------------------------
 
 export type CardToneName = "ink" | "matcha" | "sora" | "sakura" | "kin" | "ai"
 
@@ -393,6 +395,18 @@ export interface InvoiceEvent {
   createdAt: string
 }
 
+/** An invoice's reminders after it was sent. */
+export interface ReminderState {
+  on: boolean
+  /** The next scheduled one, with its label in the business's time zone ("Fri 20 Nov, 09:00 · on the due date"). */
+  next: { at: string; offset: number; label: string } | null
+  left: number
+  canSend: boolean
+  why: string | null
+  email: string | null
+  remindedToday: boolean
+}
+
 export interface InvoiceDetail {
   invoice: {
     id: string
@@ -456,6 +470,8 @@ export interface InvoiceDetail {
     repeat: "weekly" | "monthly" | null
     lines: { description: string; quantityMilli: string; unitPrice: string }[]
   } | null
+  /** Where its reminders stand; null on a draft, a paid or a voided invoice. */
+  reminders: ReminderState | null
 }
 
 export interface ReferralRow {
@@ -495,7 +511,7 @@ export interface ReferralsView {
   referredBy: ReferralRow | null
 }
 
-// --- pay people (plan 6.8 O–S) ---------------------------------------------------------------------------------
+// --- pay people ---------------------------------------------------------------------------------
 
 export type PayCadence = "weekly" | "fortnightly" | "monthly"
 
@@ -569,7 +585,7 @@ export interface PayRunRow {
   /** For a row paid to another chain: its route ("usdt-tron"). */
   route?: string | null
   amount: string
-  status: "included" | "excluded" | "skipped" | "paid" | "failed"
+  status: "included" | "excluded" | "skipped" | "paid" | "failed" | "sending"
   skipReason: string | null
   batch: number | null
   relayStatus: RelayStatus["status"] | null
@@ -627,7 +643,7 @@ export interface PersonPage {
   slips: PaySlipRow[]
 }
 
-// --- autopilot (plan 6.8 T) ----------------------------------------------------------------------------------------
+// --- autopilot ----------------------------------------------------------------------------------------
 
 export interface AutopilotRowView {
   personId: string
@@ -679,7 +695,7 @@ export interface AutopilotPreview {
   timezone: string
 }
 
-// --- books (plan 6.8 U–X) -------------------------------------------------------------------------------------------
+// --- books -------------------------------------------------------------------------------------------
 
 export type MovementKind =
   | "payment_in"
@@ -747,7 +763,7 @@ export interface Reconciliation {
   outside: { txHash: string; at: string; delta: string; other: string; explorerUrl: string }[]
 }
 
-// --- developers (plan 6.8 Y) ----------------------------------------------------------------------------------------
+// --- developers ----------------------------------------------------------------------------------------
 
 export interface DevelopersView {
   appUrl: string

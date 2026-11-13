@@ -1,6 +1,6 @@
 "use client"
 
-// The first time in Live (plan 6.8 AB): open the business's mainnet account. Same steps as Welcome (create on NEAR,
+// The first time in Live: open the business's mainnet account. Same steps as Welcome (create on NEAR,
 // register for USDC), real dollars from here, Tegata pays the network fee. A way back to the Sandbox is always there.
 import { ArrowLeft, Radio } from "lucide-react"
 import { useState } from "react"
@@ -30,6 +30,8 @@ export function OpenLive({
 }) {
   const [busy, setBusy] = useState(false)
   const [problem, setProblem] = useState<string | null>(null)
+  // A wallet account lives on one network: a testnet wallet can't be the Live account.
+  const testnetWallet = !account && wallet !== null && wallet.endsWith(".testnet")
   const accountId = account?.accountId ?? wallet ?? `${handle}.tegata.near`
   const current = !account ? 0 : account.readyAt ? 3 : account.createdTx || wallet ? 1 : 0
 
@@ -50,16 +52,22 @@ export function OpenLive({
 
   return (
     <div className="flex flex-col gap-6 pt-2">
-      <Stage className="p-6 sm:p-8">
+      <Stage tone="lacquer" className="p-6 sm:p-8">
         <div className="flex max-w-[560px] flex-col gap-4">
           <span className="inline-flex items-center gap-2 text-[15px] font-semibold text-white/90">
             <Radio className="size-4" /> Live
           </span>
           <h1 className="display text-[44px] leading-[0.95] text-white sm:text-[56px]">
-            {account ? "Opening your Live account." : "Open your Live account."}
+            {testnetWallet
+              ? "Live needs your mainnet wallet."
+              : account
+                ? "Opening your Live account."
+                : "Open your Live account."}
           </h1>
           <p className="text-[17px] text-white/90">
-            Real dollars from any chain, with no fees to pay.
+            {testnetWallet
+              ? "You signed in with a testnet account. Sign in with a NEAR wallet on mainnet to use Live."
+              : "Real dollars from any chain, with no fees to pay."}
           </p>
           <span className="inline-flex items-center gap-2 self-start rounded-full bg-white/15 px-3 py-1.5 font-mono text-[14px] text-white">
             <Mark id="near" size={18} /> {accountId}
@@ -67,7 +75,7 @@ export function OpenLive({
         </div>
       </Stage>
 
-      {account ? (
+      {testnetWallet ? null : account ? (
         <TaskSteps steps={setupSteps(accountId, Boolean(wallet))} current={current} />
       ) : (
         <div className="flex flex-col gap-3">

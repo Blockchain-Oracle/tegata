@@ -1,4 +1,4 @@
-//! The autopilot's twelve tests (plan section 2), each on its own local sandbox with a real NEP-141 token.
+//! The autopilot's twelve tests, each on its own local sandbox with a real NEP-141 token.
 //! Run: `cargo near build non-reproducible-wasm` in `autopilot` and `test-token`, then `cargo test -p tegata-autopilot-harness`.
 
 use anyhow::Result;

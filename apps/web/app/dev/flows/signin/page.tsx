@@ -1,6 +1,6 @@
 "use client"
 
-// Sign-in in every state, without signing out (plan 6.9). The code 123456 is accepted here; any other code is wrong.
+// Sign-in in every state, without signing out. The code 123456 is accepted here; any other code is wrong.
 import { useState } from "react"
 
 import { type SignInStep, SignInView } from "@/components/auth/sign-in-view"

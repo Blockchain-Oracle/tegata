@@ -1,4 +1,4 @@
-// The Sandbox note (audit S6): one dashed pill, never a paragraph. "Sandbox · Noah's test bank", "Live only · real price".
+// The Sandbox note: one dashed pill, never a paragraph. "Sandbox · Noah's test bank", "Live only · real price".
 import { cn } from "@/lib/utils"
 
 export function SandboxPill({

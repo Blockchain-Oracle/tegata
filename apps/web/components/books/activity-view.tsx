@@ -1,6 +1,6 @@
 "use client"
 
-// Activity (plan 6.8 U): one month of every movement, money in and out on the stage, filters and search, rows grouped
+// Activity: one month of every movement, money in and out on the stage, filters and search, rows grouped
 // by day that each open their object, and the month's CSV and statement. A received payment can be refunded from its
 // row. Separate from its data so /dev/flows can show every state.
 import {

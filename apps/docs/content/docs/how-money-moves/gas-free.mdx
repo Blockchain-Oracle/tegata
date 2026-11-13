@@ -1,14 +1,15 @@
 ---
 title: Accounts without gas
-description: Sign in with email for a named NEAR account holding only dollars, or bring your own NEAR wallet; either way Tegata relays every action and pays its fee, exactly once.
+description: Sign in with email for a named NEAR account holding only dollars, on testnet and on mainnet, or bring your own NEAR wallet; either way Tegata relays every action and pays its fee, exactly once.
 icon: KeyRound
 ---
 
 ## The account
 
 1. You sign in with your email (Privy). Your login holds an ed25519 key; nobody sees a wallet.
-2. Tegata's operator (`tegata.testnet`; `tegata.near` once Live is built) creates `your-name.tegata.testnet` with **your** key
-   as its only full-access key.
+2. Tegata's operator (`tegata.testnet` in the Sandbox, `tegata.near` in Live) creates `your-name.tegata.testnet`
+   (`your-name.tegata.near` in Live) with **your** key as its only full-access key. Your Live account is a second
+   account under the same sign-in and key, opened the first time you switch to Live.
 3. The operator registers it on USDC (a 0.00125 NEAR storage deposit, paid by Tegata in its own transaction).
 
 Your account holds dollars and no NEAR.
@@ -41,8 +42,9 @@ Tegata needs (on testnet: Meteor, Intear, Ledger and NEAR CLI).
    answer only if, apart from those three, it is byte for byte the delegate it drafted, signed by a full-access key.
    Then the relay is the same: Tegata pays the fee.
 
-Wallet accounts live on one network: a testnet account uses the Sandbox. A Tegata account (`name.tegata.testnet`) can't
-sign in through a wallet; only its email can.
+Wallet accounts live on one network, and wallet sign-in is on testnet today: a wallet account uses the Sandbox, and
+can't open Live until a mainnet wallet can sign in. A Tegata account (`name.tegata.testnet`) can't sign in through a
+wallet; only its email can.
 
 <Callout title="Proved on testnet" type="success">
 A real `tegata-wallet-dacd0228.testnet` signed in with its own key (the same signature sent twice was refused),

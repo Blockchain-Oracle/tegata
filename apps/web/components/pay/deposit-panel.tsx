@@ -1,20 +1,21 @@
 "use client"
 
-// A Live payment from another chain, in flight (plan 6.8 AB): exactly what to send (with the coin's own mark), where
+// A Live payment from another chain, in flight: exactly what to send (with the coin's own mark), where
 // (grouped in fours, copied whole), a QR in the chain's own payment link (or the plain address where no standard
 // exists), the payer's window, and the steps 1Click reports, each with its chain's mark. "Paid" still comes from
 // NEAR: the page moves on when the server has read the USDC delivery.
-import { Check, Copy, RefreshCw, Repeat2 } from "lucide-react"
+import { Check, Copy, ExternalLink, RefreshCw, Repeat2 } from "lucide-react"
 import { QRCodeSVG } from "qrcode.react"
 import { useEffect, useState } from "react"
 
 import { Paper, Stage } from "@/components/kit/stage"
 import { type TaskStep, TaskSteps } from "@/components/kit/task-steps"
 import { MARKS, Mark, type MarkId } from "@/components/marks/mark"
+import { PAY_WALLET_KEY, useChainWallets, WalletIcon } from "@/components/pay/wallet-rows"
 import type { AttemptView } from "@/lib/client/types"
 import { fire } from "@/lib/feedback"
 import { groupNumber } from "@/lib/fiat"
-import { routeOfAsset } from "@/lib/routes"
+import { chainTxUrl, routeOfAsset } from "@/lib/routes"
 import { cn } from "@/lib/utils"
 
 type OneClick = NonNullable<AttemptView["oneclick"]>
@@ -99,7 +100,16 @@ function CopyRow({
   )
 }
 
-export function DepositPanel({ oneclick, business }: { oneclick: OneClick; business: string }) {
+export function DepositPanel({
+  oneclick,
+  business,
+  attemptId,
+}: {
+  oneclick: OneClick
+  business: string
+  /** The payment, so a wallet's transaction can be handed to NEAR Intents. */
+  attemptId?: string
+}) {
   const countdown = useCountdown(oneclick.deadline)
   const step = stepOf(oneclick.swapStatus)
   const route = routeOfAsset(oneclick.assetIn)
@@ -141,6 +151,16 @@ export function DepositPanel({ oneclick, business }: { oneclick: OneClick; busin
               </span>
             ) : null}
           </div>
+          {chainMark && oneclick.amountIn ? (
+            <WalletSend
+              chainMark={chainMark}
+              contract={oneclick.tokenContract ?? null}
+              to={oneclick.depositAddress}
+              amount={oneclick.amountIn}
+              shown={amount}
+              attemptId={attemptId}
+            />
+          ) : null}
           <CopyRow
             label={`${symbol} on ${chain}`}
             value={oneclick.amountInFormatted ?? ""}
@@ -200,6 +220,125 @@ export function DepositPanel({ oneclick, business }: { oneclick: OneClick; busin
           {oneclick.refundTo ? shortAddress(oneclick.refundTo) : "your address"}
         </span>
       </div>
+    </div>
+  )
+}
+
+/**
+ * "Send 25.0026 USDC with MetaMask": the payer's own wallet sends exactly the quote's amount to the deposit address
+ * (switching to the chain first if it has to). The transaction goes to NEAR Intents as a hint; "paid" still comes from
+ * the USDC arriving on NEAR. Shown only when a wallet for this chain is on the device.
+ */
+function WalletSend({
+  chainMark,
+  contract,
+  to,
+  amount,
+  shown,
+  attemptId,
+}: {
+  chainMark: string
+  contract: string | null
+  to: string
+  amount: string
+  shown: string
+  attemptId?: string
+}) {
+  const wallets = useChainWallets(chainMark)
+  const [state, setState] = useState<
+    | { kind: "idle" }
+    | { kind: "sending" }
+    | { kind: "sent"; hash: string }
+    | { kind: "problem"; text: string }
+  >({ kind: "idle" })
+  if (!wallets?.length) return null
+  const chosen = (() => {
+    try {
+      return sessionStorage.getItem(PAY_WALLET_KEY)
+    } catch {
+      return null
+    }
+  })()
+  const wallet = wallets.find((w) => w.id === chosen) ?? wallets[0]
+  if (!wallet) return null
+
+  if (state.kind === "sent") {
+    const url = chainTxUrl(chainMark, state.hash)
+    return (
+      <div className="flex items-center gap-3 rounded-[14px] bg-up-surface px-4 py-3 text-[15px] font-semibold text-up">
+        <Check className="size-4 shrink-0" />
+        <span className="flex-1">Sent from {wallet.name}</span>
+        {url ? (
+          <a
+            href={url}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center gap-1 text-[13px] underline-offset-2 hover:underline"
+          >
+            View it <ExternalLink className="size-3.5" />
+          </a>
+        ) : null}
+      </div>
+    )
+  }
+
+  const send = async () => {
+    setState({ kind: "sending" })
+    try {
+      const { sendFromWallet, WalletRejected } = await import("@/lib/client/chain-wallets")
+      try {
+        const hash = await sendFromWallet(wallet, {
+          chainMark,
+          contract,
+          to,
+          amount: BigInt(amount),
+        })
+        fire("confirm", { cue: "sent" })
+        setState({ kind: "sent", hash })
+        if (attemptId)
+          void fetch(`/api/pay/attempts/${attemptId}/deposit-tx`, {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({ txHash: hash }),
+          }).catch(() => undefined)
+      } catch (error) {
+        fire("fail", { cue: "error" })
+        setState({
+          kind: "problem",
+          text:
+            error instanceof WalletRejected
+              ? "Nothing was sent. Try again, or send it another way below."
+              : error instanceof Error
+                ? error.message
+                : "The wallet didn't send it. Nothing moved.",
+        })
+      }
+    } catch {
+      setState({ kind: "problem", text: "Couldn't reach the wallet. Send it another way below." })
+    }
+  }
+
+  return (
+    <div className="flex flex-col gap-2">
+      <button
+        type="button"
+        onClick={() => void send()}
+        disabled={state.kind === "sending"}
+        className="press flex h-14 items-center justify-center gap-3 rounded-[14px] bg-primary px-4 text-[16px] font-semibold text-primary-foreground disabled:opacity-60"
+      >
+        {state.kind === "sending" ? (
+          <span className="size-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+        ) : (
+          <WalletIcon wallet={wallet} size={24} />
+        )}
+        {state.kind === "sending"
+          ? `Approve in ${wallet.name}`
+          : `Send ${shown} with ${wallet.name}`}
+      </button>
+      {state.kind === "problem" ? (
+        <p className="text-[14px] font-medium text-down">{state.text}</p>
+      ) : null}
+      <span className="text-center text-detail text-muted-foreground">or send it yourself</span>
     </div>
   )
 }

@@ -1,7 +1,7 @@
 "use client"
 
-// New pay link (plan 6.8 G): what it's for, an amount or "any amount", an optional note. The card at the top is the
-// pay page's own card, filling in as you type (Bento and Cosmos: the object reacts to the form).
+// New pay link: what it's for, an amount or "any amount", an optional note. The card at the top is the
+// pay page's own card, filling in as you type (the object reacts to the form).
 import { useState } from "react"
 
 import { BusinessSeal } from "@/components/brand/seal"

@@ -1,6 +1,6 @@
 "use client"
 
-// One invoice (plan 6.8 L; Stripe's invoice page): the number in display type, the document on the stage, stamped
+// One invoice: the number in display type, the document on the stage, stamped
 // when paid; beside it, on its own stage, what is received and left with the actions as an icon row; then the
 // payments (each with the real mark of how it was paid, opening its receipt) and the timeline of everything that
 // happened. Separate from its logic so /dev/flows can show every state.
@@ -31,10 +31,11 @@ import { Field } from "@/components/kit/field"
 import { Figure, viewDollars } from "@/components/kit/figure"
 import { Stage } from "@/components/kit/stage"
 import { ErrorState, Skeleton } from "@/components/kit/states"
+import { Switch } from "@/components/kit/switch"
 import { PayerName, railWord } from "@/components/links/link-detail-view"
 import { PaidWithMark } from "@/components/marks/paid-with"
 import { Sheet } from "@/components/shell/sheet"
-import type { InvoiceDetail, InvoiceEvent, LinkPayment } from "@/lib/client/types"
+import type { InvoiceDetail, InvoiceEvent, LinkPayment, ReminderState } from "@/lib/client/types"
 import { fire } from "@/lib/feedback"
 import { usd, usdUnits } from "@/lib/fiat"
 import { cn } from "@/lib/utils"
@@ -56,11 +57,15 @@ export interface InvoiceDetailViewProps {
   justSent: boolean
   /** Paid while this page was open: press the PAID seal. */
   pressSeal: boolean
-  busy: "void" | "paid" | "duplicate" | null
+  busy: "void" | "paid" | "duplicate" | "remind" | "reminders" | null
   problem: string | null
+  /** Set just after "Remind now" was accepted: who it's going to. */
+  remindedTo?: string | null
   onVoid: () => void
   onMarkPaid: (amount: string, note: string) => void
   onDuplicate: () => void
+  onRemind?: () => void
+  onReminders?: (on: boolean) => void
 }
 
 export function InvoiceDetailView(p: InvoiceDetailViewProps) {
@@ -101,7 +106,7 @@ export function InvoiceDetailView(p: InvoiceDetailViewProps) {
     return (
       <div className="flex flex-col gap-6" role="status" aria-label="Loading the invoice">
         <Skeleton className="h-10 w-56" />
-        <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
+        <div className="grid grid-cols-[minmax(0,1fr)] gap-6 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)]">
           <Skeleton className="h-[620px] rounded-[24px]" />
           <Skeleton className="h-[420px] rounded-[24px]" />
         </div>
@@ -152,7 +157,7 @@ export function InvoiceDetailView(p: InvoiceDetailViewProps) {
         </div>
       ) : null}
 
-      <div className="grid items-start gap-6 lg:grid-cols-[1.2fr_0.8fr]">
+      <div className="grid grid-cols-[minmax(0,1fr)] items-start gap-6 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)]">
         <Stage className="p-3 sm:p-6" grid={false}>
           <InvoicePaper
             from={inv.billFrom ?? { name: "", email: null, address: null, taxId: null }}
@@ -271,6 +276,15 @@ export function InvoiceDetailView(p: InvoiceDetailViewProps) {
               <ChevronRight className="size-4 shrink-0 text-text-3" />
             </Link>
           ) : null}
+          {d.reminders ? (
+            <RemindersRow
+              r={d.reminders}
+              busy={p.busy}
+              remindedTo={p.remindedTo ?? null}
+              onRemind={p.onRemind}
+              onToggle={p.onReminders}
+            />
+          ) : null}
           {p.problem ? <p className="text-[15px] font-medium text-down">{p.problem}</p> : null}
 
           {d.payments.some((pay) => pay.status === "succeeded") ? (
@@ -386,6 +400,69 @@ export function InvoiceDetailView(p: InvoiceDetailViewProps) {
   )
 }
 
+/**
+ * Reminders after sending: the next one in the business's time zone, a switch for the scheduled ones and
+ * "Remind now" (once a day). A customer without an email, or a server without email, says so instead.
+ */
+function RemindersRow({
+  r,
+  busy,
+  remindedTo,
+  onRemind,
+  onToggle,
+}: {
+  r: ReminderState
+  busy: InvoiceDetailViewProps["busy"]
+  remindedTo: string | null
+  onRemind?: () => void
+  onToggle?: (on: boolean) => void
+}) {
+  const line = remindedTo
+    ? `On its way to ${remindedTo}`
+    : !r.canSend
+      ? r.why
+      : !r.on
+        ? "Off"
+        : r.next
+          ? `Next: ${r.next.label}`
+          : "All sent"
+  const reminded = r.remindedToday || Boolean(remindedTo)
+  return (
+    <div className="flex items-center gap-3 rounded-[16px] bg-card px-4 py-3">
+      <span className="grid size-9 shrink-0 place-items-center rounded-full bg-secondary [&_svg]:size-4">
+        <Bell />
+      </span>
+      <span className="flex min-w-0 flex-1 flex-col">
+        <span className="text-detail text-muted-foreground">Reminders</span>
+        <span className="truncate text-[15px] font-semibold">{line}</span>
+      </span>
+      {r.canSend ? (
+        <>
+          <button
+            type="button"
+            onClick={onRemind}
+            disabled={reminded || busy === "remind"}
+            className="press inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full bg-secondary px-3 text-[13px] font-semibold disabled:opacity-50"
+          >
+            {busy === "remind" ? (
+              <span className="size-3.5 animate-spin rounded-full border-2 border-current border-t-transparent" />
+            ) : reminded ? (
+              <Check className="size-3.5" />
+            ) : null}
+            {reminded ? "Reminded today" : "Remind now"}
+          </button>
+          <Switch
+            checked={r.on}
+            onCheckedChange={(on) => onToggle?.(on)}
+            disabled={busy === "reminders"}
+            label="Scheduled reminders"
+          />
+        </>
+      ) : null}
+    </div>
+  )
+}
+
 /** An action on the stage: a white circle and its label (the icon row, like Home's stage actions). */
 function Action({
   icon,
@@ -478,7 +555,16 @@ const EVENT: Record<
     text: (e) =>
       `${usdUnits(String(e.detail?.amount ?? "0"))} received${e.detail?.rail === "manual" ? " by hand" : " on NEAR"}`,
   },
-  reminder: { icon: <Bell />, text: () => "Reminder sent" },
+  reminder: {
+    icon: <Bell />,
+    text: (e) => {
+      const offset = Number(e.detail?.offset ?? 0)
+      if (e.detail?.source === "manual") return "Reminder sent by you"
+      if (offset < 0) return `Reminder sent, ${-offset} days before it was due`
+      if (offset === 0) return "Reminder sent on the due date"
+      return offset >= 7 ? "Final reminder sent" : `Reminder sent, ${offset} days late`
+    },
+  },
   marked_paid: {
     icon: <HandCoins />,
     text: (e) => `Marked paid by hand${e.detail?.note ? `: ${e.detail.note}` : ""}`,

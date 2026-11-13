@@ -1,4 +1,4 @@
-// Local money as people read it (plan 6.8 AC′): its own sign and two decimals (₦26,765.50, GH₵408.20, R312.60),
+// Local money as people read it: its own sign and two decimals (₦26,765.50, GH₵408.20, R312.60),
 // the round flag for a country or currency, bank names in title case and account numbers grouped.
 
 /** Round flag file (public/flags) for a currency. */

@@ -1,6 +1,6 @@
 "use client"
 
-// A designed date picker (plan 6.8 K: "chips … · a date"; audit pattern 6): a field-shaped button that reads the date
+// A designed date picker: a field-shaped button that reads the date
 // as people say it ("12 Nov 2026"), and a month grid in a popover. The chosen day is vermilion, today is ringed, and
 // days before `min` are off. Dates are plain `YYYY-MM-DD` strings, as the invoice keeps them.
 import { CalendarDays, ChevronLeft, ChevronRight } from "lucide-react"

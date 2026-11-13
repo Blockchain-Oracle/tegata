@@ -1,4 +1,4 @@
-// Real bank logos for the Bank page (plan 6.8 AC′). Noah's forms name 571 Nigerian, 67 Ghanaian and 21 South African
+// Real bank logos for the Bank page. Noah's forms name 571 Nigerian, 67 Ghanaian and 21 South African
 // banks but carry no logos, so: Nigeria's come from nigerianbanks.xyz (a public list with each bank's logo), matched
 // to Noah's names; Ghana's and South Africa's from each bank's own website icon. Every logo is saved at 128 px under
 // apps/web/public/banks/<country>/ and apps/web/lib/bank-logos.ts maps Noah's exact bank name to it.

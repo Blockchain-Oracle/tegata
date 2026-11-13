@@ -1,4 +1,5 @@
-import { deleteDraft, getInvoice, updateDraft } from "@tegata/services"
+import { emailConfigured } from "@tegata/env"
+import { deleteDraft, getInvoice, reminderState, updateDraft } from "@tegata/services"
 import { z } from "zod"
 
 import { requireOwner } from "@/lib/server/auth.ts"
@@ -9,12 +10,12 @@ import { draftBody, toDraftInput } from "@/lib/server/invoice-input.ts"
 type Context = { params: Promise<{ id: string }> }
 const idOf = async (context: Context) => z.uuid().parse((await context.params).id)
 
-/** One invoice: the document, its lines, payments, timeline and status. */
+/** One invoice: the document, its lines, payments, timeline, status and where its reminders stand. */
 export const GET = route(async (request, context: Context) => {
   const { workspace } = await requireOwner(request)
   const found = await getInvoice(db(), workspace.id, await idOf(context))
   if (!found) throw notFound("That invoice doesn't exist")
-  return found
+  return { ...found, reminders: reminderState(found, emailConfigured()) }
 })
 
 /** Save changes to a draft. */

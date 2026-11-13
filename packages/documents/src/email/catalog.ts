@@ -1,4 +1,4 @@
-// Every email Tegata sends, as data → content (context/09-realworld-money/email-audit.md §3). Services queue an
+// Every email Tegata sends, as data → content. Services queue an
 // `EmailEvent` in the same transaction as the event it tells about; the worker composes it here and renders it with
 // the one layout. The subject is the Activity row's words; the facts are the receipt page's rows.
 import type { EmailContent, EmailRow } from "./layout.tsx"
@@ -54,7 +54,7 @@ const EMAIL_MARKS = new Set([
 const markOr = (id: string) => (EMAIL_MARKS.has(id) ? id : "intents")
 
 /**
- * The mark for a "Paid with" row (audit S3): the seal for a Tegata balance, NEAR for a NEAR wallet, the coin actually
+ * The mark for a "Paid with" row: the seal for a Tegata balance, NEAR for a NEAR wallet, the coin actually
  * sent for a payment from another chain ("USDT on Tron → USDC on NEAR"), NEAR Intents when the coin isn't known.
  */
 function paidWithMark(paidWith: string): string | undefined {
@@ -108,13 +108,17 @@ export interface InvoiceData {
   url: string
   notes: string | null
   sandbox: boolean
-  /** Reminders: days from the due date (−3, 0, 3, 7). */
+  /** Reminders: days from the due date (−3, 0, 3, 7, or any day for one the owner sends by hand). */
   offset?: number
+  /** Sent by the owner with "Remind now", not on the schedule. */
+  manual?: boolean
   /** The invoice, so the worker can attach its PDF and log the email on its timeline. */
   invoiceId?: string
 }
 
 export interface PayslipData extends Settled {
+  /** The paid row, so the worker can attach its payslip PDF. */
+  rowId?: string
   person: string
   amount: Units
   period: string
@@ -425,24 +429,49 @@ export function compose(event: EmailEvent, assets: string): EmailContent {
       const d = event.data
       const reminder = event.kind === "invoice.reminder"
       const offset = d.offset ?? 0
+      // The last step (+7 days) is the final reminder; nothing is sent after it.
+      const final = reminder && offset >= 7 && !d.manual
+      const days = (n: number) => `${n} day${n === 1 ? "" : "s"}`
+      const late = reminder && offset > 0
       const lead = !reminder
         ? `Here is invoice ${d.number} from ${d.business}.`
         : offset < 0
           ? `A reminder: ${d.number} is due on ${longDay(d.dueDate)}.`
           : offset === 0
             ? `${d.number} is due today.`
-            : `${d.number} was due on ${longDay(d.dueDate)}.`
+            : final
+              ? `${d.number} was due on ${longDay(d.dueDate)}. This is the last reminder.`
+              : `${d.number} was due on ${longDay(d.dueDate)}.`
+      const subject = !reminder
+        ? `${d.number} from ${d.business}: ${usd(d.remaining)} due ${longDay(d.dueDate)}`
+        : offset < 0
+          ? `Reminder: ${d.number} from ${d.business}, ${usd(d.remaining)} due ${longDay(d.dueDate)}`
+          : offset === 0
+            ? `${d.number} from ${d.business} is due today: ${usd(d.remaining)}`
+            : final
+              ? `Final reminder: ${d.number} from ${d.business}, ${usd(d.remaining)}`
+              : `${d.number} from ${d.business} is ${days(offset)} overdue: ${usd(d.remaining)}`
       return {
         ...base,
         shape: "card",
-        subject: reminder
-          ? `Reminder: ${d.number} from ${d.business}, ${usd(d.remaining)}`
-          : `${d.number} from ${d.business}: ${usd(d.remaining)} due ${longDay(d.dueDate)}`,
+        subject,
         preview: `${d.number} for ${usd(d.total)}, due ${longDay(d.dueDate)}`,
         brand: { name: d.business, logo: d.logo },
         label: `Invoice ${d.number}`,
-        hero: `${usd(d.remaining)} due ${longDay(d.dueDate)}`,
-        body: [`Hi ${d.customer},`, lead, ...(d.notes && !reminder ? [d.notes] : [])],
+        hero:
+          !reminder || offset < 0
+            ? `${usd(d.remaining)} due ${longDay(d.dueDate)}`
+            : offset === 0
+              ? `${usd(d.remaining)} due today`
+              : `${usd(d.remaining)} overdue`,
+        body: [
+          `Hi ${d.customer},`,
+          lead,
+          ...(d.notes && !reminder ? [d.notes] : []),
+          ...(late
+            ? ["Already paid? Ignore this. Reminders stop once the payment shows on NEAR."]
+            : []),
+        ],
         rows: [
           { label: "Total", value: usd(d.total) },
           ...(d.remaining !== d.total ? [{ label: "Left to pay", value: usd(d.remaining) }] : []),

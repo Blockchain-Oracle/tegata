@@ -1,4 +1,4 @@
-// The session of someone who signed in with a NEAR wallet (plan 6.8 AA). Email sign-in keeps Privy's own token; a
+// The session of someone who signed in with a NEAR wallet. Email sign-in keeps Privy's own token; a
 // wallet has none, so after the server checks the wallet's signed message it sets this cookie: the user id and an
 // expiry, signed with HMAC-SHA256 under SESSION_SECRET. httpOnly, so page scripts can't read or forge it. A second,
 // readable cookie only tells the page to use the wallet session (it carries no identity and grants nothing).

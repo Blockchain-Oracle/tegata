@@ -4,30 +4,41 @@ description: What this build doesn't do yet, said plainly, and what comes next.
 icon: TriangleExclamationPoint
 ---
 
-- **Live isn't built yet.** Everything runs on NEAR testnet with test USDC. Tegata's mainnet operator `tegata.near`
-  exists; the mainnet side of the app doesn't yet.
-- **Paying from another chain stops at the quote.** NEAR Intents has no testnet, so the deposit address that turns a
-  payer's coin into USDC on NEAR is part of Live and isn't built yet. Today customers pay in USDC on NEAR.
-- **Emails are switched off on the live site** until a sending domain is set up, so invoice and reminder emails
-  don't go out. Sending an invoice still gives you its link to share.
-- **Payroll pays Tegata and NEAR accounts.** Another chain is Live-only, and a bank account is shown locked: cash-out
-  to a bank needs a licensed payout partner. Payroll emails wait for email too; until then you share each person's
-  link.
-- **NEAR-wallet sign-in is proved by a script playing the wallet** (a real testnet account signing with its own key,
-  as NEAR Connect's wallets do); a sign-in through a wallet extension hasn't been walked on camera yet. A wallet owner
-  gets no emails. Refunds go back to a NEAR account; a refund to another chain comes with Live.
+- **Live has no recorded real-money payment yet.** Live is on (`tegata.near`, mainnet USDC, NEAR Intents), and every
+  [proof](/docs/how-money-moves/proof) in these docs is on testnet. NEAR Intents has no testnet, so paying in from
+  other chains and paying out to them haven't been walked end to end for these docs.
+- **Wallet sign-in is testnet only.** A NEAR-wallet owner can use the Sandbox but can't open Live until a mainnet
+  wallet can sign in; email owners can. Wallet sign-in itself is proved by a script playing the wallet (a real testnet
+  account signing with its own key, as NEAR Connect's wallets do).
+- **Autopilot is Sandbox-only.** Its contract is `pay.tegata.testnet`; on mainnet the Payroll page says it opens when
+  the contract is deployed there. Autopilot pays Tegata and NEAR accounts only: a payout to another chain needs a
+  fresh NEAR Intents quote, which can't be fetched with nobody online.
+- **Bank runs in the Sandbox, on Noah's sandbox.** A withdrawal reaches Noah's last step and stops there, before any
+  money moves, until Noah switches payouts on for Tegata's sandbox account; the page says so. In the Sandbox the USDC
+  reaches Noah through Tegata's own Solana devnet wallet, where Live would use NEAR Intents. A person can't yet choose
+  a bank account for their pay.
+- **Cards and card payments wait on their partners' keys.** **Cards** says "Opening soon", and the Card way to pay
+  stays hidden from payers until Bitnob's and Transak's keys are set. Transak's staging orders deliver nothing on NEAR,
+  so in the Sandbox Tegata sends the matching test USDC itself, and the receipt says so.
+- **A card reserve and a bank hop hold money for minutes.** Money on its way to a card or a bank passes through
+  Tegata's operator account; everywhere else it moves from the business's own account
+  ([Bank and cards](/docs/how-money-moves/bank-and-cards)).
 - **The autopilot contract has no upgrade method, but its account does.** `pay.tegata.testnet`'s only key is the
-  operator's, so during the hackathon Tegata can redeploy it. Autopilot pays Tegata and NEAR accounts only.
-- **The Sandbox stash is shared.** Add test dollars draws from Tegata's own test USDC and can run dry; Circle's faucet
-  is the fallback.
+  operator's, so during the hackathon Tegata can redeploy it.
+- **A wallet owner gets no emails** unless the business sets a billing email: Tegata has no other address for them.
+- **The Sandbox stash is shared.** Add test dollars and euro deposits in the Sandbox draw from Tegata's own test USDC
+  and can run dry; Circle's faucet is the fallback for test dollars.
 - **Referrals don't yet flag two accounts opened from one device or network.**
 - **No outside businesses have used it yet.**
 
 ## Next
 
-These are planned, in this order, and none of them is described anywhere in these docs as working:
+None of these is described anywhere in these docs as working:
 
 | Next | What it adds |
 | --- | --- |
-| Developers | API keys, checkout sessions, signed webhooks, a counter mode |
-| Live | Real dollars on mainnet, and paying in from other chains through NEAR Intents |
+| Partner keys | Bitnob's sandbox keys open spend cards; Transak's keys open paying and adding money by card |
+| Noah payouts | Bank withdrawals that reach the bank, then Noah's business review for Live |
+| Autopilot on mainnet | `pay.tegata.near`, so Live paydays can pay themselves |
+| Mainnet wallet sign-in | NEAR-wallet owners in Live |
+| A person's bank account | Payroll that lands in someone's own bank |

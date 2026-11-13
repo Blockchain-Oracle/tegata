@@ -1,6 +1,6 @@
 "use client"
 
-// Who the invoice is for (plan 6.8 K, PayPal flow 7395's inline customer): a search over the business's customers
+// Who the invoice is for: a search over the business's customers
 // and "New customer" in a sheet without leaving the builder. The chosen customer shows as a card with Change.
 import { Command } from "cmdk"
 import { Check, ChevronDown, Plus, UserRound } from "lucide-react"
@@ -31,10 +31,10 @@ export function initials(name: string): string {
 
 /** Story fields for name discs; the same name always lands on the same one (as `BankDisc` does). */
 const DISC = [
-  "bg-sora text-black",
-  "bg-matcha text-black",
-  "bg-sakura text-black",
-  "bg-kin text-black",
+  "bg-sora text-field-ink",
+  "bg-matcha text-field-ink",
+  "bg-sakura text-field-ink",
+  "bg-kin text-field-ink",
   "bg-ai text-white",
 ] as const
 

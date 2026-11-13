@@ -9,6 +9,7 @@ import { migrateDb } from "@tegata/db/migrate"
 import {
   type EmailEvent,
   renderInvoicePdf,
+  renderPayslipPdf,
   renderStatementPdf,
   resendMailer,
 } from "@tegata/documents"
@@ -39,8 +40,10 @@ import {
   markInvited,
   monthStatement,
   oneClickToPoll,
+  ownerAddress,
   paymentsToVerify,
   payoutsToPoll,
+  payslipDocument,
   pendingDeliveries,
   pollBankPayout,
   pollCardPayment,
@@ -69,6 +72,7 @@ import {
   registerForAutopilot,
   registerPayoutAddress,
   registerRunAddresses,
+  remindersDue,
   reminderTarget,
   reminderTimes,
   removeCard,
@@ -83,6 +87,7 @@ import {
   settleCardRelay,
   settlePayment,
   settlePayoutRelay,
+  settlePayrollPayout,
   settleRefund,
   settleRelayedPayment,
   settleRunRelay,
@@ -251,13 +256,31 @@ await boss.work(QUEUES.testDollars.name, async ([job]) => {
 /** Invoice emails: queued in the outbox at their time; the drain attaches the PDF and logs them on the timeline. */
 await boss.work(QUEUES.invoiceEmail.name, async ([job]) => {
   if (!job) return
-  const { invoiceId, kind, offset } = QUEUES.invoiceEmail.payload.parse(job.data)
+  const { invoiceId, kind, offset, manualDay } = QUEUES.invoiceEmail.payload.parse(job.data)
   const sent = await invoiceToken(db, invoiceId)
   if (!sent) return
-  if (kind === "reminder" && !(await reminderTarget(db, invoiceId))) return
+  if (kind === "reminder" && !(await reminderTarget(db, invoiceId, { manual: Boolean(manualDay) })))
+    return
   await queueInvoiceEmail(db, invoiceId, kind === "invoice" ? "invoice.sent" : "invoice.reminder", {
     offset: offset ?? 0,
+    manualDay,
   })
+})
+
+/** Hourly: queue every reminder step due in the next hour, so invoices sent while email was off still get them. */
+await boss.schedule(QUEUES.invoiceReminderSweep.name, "5 * * * *", {})
+await boss.work(QUEUES.invoiceReminderSweep.name, async () => {
+  if (!mailer) return
+  const due = await remindersDue(db)
+  for (const step of due)
+    await enqueue(
+      boss,
+      "invoiceEmail",
+      { invoiceId: step.invoiceId, kind: "reminder", offset: step.offset },
+      `${step.invoiceId}:remind:${step.offset}`,
+      { startAfter: step.at },
+    )
+  if (due.length) console.log(`[reminders] ${due.length} queued for the next hour`)
 })
 
 await boss.work(QUEUES.autopilotRegister.name, async ([job]) => {
@@ -322,6 +345,10 @@ await boss.work(QUEUES.payoutPoll.name, async ([job]) => {
   }
   console.log(`[payout] ${payoutId} ${result}`)
   await queuePayoutEmail(db, payoutId)
+  // A payroll row to another chain is paid only now that NEAR Intents delivered it (or failed, if it came back).
+  const payroll = await settlePayrollPayout(db, payoutId)
+  if (payroll && (payroll.settled === "paid" || payroll.settled === "failed"))
+    await queueRunEmails(db, payroll.runId)
 })
 await boss.schedule(QUEUES.payoutSweep.name, "* * * * *", {})
 await boss.work(QUEUES.payoutSweep.name, async () => {
@@ -542,6 +569,16 @@ async function attachmentsFor(event: EmailEvent, email: { workspaceId: string | 
         { filename: `${docs.document.number}.pdf`, content: await renderInvoicePdf(docs.document) },
       ]
   }
+  if (event.kind === "payroll.paid" && event.data.rowId) {
+    const doc = await payslipDocument(db, event.data.rowId, env.APP_URL)
+    if (doc)
+      return [
+        {
+          filename: `Payslip-${doc.payDate.slice(0, 7)}-${doc.person.name.replace(/[^A-Za-z0-9]+/g, "-")}.pdf`,
+          content: await renderPayslipPdf(doc),
+        },
+      ]
+  }
   if (event.kind === "statement.monthly") {
     const doc = email.workspaceId
       ? await monthStatement(
@@ -562,14 +599,10 @@ async function attachmentsFor(event: EmailEvent, email: { workspaceId: string | 
   return []
 }
 
-/** Replies to a customer or payroll email reach the business. */
+/** Replies to a customer or payroll email reach the business: its billing email, or else the owner's sign-in email. */
 async function replyToFor(workspaceId: string | null) {
   if (!workspaceId) return null
-  const [row] = await db
-    .select({ email: schema.workspaces.email })
-    .from(schema.workspaces)
-    .where(eq(schema.workspaces.id, workspaceId))
-  return row?.email ?? null
+  return ownerAddress(db, workspaceId)
 }
 
 async function drainEmails() {
@@ -584,6 +617,17 @@ async function drainEmails() {
           : undefined
       if (Date.now() - email.createdAt.getTime() > EMAIL_MAX_AGE_MS) {
         await markEmail(db, email.id, { status: "skipped", reason: "Too old to send" })
+        continue
+      }
+      if (
+        event.kind === "invoice.reminder" &&
+        invoiceId &&
+        !(await reminderTarget(db, invoiceId, { manual: Boolean(event.data.manual) }))
+      ) {
+        await markEmail(db, email.id, {
+          status: "skipped",
+          reason: "Paid, voided or reminders off before it went out",
+        })
         continue
       }
       if (!(await wanted(db, email))) {
@@ -609,6 +653,9 @@ async function drainEmails() {
             {
               to: email.to,
               ...(event.kind === "invoice.reminder" ? { offset: event.data.offset ?? 0 } : {}),
+              ...(event.kind === "invoice.reminder" && event.data.manual
+                ? { source: "manual" }
+                : {}),
             },
           )
         console.log(`[email] ${email.kind} sent`)
@@ -630,7 +677,7 @@ const emailTimer = setInterval(
 )
 
 /** Every morning (UTC): payrolls that are due and not yet run ask their owner to approve. */
-await boss.schedule(QUEUES.payrollDue.name, "0 7 * * *", {})
+await boss.schedule(QUEUES.payrollDue.name, "0 * * * *", {})
 await boss.work(QUEUES.payrollDue.name, async () => {
   await queuePayrollDue(db)
 })

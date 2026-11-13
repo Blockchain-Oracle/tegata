@@ -26,7 +26,7 @@ export default function BrandPage() {
         title="The mark"
         note="手形 (tegata, a bill of exchange) cut into a square company seal. A Japanese business signs with its seal, not a pen. Real glyph outlines, ink texture, no font shipped."
       >
-        <div className="grid gap-4 lg:grid-cols-[1.4fr_1fr]">
+        <div className="grid grid-cols-[minmax(0,1fr)] gap-4 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
           <Stage className="min-h-[380px] p-10" inner="grid min-h-[300px] place-items-center">
             <div className="flex flex-col items-center gap-6">
               <SealPress
@@ -108,7 +108,7 @@ export default function BrandPage() {
         title="Every business gets its own seal"
         note="Cut from the business name the moment the account opens: the name runs round the ring, a monogram sits in the centre. The same seal stamps every paid invoice, receipt and payslip."
       >
-        <div className="grid gap-4 lg:grid-cols-[1fr_1.2fr]">
+        <div className="grid grid-cols-[minmax(0,1fr)] gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)]">
           <div className="flex flex-col gap-4 rounded-[20px] bg-card p-5">
             <Field
               label="Business name"
@@ -136,9 +136,9 @@ export default function BrandPage() {
             </div>
             <div className="grid min-h-64 place-items-center rounded-[20px] bg-white">
               <div className="relative w-56 rounded-[12px] bg-white p-4 text-black shadow-receipt">
-                <p className="text-meta font-semibold text-[#666]">Invoice 0042</p>
+                <p className="text-meta font-semibold text-[#5B544A]">Invoice 0042</p>
                 <p className="figure mt-1 text-[40px]">$1,250.00</p>
-                <p className="text-[13px] text-[#666]">{name || "Your business"}</p>
+                <p className="text-[13px] text-[#5B544A]">{name || "Your business"}</p>
                 <div className="absolute -right-6 -bottom-6">
                   <SealPress key={`inv-${pressKey}`} delay={0.15}>
                     <BusinessSeal name={name} size={104} band="Paid" />

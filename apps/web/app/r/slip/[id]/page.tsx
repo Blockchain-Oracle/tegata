@@ -1,4 +1,4 @@
-// A payslip (plan 6.8 S): one person's pay from one run, stamped by the business's seal, with the NEAR transaction
+// A payslip: one person's pay from one run, stamped by the business's seal, with the NEAR transaction
 // that carried it. Public by its random id, so the person can keep it or show it.
 import type { Metadata } from "next"
 import { notFound } from "next/navigation"

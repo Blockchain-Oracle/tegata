@@ -1,4 +1,4 @@
-//! Tegata autopilot (plan section 2): money a business sets aside here pays its payroll schedule with nobody online.
+//! Tegata autopilot: money a business sets aside here pays its payroll schedule with nobody online.
 //!
 //! One deployment per network, many businesses, one token (USDC, fixed at `new`). A business deposits with
 //! `ft_transfer_call`, creates a plan (rows of NEAR accounts and amounts, plus exact due timestamps computed in the

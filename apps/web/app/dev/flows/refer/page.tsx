@@ -1,6 +1,6 @@
 "use client"
 
-// Referrals in every state (plan 6.9): the Refer page (none yet, a mix of joined / qualifying / paid / not counted,
+// Referrals in every state: the Refer page (none yet, a mix of joined / qualifying / paid / not counted,
 // loading, error) and the join page a friend opens, on sample data that lives only under /dev.
 import { useState } from "react"
 

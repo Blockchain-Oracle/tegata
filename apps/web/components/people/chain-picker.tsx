@@ -1,6 +1,6 @@
 "use client"
 
-// Pay to another chain (plan 6.8 AB, payroll): pick the coin and chain from real marks, then paste the address there.
+// Pay to another chain (payroll): pick the coin and chain from real marks, then paste the address there.
 // The address is checked for that chain's format as it's typed. Live only: NEAR Intents has no testnet.
 import { Check } from "lucide-react"
 import { useState } from "react"

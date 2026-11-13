@@ -14,16 +14,7 @@ resolves to a token named here (values live in `apps/web/app/globals.css` and `a
 - Light is the default. Dark is an adaptation, not an inversion.
 - Depth is one step lighter fill. Never a border, never a shadow on content.
 
-Sources (what each one owns):
-
-| Source                                                  | Owns                                                                                                               |
-| ------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
-| Senryo and Kawase (the owner's earlier apps)            | Plate grammar, rows not boxes, marks not dots, press feel, state rules, the money lifecycle, the sound palette     |
-| Bento "claim your link", Cosmos sign-up (Refero)        | Sign-up as a split screen: a form on one side, a live object that reacts as you type on the other                  |
-| Portrait with Privy (Refero flow 11790)                 | Email code inside our own page; named stages while the account is made                                             |
-| Delphi "claim your handle" (Refero)                     | One question per step, a thin progress line, availability said inside the field                                    |
-| Privy (Refero style fc2dd49a, checked live on privy.io) | The split product-stage opening; colour lives in stages and story panels, not chrome; sign-in rows with real logos |
-| Wise (Refero style da2edc37)                            | Landing page only: the promise above a working calculator                                                          |
+The plate grammar, press feel, state rules and sound palette come from the owner's earlier apps (Senryo and Kawase).
 
 ## Signature: the seal
 
@@ -37,25 +28,33 @@ Every business gets its own round seal, cut from its name the moment the account
 
 ## Palette (light / dark)
 
+Washi and sumi (13 Nov 2026, carried from the landing to the whole app): warm paper by day, warm ink-black at night,
+vermilion only where a seal would be.
+
 | Token                                    | Light                                                                               | Dark                              | Used for                                                                 |
 | ---------------------------------------- | ----------------------------------------------------------------------------------- | --------------------------------- | ------------------------------------------------------------------------ |
-| background                               | `#F5F5F5`                                                                           | `#111111`                         | the page                                                                 |
-| card                                     | `#FFFFFF`                                                                           | `#1C1C1C`                         | a group on a page                                                        |
-| secondary, muted, input                  | `#ECECEC`                                                                           | `#292929`                         | quiet plates, inputs, a group inside a sheet                             |
-| plate-pressed                            | `#E2E2E2`                                                                           | `#363636`                         | pressed rows, hover plate, segmented thumb                               |
-| foreground                               | `#000000`                                                                           | `#F5F5F5`                         | text 1                                                                   |
-| muted-foreground / text-3                | `#666666` / `#6E6E6E`                                                               | `#B8B8B8` / `#A0A0A0`             | text 2 and 3                                                             |
-| primary / on it                          | `#000000` / `#FFFFFF`                                                               | `#F5F5F5` / `#000000`             | the one main action; pressed `#252525` / `#DEDEDE`                       |
+| background (washi)                       | `#F3EFE6`                                                                           | `#0E0C0A`                         | the page                                                                 |
+| card                                     | `#FFFCF6`                                                                           | `#1B1814`                         | a group on a page                                                        |
+| secondary, muted, input                  | `#E9E3D6`                                                                           | `#262119`                         | quiet plates, inputs, a group inside a sheet                             |
+| plate-pressed, accent                    | `#DFD8C9`                                                                           | `#2E2820`                         | pressed rows, hover plate, segmented thumb                               |
+| foreground (sumi)                        | `#16130F`                                                                           | `#F2EDE4`                         | text 1                                                                   |
+| muted-foreground / text-3                | `#5B544A` / `#6B6357`                                                               | `#B8AFA2` / `#968C7F`             | text 2 and 3                                                             |
+| primary / on it                          | `#16130F` / `#FFFCF6`                                                               | `#F2EDE4` / `#0E0C0A`             | the one main action; pressed `#2B2620` / `#DCD5CA`                       |
+| rule                                     | `#DCD4C4`                                                                           | `#2C2620`                         | print hairlines only (running heads, ledgers), never a box               |
+| paper                                    | `#FFFCF6`, sunk `#F3EFE6`, rule `#E9E3D6`, text `#5B544A` / `#6B6357`               | same (paper stays paper)          | receipts, invoices, slips, every object on a stage                       |
 | shu (seal) / on it                       | `#FF4F00` / `#000000`                                                               | same                              | the seal, selected controls, the focus ring, badges                      |
-| stage                                    | lit field: `#FF4F00` base, `#FF7A2E` and `#FFB38A` radial lights, white blur, grain | same (stays lit)                  | sign-in, onboarding, landing hero, the balance tile, the pay page header |
-| story fields                             | matcha `#C8F06A` · sora `#A9D8FF` · sakura `#FFC2D6` · kin `#FFD23F` · ai `#1B1F5E` | same                              | onboarding scenes, empty states, landing story cards, Home's first steps |
+| stage, shu tone                          | lit field: `#FF4F00` base, `#FF7A2E` and `#FFB38A` radial lights, white blur, grain | same (stays lit)                  | money moments: the balance, the pay page header, a receipt, a send       |
+| stage, lacquer tone                      | sumi `#120D0A`, a vermilion glow rising from below, the desk's dot grid, grain      | same                              | big surfaces: sign-in, onboarding, cards, bank, opening Live             |
+| story fields                             | matcha `#C8F06A` · sora `#A9D8FF` · sakura `#FFC2D6` · kin `#FFD23F` · ai `#1B1F5E` | deep on the landing               | onboarding scenes, empty states, landing story cards, Home's first steps |
 | seal-ink                                 | `#B23700`                                                                           | `#FF8A52`                         | seal colour as text on a plate, links                                    |
-| seal-wash                                | `#FFE9DF`                                                                           | `#3A2015`                         | a selected row                                                           |
+| seal-wash                                | `#FFE6D6`                                                                           | `#3A2015`                         | a selected row                                                           |
 | up / down                                | `#2F7A00` / `#C8283F`                                                               | `#B5F543` / `#FF647C`             | money in / money out and failures, always with a sign or a word          |
-| up-surface / down-surface / warn-surface | `#EEF9DC` / `#FDE7EA` / `#FFF0D5`                                                   | `#1E2A0C` / `#3A1A20` / `#332719` | chips and panels                                                         |
+| up-surface / down-surface / warn-surface | `#ECF5D8` / `#FDECEB` / `#FBEBCB`                                                   | `#1E2A0C` / `#3A1A20` / `#332719` | chips and panels                                                         |
 | warn                                     | `#8A5800`                                                                           | `#F2B85C`                         | warnings                                                                 |
-| skeleton                                 | `#DEDEDE`                                                                           | `#363636`                         | loading geometry                                                         |
-| scrim                                    | `#000000B3`                                                                         | `#000000B3`                       | under sheets                                                             |
+| skeleton                                 | `#E2DBCD`                                                                           | `#2A251F`                         | loading geometry                                                         |
+| scrim                                    | `#16130FB3`                                                                         | `#000000B3`                       | under sheets and ⌘K                                                      |
+
+Shadows are warm (sumi `#16130F` at low alpha), never neutral black. Emails and PDFs use the same paper values.
 
 Sandbox is said by the word "Sandbox" and a dashed rim on the mode capsule, never by a hue.
 Text pairs stay at 4.5:1 or better; `pnpm check:contrast` fails the build otherwise.
@@ -112,6 +111,10 @@ Sentence case. No tracked uppercase labels.
 
 Reduced motion: travel becomes a 100 ms crossfade, shimmer and skeletons stand still, digits swap.
 
+Stage tones: `shu` for money moments (the balance, send, pay links, the pay page header, receipts, emails), `lacquer`
+for big surfaces (sign-in, onboarding, cards, bank, payroll, opening Live, the referral join page, the share
+image). Story fields go deep at night (`--field-ink` flips to washi on them).
+
 ## Sound and touch
 
 One call: `fire(event, { cue, identity })` in `apps/web/lib/feedback`.
@@ -155,8 +158,8 @@ One call: `fire(event, { cue, identity })` in `apps/web/lib/feedback`.
 
 ## Where each part comes from
 
-Parts are ported from the owner's own web kits (Senryo web, Kawase `ui-web`), which were sourced from
-21st.dev, or installed from 21st.dev directly. Hand-built parts are named as such.
+Parts come from the owner's earlier web kits (Senryo, Kawase), which were sourced from
+21st.dev, or are installed from 21st.dev directly. Hand-built parts are named as such.
 
 | Part                                                   | Source                                                              |
 | ------------------------------------------------------ | ------------------------------------------------------------------- |
@@ -185,10 +188,108 @@ Parts are ported from the owner's own web kits (Senryo web, Kawase `ui-web`), wh
 ## Banned
 
 - Inter, Roboto or a system font as the brand face.
-- Borders on content, shadows on groups, gradients, glow, glass on content.
+- Borders on content, shadows on groups, glass on content. Gradients and glow only as the stage's light (shu and lacquer) and the landing's desk.
 - Tracked uppercase labels, explainer sentences under controls, text dumps.
 - Full-pill main buttons. Purple. Emoji as icons.
 - A spinner where a skeleton or an inline message belongs.
 - Colour as the only signal for network, direction, success or failure.
 - Tinting a logo, or a letter disc where a real mark exists.
 - Sample names and figures anywhere outside `/dev`. The word "gas" anywhere.
+
+## The landing page (revamp, 13 Nov 2026)
+
+The landing is the one surface allowed to perform. The app stays calm; `/` tells the whole story of a bill, in
+light and dark, with one real 3D object and motion that always shows something true about the product.
+References studied live (Framer marketplace, 13 Nov 2026) and what each one gives us:
+
+| Reference          | Taken                                                                                        |
+| ------------------ | -------------------------------------------------------------------------------------------- |
+| Cardora Finance    | One 3D object as the hero, a dark field lit by one warm glow, huge type, scroll-lit lines    |
+| FintechX           | The before/after dial, the integration orbit around one mark, the tree from one node to many |
+| Verity             | Live product UI that plays itself ("shows its work"), figures that count up, calm dark mode  |
+| Parallel — Finance | Printed paper: running heads, words that ink in as you read, sources as numbered footnotes   |
+| Canvas             | Hand-set emphasis: a word set on a coloured block inside a headline; stats inside a grid     |
+| Ballance           | "Who it's for" as tabs that swap one big picture                                             |
+
+### Direction: washi and shu
+
+- **Light:** warm washi paper, sumi ink, vermilion only where a seal would be. **Dark:** sumi night with one
+  vermilion glow rising from below, like Cardora's field; paper objects stay paper.
+- Colour roles, not one accent: **shu** = the seal, the hero light, the one main highlight per section; **matcha** =
+  money arrived; **ai** (indigo) = NEAR and proof; **kin** = payroll; **sora** = pay links; **sakura** = cards.
+  The story fields are used as small fills and highlight blocks, never as whole candy sections.
+- Every figure on the page is real: the README's sourced $1,250 example, the 11 routes in `lib/routes.ts`, the
+  measured fees, and testnet transactions that open on the explorer. No invented customers, quotes or stats.
+
+### Tokens (scoped to `.landing`, so the app is untouched)
+
+| Token         | Light                 | Dark                  | Use                                     |
+| ------------- | --------------------- | --------------------- | --------------------------------------- |
+| washi (page)  | `#F3EFE6`             | `#0E0C0A`             | background                              |
+| washi-card    | `#FFFCF6`             | `#1B1814`             | a plate on the page                     |
+| washi-sunk    | `#E9E3D6`             | `#262119`             | a plate inside a plate, inputs, chips   |
+| ink           | `#16130F`             | `#F2EDE4`             | text 1, the main action                 |
+| ink-2         | `#5B544A`             | `#B8AFA2`             | text 2                                  |
+| ink-3         | `#6B6357`             | `#968C7F`             | text 3, footnotes                       |
+| rule          | `#DCD4C4`             | `#2C2620`             | print hairlines (running heads, ledger) |
+| shu / shu-ink | `#FF4F00` / `#B23700` | `#FF4F00` / `#FF8A52` | seal, highlight / shu as text           |
+
+Every text pair is 4.5:1 or better (checked); `#FF4F00` is never small text on washi. Hairlines are print rules
+(a running head, a ledger row), never a box around content.
+
+### Type
+
+- Archivo condensed 900 (`display`) for the headline and every figure; Archivo 100 for words; DM Mono for
+  memos, accounts and hashes. Running heads read `§ 03 · How a payment moves`, sentence case, DM Mono 13.
+- 手形 appears as the real seal glyph outlines (no Japanese font shipped), set vertically as a watermark.
+
+### Sections, top to bottom
+
+1. **Nav:** a floating capsule that tightens on scroll (Aceternity resizable navbar): lockup, How it works,
+   Payroll, Proof, Docs, the theme switch (Magic UI animated theme toggler, a circle wipe), Sign in, Open an account.
+2. **Hero:** the promise on the left (cut in character by character, after Fancy's vertical cut reveal but in CSS
+   keyframes so it never waits on hydration), the 3D hanko on the right.
+   Facts under the buttons: 0 NEAR to hold · 11 coin-and-chain routes · 1 approval pays everyone.
+3. **Marquee:** the 11 coin-on-chain marks a client can pay from (Magic UI marquee), "settled as USDC on NEAR".
+4. **Before / after:** "A $1,250 invoice to a client abroad." A dial flips the plate between the usual way (card
+   −$67.80, wire −$6.11, four manual stablecoin steps) and Tegata ($1,250.00 exactly). Sources as footnotes.
+5. **How a payment moves:** pinned scroll (Aceternity sticky scroll reveal, on page scroll): send → they pay
+   their way → NEAR decides paid (the memo, receiver, amount, final) → your seal stamps the receipt. The object
+   on the right is the real product part for each step (invoice paper, rails with marks, a transaction readout,
+   the receipt slip with the business seal).
+6. **Live quote:** the existing calculator beside an orbit of the 11 marks around the Tegata seal (Magic UI
+   orbiting circles). Real NEAR Intents dry quotes.
+7. **Payroll:** a run that plays itself (Magic UI animated list): rows to a Tegata account, a NEAR account and
+   USDT on Tron tick to Paid in one transaction, then the seal presses. Autopilot as a fact, marked Sandbox.
+8. **Across borders:** a cobe globe (Magic UI globe) with Lagos, Accra, Johannesburg and the euro account; ₦,
+   GH₵, R and € with round flags; a Sandbox pill.
+9. **Everything else:** a bento (Magic UI bento grid, reskinned): pay links and QR, counter, checkout API with a
+   real `curl`, books (CSV, statement, reconciliation), Send, NEAR wallet sign-in, cards ("Opening soon").
+10. **Proof on NEAR:** a scroll-inked line (Magic UI text reveal) "Nothing is paid until NEAR says so.", then a
+    ledger of real testnet transactions with explorer links and the measured fees.
+11. **Built on NEAR:** a tree with travelling beams (Magic UI animated beam): Tegata's seal to named accounts,
+    meta transactions, USDC, NEAR Intents, NEAR Connect and the autopilot contract; partners at the licensed edge.
+12. **Questions:** shadcn accordion, honest answers (custody, cost, Sandbox and Live).
+13. **Close and footer:** "Open your account in a minute." on the stage; a giant 手形 / Tegata set in the footer.
+
+### The 3D hanko (hand-built: no premium equivalent)
+
+- three.js, loaded only on `/` after first paint; a static seal-on-bill fallback for no WebGL and reduced motion.
+- A square company seal: a black horn body with a thin kin band, the face cut from the real 手形 outlines
+  (`lib/brand/glyphs.ts`, extruded) and inked vermilion. A bill lies on the desk below it.
+- Coins of the 11 routes orbit the seal. Once, after load: the seal turns face-down, presses the bill (soft shadow
+  darkens, a short squash), lifts, and the bill's status turns Paid with the ink impression. Clicking the seal
+  presses again, with the `stamp` cue (sound only ever follows a click).
+- Pointer parallax of a few degrees; the scene pauses when off screen; DPR capped at 1.75.
+- **Onboarding (welcome):** the same desk on the lacquer stage, with the business's own round seal (丸印) on a
+  lathe-turned hanko. Its face is re-cut on canvas as the name is typed (drawn upside down so its print reads true);
+  the bill reads "Pay to the order of {name}" and the pay address; the coins orbit while the address is chosen; the
+  opening steps and the QR float on paper below. When the account opens the seal presses once (`stamp`, then
+  `celebrate`) and the bill turns Open with the "OPEN · date" ink. Without WebGL or with reduced motion, the 2D bill
+  stage stands in (`components/onboarding/desk-stage.tsx`, `bill-stage.tsx`).
+
+### Motion on the landing
+
+- Headline lines cut in 80 ms apart on load; section titles rise 12 px in 320 ms when they enter.
+- Figures count with NumberFlow; the orbit turns once per 60 s; beams travel every 4 s.
+- Reduced motion: everything is placed at its end state; the hanko is a still image; nothing loops.

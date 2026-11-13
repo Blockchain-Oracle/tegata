@@ -1,7 +1,7 @@
 "use client"
 
 // The pay page's logic. Every rail ends the same way: the server reads the USDC transfer from NEAR and only then
-// calls it paid (plan section 2, "Paying in"). Nothing the browser says is believed.
+// calls it paid. Nothing the browser says is believed.
 //  · Tegata balance: the server drafts the transfer with the attempt's memo; this page checks the draft is exactly
 //    this link's receiver, amount and memo, the Privy key signs it, and our relayer sends it gas-free.
 //  · NEAR wallet: the wallet sends one `ft_transfer` with the memo; this page hands the hash to the server.
@@ -107,9 +107,12 @@ async function submitClaim(claim: WalletClaim) {
 export function PayClient({
   initial,
   routes,
+  embed,
 }: {
   initial: PublicRequest
   routes: readonly PayRoute[]
+  /** Opened over a merchant's site by checkout.js: the paid moment is told to that page (its origin only). */
+  embed?: { parent: string | null }
 }) {
   const router = useRouter()
   // Signed in by email (Privy) or with a NEAR wallet: either can pay from its Tegata balance.
@@ -124,7 +127,10 @@ export function PayClient({
     const asked = new URLSearchParams(window.location.search).get("rail")
     if (asked === "chain") setRail("oneclick")
     if (asked === "card") setRail("card")
-  }, [])
+    // An any-amount link opened from a merchant's button arrives with the amount filled in (still editable).
+    const given = new URLSearchParams(window.location.search).get("amount")
+    if (given && initial.amount === null && /^\d{1,9}(\.\d{1,2})?$/.test(given)) setAmount(given)
+  }, [initial.amount])
   const [amount, setAmount] = useState(() =>
     initial.invoice?.allowPartial ? viewDollars(initial.invoice.remaining).toFixed(2) : "",
   )
@@ -181,6 +187,26 @@ export function PayClient({
   })
 
   const status = attempt.data?.status
+  // Embedded: tell the merchant's page it was paid, for its own screens only (proof is the signed webhook).
+  const paidAttempt = step === "paid" ? attempt.data : undefined
+  useEffect(() => {
+    const parent = embed?.parent
+    if (!paidAttempt || !parent || window.parent === window) return
+    window.parent.postMessage(
+      {
+        type: "tegata:checkout.completed",
+        token: initial.token,
+        detail: {
+          paymentId: paidAttempt.id,
+          amount: paidAttempt.amount,
+          receipt: paidAttempt.receiptToken
+            ? `${window.location.origin}/r/${paidAttempt.receiptToken}`
+            : null,
+        },
+      },
+      parent,
+    )
+  }, [paidAttempt, embed?.parent, initial.token])
   useEffect(() => {
     if (step !== "paying" || !status) return
     if (status === "succeeded") setStep("paid")
@@ -421,15 +447,16 @@ export function PayClient({
   }, [])
 
   /** Live: ask NEAR Intents for a deposit address on the chosen coin and chain, then follow it. */
-  async function payChain() {
+  async function payChain(walletAddress?: string) {
     if (!due) return
+    if (walletAddress) setRefundTo(walletAddress)
     setBusy(true)
     setProblem(null)
     try {
       const res = await api<{ paymentId: string }>(`/api/pay/${request.token}/oneclick`, {
         body: {
           route: routeId,
-          refundTo: refundTo.trim(),
+          refundTo: (walletAddress ?? refundTo).trim(),
           amount: typed ? amount : undefined,
           email: receiptEmail.trim(),
         },
@@ -523,7 +550,7 @@ export function PayClient({
         setRefundTo(value)
         setProblem(null)
       }}
-      onPayChain={() => void payChain()}
+      onPayChain={(walletAddress) => void payChain(walletAddress)}
       // A payer sees Card only where it's open: no "not set up yet" on someone's pay page.
       card={
         card.data?.open

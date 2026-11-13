@@ -1,5 +1,5 @@
-// Transak (https://docs.transak.com), the card on-ramp behind "pay by card" (plan 6.8 AD, job 2;
-// context/09-realworld-money/cards-v2.md §B): a payer's Visa or Mastercard buys native USDC on NEAR, delivered to the
+// Transak (https://docs.transak.com), the card on-ramp behind "pay by card" (job 2):
+// a payer's Visa or Mastercard buys native USDC on NEAR, delivered to the
 // business's own NEAR account. Server only: the API secret never reaches a browser. Staging is self-serve with test
 // cards and always-approved KYC; its NEAR orders deliver nothing, so Sandbox delivery is Tegata's (see the services).
 

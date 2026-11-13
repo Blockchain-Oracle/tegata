@@ -7,7 +7,9 @@ icon: Store
 For taking a payment in person: a till, a market stall, a client at your desk. Open **Counter** from the rail, the
 **+** button on a phone, or **⌘K**.
 
-<Phone src="/shots/phone/app-counter.webp" alt="The counter on a phone: Charge $0, a note field, the keypad, and this month's sales: Two flat whites, not paid, $0.12" caption="The counter, with this month's sales under the keypad." />
+<Phone src="/shots/phone/app-counter.webp" alt="The counter on a phone: Charge $0.00 on the stage, What it's for (optional), the keypad, and Type an amount" caption="The counter, ready for an amount." />
+
+<Shot src="/shots/wide/app-counter.webp" alt="The counter on a laptop: Charge $0.00 on the stage, What it's for (optional), the keypad, Type an amount, and Today's sales" caption="The counter on a laptop, for a till." address="tegata.xyz/app/counter" />
 
 <Steps>
 <Step>
@@ -20,7 +22,7 @@ reads **Charge $4.50**.
 
 **Charge.** The stage shows the amount and a QR code of a one-time pay page, with "Scan to pay with USDC on NEAR"
 and how long it has been waiting. The customer scans it with their phone's camera and pays on the
-[pay page](/docs/guide/pay-page), with a Tegata balance or a NEAR wallet.
+[pay page](/docs/guide/pay-page), any way it offers: a Tegata balance, a NEAR wallet, or in Live a coin on another chain.
 
 </Step>
 <Step>
@@ -33,10 +35,12 @@ plays. **New sale** clears the keypad for the next one.
 
 **Cancel** leaves a sale unpaid and goes back to the keypad.
 
-## This month's sales
+## Today's sales
 
-Under the keypad, every counter sale this month with its note, time, amount and **Paid** or **Not paid**. Each opens
-its pay page; a paid one shows your seal and the customer's receipt.
+Under the keypad, every counter sale today with its note and time: a paid one shows its amount in green and how it
+was paid, and opens the customer's receipt; one not paid yet reads **Waiting** (or **Cancelled**) and opens its pay
+page. The counter works the same in
+the Sandbox and in Live.
 
 Each sale is a one-time checkout, so it also appears in [Activity](/docs/start/bookkeepers), gets a numbered receipt,
 and sends `payment.succeeded` to your [webhooks](/docs/build/developers#webhooks) like any other payment.

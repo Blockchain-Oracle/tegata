@@ -1,0 +1,38 @@
+---
+title: Balance
+description: What you hold in USDC on NEAR, every way to add money (your pay address, a card, another chain, test dollars), every way out, and your books checked against NEAR.
+icon: Wallet
+---
+
+<Shot src="/shots/wide/app-balance.webp" alt="Balance for Studio Kaze on a laptop: you hold $1.25 in your balance, Sandbox · other chains in Live, with Add money, Move out and To a bank; Books against NEAR: 1 transfer outside Tegata of 7, Arrived outside Tegata from tegata.testnet, +$1.00" caption="Balance: what you hold, three ways to move it, and the books checked against NEAR." address="tegata.xyz/app/balance" />
+
+Open **Balance** under **Money**. The stage shows what you hold, read live from the USDC contract on NEAR (and what
+sits in [autopilot](/docs/how-money-moves/autopilot), if any), your pay address, and three actions.
+
+## Add money
+
+<Phone src="/shots/phone/add-money.webp" alt="The Add money sheet on the live app in the Sandbox: To your pay address, With a card (Opening soon), From another chain (Live only), Test dollars ($5.00 of test USDC, once a day)" caption="Add money, in the Sandbox." eager />
+
+**Add money** (also on Home) opens one sheet:
+
+| Way | What it does | Where it runs |
+| --- | --- | --- |
+| **To your pay address** | Shows your pay address and its QR code, for anyone sending USDC on NEAR | Both |
+| **With a card** | Buy USDC on NEAR with a Visa or Mastercard through Transak: $100, $250 or $500, then **Continue to Transak**, fee shown first. See [Cards](/docs/guide/cards#customers-who-pay-by-card) | Once Transak's keys are set; until then "Opening soon" |
+| **From another chain** | The dollars to add, then a coin and chain: a one-time pay page to your own account. See [Any chain](/docs/how-money-moves/any-chain#add-money-from-another-chain) | Live only |
+| **Test dollars** | $5.00 of test USDC, once a day | Sandbox only |
+
+## Move it out
+
+| Action | Opens |
+| --- | --- |
+| **Move out** | [Send](/docs/guide/send): to a NEAR account, or in Live straight to [another chain](/docs/guide/send#to-another-chain) |
+| **To a bank** | [Bank](/docs/guide/bank): a bank account in Nigeria, Ghana or South Africa |
+| **Autopilot** | Shown when dollars are set aside for [autopilot](/docs/how-money-moves/autopilot) |
+
+## Books against NEAR
+
+Every USDC transfer on your account, read from NearBlocks, is matched by its transaction to what Tegata recorded.
+A transfer that came or went another way (a faucet, a wallet outside Tegata) is listed as **Arrived outside
+Tegata** or **Left outside Tegata**, and never matched automatically. **Check again** re-reads NEAR. More in
+[If you keep the books](/docs/start/bookkeepers).

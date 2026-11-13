@@ -1,5 +1,5 @@
 /**
- * Invoice maths (plan 6.8 J–N, "Money rules"). Everything is USDC base units as bigint, and every money value is a
+ * Invoice maths. Everything is USDC base units as bigint, and every money value is a
  * whole number of cents, so an invoice for 500.00 is paid as exactly 500.00.
  *
  *   line      = quantity × unit price, rounded half-up to the cent (quantity allows three decimals: hours)

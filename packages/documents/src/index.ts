@@ -19,6 +19,7 @@ export {
   renderInvoicePdf,
 } from "./invoice-pdf.tsx"
 export { type Attachment, type Mailer, renderEmail, resendMailer } from "./mailer.tsx"
+export { type PayslipDocument, PayslipPdf, renderPayslipPdf } from "./payslip-pdf.tsx"
 export {
   renderStatementPdf,
   type StatementDocument,

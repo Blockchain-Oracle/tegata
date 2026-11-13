@@ -1,6 +1,6 @@
 "use client"
 
-// Autopilot on the Payroll page (plan 6.8 T): off (a sora card that says what it does), being set up (steps on NEAR),
+// Autopilot on the Payroll page: off (a sora card that says what it does), being set up (steps on NEAR),
 // on (a stage tile with the contract's own numbers), paused, underfunded, and money still set aside after it's off.
 // The setup sheet lists who it pays, the paydays at 09:00 local, and how much to set aside. Separate from its logic so
 // /dev/flows can show every state.
@@ -124,14 +124,14 @@ export function AutopilotCard({
 
   if (!row) {
     return (
-      <section className="flex flex-col gap-4 rounded-[24px] bg-sora p-6 text-black">
+      <section className="flex flex-col gap-4 rounded-[24px] bg-sora p-6 text-field-ink">
         <div className="flex items-start gap-4">
           <span className="grid size-12 shrink-0 place-items-center rounded-[16px] bg-white [&_svg]:size-6">
             <CalendarClock />
           </span>
           <div className="flex flex-col gap-1">
             <h2 className="display text-[28px] leading-none">Autopilot</h2>
-            <p className="max-w-[52ch] text-[15px] text-black/75">
+            <p className="max-w-[52ch] text-[15px] text-field-ink/75">
               Pays your team on payday even with everyone offline. You set dollars aside in Tegata's
               contract on NEAR; it pays each payday by itself and confirms every row.
             </p>
@@ -157,7 +157,7 @@ export function AutopilotCard({
         {problem ? <p className="text-[15px] font-medium text-down">{problem}</p> : null}
         <div className="flex flex-wrap items-center gap-3">
           {live ? (
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-dashed border-black/40 px-3 py-1 text-[13px] font-semibold text-black/80">
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-dashed border-field-ink/40 px-3 py-1 text-[13px] font-semibold text-field-ink/80">
               Live opens when its contract is on NEAR mainnet · runs in the Sandbox now
             </span>
           ) : (
@@ -165,12 +165,12 @@ export function AutopilotCard({
               Set up autopilot
             </Button>
           )}
-          <span className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-black/70">
+          <span className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-field-ink/70">
             <Mark id="near" size={18} /> {view.contract}
           </span>
         </div>
         {!canSetUp && !live ? (
-          <p className="text-[14px] text-black/70">
+          <p className="text-[14px] text-field-ink/70">
             Needs a payday and at least one person who is ready.
           </p>
         ) : null}

@@ -1,6 +1,6 @@
 "use client"
 
-// Send to another chain, the logic behind ChainSendView (plan 6.8 AB). A live dry quote while the form is filled;
+// Send to another chain, the logic behind ChainSendView. A live dry quote while the form is filled;
 // Review commits a signed 1Click quote with its own deposit address and drafts one gas-free USDC transfer to it;
 // before signing, the page rebuilds that transfer and checks it is exactly the amount to exactly that address; then
 // it follows the payout to delivery on the other chain (the worker reads NEAR Intents). In the Sandbox the same form

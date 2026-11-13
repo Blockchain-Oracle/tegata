@@ -1,6 +1,6 @@
 "use client"
 
-// The time-zone picker (plan 6.8 I, audit S7): a row that says the zone the way people do ("British time (London)"
+// The time-zone picker: a row that says the zone the way people do ("British time (London)"
 // and its UTC offset), opening a sheet with a search across every zone, sorted by offset.
 import { Check, ChevronDown, Clock3, Search } from "lucide-react"
 import { useMemo, useState } from "react"

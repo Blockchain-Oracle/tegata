@@ -7,7 +7,7 @@ export const SITE = {
   meaning: "a written promise to pay",
   headline: "Get paid. Pay your team. In exact dollars.",
   subheadline:
-    "Invoices, pay links and payroll for small businesses, settled in USDC on NEAR. Sign in with email; Tegata pays every network fee and seals every receipt.",
+    "Invoices, pay links and payroll for small businesses, paid from any chain and settled in USDC on NEAR. Sign in with email; Tegata pays every network fee and seals every receipt.",
   url: "https://docs.tegata.xyz",
   app: "https://tegata.xyz",
   repo: "https://github.com/Blockchain-Oracle/tegata",

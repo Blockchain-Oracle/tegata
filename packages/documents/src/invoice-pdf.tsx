@@ -1,6 +1,6 @@
 /** @jsxRuntime automatic */
 /** @jsxImportSource react */
-// The invoice as an A4 PDF (plan 6.8 J–N): the same document the customer sees on the web, for the email attachment
+// The invoice as an A4 PDF: the same document the customer sees on the web, for the email attachment
 // and "Download PDF". Drawn with @react-pdf/renderer on the server; fonts are embedded (see fonts.ts).
 import {
   Document,
@@ -29,9 +29,9 @@ Font.register({ family: "DM Mono", src: mono400 })
 Font.registerHyphenationCallback((word) => [word])
 
 const SHU = "#FF4F00"
-const INK = "#000000"
-const GREY = "#666666"
-const RULE = "#ECECEC"
+const INK = "#16130F"
+const GREY = "#5B544A"
+const RULE = "#E9E3D6"
 const UNITS_PER_DOLLAR = 1e6
 
 export interface PdfParty {
@@ -109,9 +109,9 @@ function PartyBlock({ party }: { party: PdfParty }) {
   return (
     <View>
       <Text style={{ fontWeight: 600 }}>{party.name}</Text>
-      {party.address ? <Text style={{ color: "#444" }}>{party.address}</Text> : null}
-      {party.taxId ? <Text style={{ color: "#444" }}>Tax ID {party.taxId}</Text> : null}
-      {party.email ? <Text style={{ color: "#444" }}>{party.email}</Text> : null}
+      {party.address ? <Text style={{ color: "#3D3730" }}>{party.address}</Text> : null}
+      {party.taxId ? <Text style={{ color: "#3D3730" }}>Tax ID {party.taxId}</Text> : null}
+      {party.email ? <Text style={{ color: "#3D3730" }}>{party.email}</Text> : null}
     </View>
   )
 }
@@ -281,8 +281,8 @@ export function InvoicePdf({ doc }: { doc: InvoiceDocument }) {
         </View>
 
         {doc.notes ? (
-          <View style={{ marginTop: 20, backgroundColor: "#F5F5F5", padding: 12, borderRadius: 6 }}>
-            <Text style={{ color: "#444" }}>{doc.notes}</Text>
+          <View style={{ marginTop: 20, backgroundColor: "#F3EFE6", padding: 12, borderRadius: 6 }}>
+            <Text style={{ color: "#3D3730" }}>{doc.notes}</Text>
           </View>
         ) : null}
 

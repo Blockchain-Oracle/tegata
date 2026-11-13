@@ -1,6 +1,6 @@
 "use client"
 
-// Every surface's states (plan section 6, DESIGN.md "States"), from Senryo/Kawase's kit and 21st sources:
+// Every surface's states (DESIGN.md "States"), from Senryo/Kawase's kit and 21st sources:
 // shadcn skeleton (1588) in shaped layouts, serafimcloud/empty-state (1435) and cnippet-dev/v-alert-7 (23621) for
 // empty and error, ibelick/text-shimmer (1641) for waits. Loading is held at least 300 ms so nothing flickers.
 import { AlertTriangle, RotateCw } from "lucide-react"
@@ -143,7 +143,7 @@ const FIELD_TONE = {
   shu: "bg-shu",
 } as const
 
-/** Says why it's empty and names the next action, on a story-field tile so it is never grey (D-R2). */
+/** Says why it's empty and names the next action, on a story-field tile so it is never grey. */
 export function EmptyState({
   art,
   field = "sora",
@@ -168,7 +168,7 @@ export function EmptyState({
     >
       <div
         className={cn(
-          "grid size-20 place-items-center rounded-[22px] text-black [&_svg]:size-9",
+          "grid size-20 place-items-center rounded-[22px] text-field-ink [&_svg]:size-9",
           FIELD_TONE[field],
         )}
       >

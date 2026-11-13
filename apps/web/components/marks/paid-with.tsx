@@ -1,4 +1,4 @@
-// How a payment was made, as one mark (audit S3): the seal for a Tegata balance, NEAR for a NEAR wallet, the coin that
+// How a payment was made, as one mark: the seal for a Tegata balance, NEAR for a NEAR wallet, the coin that
 // was actually sent (with its chain) for a payment through NEAR Intents, the card networks' own marks for a card, and
 // a kin disc for one recorded by hand.
 import { HandCoins } from "lucide-react"
@@ -48,7 +48,7 @@ export function PaidWithMark({
   if (rail === "manual")
     return (
       <span
-        className="grid shrink-0 place-items-center rounded-full bg-kin text-black"
+        className="grid shrink-0 place-items-center rounded-full bg-kin text-field-ink"
         style={{ width: size, height: size }}
         role="img"
         aria-label="Paid by hand"

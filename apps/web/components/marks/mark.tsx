@@ -1,4 +1,4 @@
-// Real marks (plan 6.10, D-R4): a chain, coin or partner logo in its own colours, never tinted. An optional chain
+// Real marks: a chain, coin or partner logo in its own colours, never tinted. An optional chain
 // badge sits in the bottom corner ("USDT on Tron"). Unknown ids fall back to the widget's own "unknown" mark.
 import { cn } from "@/lib/utils"
 

@@ -1,4 +1,4 @@
-// Developers (plan 6.8 Y): API keys (only a hash is stored), checkout sessions created over the API, events, and
+// Developers: API keys (only a hash is stored), checkout sessions created over the API, events, and
 // webhooks signed with Standard Webhooks and retried with backoff. Tegata's own test inbox lets a webhook be seen end
 // to end with no outside service.
 import { createHash, randomBytes } from "node:crypto"

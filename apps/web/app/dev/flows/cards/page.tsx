@@ -1,6 +1,6 @@
 "use client"
 
-// Cards in every state (plan 6.8 AD, cards-ux-brief §7), on sample data only: no issuer yet, no cards, the owner's
+// Cards in every state, on sample data only: no issuer yet, no cards, the owner's
 // card alone, a team, a card's panel (active, frozen), adding money and moving back, and making a card.
 import { useState } from "react"
 

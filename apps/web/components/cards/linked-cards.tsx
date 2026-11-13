@@ -1,6 +1,6 @@
 "use client"
 
-// A crypto card the business already has (plan 6.8 AD, the secondary path): a Gnosis Pay card account on the Gnosis
+// A crypto card the business already has (the secondary path): a Gnosis Pay card account on the Gnosis
 // chain, shown with its live balance and topped up from the NEAR balance through NEAR Intents. It lives in a sheet off
 // the Cards page ("Already have a crypto card? Top it up"); Tegata's own cards are the page itself.
 import { Check, Copy, CreditCard, ExternalLink, Plus, Trash2, Wallet } from "lucide-react"

@@ -1,6 +1,6 @@
 "use client"
 
-// The sign-in story (plan 6.8 A; Kawase's StoryPager behaviour on Privy's product stage): four scenes, each built
+// The sign-in story: four scenes, each built
 // from real Tegata objects and real chain marks floating on the lit stage. Auto-advances every few seconds, pauses on
 // hover, a tap on the left third goes back. Every amount is labelled "Example".
 import { Check, ChevronLeft, ChevronRight, ExternalLink } from "lucide-react"
@@ -367,7 +367,7 @@ function ReceiptScene() {
   const beat = useBeats(RECEIPT_BEATS)
   return (
     <StageObject from={{ y: 30, rotate: 3 }}>
-      <div className="relative w-[290px] rounded-[18px] bg-white text-black shadow-object sm:w-[310px]">
+      <div className="relative w-[290px] rounded-[18px] bg-paper text-[#16130F] shadow-object sm:w-[310px]">
         <div className="p-5 pb-4">
           <div className="flex items-center justify-between">
             <span className="inline-flex items-center gap-2 text-[13px] font-semibold text-paper-text-2">

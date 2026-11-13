@@ -1,6 +1,6 @@
 "use client"
 
-// Send to another chain, in Live (plan 6.8 AB): the business sends an exact dollar amount from its USDC on NEAR and the
+// Send to another chain, in Live: the business sends an exact dollar amount from its USDC on NEAR and the
 // person receives the coin they asked for, on their chain, through NEAR Intents. Amount on the stage, a coin-and-chain
 // grid with real marks, their address, a live quote of what arrives; a review paper from the committed quote; hold to
 // send (one gas-free transfer); steps to delivery; a receipt with both transactions. Separate from its logic so

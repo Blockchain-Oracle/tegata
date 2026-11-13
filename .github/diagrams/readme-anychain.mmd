@@ -1,0 +1,18 @@
+sequenceDiagram
+  autonumber
+  participant P as Payer on Tron
+  participant T as Tegata
+  participant I as NEAR Intents (1Click)
+  participant N as NEAR (USDC)
+  participant B as Business
+  P->>T: USDT on Tron, refund address TFxa…3yH8
+  T->>I: exact-output quote: $1,250.00 USDC on NEAR to the business
+  I-->>T: signed quote: send 1,251.387 USDT to a deposit address
+  T->>T: checks signature, recipient, amount, asset, type
+  T-->>P: Send exactly 1,251.387 USDT, QR code, 20-minute window
+  P->>I: 1,251.387 USDT on Tron
+  I->>N: delivers exactly 1,250.00 USDC to the business
+  T->>I: status every 5 s: SUCCESS, delivery transaction
+  T->>N: reads the delivery: USDC to the business, at least $1,250.00
+  T-->>B: Paid, numbered receipt: USDT on Tron → USDC on NEAR
+  Note over P,I: If it can't complete, NEAR Intents refunds the payer on Tron

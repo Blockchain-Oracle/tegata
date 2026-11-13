@@ -1,5 +1,5 @@
-// Bitnob (https://www.bitnob.dev), the crypto-native card issuer behind Tegata's spend cards (plan 6.8 AD;
-// context/09-realworld-money/cards-v2.md). Virtual Visa cards for a business and its people, each with its own balance;
+// Bitnob (https://www.bitnob.dev), the crypto-native card issuer behind Tegata's spend cards.
+// Virtual Visa cards for a business and its people, each with its own balance;
 // freeze, limits, reveal and purchases by webhook. Server only: the client id and secret never reach a browser.
 // Sandbox and Live share the base URL; the key picks the environment. Amounts are micro-units (1 USD = 1,000,000).
 import { createHmac, randomBytes, timingSafeEqual } from "node:crypto"

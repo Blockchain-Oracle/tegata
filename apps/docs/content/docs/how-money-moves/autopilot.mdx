@@ -4,6 +4,11 @@ description: Money a business sets aside in Tegata's own contract on NEAR pays i
 icon: CalendarClock
 ---
 
+<Callout title="Sandbox only, for now" type="info">
+Autopilot runs in the Sandbox. In Live the Payroll page says "Live opens when its contract is on NEAR mainnet · runs in
+the Sandbox now": `pay.tegata.near` isn't deployed yet, and Live paydays are paid by an approved run.
+</Callout>
+
 Autopilot is Tegata's own contract, `pay.tegata.testnet` (Rust, near-sdk 5.30). A business sets dollars aside in it
 and gives it a plan: who is paid how much, and on which paydays. Once a payday's time has passed, **anyone** may call
 `run`. Tegata's worker does, every minute, so payroll goes out with every browser closed.

@@ -15,7 +15,7 @@ export interface ButtonProps
     VariantProps<typeof buttonVariants> {
   asChild?: boolean
   busy?: boolean
-  /** A cue for a main action (plan 6.6). Ticks and navigation stay silent. */
+  /** A cue for a main action. Ticks and navigation stay silent. */
   cue?: Cue
 }
 

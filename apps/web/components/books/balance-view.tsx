@@ -1,6 +1,6 @@
 "use client"
 
-// Balance (plan 6.8 W): what you hold (USDC on NEAR plus what's set aside in autopilot), adding and moving money, and
+// Balance: what you hold (USDC on NEAR plus what's set aside in autopilot), adding and moving money, and
 // the books checked against NEAR: every USDC transfer on the account, matched by transaction to what Tegata recorded.
 // A transfer that came or went outside Tegata is listed, never matched automatically.
 import {

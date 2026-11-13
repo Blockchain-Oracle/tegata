@@ -1,6 +1,6 @@
 "use client"
 
-// New recipient (plan 6.8 AC′): the bank from a searchable list, the account number, and who holds it. In Nigeria the
+// New recipient: the bank from a searchable list, the account number, and who holds it. In Nigeria the
 // bank itself names the holder as soon as the number is typed (Noah's beneficiary check); Ghana and South Africa ask
 // for the name, and South Africa for their contact details too. Built from Noah's live form, so every field it requires
 // is asked for.
@@ -307,7 +307,7 @@ export function RecipientSheet({
             }
           />
           {check.state === "found" ? (
-            <div className="flex items-center gap-3 rounded-[16px] bg-matcha px-4 py-3 text-black">
+            <div className="flex items-center gap-3 rounded-[16px] bg-matcha px-4 py-3 text-field-ink">
               <BadgeCheck className="size-5 shrink-0" />
               <span className="flex-1 text-[16px] font-bold uppercase tracking-[0.02em]">
                 {check.name}

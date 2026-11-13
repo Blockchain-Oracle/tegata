@@ -1,4 +1,4 @@
-// Bank payouts and bank details through Noah (plan 6.8 AC; context/09-realworld-money/bank-alternatives.md).
+// Bank payouts and bank details through Noah.
 //
 // Withdraw to a bank: the business approves one gas-free USDC transfer on NEAR; the money then reaches Noah as USDC
 // on Solana and Noah pays the bank. In Live that hop is NEAR Intents; NEAR Intents has no testnet, so in the Sandbox
@@ -101,6 +101,12 @@ const noahError = (error: unknown) => {
     return new BankError(
       "noah",
       "Noah's sandbox hasn't switched on bank payouts for Tegata yet (they turn it on by request, and it's asked for). Bank details and deposits work now.",
+    )
+  // Noah opens bank details per customer; one it hasn't cleared for euros gets "no allowed channels".
+  if (error instanceof NoahError && /no allowed channels/i.test(error.message))
+    return new BankError(
+      "no_channel",
+      "Noah hasn't opened euro bank details for this account yet.",
     )
   return new BankError(
     "noah",

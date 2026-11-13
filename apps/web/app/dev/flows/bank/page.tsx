@@ -1,6 +1,6 @@
 "use client"
 
-// Bank in every state (plan 6.8 AC′): withdraw (converter, recipients, the bank naming the holder, review, on its way,
+// Bank in every state: withdraw (converter, recipients, the bank naming the holder, review, on its way,
 // paid, failed), Live locked, and Receive (the euro account card, a test transfer, deposits), on sample data only.
 // "New recipient" opens the real sheet: Nigeria asks the bank for the name, Ghana and South Africa ask for it.
 import { useCallback, useState } from "react"
