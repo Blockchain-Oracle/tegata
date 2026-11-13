@@ -1,6 +1,6 @@
 "use client"
 
-// Counter (plan 6.8 Z): the amount rolls on the stage as you type on the keypad, Charge, show the QR on the stage
+// Counter: the amount rolls on the stage as you type on the keypad, Charge, show the QR on the stage
 // while the customer pays from their phone, then the stage turns green and the seal presses. Today's sales below,
 // each with the mark of how it was paid, opening its receipt. Phone first. Separate from its data so /dev/flows can
 // show every state.
@@ -198,7 +198,7 @@ export function CounterView({
 }
 
 /**
- * One sale: paid ones show how they were paid and open their receipt (plan 6.8 Z); open ones show the business seal
+ * One sale: paid ones show how they were paid and open their receipt; open ones show the business seal
  * and open their pay page, to show the customer again.
  */
 function SaleRow({ sale, business }: { sale: CounterSale; business: string }) {

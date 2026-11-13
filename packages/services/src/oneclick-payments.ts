@@ -1,4 +1,4 @@
-// Live pay-ins from any chain through NEAR Intents 1Click (plan 6.8 AB; context/09-realworld-money/live-1click-notes.md).
+// Live pay-ins from any chain through NEAR Intents 1Click.
 // The payer picks a coin and chain and gives an address there for refunds; Tegata asks 1Click for an EXACT_OUTPUT quote
 // (the business receives exactly the amount, in USDC on NEAR), checks 1Click signed it, and shows the deposit address.
 // The worker polls 1Click; "paid" is still decided on NEAR: the delivery transaction must carry a USDC transfer to the

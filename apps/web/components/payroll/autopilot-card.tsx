@@ -1,6 +1,6 @@
 "use client"
 
-// Autopilot on the Payroll page (plan 6.8 T): off (a sora card that says what it does), being set up (steps on NEAR),
+// Autopilot on the Payroll page: off (a sora card that says what it does), being set up (steps on NEAR),
 // on (a stage tile with the contract's own numbers), paused, underfunded, and money still set aside after it's off.
 // The setup sheet lists who it pays, the paydays at 09:00 local, and how much to set aside. Separate from its logic so
 // /dev/flows can show every state.

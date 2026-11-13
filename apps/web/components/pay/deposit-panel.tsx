@@ -1,6 +1,6 @@
 "use client"
 
-// A Live payment from another chain, in flight (plan 6.8 AB): exactly what to send (with the coin's own mark), where
+// A Live payment from another chain, in flight: exactly what to send (with the coin's own mark), where
 // (grouped in fours, copied whole), a QR in the chain's own payment link (or the plain address where no standard
 // exists), the payer's window, and the steps 1Click reports, each with its chain's mark. "Paid" still comes from
 // NEAR: the page moves on when the server has read the USDC delivery.

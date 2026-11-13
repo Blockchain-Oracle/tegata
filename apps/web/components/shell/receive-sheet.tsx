@@ -1,7 +1,7 @@
 "use client"
 
 // "Get paid" (the receive sheet): the business's NEAR pay address with a QR, copy and share. Payers on other chains
-// get pay links (S01); this sheet is the address itself, which works today for anyone holding USDC on NEAR.
+// get pay links; this sheet is the address itself, which works today for anyone holding USDC on NEAR.
 import { Check, Copy, Share2 } from "lucide-react"
 import { QRCodeSVG } from "qrcode.react"
 import { useState } from "react"

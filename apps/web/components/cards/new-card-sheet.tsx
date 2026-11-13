@@ -1,6 +1,6 @@
 "use client"
 
-// Create a card (cards-ux-brief §4.3, Mercury's create drawer): who it's for, its name, a monthly limit (or none) and
+// Create a card: who it's for, its name, a monthly limit (or none) and
 // what to start it with, with the face updating live at the top. One hold approves the first fill; then the steps run
 // (approved, on NEAR, the issuer makes the card) and the seal presses onto the new face.
 import { Check, KeyRound } from "lucide-react"

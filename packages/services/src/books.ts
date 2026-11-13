@@ -1,4 +1,4 @@
-// Books (plan 6.8 U–X): one list of every movement that touched a business's dollars in a month, which feeds Activity,
+// Books: one list of every movement that touched a business's dollars in a month, which feeds Activity,
 // the CSV and the statement; the refund of a received payment; and reconciliation of the books against NEAR.
 import { NETWORKS, type NetworkId } from "@tegata/config"
 import { atLocal } from "@tegata/core/invoices"

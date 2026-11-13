@@ -1,4 +1,4 @@
-// Bank payouts and bank details through Noah (plan 6.8 AC; context/09-realworld-money/bank-alternatives.md).
+// Bank payouts and bank details through Noah.
 //
 // Withdraw to a bank: the business approves one gas-free USDC transfer on NEAR; the money then reaches Noah as USDC
 // on Solana and Noah pays the bank. In Live that hop is NEAR Intents; NEAR Intents has no testnet, so in the Sandbox

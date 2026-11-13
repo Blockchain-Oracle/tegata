@@ -1,4 +1,4 @@
-// Cards a business has linked (plan 6.8 AD): a Gnosis Pay card account on the Gnosis chain, topped up from NEAR
+// Cards a business has linked: a Gnosis Pay card account on the Gnosis chain, topped up from NEAR
 // through NEAR Intents. Balances are read live from the chain, never stored.
 import { sql } from "drizzle-orm"
 import { index, jsonb, pgEnum, pgTable, text, uniqueIndex, uuid } from "drizzle-orm/pg-core"
@@ -40,7 +40,7 @@ export const issuedCardStatus = pgEnum("issued_card_status", [
 ])
 
 /**
- * A card Tegata issued (plan 6.8 AD, job 1): a virtual Visa for the owner or a person, with its own balance that the
+ * A card Tegata issued: a virtual Visa for the owner or a person, with its own balance that the
  * business fills from its USDC on NEAR. The number never touches Tegata: only the last four, from the issuer.
  */
 export const issuedCards = pgTable(

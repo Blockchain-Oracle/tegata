@@ -1,4 +1,4 @@
-// Sandbox or Live for this request (plan 6.8 AB). The mode capsule sets the `tegata-mode` cookie; Live is honoured only
+// Sandbox or Live for this request. The mode capsule sets the `tegata-mode` cookie; Live is honoured only
 // when the server has it switched on, so until then every request is the Sandbox (NEAR testnet).
 import type { NetworkId } from "@tegata/config"
 import { liveEnabled } from "@tegata/env"

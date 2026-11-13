@@ -1,6 +1,6 @@
 "use client"
 
-// Home and Send in every state (plan 6.9), on sample data that lives only under /dev.
+// Home and Send in every state, on sample data that lives only under /dev.
 import { useState } from "react"
 
 import { HomeView } from "@/components/home/home-view"

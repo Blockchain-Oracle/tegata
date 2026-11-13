@@ -1,4 +1,4 @@
-// Pay people (plan 6.8 O–S): the team, where each person's pay lands, the schedule, and runs that pay everyone ready
+// Pay people: the team, where each person's pay lands, the schedule, and runs that pay everyone ready
 // in all-or-nothing batches. A run is drafted from a snapshot, signed by the owner as one delegate action per 50
 // people, relayed by the worker, and settled only from the USDC contract's own transfer events.
 import { NETWORKS, type NetworkId } from "@tegata/config"

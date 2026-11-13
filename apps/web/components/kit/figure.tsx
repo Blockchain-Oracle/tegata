@@ -1,6 +1,6 @@
 "use client"
 
-// Rolling money (21st barvian/number-flow 1444, ported from Senryo's Odometer): each digit rolls forward on a rise and
+// Rolling money (21st barvian/number-flow 1444, after our earlier Senryo odometer): each digit rolls forward on a rise and
 // back on a fall, 260 ms on cubic-bezier(0.22, 1, 0.36, 1), in the condensed display cut. Display only: money stays in
 // bigint base units upstream and becomes a number only here.
 import NumberFlow, { type Format } from "@number-flow/react"

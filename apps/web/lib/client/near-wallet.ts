@@ -2,8 +2,8 @@
 
 /**
  * Paying from a NEAR wallet through NEAR Connect (`@hot-labs/near-connect`): HOT, Meteor, Intear, MyNearWallet… and
- * "Ethereum Wallets", where MetaMask signs for a `0x…` NEAR account. Ported from Mamori's `lib/wallets/near-tx.ts`
- * (the author's earlier project). Every call is a single FunctionCall, which every wallet supports.
+ * "Ethereum Wallets", where MetaMask signs for a `0x…` NEAR account. From our earlier Mamori
+ * app. Every call is a single FunctionCall, which every wallet supports.
  */
 import type { NearConnector } from "@hot-labs/near-connect"
 

@@ -1,6 +1,6 @@
 "use client"
 
-// Cards home (plan 6.8 AD; cards-ux-brief §4.1): the business's cards fanned on the stage with "On cards" as the one
+// Cards home: the business's cards fanned on the stage with "On cards" as the one
 // figure, then the cards grouped "Yours" and "Your team", the latest purchases, and a quiet way to top up a crypto card
 // the business already has. Picking a card opens its panel. Separate from its logic so /dev/flows can show every state.
 import { ChevronRight, CreditCard, Plus, Snowflake } from "lucide-react"

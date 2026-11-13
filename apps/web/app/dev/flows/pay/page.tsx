@@ -1,6 +1,6 @@
 "use client"
 
-// The pay page and the receipt in every state (plan 6.9), on sample data that lives only under /dev. The quote in
+// The pay page and the receipt in every state, on sample data that lives only under /dev. The quote in
 // "Another chain" is a fixed sample here; the real page asks NEAR Intents live.
 import { useEffect, useState } from "react"
 

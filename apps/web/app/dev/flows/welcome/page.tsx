@@ -1,6 +1,6 @@
 "use client"
 
-// Welcome in every state, without opening a real account (plan 6.9). "Open my account" plays the real step timings:
+// Welcome in every state, without opening a real account. "Open my account" plays the real step timings:
 // created on NEAR after ~2.5 s, registered for USDC after ~4.5 s, then the seal. "taken" is an unavailable name.
 import { useEffect, useState } from "react"
 
@@ -9,7 +9,7 @@ import type { WelcomeStage } from "@/components/onboarding/bill-stage"
 import { setupSteps, toHandle } from "@/components/onboarding/setup"
 import { WelcomeView } from "@/components/onboarding/welcome-view"
 
-/** `?wallet=1`: the person signed in with a NEAR wallet, so step 2 shows their own account (plan 6.8 AA). */
+/** `?wallet=1`: the person signed in with a NEAR wallet, so step 2 shows their own account. */
 const SAMPLE_WALLET = "studio-kaze.testnet"
 
 export default function WelcomeFlow() {

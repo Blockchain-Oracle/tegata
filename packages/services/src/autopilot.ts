@@ -1,4 +1,4 @@
-// The autopilot (plan 6.8 T, section 2): a business's payroll schedule paid by Tegata's contract on NEAR with nobody
+// The autopilot (section 2): a business's payroll schedule paid by Tegata's contract on NEAR with nobody
 // online. Turning it on is two gas-free actions signed together (set money aside, create the plan); the operator only
 // registers the business (paying its storage). The keeper calls `run` when a payday's time has passed, and each run is
 // recorded from the contract's own events as an ordinary payroll run with payslips.

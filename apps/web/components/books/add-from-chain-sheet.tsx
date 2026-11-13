@@ -1,6 +1,6 @@
 "use client"
 
-// Add money from another chain (Live, plan 6.8 AB): how much, then the pay page's "another chain" option for the
+// Add money from another chain (Live): how much, then the pay page's "another chain" option for the
 // business's own account: pick the coin and chain you hold, send it to the deposit address, and NEAR Intents delivers
 // USDC to your balance on NEAR. The form is also the "From another chain" step of the Add money chooser.
 import { ArrowRight } from "lucide-react"

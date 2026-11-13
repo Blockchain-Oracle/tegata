@@ -1,8 +1,8 @@
 "use client"
 
-// The app shell (plan 6.7; Senryo's floating rail and Kawase's dock, 21st unlumen/sidebar-001 21517 and soralabs/
+// The app shell (Senryo's floating rail and Kawase's dock, 21st unlumen/sidebar-001 21517 and soralabs/
 // dock-nav 19177): a floating rail on desktop with a springing active pill, a bottom dock on a phone, the mode
-// capsule, ⌘K and the account. Places sit in groups by job with the rarely used ones at the foot (plan 6.7, re-spec
+// capsule, ⌘K and the account. Places sit in groups by job with the rarely used ones at the foot (re-spec
 // 2026-11-13); on a phone the dock's Menu opens every place, so each has a visible way in.
 import {
   ArrowDownLeft,
@@ -58,7 +58,7 @@ interface Place {
 }
 
 const HOME: Place = { href: "/app", label: "Home", icon: <Home /> }
-/** The rail's groups by job (plan 6.7, re-spec 2026-11-13). */
+/** The rail's groups by job (re-spec 2026-11-13). */
 const GROUPS: { id: string; label: string; places: Place[] }[] = [
   {
     id: "get-paid",

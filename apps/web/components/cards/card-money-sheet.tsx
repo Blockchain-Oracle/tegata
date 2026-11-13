@@ -1,6 +1,6 @@
 "use client"
 
-// Add money and Move back (cards-ux-brief §4.4): one mirrored sheet. Adding is one gas-free transfer from the balance,
+// Add money and Move back: one mirrored sheet. Adding is one gas-free transfer from the balance,
 // held to approve; moving back needs no signature (Tegata's card reserve returns it), so it's a plain button.
 import { ArrowDownLeft, ArrowUpRight } from "lucide-react"
 import { useEffect, useState } from "react"

@@ -1,6 +1,6 @@
 "use client"
 
-// Payroll in every state (plan 6.9): the payroll page (scheduled, setting the schedule, no team yet, loading,
+// Payroll in every state: the payroll page (scheduled, setting the schedule, no team yet, loading,
 // error) and a run (review, paying, paid with its seal, failed with nothing moved), on sample data only.
 import { useState } from "react"
 

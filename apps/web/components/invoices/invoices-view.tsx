@@ -1,6 +1,6 @@
 "use client"
 
-// Invoices (plan 6.8 J; Kitchen.co and Square lists): what customers owe on the stage (one hero figure, two facts),
+// Invoices: what customers owe on the stage (one hero figure, two facts),
 // status tabs with counts, a search, and one row per invoice. Empty: a matcha tile that names the next action.
 import { ChevronRight, FileText, Plus, Search } from "lucide-react"
 import { motion, useReducedMotion } from "motion/react"

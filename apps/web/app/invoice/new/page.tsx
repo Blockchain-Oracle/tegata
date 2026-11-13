@@ -1,6 +1,6 @@
 "use client"
 
-// Guest mode (plan 6.8 K): build an invoice before signing in. The draft stays on this device; "Review and send"
+// Guest mode: build an invoice before signing in. The draft stays on this device; "Review and send"
 // asks the person to sign in, then the same invoice opens in the app with its customer added, ready to send.
 import { addDays, localToday } from "@tegata/core/invoices"
 import { ArrowRight } from "lucide-react"

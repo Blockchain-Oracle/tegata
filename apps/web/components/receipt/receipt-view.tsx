@@ -1,6 +1,6 @@
 "use client"
 
-// A receipt (plan 6.8 E, rule R1): a paper slip on the stage for every money movement, a customer payment (numbered,
+// A receipt: a paper slip on the stage for every money movement, a customer payment (numbered,
 // stamped PAID with the business seal), a send (stamped SENT) or a referral reward (Tegata's own seal), with the
 // amount, who paid whom, how (with the real mark of the coin and chain), when, and the NEAR transaction that proves
 // it. Share it, save it as a PDF, then NEAR. The slip itself is `ReceiptSlip`, shared with the pay page.
@@ -253,7 +253,7 @@ export function ReceiptView({ receipt, token }: { receipt: Receipt; token: strin
   )
 }
 
-/** How the money moved, with its real mark: the coin and chain it came from for NEAR Intents (audit S3). */
+/** How the money moved, with its real mark: the coin and chain it came from for NEAR Intents. */
 function PaidWith({ receipt }: { receipt: Receipt }) {
   if (receipt.method === "oneclick") {
     const route = routeOfAsset(receipt.assetIn)

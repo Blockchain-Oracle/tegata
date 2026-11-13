@@ -1,8 +1,8 @@
 "use client"
 
-// 21st ddoemonn/task-steps (23569), ported from Senryo's web kit: a trace of named steps where the one in flight
+// 21st ddoemonn/task-steps (23569), from our earlier Senryo kit: a trace of named steps where the one in flight
 // shimmers, a finished one pops a tick, and a failed one shows a cross. Tegata's version adds a real mark per row
-// (NEAR, USDC) and plays the `step` cue as each step completes (plan 6.8 B).
+// (NEAR, USDC) and plays the `step` cue as each step completes.
 import { AnimatePresence, motion, useReducedMotion } from "motion/react"
 import { useEffect, useRef } from "react"
 

@@ -1,6 +1,6 @@
 "use client"
 
-// Developers (plan 6.8 Y): the quickstart, API keys (the full key shown once), webhook endpoints with their signing
+// Developers: the quickstart, API keys (the full key shown once), webhook endpoints with their signing
 // secret, a test event and Tegata's own test inbox, the delivery log with each payload, and the pay button snippet.
 // Separate from its data so /dev/flows can show every state.
 import { Check, Copy, Inbox, KeyRound, Plus, RotateCcw, Send, Trash2, Webhook } from "lucide-react"
@@ -17,7 +17,7 @@ import { fire } from "@/lib/feedback"
 import { LINKS } from "@/lib/links"
 
 const COPIED_MS = 1500
-/** What a webhook endpoint receives (plan 6.8 Y). */
+/** What a webhook endpoint receives. */
 const EVENTS = [
   "checkout.session.completed",
   "payment.succeeded",

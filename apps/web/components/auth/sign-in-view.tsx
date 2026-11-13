@@ -1,6 +1,6 @@
 "use client"
 
-// The sign-in screen's look (plan 6.8 A), separate from its logic so /dev/flows can show every state.
+// The sign-in screen's look, separate from its logic so /dev/flows can show every state.
 import { ArrowLeft, ArrowRight } from "lucide-react"
 import { AnimatePresence, motion, useReducedMotion } from "motion/react"
 
@@ -29,7 +29,7 @@ export interface SignInViewProps {
   onRequestCode: (event?: React.FormEvent) => void
   onSubmitCode: (value: string) => void
   onBack: () => void
-  /** Sign in with a NEAR wallet instead (plan 6.8 AA). */
+  /** Sign in with a NEAR wallet instead. */
   onWallet?: () => void
   walletState?: "idle" | "waiting" | "done"
   walletProblem?: string | null

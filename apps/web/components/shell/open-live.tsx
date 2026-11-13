@@ -1,6 +1,6 @@
 "use client"
 
-// The first time in Live (plan 6.8 AB): open the business's mainnet account. Same steps as Welcome (create on NEAR,
+// The first time in Live: open the business's mainnet account. Same steps as Welcome (create on NEAR,
 // register for USDC), real dollars from here, Tegata pays the network fee. A way back to the Sandbox is always there.
 import { ArrowLeft, Radio } from "lucide-react"
 import { useState } from "react"

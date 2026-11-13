@@ -1,6 +1,6 @@
 "use client"
 
-// The sign-in story (plan 6.8 A; Kawase's StoryPager behaviour on Privy's product stage): four scenes, each built
+// The sign-in story: four scenes, each built
 // from real Tegata objects and real chain marks floating on the lit stage. Auto-advances every few seconds, pauses on
 // hover, a tap on the left third goes back. Every amount is labelled "Example".
 import { Check, ChevronLeft, ChevronRight, ExternalLink } from "lucide-react"

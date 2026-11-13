@@ -1,4 +1,4 @@
-// A person's own page (plan 6.8 P): who added them to payroll, their pay, and where it lands. Public by its token;
+// A person's own page: who added them to payroll, their pay, and where it lands. Public by its token;
 // choosing a destination needs a sign-in with the invited email. Not indexed.
 import type { Metadata } from "next"
 import { notFound } from "next/navigation"

@@ -1,6 +1,6 @@
 "use client"
 
-// People in every state (plan 6.9): the team list (a mix of ready, waiting, getting ready and a change on its way;
+// People in every state: the team list (a mix of ready, waiting, getting ready and a change on its way;
 // none yet; loading; error), the add sheet, the CSV import, a person's sheet, the person's own page (choosing,
 // set, a change waiting) and their payslip, on sample data that lives only under /dev.
 import { useState } from "react"

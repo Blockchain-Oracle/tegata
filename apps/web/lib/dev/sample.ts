@@ -1,4 +1,4 @@
-// Sample names and figures for /dev only (plan 6.9). Nothing outside app/dev imports this file.
+// Sample names and figures for /dev only. Nothing outside app/dev imports this file.
 import type {
   AutopilotPreview,
   AutopilotView,
@@ -1310,7 +1310,7 @@ export const SAMPLE_BANK = {
   ],
 }
 
-// --- cards (plan 6.8 AD): sample spend cards for /dev/flows/cards only ---------------------------------------------
+// --- cards: sample spend cards for /dev/flows/cards only ---------------------------------------------
 const CARD_BASE = {
   frozenBy: null,
   error: null,

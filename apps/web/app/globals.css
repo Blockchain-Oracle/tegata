@@ -5,7 +5,7 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
- * Tegata tokens (plan section 6, DESIGN.md). Chrome stays quiet; colour lives in the lit vermilion stage, the story
+ * Tegata tokens (DESIGN.md). Chrome stays quiet; colour lives in the lit vermilion stage, the story
  * fields, the seal and real marks. Depth is a lighter fill, never a border or a shadow on content.
  * shadcn's `accent` is the hover plate; the brand colour is `shu`.
  */
@@ -118,7 +118,7 @@
   --shadow-receipt: 0 8px 24px #0000001f;
   --shadow-object: 0 18px 40px -12px #5a1a0040, 0 2px 6px #5a1a001f;
 
-  --ease-senryo: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --ease-plate: cubic-bezier(0.2, 0.8, 0.2, 1);
   --ease-sheet: cubic-bezier(0.32, 0.72, 0, 1);
   --ease-roll: cubic-bezier(0.22, 1, 0.36, 1);
 
@@ -323,8 +323,8 @@
 /* A control that is one big press target: lifts on hover, sinks on press. */
 @utility press-lift {
   transition:
-    transform 160ms var(--ease-senryo),
-    background-color 120ms var(--ease-senryo);
+    transform 160ms var(--ease-plate),
+    background-color 120ms var(--ease-plate);
   @media (hover: hover) {
     &:hover {
       transform: translateY(-2px);
@@ -339,7 +339,7 @@
 
 /* Plate press: 0.97 in 100 ms, back in 160 ms. */
 @utility press {
-  transition: transform 160ms var(--ease-senryo);
+  transition: transform 160ms var(--ease-plate);
   &:active {
     transform: scale(0.97);
     transition-duration: 100ms;

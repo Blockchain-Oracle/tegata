@@ -1,6 +1,6 @@
 "use client"
 
-// Books in every state (plan 6.9): Activity (a month, an empty month, loading, error), the refund sheet, and Balance
+// Books in every state: Activity (a month, an empty month, loading, error), the refund sheet, and Balance
 // with reconciliation (outside transfers, all matched, NearBlocks down), on sample data only.
 import { useState } from "react"
 

@@ -158,7 +158,7 @@ const HEADLINE = ["Get paid.", "Pay your team.", "In exact dollars."]
 /** Lines in ink; the rest in the muted tone (the two-tone hero). */
 const INK_LINES = 2
 const SUB =
-  "Invoices, pay links and payroll for small businesses, settled in USDC on NEAR. Sign in with email; Tegata pays every network fee and seals every receipt."
+  "Invoices, pay links and payroll for small businesses, paid from any chain and settled in USDC on NEAR. Sign in with email; Tegata pays every network fee and seals every receipt."
 
 function banner(theme) {
   const t = THEMES[theme]
@@ -178,7 +178,7 @@ function banner(theme) {
   const chips = [
     ["usdc", "USDC on NEAR"],
     ["intents", "NEAR Intents"],
-    ["near", "Gas paid by Tegata"],
+    ["near", "Fees paid by Tegata"],
   ]
   let cx = left
   const chipRow = chips

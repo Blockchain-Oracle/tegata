@@ -1,6 +1,6 @@
 "use client"
 
-// The invoice the customer opens (plan 6.8 M), phone first: the document on the stage, and a bar that stays at the
+// The invoice the customer opens, phone first: the document on the stage, and a bar that stays at the
 // bottom with what is left to pay and the Pay button (it opens the pay page for this invoice). Paid: the PAID seal
 // and the receipts. Void: a band, no pay bar. The first open by anyone but the owner records "Viewed".
 import { ArrowRight, Download, ReceiptText } from "lucide-react"

@@ -1,6 +1,6 @@
 "use client"
 
-// Every email Tegata sends, rendered with the real layout and words (plan 6.9: /dev shows every part). Sample data
+// Every email Tegata sends, rendered with the real layout and words (/dev shows every part). Sample data
 // lives in lib/dev/sample.ts.
 import type { EmailEvent } from "@tegata/documents"
 import { useEffect, useState } from "react"

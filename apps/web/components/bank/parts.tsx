@@ -1,6 +1,6 @@
 "use client"
 
-// Bank parts (plan 6.8 AC′): a round flag for a country or currency, a monogram disc for a bank (no logo set covers
+// Bank parts: a round flag for a country or currency, a monogram disc for a bank (no logo set covers
 // Nigeria's 571 banks), and a line of bank details you tap to copy.
 import { Check, Copy } from "lucide-react"
 import { useState } from "react"

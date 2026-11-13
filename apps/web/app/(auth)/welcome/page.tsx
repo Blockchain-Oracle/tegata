@@ -1,6 +1,6 @@
 "use client"
 
-// Welcome (plan 6.8 B): name the business, pick the pay address, watch the account open on NEAR, see the seal land.
+// Welcome: name the business, pick the pay address, watch the account open on NEAR, see the seal land.
 // The steps on the stage follow the real account-setup job: created on NEAR (createdTx), registered for USDC (readyAt).
 import { useMutation, useQuery } from "@tanstack/react-query"
 import { NETWORKS } from "@tegata/config"

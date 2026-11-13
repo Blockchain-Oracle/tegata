@@ -1,6 +1,6 @@
 /** @jsxRuntime automatic */
 /** @jsxImportSource react */
-// One layout for every Tegata email (context/09-realworld-money/email-audit.md §4), so no email can drift. Two shapes:
+// One layout for every Tegata email, so no email can drift. Two shapes:
 // the slip, for money that moved (the receipt page on paper: header, hero figure, the seal pressed, a perforation,
 // receipt rows, the NEAR transaction), and the card, for everything else (a vermilion rule, a headline, a few lines).
 // Tables and inline styles only, light only, a black main button (DESIGN.md: the one main action is black; vermilion is

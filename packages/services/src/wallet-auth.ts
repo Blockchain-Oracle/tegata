@@ -1,4 +1,4 @@
-// Sign in with a NEAR wallet (plan 6.8 AA). The server hands out a one-time NEP-413 nonce; the wallet signs "Sign in
+// Sign in with a NEAR wallet. The server hands out a one-time NEP-413 nonce; the wallet signs "Sign in
 // to Tegata" with it; the server checks the signature and that the key has full access to the account, then the
 // person is that account. Their pay address is the wallet's own account: Tegata creates nothing, only registers it on
 // USDC if it can't hold dollars yet.

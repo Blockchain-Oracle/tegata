@@ -1,4 +1,4 @@
-// Every email Tegata sends, as data → content (context/09-realworld-money/email-audit.md §3). Services queue an
+// Every email Tegata sends, as data → content. Services queue an
 // `EmailEvent` in the same transaction as the event it tells about; the worker composes it here and renders it with
 // the one layout. The subject is the Activity row's words; the facts are the receipt page's rows.
 import type { EmailContent, EmailRow } from "./layout.tsx"
@@ -54,7 +54,7 @@ const EMAIL_MARKS = new Set([
 const markOr = (id: string) => (EMAIL_MARKS.has(id) ? id : "intents")
 
 /**
- * The mark for a "Paid with" row (audit S3): the seal for a Tegata balance, NEAR for a NEAR wallet, the coin actually
+ * The mark for a "Paid with" row: the seal for a Tegata balance, NEAR for a NEAR wallet, the coin actually
  * sent for a payment from another chain ("USDT on Tron → USDC on NEAR"), NEAR Intents when the coin isn't known.
  */
 function paidWithMark(paidWith: string): string | undefined {

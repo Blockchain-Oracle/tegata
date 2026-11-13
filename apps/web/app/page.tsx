@@ -1,4 +1,4 @@
-// The landing page (plan 6.8 F; Privy's split product-stage opening on our lit stage): the promise beside a live
+// The landing page (Privy's split product-stage opening on our lit stage): the promise beside a live
 // NEAR Intents calculator, how it works, what NEAR does, who it's for, and a short close.
 import { ArrowRight, Check, Link2, Stamp, UsersRound, Wallet } from "lucide-react"
 import type { Metadata } from "next"

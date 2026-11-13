@@ -1,6 +1,6 @@
 "use client"
 
-// A payroll run (plan 6.8 R): review every row (include switch, skipped rows with their reason, the total against the
+// A payroll run: review every row (include switch, skipped rows with their reason, the total against the
 // balance), hold to pay, watch it land, then each row's payslip and the NEAR transaction. A batch is all-or-nothing:
 // if it fails, nothing in it moved, and Retry drafts it again.
 import { ArrowLeft, ExternalLink, FileText, KeyRound, Radio } from "lucide-react"

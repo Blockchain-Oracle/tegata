@@ -1,7 +1,7 @@
 "use client"
 
 // The pay page's logic. Every rail ends the same way: the server reads the USDC transfer from NEAR and only then
-// calls it paid (plan section 2, "Paying in"). Nothing the browser says is believed.
+// calls it paid. Nothing the browser says is believed.
 //  · Tegata balance: the server drafts the transfer with the attempt's memo; this page checks the draft is exactly
 //    this link's receiver, amount and memo, the Privy key signs it, and our relayer sends it gas-free.
 //  · NEAR wallet: the wallet sends one `ft_transfer` with the memo; this page hands the hash to the server.

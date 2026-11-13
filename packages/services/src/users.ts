@@ -139,7 +139,7 @@ export async function onboard(
 }
 
 /**
- * Open the business's account on another network (plan 6.8 AB: the first time someone switches to Live). The same
+ * Open the business's account on another network (the first time someone switches to Live). The same
  * handle on that network (`name.tegata.near`), or, for a NEAR-wallet user, their own account if it lives there. Returns
  * the row; the worker's account-setup job creates and registers it.
  */

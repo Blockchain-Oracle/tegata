@@ -1,4 +1,4 @@
-// Money out to another chain through NEAR Intents 1Click (plan 6.8 AB; context/09-realworld-money/live-1click-notes.md §2).
+// Money out to another chain through NEAR Intents 1Click.
 // The business sends exactly `amount` of USDC (EXACT_INPUT) to a fresh 1Click deposit address on NEAR. Tegata's
 // operator registers that address on USDC in its own transaction (a deposit above 1 yocto never rides inside a user's
 // relayed action), the business's gas-free action sends the USDC there, and the worker follows 1Click to delivery.

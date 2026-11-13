@@ -1,6 +1,6 @@
 "use client"
 
-// Import people from a CSV (plan 6.8 O): pick a file or paste it, see every row before anything is saved, with each
+// Import people from a CSV: pick a file or paste it, see every row before anything is saved, with each
 // bad row and what to fix. Only the good rows are imported.
 import { parsePeopleCsv } from "@tegata/core/payroll"
 import { FileUp } from "lucide-react"

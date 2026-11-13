@@ -19,7 +19,7 @@ import { payouts } from "./payouts.ts"
 export const personStatus = pgEnum("person_status", ["active", "removed"])
 
 /**
- * Someone a business pays (plan 6.8 O). Kept per network, like Stripe's test mode keeps its own customers: a Sandbox
+ * Someone a business pays. Kept per network, like Stripe's test mode keeps its own customers: a Sandbox
  * team never mixes with a Live one. The token opens the person's own page, where they choose where pay lands.
  */
 export const people = pgTable(
@@ -115,7 +115,7 @@ export const payrolls = pgTable(
 )
 
 /**
- * The autopilot (plan 6.8 T): one plan per business and network on the `pay.tegata.*` contract. The row snapshot and
+ * The autopilot: one plan per business and network on the `pay.tegata.*` contract. The row snapshot and
  * paydays are kept here; the money and the run state live in the contract and are read from it.
  * preparing: the operator is registering the business · ready: drafts can be signed · approved: signed, relaying ·
  * on: the plan exists on NEAR · off: cancelled · failed: the relays didn't land.

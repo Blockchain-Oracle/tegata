@@ -1,6 +1,6 @@
 "use client"
 
-// The stage (plan 6.2): a lit vermilion field with soft light and fine grain, where real product objects float.
+// The stage: a lit vermilion field with soft light and fine grain, where real product objects float.
 // Privy's "luminous interface stage", in seal ink. Used on sign-in, onboarding, the landing hero, the Home balance
 // tile and the pay page header. It stays lit in dark mode.
 import { motion, useReducedMotion } from "motion/react"

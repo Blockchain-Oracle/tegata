@@ -1,6 +1,6 @@
 "use client"
 
-// One invoice (plan 6.8 L; Stripe's invoice page): the number in display type, the document on the stage, stamped
+// One invoice (Stripe's invoice page): the number in display type, the document on the stage, stamped
 // when paid; beside it, on its own stage, what is received and left with the actions as an icon row; then the
 // payments (each with the real mark of how it was paid, opening its receipt) and the timeline of everything that
 // happened. Separate from its logic so /dev/flows can show every state.

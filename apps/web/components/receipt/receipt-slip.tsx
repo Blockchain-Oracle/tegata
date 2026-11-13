@@ -1,6 +1,6 @@
 "use client"
 
-// One slip for every paid moment (audit S4): the receipt page and the pay page's paid step draw the same paper. A
+// One slip for every paid moment: the receipt page and the pay page's paid step draw the same paper. A
 // header line by the Tegata seal, the amount in display figures, who it was for, a perforation, the facts, NEAR's
 // footer, and the seal pressed in the corner. Paper stays light in both themes, so it uses the paper tokens.
 import { TegataSeal } from "@/components/brand/seal"

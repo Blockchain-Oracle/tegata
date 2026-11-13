@@ -14,16 +14,7 @@ resolves to a token named here (values live in `apps/web/app/globals.css` and `a
 - Light is the default. Dark is an adaptation, not an inversion.
 - Depth is one step lighter fill. Never a border, never a shadow on content.
 
-Sources (what each one owns):
-
-| Source                                                  | Owns                                                                                                               |
-| ------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
-| Senryo and Kawase (the owner's earlier apps)            | Plate grammar, rows not boxes, marks not dots, press feel, state rules, the money lifecycle, the sound palette     |
-| Bento "claim your link", Cosmos sign-up (Refero)        | Sign-up as a split screen: a form on one side, a live object that reacts as you type on the other                  |
-| Portrait with Privy (Refero flow 11790)                 | Email code inside our own page; named stages while the account is made                                             |
-| Delphi "claim your handle" (Refero)                     | One question per step, a thin progress line, availability said inside the field                                    |
-| Privy (Refero style fc2dd49a, checked live on privy.io) | The split product-stage opening; colour lives in stages and story panels, not chrome; sign-in rows with real logos |
-| Wise (Refero style da2edc37)                            | Landing page only: the promise above a working calculator                                                          |
+The plate grammar, press feel, state rules and sound palette come from the owner's earlier apps (Senryo and Kawase).
 
 ## Signature: the seal
 
@@ -155,8 +146,8 @@ One call: `fire(event, { cue, identity })` in `apps/web/lib/feedback`.
 
 ## Where each part comes from
 
-Parts are ported from the owner's own web kits (Senryo web, Kawase `ui-web`), which were sourced from
-21st.dev, or installed from 21st.dev directly. Hand-built parts are named as such.
+Parts come from the owner's earlier web kits (Senryo, Kawase), which were sourced from
+21st.dev, or are installed from 21st.dev directly. Hand-built parts are named as such.
 
 | Part                                                   | Source                                                              |
 | ------------------------------------------------------ | ------------------------------------------------------------------- |

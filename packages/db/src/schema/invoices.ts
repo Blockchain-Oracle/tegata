@@ -37,7 +37,7 @@ export const customers = pgTable(
 
 /**
  * Stored status only. "Sent", "Viewed", "Partly paid" and "Overdue" are read from `sentAt`, `viewedAt`, the request's
- * paid total and the due date, so they can never go stale (plan 6.8 J–N).
+ * paid total and the due date, so they can never go stale.
  */
 export const invoiceStatus = pgEnum("invoice_status", ["draft", "open", "paid", "void"])
 export const discountKind = pgEnum("discount_kind", ["percent", "fixed"])

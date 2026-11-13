@@ -1,6 +1,6 @@
 "use client"
 
-// New recipient (plan 6.8 AC′): the bank from a searchable list, the account number, and who holds it. In Nigeria the
+// New recipient: the bank from a searchable list, the account number, and who holds it. In Nigeria the
 // bank itself names the holder as soon as the number is typed (Noah's beneficiary check); Ghana and South Africa ask
 // for the name, and South Africa for their contact details too. Built from Noah's live form, so every field it requires
 // is asked for.

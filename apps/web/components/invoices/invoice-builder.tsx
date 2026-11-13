@@ -1,6 +1,6 @@
 "use client"
 
-// The invoice builder (plan 6.8 K; Acctual flow 8839, Mercury flow 11047): the form on the left, and on the right a
+// The invoice builder: the form on the left, and on the right a
 // live preview on the stage, either the paper invoice or the real pay page the customer will see, at phone size. On
 // a phone the two switch with Edit / Preview. Totals are worked out with the same core maths the server uses, and
 // the server works them out again before anything is sent.

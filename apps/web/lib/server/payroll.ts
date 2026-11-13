@@ -123,7 +123,7 @@ export async function personPageView(token: string): Promise<PersonPage | null> 
   }
 }
 
-/** The payslip as a receipt of kind payslip (plan 6.8 S). */
+/** The payslip as a receipt of kind payslip. */
 export async function payslipView(rowId: string): Promise<ReceiptView | null> {
   const slip = await payslip(db(), rowId)
   if (!slip) return null

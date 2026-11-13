@@ -34,7 +34,7 @@ export const GET = route(async (request) => {
     )
     .orderBy(desc(schema.requests.createdAt))
     .limit(SALES_SHOWN)
-  // A paid sale opens its receipt and shows how it was paid (plan 6.8 Z).
+  // A paid sale opens its receipt and shows how it was paid.
   const paidIds = rows.filter((r) => r.status === "paid").map((r) => r.id)
   const paid = paidIds.length
     ? await db()

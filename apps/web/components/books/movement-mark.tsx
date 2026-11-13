@@ -1,6 +1,6 @@
 "use client"
 
-// One mark per movement (plan 6.8 C and U, audit pattern 1): Home's "Latest" and Activity draw the same movement the
+// One mark per movement: Home's "Latest" and Activity draw the same movement the
 // same way. The mark is the other side or the way the money moved: the payer's rail for money in (the Tegata seal, the
 // NEAR mark, the coin and chain it came from), the NEAR mark for a send, the coin and chain for a payout to another
 // chain, the business's seal for payroll and payslips, the Tegata seal for what Tegata paid, a flag for a bank.

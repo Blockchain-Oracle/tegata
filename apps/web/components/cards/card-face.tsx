@@ -1,6 +1,6 @@
 "use client"
 
-// Tegata's card face (plan 6.8 AD, context/09-realworld-money/cards-ux-brief.md §3). A pocket stage: one flat field
+// Tegata's card face. A pocket stage: one flat field
 // colour with the stage's grain and one soft light, and four things at rest: the business's own seal with the card's
 // nickname, "Virtual", the holder with the last four, and the real Visa mark. The owner's cards are ink; each person
 // keeps one story colour everywhere. Frozen frosts over (no glass, no blur); a card being made shimmers once.

@@ -1,6 +1,6 @@
 "use client"
 
-// Scan a QR code (Abu, 2026-11-13: "the QR code is all the stuff, but we cannot even scan"). The camera reads frames
+// Scan a QR code. The camera reads frames
 // with the browser's own BarcodeDetector where it exists (Chrome, Android) and jsQR everywhere else (iPhone Safari);
 // a photo or screenshot can be chosen instead. What was read is shown with the one thing to do next: open the pay link,
 // send to the NEAR account, or send to the address on its chain.

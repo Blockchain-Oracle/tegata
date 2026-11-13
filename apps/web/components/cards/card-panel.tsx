@@ -1,6 +1,6 @@
 "use client"
 
-// One card (cards-ux-brief §4.2): a mini stage with the face and "On the card", round actions (Add money, Move back,
+// One card: a mini stage with the face and "On the card", round actions (Add money, Move back,
 // Freeze, and in the Sandbox a test purchase), the month's spend against its limit, four facts and its purchases.
 // Frozen collapses the actions to Unfreeze and Add money (money can wait on a frozen card).
 import {

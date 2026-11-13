@@ -1,4 +1,4 @@
-// Spend cards on the server (plan 6.8 AD): Bitnob's client from env, and the views the Cards screens read.
+// Spend cards on the server: Bitnob's client from env, and the views the Cards screens read.
 import { bitnobClient } from "@tegata/core/bitnob"
 import { serverEnv } from "@tegata/env"
 import { CardError, type getIssuedCard, type listIssuedCards } from "@tegata/services"

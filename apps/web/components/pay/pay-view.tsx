@@ -1,6 +1,6 @@
 "use client"
 
-// The pay page (plan 6.8 D, D′ and AD job 2), phone first: the business and the amount on the stage, then the ways to
+// The pay page (D′ and AD job 2), phone first: the business and the amount on the stage, then the ways to
 // pay as large rows with real marks (a bank card through Transak, a Tegata balance, a NEAR wallet, another chain through
 // NEAR Intents), then live steps and a sealed slip once NEAR has settled it. No app chrome: the business's seal at the top, NEAR at the foot.
 // Separate from its logic so /dev/flows can show every state.
@@ -895,7 +895,7 @@ const REFUND_HINT: Record<string, string> = {
   tron: "T…",
 }
 
-/** The paid slip: the receipt's own paper (audit S4) on the stage, stamped PAID with the "received" cue, once. */
+/** The paid slip: the receipt's own paper on the stage, stamped PAID with the "received" cue, once. */
 function PaidSlip(p: PanelProps) {
   const rail = p.usedRail ?? "tegata"
   const assetIn = p.attempt?.oneclick?.assetIn ?? null

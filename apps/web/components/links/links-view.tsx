@@ -1,6 +1,6 @@
 "use client"
 
-// Pay links (plan 6.8 G): what the business has received through links on the stage, then one row per link with
+// Pay links: what the business has received through links on the stage, then one row per link with
 // its amount, times paid and total. Empty: a sora tile that names the next action. Separate from its data so
 // /dev/flows can show every state.
 import { ChevronRight, Link2, Plus } from "lucide-react"

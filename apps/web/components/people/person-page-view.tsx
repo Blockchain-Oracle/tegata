@@ -1,6 +1,6 @@
 "use client"
 
-// The person's page (plan 6.8 P), phone first: the business's seal and "added you to payroll" with their pay on the
+// The person's page, phone first: the business's seal and "added you to payroll" with their pay on the
 // stage, then where their pay should land as rows with real marks. A Tegata account (their own, opened with the
 // invited email), a NEAR account, or (in Live) an address on another chain paid through NEAR Intents; a bank account
 // is coming, so it's shown locked. Once chosen: "You're set", any change waiting out its 24 hours, and their payslips.

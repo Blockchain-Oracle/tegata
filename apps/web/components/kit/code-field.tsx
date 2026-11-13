@@ -2,7 +2,7 @@
 
 // The six-cell email code (21st ddoemonn/otp-input 23543 on `input-otp`): big cells on quiet plates, the active cell
 // ringed in vermilion, paste and autofill through one hidden input. A wrong code shakes the row; an accepted code
-// fills the cells vermilion one by one before the seal presses (plan 6.8 A).
+// fills the cells vermilion one by one before the seal presses.
 import { OTPInput, type SlotProps } from "input-otp"
 import { motion, useReducedMotion } from "motion/react"
 

@@ -1,6 +1,6 @@
 "use client"
 
-// The join link (plan 6.8 H): "Studio Kaze invited you", the reward on a paper card on the stage with the rule of this
+// The join link: "Studio Kaze invited you", the reward on a paper card on the stage with the rule of this
 // network in one line, three facts, and one button. The invite is kept on this device and attached when the account
 // is opened.
 import { ArrowRight, Gift, Mail, Zap } from "lucide-react"

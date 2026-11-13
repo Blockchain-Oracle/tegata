@@ -1,6 +1,6 @@
 "use client"
 
-// "Send to": a NEAR account or another chain, each with its real marks (audit pattern 1). Both are offered in the
+// "Send to": a NEAR account or another chain, each with its real marks. Both are offered in the
 // Sandbox too (R5); another chain then says why it runs in Live.
 import { Mark, MarkStack } from "@/components/marks/mark"
 import { fire } from "@/lib/feedback"

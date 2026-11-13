@@ -1,7 +1,7 @@
 "use client"
 
 import type { NetworkId } from "@tegata/config"
-// Home (plan 6.8 C): the balance on a stage tile with four actions, the pay address as a sealed card, the latest
+// Home: the balance on a stage tile with four actions, the pay address as a sealed card, the latest
 // movements as rows that open their receipts, and colour-field first steps that retire as each is done. Separate
 // from its data so /dev/flows can show every state.
 import {

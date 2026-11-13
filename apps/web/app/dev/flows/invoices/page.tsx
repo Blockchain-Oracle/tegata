@@ -1,6 +1,6 @@
 "use client"
 
-// Invoices in every state (plan 6.9): the list, the builder (live), one invoice (sent, partly paid, paid, void) and
+// Invoices in every state: the list, the builder (live), one invoice (sent, partly paid, paid, void) and
 // the public invoice the customer opens, on sample data that lives only under /dev.
 import { localToday } from "@tegata/core/invoices"
 import { useState } from "react"

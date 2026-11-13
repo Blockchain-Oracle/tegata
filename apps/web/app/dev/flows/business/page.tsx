@@ -1,6 +1,6 @@
 "use client"
 
-// The business profile in every state (plan 6.9), on sample data that lives only under /dev.
+// The business profile in every state, on sample data that lives only under /dev.
 import { useState } from "react"
 
 import { Segmented } from "@/components/kit/segmented"

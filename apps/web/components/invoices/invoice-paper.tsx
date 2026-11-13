@@ -1,6 +1,6 @@
 "use client"
 
-// The invoice as a document (plan 6.8 J–N, after Acctual's and Mercury's previews): the business header (logo or
+// The invoice as a document: the business header (logo or
 // seal), number and dates, From / To, the items, the totals, notes, and where it is paid. One component for the
 // builder's live preview, the invoice page, and the public page, so all three always match. A paid invoice is
 // stamped with the business's PAID seal. Paper stays light in both themes, so its colours are the paper tokens.

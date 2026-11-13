@@ -1,6 +1,6 @@
 "use client"
 
-// 21st ddoemonn/segmented-control (23552), ported from Kawase's ui-web: a thumb that springs between options with the
+// 21st ddoemonn/segmented-control (23552), from our earlier Kawase kit: a thumb that springs between options with the
 // label clipped through it, arrow keys, and reading direction. Reskinned: a quiet plate track, an ink thumb, our type.
 import { animate, motion, useMotionValue, useReducedMotion, useTransform } from "motion/react"
 import { useCallback, useEffect, useRef, useState } from "react"

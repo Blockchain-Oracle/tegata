@@ -1,4 +1,4 @@
-// Who gets which email, for every event (context/09-realworld-money/email-audit.md §3). Each function reads what the
+// Who gets which email, for every event. Each function reads what the
 // email shows from the database, captures it as the event's data, and queues it in the outbox (notify.ts) with a
 // dedupe key, so calling it twice sends once. Links are app paths; the layout makes them absolute.
 import { NETWORKS, type NetworkId, REFERRALS } from "@tegata/config"

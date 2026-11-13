@@ -1,4 +1,4 @@
-// Pay by card (plan 6.8 AD, job 2): a payer's bank card buys USDC on NEAR through Transak, delivered to the business.
+// Pay by card: a payer's bank card buys USDC on NEAR through Transak, delivered to the business.
 // One attempt per checkout, rail "card". Paid only when NEAR shows the USDC reaching the business, like every rail:
 //  · Live (Transak production): Transak's own delivery transaction, read on NEAR for the full amount.
 //  · Sandbox (Transak staging): staging orders to NEAR deliver nothing, so when Transak marks the order complete,

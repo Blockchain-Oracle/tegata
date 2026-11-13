@@ -79,7 +79,7 @@ export const GAS = {
   autopilotRun: 300n * TGAS,
 } as const
 
-/** The autopilot contract (plan section 2, 6.8 T). Numbers match `contracts/autopilot`. */
+/** The autopilot contract (6.8 T). Numbers match `contracts/autopilot`. */
 export const AUTOPILOT = {
   /** NEAR the operator attaches to register a business: its record plus a few plans (a 100-row plan is ~0.038). */
   storageYocto: 100_000_000_000_000_000_000_000n,
@@ -124,7 +124,7 @@ export const RESERVED_HANDLES: readonly string[] = [
 export const TEST_DOLLARS = { units: 5_000_000n, memo: "tegata:test-dollars" } as const
 
 /**
- * Referral rules per network (plan 6.8 H). Live pays $10 to each side once the invited business has received $50
+ * Referral rules per network. Live pays $10 to each side once the invited business has received $50
  * from other payers within 30 days, after a 48-hour hold. Sandbox runs the same checks at a tenth of the amounts
  * with a 10-minute hold, so it can be tried with test dollars.
  */

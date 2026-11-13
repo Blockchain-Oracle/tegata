@@ -1,6 +1,6 @@
 "use client"
 
-// Who the invoice is for (plan 6.8 K, PayPal flow 7395's inline customer): a search over the business's customers
+// Who the invoice is for: a search over the business's customers
 // and "New customer" in a sheet without leaving the builder. The chosen customer shows as a card with Change.
 import { Command } from "cmdk"
 import { Check, ChevronDown, Plus, UserRound } from "lucide-react"

@@ -1,4 +1,4 @@
-// NEAR Intents 1Click (plan R4, context/02-intents-and-chain-abstraction/1click-api.md): coins and chains are read
+// NEAR Intents 1Click: coins and chains are read
 // from /v0/tokens at run time; prices for the landing calculator are dry EXACT_OUTPUT quotes (the business receives
 // exactly the amount; the payer's side carries the route cost). A dry quote never creates a deposit address.
 import { NETWORKS } from "@tegata/config"
@@ -110,7 +110,7 @@ const EVM_CHAIN_ID: Record<string, number> = {
 }
 
 /**
- * A payment link a wallet can open from a QR (context/09-realworld-money/live-1click-notes.md §6): EIP-681 on EVM chains,
+ * A payment link a wallet can open from a QR: EIP-681 on EVM chains,
  * BIP-21 on Bitcoin, Solana Pay for SOL. Null where no reliable standard exists (Tron, and SPL USDC to a fresh Solana
  * address, which Solana Pay can't fund): the page then shows the plain address.
  */

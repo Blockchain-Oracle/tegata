@@ -1,4 +1,4 @@
-// The share card (plan 6.3): the seal and the promise on the lit stage, in Archivo's condensed cut.
+// The share card: the seal and the promise on the lit stage, in Archivo's condensed cut.
 import { ImageResponse } from "next/og"
 
 import { SEAL_FACES } from "@/lib/brand/glyphs"

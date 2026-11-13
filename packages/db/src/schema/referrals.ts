@@ -18,7 +18,7 @@ export const referralSide = pgEnum("referral_side", ["referrer", "referee"])
 export const referralPayoutStatus = pgEnum("referral_payout_status", ["queued", "sent", "failed"])
 
 /**
- * One business invited by another (plan 6.8 H). A business has at most one referrer, and it is locked once the
+ * One business invited by another. A business has at most one referrer, and it is locked once the
  * business receives its first payment. The NEAR accounts of both sides are kept so the anti-abuse checks can tell
  * their money from a real customer's.
  */

@@ -1,6 +1,6 @@
 "use client"
 
-// Business profile (plan 6.8 I): on the stage, the header every receipt and invoice will carry, filling in as you
+// Business profile: on the stage, the header every receipt and invoice will carry, filling in as you
 // type, with the round seal beside it (it follows the name); beside it, one card of fields. Save appears only when
 // something changed. Separate from its logic so /dev/flows can show every state.
 import { Check, Copy, ImagePlus, Trash2 } from "lucide-react"

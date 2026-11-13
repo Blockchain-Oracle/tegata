@@ -15,7 +15,7 @@ import { createdAt, id, updatedAt } from "./columns.ts"
 import { network, workspaces } from "./identity.ts"
 
 /**
- * An API key (plan 6.8 Y). Only a SHA-256 hash of the secret is stored; the person sees it once. `prefix` is the
+ * An API key. Only a SHA-256 hash of the secret is stored; the person sees it once. `prefix` is the
  * first characters, kept so the list can say which key is which.
  */
 export const apiKeys = pgTable(

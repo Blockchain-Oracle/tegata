@@ -1,6 +1,6 @@
 "use client"
 
-// Payroll (plan 6.8 Q): the next payday on the stage with what it pays and to whom, the schedule in the business's
+// Payroll: the next payday on the stage with what it pays and to whom, the schedule in the business's
 // time zone, the team's readiness, and every run so far. Separate from its data so /dev/flows can show every state.
 import { CalendarClock, CalendarDays, ChevronRight, Play, Users } from "lucide-react"
 import Link from "next/link"

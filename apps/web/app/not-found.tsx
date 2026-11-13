@@ -1,4 +1,4 @@
-// The 404 (audit top 10 #10; R6, D-R2). Tegata is named after the old Japanese bill of exchange, so a link that leads
+// The 404 (audit top 10 #10; R6). Tegata is named after the old Japanese bill of exchange, so a link that leads
 // nowhere is a bill that came back: a paper bill on the stage, numbered 404, stamped "Returned" in seal ink, with one
 // way back. Every bad or expired pay, receipt, invoice, person or join link lands here; never Next's bare 404.
 import type { Metadata } from "next"

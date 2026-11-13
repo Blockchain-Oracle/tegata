@@ -1,6 +1,6 @@
 /** @jsxRuntime automatic */
 /** @jsxImportSource react */
-// The monthly statement (plan 6.8 V): the business header and seal, the month, money in, money out and net, every
+// The monthly statement: the business header and seal, the month, money in, money out and net, every
 // movement in order, and the balance on NEAR when it was made. Drawn with @react-pdf/renderer on the server, in the
 // invoice's own fonts (registered in invoice-pdf.tsx).
 import { Document, Image, Page, renderToBuffer, StyleSheet, Text, View } from "@react-pdf/renderer"

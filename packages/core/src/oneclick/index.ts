@@ -1,4 +1,4 @@
-// NEAR Intents 1Click, server side (plan 6.8 AB; context/09-realworld-money/live-1click-notes.md): non-dry quotes for
+// NEAR Intents 1Click, server side: non-dry quotes for
 // Live pay-ins and payouts, the status of a deposit address, and the check that a quote really came from 1Click.
 // No SDK: the SDK pulls in axios; the signature check is a few lines, mirrored from its `quote-signature.ts`.
 import { sha256 } from "@noble/hashes/sha2.js"

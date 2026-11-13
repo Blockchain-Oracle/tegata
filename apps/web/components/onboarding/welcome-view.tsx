@@ -1,6 +1,6 @@
 "use client"
 
-// The welcome flow's look (plan 6.8 B), separate from its logic so /dev/flows can show every state.
+// The welcome flow's look, separate from its logic so /dev/flows can show every state.
 // 1 "What's your business called?" → 2 "Your pay address." → 3 "Opening your account." → open, with the two first
 // steps spec B names: add test dollars (Sandbox) and create a pay link.
 import {

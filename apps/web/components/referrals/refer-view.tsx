@@ -1,6 +1,6 @@
 "use client"
 
-// Refer (plan 6.8 H; Wise's invite screens, Copperx's stablecoin referral panel): your join link and its QR on the
+// Refer: your join link and its QR on the
 // stage, what you've earned, a tracker for each business you invited with its progress to the threshold, who invited
 // you, and the terms in five lines. Separate from its logic so /dev/flows can show every state.
 import {
@@ -61,7 +61,7 @@ function payoutWords(error: string | null): string {
     : "Trying again shortly"
 }
 
-/** The rules in five short lines (plan 6.8 H), each with its own colour so the block isn't grey (D-R2). */
+/** The rules in five short lines, each with its own colour so the block isn't grey. */
 function terms(rules: ReferralRules, sandbox: boolean) {
   const hold = sandbox ? `${rules.holdMinutes} min` : `${Math.round(rules.holdMinutes / 60)} h`
   return [

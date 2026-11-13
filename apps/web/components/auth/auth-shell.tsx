@@ -1,6 +1,6 @@
 "use client"
 
-// The sign-in and onboarding frame (plan 6.8 A/B): a form column on the page plate and a lit stage beside it, 16 px
+// The sign-in and onboarding frame: a form column on the page plate and a lit stage beside it, 16 px
 // off the window. On a phone the stage becomes a band above the form.
 import { Lockup } from "@/components/brand/seal"
 import { Stage } from "@/components/kit/stage"

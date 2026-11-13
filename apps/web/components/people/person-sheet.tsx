@@ -1,6 +1,6 @@
 "use client"
 
-// Adding someone, and everything about one person afterwards (plan 6.8 O): their link to share, where their pay
+// Adding someone, and everything about one person afterwards: their link to share, where their pay
 // lands (or a change waiting out its 24 hours), a NEAR account the owner can set, their details, payslips, remove.
 import { Check, Copy, ExternalLink, Mail, Share2, Trash2 } from "lucide-react"
 import Link from "next/link"

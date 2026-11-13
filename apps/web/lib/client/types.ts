@@ -55,7 +55,7 @@ export interface SendDraft {
   amount: string
 }
 
-/** A payout to another chain through NEAR Intents (plan 6.8 AB), as the screens see it. */
+/** A payout to another chain through NEAR Intents, as the screens see it. */
 export interface PayoutView {
   id: string
   status: "drafted" | "sending" | "processing" | "delivered" | "refunded" | "failed"
@@ -93,7 +93,7 @@ export interface PayoutPreview {
   timeEstimate: number | null
 }
 
-/** Where one attempt to pay a request stands (plan section 2, "Paying in"). */
+/** Where one attempt to pay a request stands. */
 export type PaymentStatus =
   | "awaiting"
   | "detected"
@@ -242,7 +242,7 @@ export interface WalletAttempt {
 }
 
 /** A receipt for any money movement: a customer payment (numbered), a send, or a referral reward. */
-// --- spend cards (plan 6.8 AD) -----------------------------------------------------------------------------------
+// --- spend cards -----------------------------------------------------------------------------------
 
 export type CardToneName = "ink" | "matcha" | "sora" | "sakura" | "kin" | "ai"
 
@@ -495,7 +495,7 @@ export interface ReferralsView {
   referredBy: ReferralRow | null
 }
 
-// --- pay people (plan 6.8 O–S) ---------------------------------------------------------------------------------
+// --- pay people ---------------------------------------------------------------------------------
 
 export type PayCadence = "weekly" | "fortnightly" | "monthly"
 
@@ -627,7 +627,7 @@ export interface PersonPage {
   slips: PaySlipRow[]
 }
 
-// --- autopilot (plan 6.8 T) ----------------------------------------------------------------------------------------
+// --- autopilot ----------------------------------------------------------------------------------------
 
 export interface AutopilotRowView {
   personId: string
@@ -679,7 +679,7 @@ export interface AutopilotPreview {
   timezone: string
 }
 
-// --- books (plan 6.8 U–X) -------------------------------------------------------------------------------------------
+// --- books -------------------------------------------------------------------------------------------
 
 export type MovementKind =
   | "payment_in"
@@ -747,7 +747,7 @@ export interface Reconciliation {
   outside: { txHash: string; at: string; delta: string; other: string; explorerUrl: string }[]
 }
 
-// --- developers (plan 6.8 Y) ----------------------------------------------------------------------------------------
+// --- developers ----------------------------------------------------------------------------------------
 
 export interface DevelopersView {
   appUrl: string

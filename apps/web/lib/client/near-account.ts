@@ -2,7 +2,7 @@
 
 import type { NearConnector } from "@hot-labs/near-connect"
 /**
- * Signing in with a NEAR wallet, and approving gas-free actions with it (plan 6.8 AA). Its own NEAR Connect instance,
+ * Signing in with a NEAR wallet, and approving gas-free actions with it. Its own NEAR Connect instance,
  * kept apart from the one payers use: it offers only wallets that can both sign a message at sign-in and sign delegate
  * actions (HOT, Meteor, Intear, Ledger…), so every wallet offered here can also approve Tegata's actions.
  */

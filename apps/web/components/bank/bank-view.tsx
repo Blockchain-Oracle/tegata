@@ -1,6 +1,6 @@
 "use client"
 
-// Bank (plan 6.8 AC′): withdraw dollars to a bank account in naira, cedi or rand, and euro bank details whose
+// Bank: withdraw dollars to a bank account in naira, cedi or rand, and euro bank details whose
 // deposits arrive as dollars. Noah is the licensed partner that pays the bank; the money leaves NEAR as USDC. Separate
 // from its logic so /dev/flows can show every state.
 import {

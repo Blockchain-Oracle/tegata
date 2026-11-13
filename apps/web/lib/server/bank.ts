@@ -1,4 +1,4 @@
-// Bank payouts and bank details on the server (plan 6.8 AC): Noah's client from env, and the views the screens read.
+// Bank payouts and bank details on the server: Noah's client from env, and the views the screens read.
 import { noahClient } from "@tegata/core/noah"
 import { serverEnv } from "@tegata/env"
 import { BankError, type bankOverview } from "@tegata/services"
