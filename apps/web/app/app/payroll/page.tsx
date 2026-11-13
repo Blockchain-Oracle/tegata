@@ -227,6 +227,7 @@ export default function PayrollPage() {
         autopilot={
           <AutopilotCard
             view={view}
+            live={network === "mainnet"}
             canSetUp={Boolean(
               overview.data?.schedule && people?.some((p) => p.ready.state === "ready"),
             )}

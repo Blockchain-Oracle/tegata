@@ -73,8 +73,11 @@ export function AutopilotCard({
   problem,
   onSetUp,
   onAction,
+  live = false,
 }: {
   view: AutopilotView | undefined
+  /** Live: the autopilot contract isn't on NEAR mainnet yet, so the card says so instead of offering set-up. */
+  live?: boolean
   /** A schedule and at least one ready person. */
   canSetUp: boolean
   busy: boolean
@@ -153,14 +156,20 @@ export function AutopilotCard({
         ) : null}
         {problem ? <p className="text-[15px] font-medium text-down">{problem}</p> : null}
         <div className="flex flex-wrap items-center gap-3">
-          <Button variant="primary" size="md" disabled={!canSetUp || busy} onClick={onSetUp}>
-            Set up autopilot
-          </Button>
+          {live ? (
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-dashed border-black/40 px-3 py-1 text-[13px] font-semibold text-black/80">
+              Live opens when its contract is on NEAR mainnet · runs in the Sandbox now
+            </span>
+          ) : (
+            <Button variant="primary" size="md" disabled={!canSetUp || busy} onClick={onSetUp}>
+              Set up autopilot
+            </Button>
+          )}
           <span className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-black/70">
             <Mark id="near" size={18} /> {view.contract}
           </span>
         </div>
-        {!canSetUp ? (
+        {!canSetUp && !live ? (
           <p className="text-[14px] text-black/70">
             Needs a payday and at least one person who is ready.
           </p>

@@ -22,6 +22,11 @@ const body = z.object({ count: z.number().int(), setAside: z.string().trim() })
 export const POST = route(async (request) => {
   const network = requestNetwork(request)
   const { user, workspace } = await requireOwner(request)
+  // The autopilot contract runs on testnet; `pay.tegata.near` isn't deployed on mainnet yet (plan item 5).
+  if (network === "mainnet")
+    throw badRequest(
+      "Autopilot in Live opens when its contract is on NEAR mainnet. It runs in the Sandbox now.",
+    )
   const input = body.parse(await request.json())
   const setAside = parseDollars(input.setAside)
   if (setAside === null) throw badRequest("Enter an amount like 2400 or 2,400.50", "amount")
