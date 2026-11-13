@@ -335,3 +335,91 @@ export function PaidEmail({ data }: { data: PaidEmailData }) {
     </Frame>
   )
 }
+
+export interface PaymentEmailData {
+  business: string
+  amount: string
+  /** What it was for: the link's title or "Invoice INV-0004". */
+  title: string
+  /** Who paid, as shown on the receipt (a NEAR account or an address). */
+  from: string | null
+  /** The receipt page. */
+  url: string
+  sandbox: boolean
+}
+
+function Amount({ label, amount, title }: { label: string; amount: string; title: string }) {
+  return (
+    <Section
+      style={{
+        backgroundColor: "#F5F5F5",
+        borderRadius: 14,
+        padding: "18px 20px",
+        margin: "20px 0",
+      }}
+    >
+      <Text style={{ fontSize: 13, color: GREY, margin: 0 }}>{label}</Text>
+      <Text
+        style={{
+          fontSize: 34,
+          fontWeight: 800,
+          color: "#000",
+          margin: "2px 0 6px",
+          lineHeight: "1.1",
+        }}
+      >
+        {usd(amount)}
+      </Text>
+      <Text style={{ fontSize: 13, color: GREY, margin: 0 }}>{title}</Text>
+    </Section>
+  )
+}
+
+const receiptButton = {
+  backgroundColor: SHU,
+  color: "#FFFFFF",
+  borderRadius: 14,
+  padding: "14px 22px",
+  fontSize: 15,
+  fontWeight: 600,
+}
+
+/** To the business: "You got paid $250 for Design sprint", with the receipt. */
+export function ReceivedEmail({ data }: { data: PaymentEmailData }) {
+  return (
+    <Frame business={data.business} preview={`You got paid ${usd(data.amount)}`}>
+      <Text style={{ fontSize: 15, color: "#000", margin: "20px 0 0" }}>
+        A payment just settled on NEAR{data.from ? `, from ${data.from}` : ""}.
+      </Text>
+      <Amount label="You got paid" amount={data.amount} title={data.title} />
+      <Button href={data.url} style={receiptButton}>
+        Open the receipt
+      </Button>
+      {data.sandbox ? (
+        <Text style={{ fontSize: 13, color: GREY, margin: "14px 0 0" }}>
+          Sandbox payment on NEAR testnet; no real money moved.
+        </Text>
+      ) : null}
+    </Frame>
+  )
+}
+
+/** To the payer, when we have their email: their receipt. */
+export function ReceiptEmail({ data }: { data: PaymentEmailData }) {
+  return (
+    <Frame business={data.business} preview={`Your receipt from ${data.business}`}>
+      <Text style={{ fontSize: 15, color: "#000", margin: "20px 0 0" }}>
+        Thanks for your payment to {data.business}. It settled on NEAR.
+      </Text>
+      <Amount label="You paid" amount={data.amount} title={data.title} />
+      <Button href={data.url} style={receiptButton}>
+        View your receipt
+      </Button>
+      {data.sandbox ? (
+        <Text style={{ fontSize: 13, color: GREY, margin: "14px 0 0" }}>
+          Sandbox payment on NEAR testnet; no real money moved.
+        </Text>
+      ) : null}
+    </Frame>
+  )
+}

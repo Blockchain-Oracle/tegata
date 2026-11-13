@@ -8,8 +8,17 @@ import { and, desc, eq, inArray, sql } from "drizzle-orm"
 import { emitEvent, paymentObject } from "./events.ts"
 import { createRelayDraft } from "./relays.ts"
 
-const { requests, payments, receipts, workspaces, accounts, relays, invoices, invoiceEvents } =
-  schema
+const {
+  requests,
+  payments,
+  receipts,
+  workspaces,
+  accounts,
+  relays,
+  invoices,
+  invoiceEvents,
+  users,
+} = schema
 
 /** A database transaction, for steps that must happen together. */
 export type Tx = Parameters<Parameters<Db["transaction"]>[0]>[0]
@@ -526,6 +535,44 @@ export async function receiptByToken(db: Db, token: string) {
     .innerJoin(workspaces, eq(workspaces.id, receipts.workspaceId))
     .where(eq(receipts.token, token))
   return row && { ...row, logo: headerLogo(row) }
+}
+
+/**
+ * Who to tell about a settled payment: the business (its billing email, else the owner's sign-in email) and the payer
+ * when we know their email (they paid from a Tegata balance). Either may be missing; nothing is sent then.
+ */
+export async function paymentEmails(db: Db, paymentId: string, appUrl: string) {
+  const [row] = await db
+    .select({
+      payment: payments,
+      request: requests,
+      business: workspaces.name,
+      businessEmail: workspaces.email,
+      ownerEmail: users.email,
+      receiptToken: receipts.token,
+      invoiceNumber: invoices.number,
+    })
+    .from(payments)
+    .innerJoin(requests, eq(requests.id, payments.requestId))
+    .innerJoin(workspaces, eq(workspaces.id, requests.workspaceId))
+    .innerJoin(users, eq(users.id, workspaces.ownerId))
+    .innerJoin(receipts, eq(receipts.paymentId, payments.id))
+    .leftJoin(invoices, eq(invoices.requestId, requests.id))
+    .where(and(eq(payments.id, paymentId), eq(payments.status, "succeeded")))
+  if (!row) return { business: null, payer: null }
+  const data = {
+    business: row.business,
+    amount: row.payment.amount.toString(),
+    title: row.invoiceNumber ? `Invoice ${invoiceNumber(row.invoiceNumber)}` : row.request.title,
+    from: row.payment.payer,
+    url: `${appUrl}/r/${row.receiptToken}`,
+    sandbox: row.payment.network === "testnet",
+  }
+  const owner = row.businessEmail ?? row.ownerEmail
+  return {
+    business: owner ? { to: owner, data } : null,
+    payer: row.payment.payerEmail ? { to: row.payment.payerEmail, data } : null,
+  }
 }
 
 /** Links this person paid from their Tegata balance (money out, beside their sends). */

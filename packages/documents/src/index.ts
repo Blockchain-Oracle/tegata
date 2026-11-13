@@ -3,8 +3,11 @@ export {
   type InvoiceEmailData,
   PaidEmail,
   type PaidEmailData,
+  type PaymentEmailData,
   type PayrollInviteData,
   PayrollInviteEmail,
+  ReceiptEmail,
+  ReceivedEmail,
   ReminderEmail,
 } from "./emails.tsx"
 export {

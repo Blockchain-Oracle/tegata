@@ -15,7 +15,13 @@ const { users, workspaces, accounts } = schema
 
 export class OnboardError extends Error {
   constructor(
-    readonly code: "handle_invalid" | "handle_taken" | "already_onboarded" | "no_key",
+    readonly code:
+      | "handle_invalid"
+      | "handle_taken"
+      | "already_onboarded"
+      | "no_key"
+      | "no_business"
+      | "wrong_network",
     message: string,
   ) {
     super(message)
@@ -130,6 +136,43 @@ export async function onboard(
       .returning()
     return { workspace, accounts: created }
   })
+}
+
+/**
+ * Open the business's account on another network (plan 6.8 AB: the first time someone switches to Live). The same
+ * handle on that network (`name.tegata.near`), or, for a NEAR-wallet user, their own account if it lives there. Returns
+ * the row; the worker's account-setup job creates and registers it.
+ */
+export async function openNetworkAccount(db: Db, userId: string, network: NetworkId) {
+  const [user] = await db.select().from(users).where(eq(users.id, userId))
+  if (!user?.handle) throw new OnboardError("no_business", "Name your business first")
+  const [existing] = await db
+    .select()
+    .from(accounts)
+    .where(and(eq(accounts.userId, userId), eq(accounts.network, network)))
+  if (existing) return existing
+  let accountId: string
+  if (user.walletAccountId) {
+    if (user.walletNetwork !== network) {
+      throw new OnboardError(
+        "wrong_network",
+        network === "mainnet"
+          ? "Your wallet account is on testnet. Sign in with a mainnet NEAR wallet to use Live."
+          : "Your wallet account is on mainnet. Sign in with a testnet wallet to use the Sandbox.",
+      )
+    }
+    accountId = user.walletAccountId
+  } else {
+    accountId = accountIdFor(network, user.handle)
+    const [taken] = await db
+      .select({ id: accounts.id })
+      .from(accounts)
+      .where(and(eq(accounts.network, network), eq(accounts.accountId, accountId)))
+    if (taken) throw new OnboardError("handle_taken", `${accountId} is already taken`)
+  }
+  const [row] = await db.insert(accounts).values({ userId, network, accountId }).returning()
+  if (!row) throw new Error("Could not open the account")
+  return row
 }
 
 /**

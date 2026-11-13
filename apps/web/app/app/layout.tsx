@@ -7,6 +7,7 @@ import { useEffect } from "react"
 import { TegataSeal } from "@/components/brand/seal"
 import { LoadingShape, Skeleton } from "@/components/kit/states"
 import { AppShell } from "@/components/shell/app-shell"
+import { OpenLive } from "@/components/shell/open-live"
 import { useNetwork } from "@/hooks/use-network"
 import { useProfile } from "@/hooks/use-profile"
 import { signOutNearWallet } from "@/lib/client/near-account"
@@ -14,11 +15,12 @@ import { signOutNearWallet } from "@/lib/client/near-account"
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter()
   const { logout } = usePrivy()
-  const { ready, authenticated, profile, viaWallet } = useProfile()
+  const { ready, authenticated, profile, viaWallet, refetch } = useProfile()
 
+  // Welcome is for a business with no account ready yet. A Live account opened later shows its steps in the app.
   const needsWelcome =
     profile !== undefined &&
-    (!profile.user.handle || profile.accounts.some((account) => !account.readyAt))
+    (!profile.user.handle || !profile.accounts.some((account) => account.readyAt))
 
   useEffect(() => {
     if (ready && !authenticated) router.replace("/signin")
@@ -27,13 +29,16 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   const network = useNetwork()
   const account = profile?.accounts.find((entry) => entry.network === network)
-  if (!profile || needsWelcome || !account) return <ShellSkeleton />
+  // In Live before the mainnet account is ready: the shell around the opening screen, named by a ready account.
+  const opening = network === "mainnet" && !account?.readyAt
+  const shown = opening ? profile?.accounts.find((entry) => entry.readyAt) : account
+  if (!profile || needsWelcome || !shown) return <ShellSkeleton />
 
   return (
     <AppShell
       businessName={profile.workspace?.name ?? "Your business"}
-      handle={account.accountId}
-      accountId={account.accountId}
+      handle={shown.accountId}
+      accountId={shown.accountId}
       live={network === "mainnet"}
       liveAvailable={profile.networks.includes("mainnet")}
       onSignOut={() =>
@@ -42,7 +47,16 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         )
       }
     >
-      {children}
+      {opening ? (
+        <OpenLive
+          handle={profile.user.handle ?? ""}
+          wallet={profile.user.walletAccountId ?? null}
+          account={account}
+          onOpened={() => void refetch()}
+        />
+      ) : (
+        children
+      )}
     </AppShell>
   )
 }

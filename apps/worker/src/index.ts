@@ -23,6 +23,7 @@ import {
   markInvited,
   paidEmail,
   paidRowsToEmail,
+  paymentEmails,
   paymentsToVerify,
   pendingDeliveries,
   processRelay,
@@ -95,6 +96,9 @@ await boss.work(QUEUES.relaySend.name, async ([job]) => {
   if (relay?.purpose.startsWith("pay:")) {
     const settled = await settleRelayedPayment(db, relay.id, operator.accountId)
     console.log(`[payment] ${relay.purpose} ${settled}`)
+    const paymentId = relay.purpose.slice("pay:".length)
+    if (settled === "succeeded" && mailer)
+      await enqueue(boss, "paymentEmail", { paymentId }, `payment:${paymentId}`)
   }
   // Autopilot: once the plan's relay lands, read its id from the contract; turning it off ends it.
   if (relay?.purpose.startsWith("autopilot:")) {
@@ -154,6 +158,8 @@ await boss.work(QUEUES.paymentVerify.name, async ([job]) => {
   const settled = await settlePayment(db, payment.id, payment.txHash, payment.payer)
   console.log(`[payment] ${payment.id} ${settled}`)
   if (settled === "succeeded") await queueDeliveries()
+  if (settled === "succeeded" && mailer)
+    await enqueue(boss, "paymentEmail", { paymentId: payment.id }, `payment:${payment.id}`)
   // Not final yet: throw so the queue tries again with backoff.
   if (settled === "pending") throw new Error("Transaction not final yet")
 })
@@ -225,6 +231,15 @@ await boss.schedule(QUEUES.webhookSweep.name, WEBHOOK_CRON, {})
 await boss.work(QUEUES.webhookSweep.name, queueDeliveries)
 
 /** Payroll emails: "added you to payroll" when someone is added, "you've been paid" for each paid row. */
+await boss.work(QUEUES.paymentEmail.name, async ([job]) => {
+  if (!job || !mailer) return
+  const { paymentId } = QUEUES.paymentEmail.payload.parse(job.data)
+  const { business, payer } = await paymentEmails(db, paymentId, env.APP_URL)
+  if (business) await mailer.received({ ...business, key: `received:${paymentId}` })
+  if (payer) await mailer.receipt({ ...payer, key: `receipt:${paymentId}` })
+  console.log(`[email] payment ${paymentId}: ${business ? "business" : ""} ${payer ? "payer" : ""}`)
+})
+
 await boss.work(QUEUES.payrollEmail.name, async ([job]) => {
   if (!job || !mailer) return
   const { kind, id } = QUEUES.payrollEmail.payload.parse(job.data)

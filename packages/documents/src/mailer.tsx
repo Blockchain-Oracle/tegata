@@ -9,8 +9,11 @@ import {
   longDay,
   PaidEmail,
   type PaidEmailData,
+  type PaymentEmailData,
   type PayrollInviteData,
   PayrollInviteEmail,
+  ReceiptEmail,
+  ReceivedEmail,
   ReminderEmail,
   usd,
 } from "./emails.tsx"
@@ -25,6 +28,8 @@ export interface Mailer {
   }): Promise<string>
   payrollInvite(input: { to: string; data: PayrollInviteData; key: string }): Promise<string>
   paid(input: { to: string; data: PaidEmailData; key: string }): Promise<string>
+  received(input: { to: string; data: PaymentEmailData; key: string }): Promise<string>
+  receipt(input: { to: string; data: PaymentEmailData; key: string }): Promise<string>
 }
 
 /** A Resend mailer. `key` is the idempotency key, so a retried job never sends twice. */
@@ -78,6 +83,24 @@ export function resendMailer(apiKey: string, from: string): Mailer {
           to,
           subject: `You've been paid ${usd(data.amount)} by ${data.business}`,
           react: <PaidEmail data={data} />,
+        },
+        key,
+      ),
+    received: ({ to, data, key }) =>
+      send(
+        {
+          to,
+          subject: `You got paid ${usd(data.amount)}: ${data.title}`,
+          react: <ReceivedEmail data={data} />,
+        },
+        key,
+      ),
+    receipt: ({ to, data, key }) =>
+      send(
+        {
+          to,
+          subject: `Your receipt from ${data.business}: ${usd(data.amount)}`,
+          react: <ReceiptEmail data={data} />,
         },
         key,
       ),

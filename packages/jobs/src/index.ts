@@ -57,6 +57,12 @@ export const QUEUES = {
     payload: z.object({ destinationId: z.uuid() }),
     options: { retryLimit: 3, retryDelay: 5, retryBackoff: true, expireInSeconds: 180 },
   },
+  /** Email a settled payment: "you got paid" to the business, the receipt to the payer. Only when email is on. */
+  paymentEmail: {
+    name: "payment-email",
+    payload: z.object({ paymentId: z.uuid() }),
+    options: { retryLimit: 3, retryDelay: 30, retryBackoff: true, expireInSeconds: 120 },
+  },
   /** Email a person: added to payroll, or paid (with the payslip link). Only when email is on. */
   payrollEmail: {
     name: "payroll-email",
