@@ -26,7 +26,13 @@
       "!apps/docs/public/marks",
       "!apps/docs/public/seal.svg",
       "!apps/docs/app/icon.svg",
-      "!apps/docs/.source"
+      "!apps/docs/.source",
+      "!apps/mobile/src/brand/glyphs.ts",
+      "!apps/mobile/assets/marks",
+      "!apps/mobile/assets/flags",
+      "!apps/mobile/ios",
+      "!apps/mobile/android",
+      "!apps/mobile/.expo"
     ]
   },
   "formatter": {
@@ -89,6 +95,20 @@
           },
           "a11y": {
             "useSemanticElements": "off"
+          }
+        }
+      }
+    },
+    {
+      "includes": ["apps/mobile/**"],
+      "linter": {
+        "rules": {
+          "a11y": {
+            "useValidAriaRole": "off",
+            "noSvgWithoutTitle": "off"
+          },
+          "correctness": {
+            "noReactNativeRawText": "off"
           }
         }
       }

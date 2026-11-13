@@ -103,7 +103,7 @@ export async function loadPrefs() {
     ])
     prefs.sound = sound !== "off"
     prefs.haptics = haptics !== "off"
-    listeners.forEach((listener) => listener())
+    for (const listener of listeners) listener()
   } catch {
     // Defaults stand.
   }
@@ -111,7 +111,7 @@ export async function loadPrefs() {
 
 export function setPref(key: "sound" | "haptics", on: boolean) {
   prefs[key] = on
-  listeners.forEach((listener) => listener())
+  for (const listener of listeners) listener()
   void SecureStore.setItemAsync(key === "sound" ? SOUND_KEY : HAPTICS_KEY, on ? "on" : "off").catch(
     () => undefined,
   )

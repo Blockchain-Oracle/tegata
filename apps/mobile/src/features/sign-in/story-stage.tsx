@@ -277,6 +277,7 @@ function ReceiptScene() {
 export function StoryStage({ height }: { height: number }) {
   const reduce = useReducedMotion()
   const [index, setIndex] = useState(0)
+  // biome-ignore lint/correctness/useExhaustiveDependencies: `index` restarts the dwell whenever the scene changes, by hand or by itself.
   useEffect(() => {
     if (reduce) return
     const t = setTimeout(() => setIndex((i) => (i + 1) % SCENES.length), DWELL_MS)

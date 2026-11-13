@@ -25,7 +25,7 @@ export function Screen({
 }: {
   children: ReactNode
   /** Pull to refresh: the spinner shows until the returned promise settles. */
-  onRefresh?: () => Promise<unknown> | void
+  onRefresh?: () => unknown
   /** A tab screen: leave room for the dock. */
   dock?: boolean
   padded?: boolean

@@ -40,6 +40,7 @@ export function SealPress({
   const scale = useSharedValue(play && !reduce ? 1.12 : 1)
   const lift = useSharedValue(play && !reduce ? -8 : 0)
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: the press plays once, when `play` turns on; later prop changes must not replay it.
   useEffect(() => {
     if (!play) return
     const land = () => {
@@ -66,8 +67,6 @@ export function SealPress({
         withTiming(1, { duration: MOTION.seal - press, easing: ease }),
       ),
     )
-    // Plays once per mount.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [play])
 
   const animated = useAnimatedStyle(() => ({

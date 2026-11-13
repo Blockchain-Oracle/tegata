@@ -35,6 +35,7 @@ const hash = (text: string) =>
   [...text].reduce((h, c) => Math.imul(h ^ c.charCodeAt(0), 16777619), 2166136261)
 
 function useSpecks(seed: string, count: number, inside: (x: number, y: number) => boolean) {
+  // biome-ignore lint/correctness/useExhaustiveDependencies: `inside` is a fixed shape test for each seal kind; the specks depend on the seed and count only.
   return useMemo(() => {
     const rand = seeded(hash(seed))
     const specks: { x: number; y: number; r: number }[] = []
@@ -45,8 +46,6 @@ function useSpecks(seed: string, count: number, inside: (x: number, y: number) =
       if (inside(x, y)) specks.push({ x, y, r: 0.6 + rand() * 1.5 })
     }
     return specks
-    // `inside` is a pure shape test for this seal kind.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [seed, count])
 }
 
@@ -110,6 +109,7 @@ export function TegataSeal({
       <G opacity={0.55}>
         {specks.map((speck, i) => (
           <Circle
+            // biome-ignore lint/suspicious/noArrayIndexKey: a fixed, seeded list that never reorders.
             key={i}
             cx={speck.x}
             cy={speck.y}
@@ -226,6 +226,7 @@ export function BusinessSeal({
       )}
       <G opacity={0.5}>
         {specks.map((speck, i) => (
+          // biome-ignore lint/suspicious/noArrayIndexKey: a fixed, seeded list that never reorders.
           <Circle key={i} cx={speck.x} cy={speck.y} r={speck.r * 0.8} fill={PAPER.face} />
         ))}
       </G>

@@ -98,6 +98,7 @@ export function Figure({
         : value.split("").map((char, i) =>
             DIGITS.includes(char) ? (
               <Digit
+                // biome-ignore lint/suspicious/noArrayIndexKey: keyed by place value (ones, tens…), so a digit column rolls instead of remounting.
                 key={`d${value.length - i}`}
                 value={Number(char)}
                 size={size}
@@ -105,6 +106,7 @@ export function Figure({
                 width={digitWidth}
               />
             ) : (
+              // biome-ignore lint/suspicious/noArrayIndexKey: symbols keyed by place, like the digit columns.
               <Text key={`s${value.length - i}`} style={symbol} allowFontScaling={false}>
                 {char}
               </Text>
