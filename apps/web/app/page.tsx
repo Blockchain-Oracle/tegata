@@ -2,6 +2,7 @@
 // on washi in light and sumi in dark, with one real 3D object. Every figure is real or sourced.
 import type { Metadata } from "next"
 
+import { AppCorner } from "@/components/landing/app-corner"
 import { BeforeAfter } from "@/components/landing/before-after"
 import { Borders } from "@/components/landing/borders"
 import { BuiltOnNear } from "@/components/landing/built-on-near"
@@ -40,6 +41,7 @@ export default function Landing() {
         <Close />
       </main>
       <Footer />
+      <AppCorner />
     </div>
   )
 }
