@@ -4,7 +4,7 @@ import type { ReactNode } from "react"
 import { ActivityIndicator, type StyleProp, View, type ViewStyle } from "react-native"
 
 import type { Cue } from "@/feedback/fire"
-import { RADIUS, usePalette } from "@/theme/tokens"
+import { PAPER, RADIUS, SHU, usePalette } from "@/theme/tokens"
 
 import { Press } from "./press"
 import { Shimmer } from "./shimmer"
@@ -40,14 +40,15 @@ export function Button({
   const colors: Record<Variant, { bg: string; fg: string }> = {
     primary: { bg: p.primary, fg: p.onPrimary },
     secondary: { bg: p.plate, fg: p.ink },
-    white: { bg: "#FFFFFF", fg: "#000000" },
-    seal: { bg: "#FF4F00", fg: "#000000" },
+    white: { bg: PAPER.face, fg: PAPER.ink },
+    seal: { bg: SHU, fg: PAPER.ink },
   }
-  const { bg, fg } = colors[variant]
+  const { bg, fg } = disabled && !busy ? { bg: p.plate, fg: p.text3 } : colors[variant]
   return (
     <Press
       onPress={busy ? undefined : onPress}
       disabled={disabled}
+      dim={false}
       cue={busy || cue === null ? undefined : cue}
       accessibilityLabel={busy && busyLabel ? busyLabel : label}
       accessibilityState={{ disabled: Boolean(disabled), busy: Boolean(busy) }}

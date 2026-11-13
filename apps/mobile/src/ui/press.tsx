@@ -17,6 +17,7 @@ export function Press({
   scaleTo = 0.97,
   onPress,
   disabled,
+  dim = true,
   ...rest
 }: Omit<PressableProps, "style" | "children"> & {
   children: ReactNode
@@ -24,6 +25,8 @@ export function Press({
   haptic?: HapticEvent | null
   cue?: Cue
   scaleTo?: number
+  /** Fade when disabled (off for parts that draw their own disabled look). */
+  dim?: boolean
 }) {
   const scale = useSharedValue(1)
   const animated = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }))
@@ -41,7 +44,7 @@ export function Press({
         if (haptic || cue) fire(haptic ?? "press", cue ? { cue } : {})
         onPress?.(event)
       }}
-      style={[animated, style, disabled ? { opacity: 0.5 } : null]}
+      style={[animated, style, disabled && dim ? { opacity: 0.5 } : null]}
       {...rest}
     >
       {children}

@@ -6,13 +6,11 @@ import { View } from "react-native"
 import Animated, { FadeInUp } from "react-native-reanimated"
 import Svg, { Path } from "react-native-svg"
 
-import { usePalette } from "@/theme/tokens"
+import { PAPER, usePalette } from "@/theme/tokens"
 import { Figure } from "@/ui/figure"
 import { BusinessSeal } from "@/ui/seal"
 import { SealPress } from "@/ui/seal-press"
 import { T } from "@/ui/text"
-
-const PAPER = "#FFFFFF"
 
 function ScallopedFoot({ width }: { width: number }) {
   const r = 7
@@ -26,7 +24,7 @@ function ScallopedFoot({ width }: { width: number }) {
   d += " Z"
   return (
     <Svg width={width} height={r * 2} style={{ marginTop: -1 }}>
-      <Path d={d} fill={PAPER} />
+      <Path d={d} fill={PAPER.face} />
     </Svg>
   )
 }
@@ -62,17 +60,20 @@ export function ReceiptSlip({
     ? `Paid · ${new Date(settledAt).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}`
     : undefined
   return (
-    <Animated.View entering={FadeInUp.duration(420).springify().damping(30)} style={{ alignSelf: "center", width }}>
+    <Animated.View
+      entering={FadeInUp.duration(420).springify().damping(30)}
+      style={{ alignSelf: "center", width }}
+    >
       <View
         style={{
-          backgroundColor: PAPER,
+          backgroundColor: PAPER.face,
           borderTopLeftRadius: 20,
           borderTopRightRadius: 20,
           padding: 20,
           paddingBottom: 26,
           gap: 14,
-          shadowColor: "#000",
-          shadowOpacity: 0.12,
+          shadowColor: PAPER.ink,
+          shadowOpacity: 0.2,
           shadowRadius: 12,
           shadowOffset: { width: 0, height: 8 },
           elevation: 6,
@@ -81,29 +82,49 @@ export function ReceiptSlip({
         <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
           <BusinessSeal name={business} size={36} tilt={0} />
           <View style={{ flex: 1 }}>
-            <T role="rowTitle" color="#000" numberOfLines={1}>
+            <T role="rowTitle" color={PAPER.ink} numberOfLines={1}>
               {business}
             </T>
-            <T role="meta" color="#666">
+            <T role="meta" color={PAPER.text2}>
               {heading}
             </T>
           </View>
         </View>
-        <View style={{ height: 1, borderStyle: "dashed", borderWidth: 0.5, borderColor: "#00000033" }} />
+        <View
+          style={{ height: 1, borderStyle: "dashed", borderWidth: 0.5, borderColor: PAPER.rule }}
+        />
         <View style={{ gap: 4 }}>
-          <T role="bodyMedium" color="#666" numberOfLines={2}>
+          <T role="bodyMedium" color={PAPER.text2} numberOfLines={2}>
             {title}
           </T>
-          <Figure units={incoming ? amount : `-${amount}`} size={50} color={incoming ? "#2F7A00" : "#000"} signed={incoming} />
+          <Figure
+            units={incoming ? amount : `-${amount}`}
+            size={50}
+            color={incoming ? PAPER.up : PAPER.ink}
+            signed={incoming}
+          />
         </View>
         <View style={{ gap: 10 }}>
           {rows.map(([label, value]) => (
-            <View key={label} style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
-              <T role="detail" color="#666">
+            <View
+              key={label}
+              style={{
+                flexDirection: "row",
+                justifyContent: "space-between",
+                alignItems: "center",
+                gap: 12,
+              }}
+            >
+              <T role="detail" color={PAPER.text2}>
                 {label}
               </T>
               {typeof value === "string" ? (
-                <T role="detailMedium" color="#000" numberOfLines={1} style={{ flexShrink: 1, textAlign: "right" }}>
+                <T
+                  role="detailMedium"
+                  color={PAPER.ink}
+                  numberOfLines={1}
+                  style={{ flexShrink: 1, textAlign: "right" }}
+                >
                   {value}
                 </T>
               ) : (
@@ -116,7 +137,12 @@ export function ReceiptSlip({
         <View style={{ position: "absolute", right: 14, bottom: 6 }} pointerEvents="none">
           {band ? (
             <SealPress delay={420} identity={`receipt-${identity}`}>
-              <BusinessSeal name={business} band={band.replace("Paid · ", "PAID ")} size={96} tilt={-8} />
+              <BusinessSeal
+                name={business}
+                band={band.replace("Paid · ", "PAID ")}
+                size={96}
+                tilt={-8}
+              />
             </SealPress>
           ) : (
             <View style={{ opacity: 0.25 }}>

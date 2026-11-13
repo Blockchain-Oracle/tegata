@@ -3,7 +3,7 @@
 // which only asks Privy to sign a 32-byte hash. After sign-in the server is told who signed in (`POST /api/session`,
 // which reads the email and key from Privy itself), then the profile is polled: fast while the account opens, slower
 // after. The mode (Sandbox | Live) is part of every request.
-import { PrivyProvider, usePrivy, useLoginWithEmail } from "@privy-io/expo"
+import { PrivyProvider, useLoginWithEmail, usePrivy } from "@privy-io/expo"
 import { useCreateWallet, useSignRawHash } from "@privy-io/expo/extended-chains"
 import { base64 } from "@scure/base"
 import { QueryClient, QueryClientProvider, useQuery, useQueryClient } from "@tanstack/react-query"
@@ -30,7 +30,8 @@ const MODE_KEY = "tegata.mode"
 export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      retry: (count, error) => !(error instanceof ApiError && error.status < 500 && error.status > 0) && count < 2,
+      retry: (count, error) =>
+        !(error instanceof ApiError && error.status < 500 && error.status > 0) && count < 2,
       staleTime: 5_000,
     },
   },
@@ -91,7 +92,8 @@ function SessionProvider({ children }: { children: ReactNode }) {
   const linked = (privy.user?.linked_accounts ?? []) as LinkedAccount[]
   const email = linked.find((account) => account.type === "email")?.address ?? null
   const keyAddress =
-    linked.find((account) => account.type === "wallet" && account.chain_type === "near")?.address ?? null
+    linked.find((account) => account.type === "wallet" && account.chain_type === "near")?.address ??
+    null
   const authenticated = Boolean(privy.user)
 
   // Every request carries the token Privy has now (refreshed when near expiry) and the chosen mode.
@@ -141,7 +143,8 @@ function SessionProvider({ children }: { children: ReactNode }) {
   })
 
   const data = profile.data ?? session.data
-  const network: NetworkId = mode === "live" && data?.networks.includes("mainnet") ? "mainnet" : "testnet"
+  const network: NetworkId =
+    mode === "live" && data?.networks.includes("mainnet") ? "mainnet" : "testnet"
   const account = data?.accounts.find((entry) => entry.network === network)
 
   const setMode = useCallback(
@@ -158,7 +161,11 @@ function SessionProvider({ children }: { children: ReactNode }) {
   const sign = useCallback(
     async (hashHex: string) => {
       if (!keyAddress) throw new Error("Your signing key is not ready yet")
-      const { signature } = await signRawHash({ address: keyAddress, chainType: "near", hash: `0x${hashHex}` })
+      const { signature } = await signRawHash({
+        address: keyAddress,
+        chainType: "near",
+        hash: `0x${hashHex}`,
+      })
       const hex = signature.replace(/^0x/, "")
       const bytes = Uint8Array.from(hex.match(/.{2}/g) ?? [], (byte) => Number.parseInt(byte, 16))
       return base64.encode(bytes)

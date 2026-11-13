@@ -6,8 +6,8 @@ import { useEffect } from "react"
 import { View } from "react-native"
 
 import { useSession } from "@/auth/session"
-import { TegataSeal } from "@/ui/seal"
 import { usePalette } from "@/theme/tokens"
+import { TegataSeal } from "@/ui/seal"
 
 export default function Gate() {
   const p = usePalette()
@@ -19,7 +19,9 @@ export default function Gate() {
 
   if (!settled)
     return (
-      <View style={{ flex: 1, backgroundColor: p.page, alignItems: "center", justifyContent: "center" }}>
+      <View
+        style={{ flex: 1, backgroundColor: p.page, alignItems: "center", justifyContent: "center" }}
+      >
         <TegataSeal size={88} />
       </View>
     )

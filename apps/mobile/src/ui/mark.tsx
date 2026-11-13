@@ -59,7 +59,10 @@ export function Mark({ id, chain, size = 24 }: { id: string; chain?: string; siz
   const badge = chain && chain !== id ? MARKS[isMark(chain) ? chain : "unknown"] : null
   const b = Math.round(size * 0.48)
   return (
-    <View style={{ width: size, height: size }} accessibilityLabel={chain ? `${id} on ${chain}` : id}>
+    <View
+      style={{ width: size, height: size }}
+      accessibilityLabel={chain ? `${id} on ${chain}` : id}
+    >
       <Image source={source} style={{ width: size, height: size }} contentFit="contain" />
       {badge ? (
         <View
@@ -98,9 +101,32 @@ export function assetMarks(assetIn: string | null | undefined): { coin: string; 
   if (!assetIn) return { coin: "usdc", chain: "near" }
   const text = assetIn.toLowerCase()
   const chain =
-    ["eth", "base", "arb", "sol", "btc", "tron", "pol", "bnb", "op", "avax", "ton", "sui", "gnosis", "xrp", "doge", "zec", "ltc", "stellar"].find(
+    [
+      "eth",
+      "base",
+      "arb",
+      "sol",
+      "btc",
+      "tron",
+      "pol",
+      "bnb",
+      "op",
+      "avax",
+      "ton",
+      "sui",
+      "gnosis",
+      "xrp",
+      "doge",
+      "zec",
+      "ltc",
+      "stellar",
+    ].find(
       (c) => text.includes(`${c}-`) || text.includes(`${c}.omft`) || text.startsWith(`nep141:${c}`),
     ) ?? "near"
-  const coin = text.includes("usdt") ? "usdt" : text.includes("usdc") || text.includes("0xa0b8") ? "usdc" : chain
+  const coin = text.includes("usdt")
+    ? "usdt"
+    : text.includes("usdc") || text.includes("0xa0b8")
+      ? "usdc"
+      : chain
   return { coin, chain }
 }

@@ -92,9 +92,11 @@ export default function Send() {
       fire("tick", { cue: "step" })
     } catch (error) {
       fire("fail", { cue: "error" })
-      const message = error instanceof ApiError ? error.message : "Couldn't prepare the payment. Try again."
+      const message =
+        error instanceof ApiError ? error.message : "Couldn't prepare the payment. Try again."
       setProblem(message)
-      if (error instanceof ApiError && /recipient|exist|receive/.test(error.code + message)) setStep("to")
+      if (error instanceof ApiError && /recipient|exist|receive/.test(error.code + message))
+        setStep("to")
     } finally {
       setBusy(false)
     }
@@ -106,7 +108,11 @@ export default function Send() {
     setProblem(null)
     try {
       // The phone's own check: this is one USDC transfer of exactly this amount to exactly this account.
-      checkSend(send.draft, { usdc: NETWORKS[network].usdc, to: recipient, amount: units.toString() })
+      checkSend(send.draft, {
+        usdc: NETWORKS[network].usdc,
+        to: recipient,
+        amount: units.toString(),
+      })
       const signature = await sign(send.draft.hash)
       await api("/api/relay/sign", { body: { relayId: send.relayId, signature } })
       setStep("sending")
@@ -123,7 +129,10 @@ export default function Send() {
   if (step === "sent" || (step === "sending" && send) || step === "failed")
     return (
       <Screen>
-        <Header title={step === "sent" ? "Sent" : step === "failed" ? "Didn't go through" : "Sending"} back={step !== "sending"} />
+        <Header
+          title={step === "sent" ? "Sent" : step === "failed" ? "Didn't go through" : "Sending"}
+          back={step !== "sending"}
+        />
         {step === "failed" ? (
           <>
             <Problem text={problem ?? "Nothing moved."} />
@@ -143,7 +152,10 @@ export default function Send() {
                 ["To", recipient],
                 ["Arrives as", "USDC on NEAR"],
                 ["Network fee", "Paid by Tegata"],
-                ["Transaction", relay.data?.txHash ? `${relay.data.txHash.slice(0, 10)}…` : "On its way"],
+                [
+                  "Transaction",
+                  relay.data?.txHash ? `${relay.data.txHash.slice(0, 10)}…` : "On its way",
+                ],
               ]}
               footer={
                 step === "sending" ? (
@@ -176,18 +188,49 @@ export default function Send() {
       <Screen>
         <Header title="Review" />
         <Animated.View entering={FadeInDown.duration(320)} style={{ gap: 16 }}>
-          <View style={{ backgroundColor: p.card, borderRadius: RADIUS.group, padding: 20, gap: 16 }}>
+          <View
+            style={{ backgroundColor: p.card, borderRadius: RADIUS.group, padding: 20, gap: 16 }}
+          >
             <T role="detailMedium" tone="text2">
               You send
             </T>
             <Figure units={units} size={56} color={p.ink} />
             {[
-              ["To", <View key="to" style={{ flexDirection: "row", alignItems: "center", gap: 8 }}><Mark id="near" size={20} /><T role="mono">{recipient}</T></View>],
-              ["Arrives as", <View key="as" style={{ flexDirection: "row", alignItems: "center", gap: 8 }}><Mark id="usdc" chain="near" size={20} /><T role="bodyMedium">USDC on NEAR</T></View>],
-              ["Network fee", <T key="fee" role="bodyMedium" tone="up">Paid by Tegata</T>],
-              ["Balance after", <T key="after" role="bodyMedium">{usd(balance - units)}</T>],
+              [
+                "To",
+                <View key="to" style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                  <Mark id="near" size={20} />
+                  <T role="mono">{recipient}</T>
+                </View>,
+              ],
+              [
+                "Arrives as",
+                <View key="as" style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                  <Mark id="usdc" chain="near" size={20} />
+                  <T role="bodyMedium">USDC on NEAR</T>
+                </View>,
+              ],
+              [
+                "Network fee",
+                <T key="fee" role="bodyMedium" tone="up">
+                  Paid by Tegata
+                </T>,
+              ],
+              [
+                "Balance after",
+                <T key="after" role="bodyMedium">
+                  {usd(balance - units)}
+                </T>,
+              ],
             ].map(([label, value]) => (
-              <View key={label as string} style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+              <View
+                key={label as string}
+                style={{
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                }}
+              >
                 <T role="detail" tone="text2">
                   {label as string}
                 </T>
@@ -196,7 +239,12 @@ export default function Send() {
             ))}
           </View>
           {problem ? <Problem text={problem} /> : null}
-          <HoldButton label={`Send ${usd(units)}`} busy={busy} busyLabel="Approving" onConfirm={approve} />
+          <HoldButton
+            label={`Send ${usd(units)}`}
+            busy={busy}
+            busyLabel="Approving"
+            onConfirm={approve}
+          />
           <Button label="Edit" variant="secondary" onPress={() => setStep("amount")} />
         </Animated.View>
       </Screen>
@@ -206,17 +254,34 @@ export default function Send() {
     return (
       <Screen scroll={false}>
         <Header title={`To ${recipient}`} />
-        <Animated.View key="amount" entering={FadeInDown.duration(320)} exiting={FadeOutUp.duration(160)} style={{ flex: 1, justifyContent: "space-between" }}>
+        <Animated.View
+          key="amount"
+          entering={FadeInDown.duration(320)}
+          exiting={FadeOutUp.duration(160)}
+          style={{ flex: 1, justifyContent: "space-between" }}
+        >
           <View style={{ alignItems: "center", gap: 10, paddingTop: 20 }}>
-            <Figure text={`$${typedAmount(amount)}`} size={72} color={short ? p.down : amount ? p.ink : p.text3} />
+            <Figure
+              text={`$${typedAmount(amount)}`}
+              size={72}
+              color={short ? p.down : amount ? p.ink : p.text3}
+            />
             <View style={{ flexDirection: "row", gap: 16, alignItems: "center" }}>
               <T role="detailMedium" tone={short ? "down" : "text2"}>
                 {short ? "More than your balance" : `${usd(balance)} available`}
               </T>
               <Press
                 haptic="tick"
-                onPress={() => setAmount((Number(balance / 10_000n) / 100).toFixed(2).replace(/\.00$/, ""))}
-                style={{ backgroundColor: p.plate, borderRadius: 999, paddingHorizontal: 12, height: 30, justifyContent: "center" }}
+                onPress={() =>
+                  setAmount((Number(balance / 10_000n) / 100).toFixed(2).replace(/\.00$/, ""))
+                }
+                style={{
+                  backgroundColor: p.plate,
+                  borderRadius: 999,
+                  paddingHorizontal: 12,
+                  height: 30,
+                  justifyContent: "center",
+                }}
               >
                 <T role="detailMedium">Max</T>
               </Press>
@@ -224,22 +289,48 @@ export default function Send() {
           </View>
           <View style={{ gap: 12 }}>
             {problem ? <Problem text={problem} /> : null}
-            <Keypad value={amount} onChange={(v) => { setAmount(v); setProblem(null) }} />
-            <Button label="Review" busy={busy} busyLabel="Preparing" disabled={!amountOk(amount) || short} onPress={review} />
+            <Keypad
+              value={amount}
+              onChange={(v) => {
+                setAmount(v)
+                setProblem(null)
+              }}
+            />
+            <Button
+              label="Review"
+              busy={busy}
+              busyLabel="Preparing"
+              disabled={!amountOk(amount) || short}
+              onPress={review}
+            />
           </View>
         </Animated.View>
       </Screen>
     )
 
   return (
-    <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
+    >
       <Screen>
         <Header title="Send" />
         <Animated.View entering={FadeInDown.duration(320)} style={{ gap: 14 }}>
           <T role="detailMedium" tone="text2">
             To a NEAR account
           </T>
-          <View style={{ height: 56, borderRadius: RADIUS.button, backgroundColor: p.plate, paddingLeft: 14, paddingRight: 6, flexDirection: "row", alignItems: "center", gap: 10 }}>
+          <View
+            style={{
+              height: 56,
+              borderRadius: RADIUS.button,
+              backgroundColor: p.plate,
+              paddingLeft: 14,
+              paddingRight: 6,
+              flexDirection: "row",
+              alignItems: "center",
+              gap: 10,
+            }}
+          >
             <Mark id="near" size={22} />
             <TextInput
               value={to}
@@ -259,7 +350,9 @@ export default function Send() {
             <Press
               haptic="tick"
               accessibilityLabel="Paste"
-              onPress={async () => setTo(((await Clipboard.getStringAsync()) ?? "").trim().toLowerCase())}
+              onPress={async () =>
+                setTo(((await Clipboard.getStringAsync()) ?? "").trim().toLowerCase())
+              }
               style={{ width: 44, height: 44, alignItems: "center", justifyContent: "center" }}
             >
               <ClipboardPaste size={20} color={p.text2} />
@@ -279,7 +372,11 @@ export default function Send() {
             </T>
           ) : null}
           {team.data && team.data.length > 0 ? (
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{ gap: 8 }}
+            >
               {team.data.map((person) => (
                 <Press
                   key={person.id}
@@ -288,14 +385,24 @@ export default function Send() {
                     setTo(person.accountId)
                     setStep("amount")
                   }}
-                  style={{ backgroundColor: to === person.accountId ? p.sealWash : p.card, borderRadius: 999, paddingHorizontal: 14, height: 40, justifyContent: "center" }}
+                  style={{
+                    backgroundColor: to === person.accountId ? p.sealWash : p.card,
+                    borderRadius: 999,
+                    paddingHorizontal: 14,
+                    height: 40,
+                    justifyContent: "center",
+                  }}
                 >
                   <T role="detailMedium">{person.name}</T>
                 </Press>
               ))}
             </ScrollView>
           ) : null}
-          <Button label="Continue" disabled={recipient.length < 2} onPress={() => setStep("amount")} />
+          <Button
+            label="Continue"
+            disabled={recipient.length < 2}
+            onPress={() => setStep("amount")}
+          />
         </Animated.View>
       </Screen>
     </KeyboardAvoidingView>

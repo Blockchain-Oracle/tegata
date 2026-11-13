@@ -135,9 +135,16 @@ export function ftTransfers(draft: DelegateDraft, usdc: string): FtTransfer[] {
 }
 
 /** A one-off send: exactly one USDC transfer of `amount` base units to `to`. */
-export function checkSend(draft: DelegateDraft, expected: { usdc: string; to: string; amount: string }) {
+export function checkSend(
+  draft: DelegateDraft,
+  expected: { usdc: string; to: string; amount: string },
+) {
   const transfers = ftTransfers(draft, expected.usdc)
   const [only] = transfers
-  if (transfers.length !== 1 || only?.receiver_id !== expected.to || only.amount !== expected.amount)
+  if (
+    transfers.length !== 1 ||
+    only?.receiver_id !== expected.to ||
+    only.amount !== expected.amount
+  )
     throw new DraftMismatch()
 }

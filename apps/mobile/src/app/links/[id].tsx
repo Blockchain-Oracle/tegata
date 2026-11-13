@@ -7,8 +7,8 @@ import { View } from "react-native"
 import { api } from "@/api/client"
 import type { LinkDetail } from "@/api/types"
 import { useSession } from "@/auth/session"
-import { LinkCard } from "@/features/links/link-card"
 import { statusChip, timeOf } from "@/features/activity/activity-row"
+import { LinkCard } from "@/features/links/link-card"
 import { usd } from "@/lib/money"
 import { Card, Chip, Header, Problem, Row, Screen, SectionTitle } from "@/ui/layout"
 import { assetMarks, Mark } from "@/ui/mark"
@@ -29,11 +29,21 @@ export default function LinkScreen() {
     <Screen refreshing={detail.isRefetching} onRefresh={() => void detail.refetch()}>
       <Header title={link?.title ?? "Pay link"} />
       {detail.isError ? (
-        <Problem text="Couldn't load the link." action="Retry" onAction={() => void detail.refetch()} />
+        <Problem
+          text="Couldn't load the link."
+          action="Retry"
+          onAction={() => void detail.refetch()}
+        />
       ) : link && detail.data ? (
         <>
           <LinkCard link={link} business={business} />
-          <SectionTitle title={detail.data.payments.length ? `Paid ${detail.data.payments.length}×` : "No payments yet"} />
+          <SectionTitle
+            title={
+              detail.data.payments.length
+                ? `Paid ${detail.data.payments.length}×`
+                : "No payments yet"
+            }
+          />
           {detail.data.payments.length > 0 ? (
             <Card>
               {detail.data.payments.map((payment) => {
@@ -48,8 +58,11 @@ export default function LinkScreen() {
                     meta={
                       <View style={{ flexDirection: "row", gap: 8, alignItems: "center" }}>
                         <T role="detail" tone="text2">
-                          {new Date(payment.settledAt ?? payment.createdAt).toLocaleDateString(undefined, { day: "numeric", month: "short" })} ·{" "}
-                          {timeOf(payment.settledAt ?? payment.createdAt)}
+                          {new Date(payment.settledAt ?? payment.createdAt).toLocaleDateString(
+                            undefined,
+                            { day: "numeric", month: "short" },
+                          )}{" "}
+                          · {timeOf(payment.settledAt ?? payment.createdAt)}
                         </T>
                         {chip ? <Chip label={chip.label} tone={chip.tone} /> : null}
                       </View>

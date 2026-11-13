@@ -3,21 +3,26 @@
 // account opening on NEAR as named stages, then the seal presses with `celebrate` and Home opens.
 import { getCalendars } from "expo-localization"
 import { router } from "expo-router"
-import { StatusBar } from "expo-status-bar"
 import { useEffect, useRef, useState } from "react"
 import { KeyboardAvoidingView, Platform, TextInput, View } from "react-native"
-import Animated, { FadeInDown, FadeOutUp, useAnimatedStyle, withTiming } from "react-native-reanimated"
+import Animated, {
+  FadeInDown,
+  FadeOutUp,
+  useAnimatedStyle,
+  withTiming,
+} from "react-native-reanimated"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 
 import { ApiError, api } from "@/api/client"
 import type { HandleCheck } from "@/api/types"
 import { queryClient, useSession } from "@/auth/session"
 import { fire } from "@/feedback/fire"
-import { FONT, RADIUS, usePalette } from "@/theme/tokens"
+import { FONT, PAPER, RADIUS, usePalette } from "@/theme/tokens"
 import { Button } from "@/ui/button"
 import { BusinessSeal } from "@/ui/seal"
 import { SealPress } from "@/ui/seal-press"
 import { StageField, StageObject } from "@/ui/stage"
+import { useStatusBar } from "@/ui/status-bar"
 import { TaskSteps } from "@/ui/task-steps"
 import { T } from "@/ui/text"
 
@@ -27,7 +32,11 @@ function useHandleCheck(name: string, from: string) {
   const [check, setCheck] = useState<HandleCheck | null>(null)
   const [checking, setChecking] = useState(false)
   useEffect(() => {
-    const query = name ? `name=${encodeURIComponent(name)}` : from ? `from=${encodeURIComponent(from)}` : ""
+    const query = name
+      ? `name=${encodeURIComponent(name)}`
+      : from
+        ? `from=${encodeURIComponent(from)}`
+        : ""
     if (!query) return
     setChecking(true)
     const t = setTimeout(() => {
@@ -45,6 +54,7 @@ export default function Welcome() {
   const p = usePalette()
   const insets = useSafeAreaInsets()
   const { profile, refetchProfile, network } = useSession()
+  useStatusBar("stage")
   const [step, setStep] = useState<0 | 1 | 2>(profile?.workspace ? 2 : 0)
   const [business, setBusiness] = useState("")
   const [handle, setHandle] = useState("")
@@ -83,30 +93,47 @@ export default function Welcome() {
     setBusy(true)
     setProblem(null)
     try {
-      const timezone = getCalendars()[0]?.timeZone ?? Intl.DateTimeFormat().resolvedOptions().timeZone ?? "UTC"
+      const timezone =
+        getCalendars()[0]?.timeZone ?? Intl.DateTimeFormat().resolvedOptions().timeZone ?? "UTC"
       await api("/api/onboard", { body: { handle, businessName: business.trim(), timezone } })
       await queryClient.invalidateQueries({ queryKey: ["me"] })
       setStep(2)
       fire("tick", { cue: "step" })
     } catch (error) {
-      setProblem(error instanceof ApiError ? error.message : "Couldn't open the account. Try again.")
+      setProblem(
+        error instanceof ApiError ? error.message : "Couldn't open the account. Try again.",
+      )
       fire("fail", { cue: "error" })
     } finally {
       setBusy(false)
     }
   }
 
-  const progress = useAnimatedStyle(() => ({ width: withTiming(`${((step + 1) / 3) * 100}%`, { duration: 320 }) }))
+  const progress = useAnimatedStyle(() => ({
+    width: withTiming(`${((step + 1) / 3) * 100}%`, { duration: 320 }),
+  }))
   const name = business.trim() || profile?.workspace?.name || "Your business"
   const handleOk = check?.available && check.handle === handle && !checking
 
   return (
-    <KeyboardAvoidingView style={{ flex: 1, backgroundColor: p.page }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
-      <StatusBar style="light" />
+    <KeyboardAvoidingView
+      style={{ flex: 1, backgroundColor: p.page }}
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
+    >
       <View style={{ height: 300 + insets.top, overflow: "hidden" }}>
-        <StageField tone={ready ? "paid" : "shu"} />
-        <View style={{ height: 2, marginTop: insets.top + 6, marginHorizontal: 20, backgroundColor: "#FFFFFF40", borderRadius: 1 }}>
-          <Animated.View style={[{ height: 2, backgroundColor: "#FFFFFF", borderRadius: 1 }, progress]} />
+        <StageField tone={ready ? "paid" : "lacquer"} />
+        <View
+          style={{
+            height: 2,
+            marginTop: insets.top + 6,
+            marginHorizontal: 20,
+            backgroundColor: "#FFFFFF40",
+            borderRadius: 1,
+          }}
+        >
+          <Animated.View
+            style={[{ height: 2, backgroundColor: "#FFFFFF", borderRadius: 1 }, progress]}
+          />
         </View>
         <View style={{ flex: 1, alignItems: "center", justifyContent: "center", gap: 14 }}>
           {ready ? (
@@ -119,9 +146,19 @@ export default function Welcome() {
             </StageObject>
           )}
           {step >= 1 ? (
-            <View style={{ backgroundColor: "#FFFFFF", borderRadius: RADIUS.pill, paddingHorizontal: 14, paddingVertical: 6 }}>
-              <T role="mono" color="#000">
-                {(account?.accountId ?? `${handle || "name"}.${network === "mainnet" ? "tegata.near" : "tegata.testnet"}`).toLowerCase()}
+            <View
+              style={{
+                backgroundColor: PAPER.face,
+                borderRadius: RADIUS.pill,
+                paddingHorizontal: 14,
+                paddingVertical: 6,
+              }}
+            >
+              <T role="mono" color={PAPER.ink}>
+                {(
+                  account?.accountId ??
+                  `${handle || "name"}.${network === "mainnet" ? "tegata.near" : "tegata.testnet"}`
+                ).toLowerCase()}
               </T>
             </View>
           ) : null}
@@ -129,7 +166,12 @@ export default function Welcome() {
       </View>
       <View style={{ flex: 1, padding: 20, paddingBottom: insets.bottom + 16, gap: 16 }}>
         {step === 0 ? (
-          <Animated.View key="name" entering={FadeInDown.duration(320)} exiting={FadeOutUp.duration(160)} style={{ gap: 16 }}>
+          <Animated.View
+            key="name"
+            entering={FadeInDown.duration(320)}
+            exiting={FadeOutUp.duration(160)}
+            style={{ gap: 16 }}
+          >
             <T role="stepTitle">What's the business called?</T>
             <TextInput
               defaultValue={business}
@@ -140,7 +182,15 @@ export default function Welcome() {
               maxLength={80}
               returnKeyType="next"
               onSubmitEditing={() => business.trim() && setStep(1)}
-              style={{ height: 56, borderRadius: RADIUS.button, backgroundColor: p.plate, paddingHorizontal: 16, fontFamily: FONT.medium, fontSize: 17, color: p.ink }}
+              style={{
+                height: 56,
+                borderRadius: RADIUS.button,
+                backgroundColor: p.plate,
+                paddingHorizontal: 16,
+                fontFamily: FONT.medium,
+                fontSize: 17,
+                color: p.ink,
+              }}
             />
             <Button
               label="Continue"
@@ -152,9 +202,23 @@ export default function Welcome() {
             />
           </Animated.View>
         ) : step === 1 ? (
-          <Animated.View key="handle" entering={FadeInDown.duration(320)} exiting={FadeOutUp.duration(160)} style={{ gap: 16 }}>
+          <Animated.View
+            key="handle"
+            entering={FadeInDown.duration(320)}
+            exiting={FadeOutUp.duration(160)}
+            style={{ gap: 16 }}
+          >
             <T role="stepTitle">Your pay address</T>
-            <View style={{ height: 56, borderRadius: RADIUS.button, backgroundColor: p.plate, paddingHorizontal: 16, flexDirection: "row", alignItems: "center" }}>
+            <View
+              style={{
+                height: 56,
+                borderRadius: RADIUS.button,
+                backgroundColor: p.plate,
+                paddingHorizontal: 16,
+                flexDirection: "row",
+                alignItems: "center",
+              }}
+            >
               <TextInput
                 value={handle}
                 onChangeText={(text) => {
@@ -178,13 +242,23 @@ export default function Welcome() {
                 {problem}
               </T>
             ) : null}
-            <Button label="Open my account" busy={busy} busyLabel="Opening" disabled={!handleOk} onPress={open} />
+            <Button
+              label="Open my account"
+              busy={busy}
+              busyLabel="Opening"
+              disabled={!handleOk}
+              onPress={open}
+            />
           </Animated.View>
         ) : (
           <Animated.View key="opening" entering={FadeInDown.duration(320)} style={{ gap: 18 }}>
             <T role="stepTitle">{ready ? "Your account is open." : "Opening your account"}</T>
             <TaskSteps
-              steps={[`Creating ${account?.accountId ?? "your account"} on NEAR`, "Registering for USDC", "Ready to get paid"]}
+              steps={[
+                `Creating ${account?.accountId ?? "your account"} on NEAR`,
+                "Registering for USDC",
+                "Ready to get paid",
+              ]}
               current={stage}
             />
             {ready ? <Button label="Go to Home" onPress={() => router.replace("/(tabs)")} /> : null}

@@ -60,7 +60,8 @@ export function HoldButton({
     if (busy || disabled) return
     setHolding(true)
     fire("press")
-    for (let i = 1; i < TICKS; i++) timers.current.push(setTimeout(() => fire("tick"), (HOLD_MS / TICKS) * i))
+    for (let i = 1; i < TICKS; i++)
+      timers.current.push(setTimeout(() => fire("tick"), (HOLD_MS / TICKS) * i))
     fill.value = withTiming(1, { duration: HOLD_MS, easing: Easing.linear }, (finished) => {
       if (finished) runOnJS(done)()
     })
@@ -95,8 +96,18 @@ export function HoldButton({
         style,
       ]}
     >
-      <Animated.View style={[{ position: "absolute", left: 0, top: 0, bottom: 0, backgroundColor: SHU }, bar]} />
-      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 10, paddingHorizontal: 16 }}>
+      <Animated.View
+        style={[{ position: "absolute", left: 0, top: 0, bottom: 0, backgroundColor: SHU }, bar]}
+      />
+      <View
+        style={{
+          flexDirection: "row",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: 10,
+          paddingHorizontal: 16,
+        }}
+      >
         {busy ? (
           <>
             <ActivityIndicator color={p.onPrimary} />
@@ -104,7 +115,11 @@ export function HoldButton({
           </>
         ) : (
           <T role="rowTitle" color={off ? p.text2 : p.onPrimary} numberOfLines={1}>
-            {off && disabledReason ? disabledReason : holding ? "Keep holding" : `Hold to ${label.charAt(0).toLowerCase()}${label.slice(1)}`}
+            {off && disabledReason
+              ? disabledReason
+              : holding
+                ? "Keep holding"
+                : `Hold to ${label.charAt(0).toLowerCase()}${label.slice(1)}`}
           </T>
         )}
       </View>

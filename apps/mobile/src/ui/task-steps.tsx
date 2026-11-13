@@ -6,7 +6,7 @@ import { View } from "react-native"
 import Animated, { FadeInDown } from "react-native-reanimated"
 
 import { fire } from "@/feedback/fire"
-import { SHU, usePalette } from "@/theme/tokens"
+import { PAPER, SHU, usePalette } from "@/theme/tokens"
 
 import { Shimmer } from "./shimmer"
 import { T } from "./text"
@@ -70,9 +70,16 @@ export function TaskSteps({
                 borderStyle: now ? "dashed" : "solid",
               }}
             >
-              {done ? <Check size={16} color={onDark ? SHU : "#000"} strokeWidth={3} /> : null}
+              {done ? <Check size={16} color={onDark ? SHU : PAPER.ink} strokeWidth={3} /> : null}
             </View>
-            <View style={{ flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+            <View
+              style={{
+                flex: 1,
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "space-between",
+              }}
+            >
               {now ? (
                 <Shimmer color={ink}>{label}</Shimmer>
               ) : (

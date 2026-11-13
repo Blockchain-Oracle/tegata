@@ -52,7 +52,14 @@ export interface SendDraft {
   amount: string
 }
 
-export type PaymentStatus = "awaiting" | "detected" | "settling" | "succeeded" | "refunded" | "failed" | "expired"
+export type PaymentStatus =
+  | "awaiting"
+  | "detected"
+  | "settling"
+  | "succeeded"
+  | "refunded"
+  | "failed"
+  | "expired"
 export type PaymentRail = "tegata" | "near_wallet" | "oneclick" | "manual" | "card"
 
 export interface ActivityItem {
@@ -109,7 +116,9 @@ export interface TeamPerson {
   id: string
   name: string
   role: string | null
-  ready: { state: "ready"; kind: DestinationKind; accountId: string } | { state: string; kind?: DestinationKind; accountId?: string }
+  ready:
+    | { state: "ready"; kind: DestinationKind; accountId: string }
+    | { state: string; kind?: DestinationKind; accountId?: string }
 }
 
 export interface PayRunSummary {

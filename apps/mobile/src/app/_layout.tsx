@@ -1,10 +1,9 @@
 // The app's frame: gestures, safe areas, Privy + the API session, sound and touch warmed at launch, and one stack.
 // Sheets (Get paid, the "+" fan, a scanned code) are native form sheets; the scanner is full screen.
-import * as SplashScreen from "expo-splash-screen"
+
 import { Stack } from "expo-router"
-import { StatusBar } from "expo-status-bar"
+import * as SplashScreen from "expo-splash-screen"
 import { useEffect } from "react"
-import { useColorScheme } from "react-native"
 import { GestureHandlerRootView } from "react-native-gesture-handler"
 import { SafeAreaProvider } from "react-native-safe-area-context"
 
@@ -16,7 +15,6 @@ void SplashScreen.preventAutoHideAsync().catch(() => undefined)
 
 export default function RootLayout() {
   const p = usePalette()
-  const scheme = useColorScheme()
   useEffect(() => {
     warmFeedback()
   }, [])
@@ -24,7 +22,6 @@ export default function RootLayout() {
     <GestureHandlerRootView style={{ flex: 1, backgroundColor: p.page }}>
       <SafeAreaProvider>
         <AppProviders>
-          <StatusBar style={scheme === "dark" ? "light" : "dark"} />
           <Stack
             screenOptions={{
               headerShown: false,
@@ -46,7 +43,10 @@ export default function RootLayout() {
                 contentStyle: { backgroundColor: p.page },
               }}
             />
-            <Stack.Screen name="scan" options={{ presentation: "fullScreenModal", animation: "fade" }} />
+            <Stack.Screen
+              name="scan"
+              options={{ presentation: "fullScreenModal", animation: "fade" }}
+            />
             <Stack.Screen name="send" options={{ gestureEnabled: true }} />
           </Stack>
         </AppProviders>

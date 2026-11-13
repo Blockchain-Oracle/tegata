@@ -17,7 +17,7 @@ import { NETWORKS } from "@/config"
 import { fire } from "@/feedback/fire"
 import { usd } from "@/lib/money"
 import { DraftMismatch, ftTransfers } from "@/near/draft"
-import { SHU, STORY, usePalette } from "@/theme/tokens"
+import { SHU, usePalette } from "@/theme/tokens"
 import { Button } from "@/ui/button"
 import { Figure } from "@/ui/figure"
 import { HoldButton } from "@/ui/hold-button"
@@ -30,7 +30,9 @@ import { T } from "@/ui/text"
 
 /** Throws unless the batches pay exactly the included rows on screen. */
 function checkBatches(batches: RunBatchDraft[], run: PayRun, usdc: string) {
-  const expected = new Map(run.rows.filter((r) => r.status === "included").map((r) => [r.id, r] as const))
+  const expected = new Map(
+    run.rows.filter((r) => r.status === "included").map((r) => [r.id, r] as const),
+  )
   let covered = 0
   for (const batch of batches) {
     const transfers = ftTransfers(batch.draft, usdc)
@@ -102,10 +104,14 @@ export default function Run() {
     setBusy(true)
     setProblem(null)
     try {
-      const { batches } = await api<{ batches: RunBatchDraft[] }>(`/api/payroll/runs/${id}/prepare`, { method: "POST" })
+      const { batches } = await api<{ batches: RunBatchDraft[] }>(
+        `/api/payroll/runs/${id}/prepare`,
+        { method: "POST" },
+      )
       checkBatches(batches, data, NETWORKS[data.network].usdc)
       const signatures = []
-      for (const batch of batches) signatures.push({ relayId: batch.relayId, signature: await sign(batch.draft.hash) })
+      for (const batch of batches)
+        signatures.push({ relayId: batch.relayId, signature: await sign(batch.draft.hash) })
       await api(`/api/payroll/runs/${id}/approve`, { body: { signatures } })
       fire("confirm")
       refresh()
@@ -122,7 +128,15 @@ export default function Run() {
     return (
       <Screen>
         <Header title="Payroll run" />
-        {run.isError ? <Problem text="Couldn't load the run." action="Retry" onAction={() => void run.refetch()} /> : <Skeleton width="100%" height={180} radius={20} />}
+        {run.isError ? (
+          <Problem
+            text="Couldn't load the run."
+            action="Retry"
+            onAction={() => void run.refetch()}
+          />
+        ) : (
+          <Skeleton width="100%" height={180} radius={20} />
+        )}
       </Screen>
     )
 
@@ -136,18 +150,31 @@ export default function Run() {
   return (
     <Screen refreshing={run.isRefetching} onRefresh={() => void run.refetch()}>
       <Header title={data.label} />
-      <View style={{ backgroundColor: paid ? "#C8F06A" : STORY.kin, borderRadius: 24, padding: 20, gap: 6, overflow: "hidden" }}>
-        <T role="detailMedium" color="#000000B3">
+      <View
+        style={{
+          backgroundColor: paid ? p.matcha : p.kin,
+          borderRadius: 24,
+          padding: 20,
+          gap: 6,
+          overflow: "hidden",
+        }}
+      >
+        <T role="detailMedium" color={`${p.fieldInk}B3`}>
           {paid ? "Paid" : data.status === "approved" ? "Paying on NEAR" : "Payroll to approve"}
         </T>
-        <Figure units={data.total} size={52} color="#000" />
-        <T role="bodyMedium" color="#000000B3">
+        <Figure units={data.total} size={52} color={p.fieldInk} />
+        <T role="bodyMedium" color={`${p.fieldInk}B3`}>
           to {included.length} {included.length === 1 ? "person" : "people"} · payday{" "}
-          {new Date(`${data.payday}T12:00:00`).toLocaleDateString(undefined, { day: "numeric", month: "short" })}
+          {new Date(`${data.payday}T12:00:00`).toLocaleDateString(undefined, {
+            day: "numeric",
+            month: "short",
+          })}
         </T>
         {data.status === "draft" ? (
-          <T role="detail" color={short ? "#C8283F" : "#000000B3"}>
-            {short ? `Your balance is ${usd(balance)}. Add money first.` : `Balance after: ${usd(balance - total)}`}
+          <T role="detail" color={short ? p.down : `${p.fieldInk}B3`}>
+            {short
+              ? `Your balance is ${usd(balance)}. Add money first.`
+              : `Balance after: ${usd(balance - total)}`}
           </T>
         ) : null}
         {paid ? (
@@ -172,13 +199,28 @@ export default function Run() {
             }
             right={
               <View style={{ alignItems: "flex-end", gap: 4 }}>
-                <T role="rowTitle" tone={row.status === "excluded" || row.status === "skipped" ? "text3" : "ink"}>
+                <T
+                  role="rowTitle"
+                  tone={row.status === "excluded" || row.status === "skipped" ? "text3" : "ink"}
+                >
                   {usd(row.amount)}
                 </T>
                 {row.status === "paid" ? (
-                  <Animated.View entering={ZoomIn.springify()} style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
-                    <View style={{ width: 16, height: 16, borderRadius: 8, backgroundColor: p.up, alignItems: "center", justifyContent: "center" }}>
-                      <Check size={10} color="#fff" strokeWidth={3} />
+                  <Animated.View
+                    entering={ZoomIn.springify()}
+                    style={{ flexDirection: "row", alignItems: "center", gap: 4 }}
+                  >
+                    <View
+                      style={{
+                        width: 16,
+                        height: 16,
+                        borderRadius: 8,
+                        backgroundColor: p.up,
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
+                    >
+                      <Check size={10} color={p.page} strokeWidth={3} />
                     </View>
                     <T role="meta" tone="up">
                       Paid
@@ -186,7 +228,8 @@ export default function Run() {
                   </Animated.View>
                 ) : row.status === "failed" ? (
                   <Chip label="Didn't go through" tone="down" />
-                ) : data.status === "draft" && (row.status === "included" || row.status === "excluded") ? (
+                ) : data.status === "draft" &&
+                  (row.status === "included" || row.status === "excluded") ? (
                   <Switch
                     value={row.status === "included"}
                     onValueChange={(on) => {
@@ -217,9 +260,17 @@ export default function Run() {
       {data.transactions.length > 0 ? (
         <Button
           variant="secondary"
-          label={data.transactions.length > 1 ? `Open on NEAR · ${data.transactions.length} batches` : "Open on NEAR"}
+          label={
+            data.transactions.length > 1
+              ? `Open on NEAR · ${data.transactions.length} batches`
+              : "Open on NEAR"
+          }
           icon={<Mark id="near" size={20} />}
-          onPress={() => void WebBrowser.openBrowserAsync(data.transactions[0]?.url ?? NETWORKS[network].explorer)}
+          onPress={() =>
+            void WebBrowser.openBrowserAsync(
+              data.transactions[0]?.url ?? NETWORKS[network].explorer,
+            )
+          }
         />
       ) : null}
       {paid ? <Button label="Done" onPress={() => router.back()} /> : null}

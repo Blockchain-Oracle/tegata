@@ -3,7 +3,12 @@
 // (±6 px three times in 300 ms) — the caller bumps `shake`.
 import { useEffect, useRef } from "react"
 import { Pressable, TextInput, View } from "react-native"
-import Animated, { useAnimatedStyle, useSharedValue, withSequence, withTiming } from "react-native-reanimated"
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withSequence,
+  withTiming,
+} from "react-native-reanimated"
 
 import { FONT, RADIUS, SHU, usePalette } from "@/theme/tokens"
 
@@ -44,7 +49,8 @@ export function CodeField({
 
   const box = (i: number) => {
     const char = value[i]
-    const active = !disabled && (i === value.length || (i === LENGTH - 1 && value.length === LENGTH))
+    const active =
+      !disabled && (i === value.length || (i === LENGTH - 1 && value.length === LENGTH))
     return (
       <View
         key={i}
@@ -68,7 +74,15 @@ export function CodeField({
     <Pressable onPress={() => input.current?.focus()} accessibilityLabel="Sign-in code">
       <Animated.View style={[{ flexDirection: "row", alignItems: "center", gap: 8 }, row]}>
         {[0, 1, 2].map(box)}
-        <View style={{ width: 10, height: 2, borderRadius: 1, backgroundColor: p.text3, marginHorizontal: 2 }} />
+        <View
+          style={{
+            width: 10,
+            height: 2,
+            borderRadius: 1,
+            backgroundColor: p.text3,
+            marginHorizontal: 2,
+          }}
+        />
         {[3, 4, 5].map(box)}
       </Animated.View>
       <TextInput

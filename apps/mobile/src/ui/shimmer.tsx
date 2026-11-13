@@ -1,7 +1,7 @@
 // A short verb that breathes while something is happening ("Opening your account"), and the skeleton block that
 // stands where data will land (opacity 0.65 ↔ 1 over 1200 ms; still under reduced motion).
 import { useEffect } from "react"
-import { type DimensionValue, type StyleProp, type ViewStyle } from "react-native"
+import type { DimensionValue, StyleProp, ViewStyle } from "react-native"
 import Animated, {
   Easing,
   useAnimatedStyle,

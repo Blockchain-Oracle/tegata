@@ -10,7 +10,7 @@ import { api } from "@/api/client"
 import type { ActivityItem } from "@/api/types"
 import { useSession } from "@/auth/session"
 import { ActivityRow, isIn } from "@/features/activity/activity-row"
-import { STORY } from "@/theme/tokens"
+import { PAPER } from "@/theme/tokens"
 import { Card, Header, Problem, Screen, StoryTile } from "@/ui/layout"
 import { Segmented } from "@/ui/segmented"
 import { Skeleton } from "@/ui/shimmer"
@@ -24,7 +24,11 @@ function dayLabel(iso: string) {
   const yesterday = new Date(Date.now() - 86_400_000)
   if (d.toDateString() === today.toDateString()) return "Today"
   if (d.toDateString() === yesterday.toDateString()) return "Yesterday"
-  return d.toLocaleDateString(undefined, { day: "numeric", month: "short", year: d.getFullYear() === today.getFullYear() ? undefined : "numeric" })
+  return d.toLocaleDateString(undefined, {
+    day: "numeric",
+    month: "short",
+    year: d.getFullYear() === today.getFullYear() ? undefined : "numeric",
+  })
 }
 
 export default function Activity() {
@@ -36,7 +40,9 @@ export default function Activity() {
     select: (data) => data.items.filter((item) => item.network === network),
   })
   const groups = useMemo(() => {
-    const items = (activity.data ?? []).filter((item) => (filter === "all" ? true : filter === "in" ? isIn(item) : !isIn(item)))
+    const items = (activity.data ?? []).filter((item) =>
+      filter === "all" ? true : filter === "in" ? isIn(item) : !isIn(item),
+    )
     const map = new Map<string, ActivityItem[]>()
     for (const item of items) {
       const key = dayLabel(item.at)
@@ -70,19 +76,33 @@ export default function Activity() {
           ))}
         </Card>
       ) : activity.isError ? (
-        <Problem text="Couldn't load your activity." action="Retry" onAction={() => void activity.refetch()} />
+        <Problem
+          text="Couldn't load your activity."
+          action="Retry"
+          onAction={() => void activity.refetch()}
+        />
       ) : groups.length === 0 ? (
         <StoryTile
-          color={STORY.sora}
-          icon={<ArrowDownLeft size={24} color="#000" />}
-          title={filter === "all" ? "Nothing has moved yet" : filter === "in" ? "No money in yet" : "No money out yet"}
+          field="sora"
+          icon={<ArrowDownLeft size={24} color={PAPER.ink} />}
+          title={
+            filter === "all"
+              ? "Nothing has moved yet"
+              : filter === "in"
+                ? "No money in yet"
+                : "No money out yet"
+          }
           line="Share your pay address or a pay link."
           action="Get paid"
           onPress={() => router.push("/get-paid")}
         />
       ) : (
         groups.map(([day, items], g) => (
-          <Animated.View key={day} entering={FadeInDown.delay(g * 40).duration(320)} style={{ gap: 10 }}>
+          <Animated.View
+            key={day}
+            entering={FadeInDown.delay(g * 40).duration(320)}
+            style={{ gap: 10 }}
+          >
             <T role="sectionTitle">{day}</T>
             <Card>
               {items.map((item) => (

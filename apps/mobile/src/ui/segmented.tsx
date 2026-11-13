@@ -20,7 +20,10 @@ export function Segmented<V extends string>({
 }) {
   const p = usePalette()
   const [width, setWidth] = useState(0)
-  const index = Math.max(0, options.findIndex((o) => o.value === value))
+  const index = Math.max(
+    0,
+    options.findIndex((o) => o.value === value),
+  )
   const segment = width / options.length
   const thumb = useAnimatedStyle(() => ({
     width: segment - 4,
@@ -29,12 +32,28 @@ export function Segmented<V extends string>({
   return (
     <View
       onLayout={(e) => setWidth(e.nativeEvent.layout.width - 8)}
-      style={{ flexDirection: "row", backgroundColor: p.plate, borderRadius: RADIUS.button, padding: 4, height: 44 }}
+      style={{
+        flexDirection: "row",
+        backgroundColor: p.plate,
+        borderRadius: RADIUS.button,
+        padding: 4,
+        height: 44,
+      }}
       accessibilityRole="tablist"
     >
       {width > 0 ? (
         <Animated.View
-          style={[{ position: "absolute", top: 4, left: 6, bottom: 4, borderRadius: 9, backgroundColor: p.card }, thumb]}
+          style={[
+            {
+              position: "absolute",
+              top: 4,
+              left: 6,
+              bottom: 4,
+              borderRadius: 9,
+              backgroundColor: p.card,
+            },
+            thumb,
+          ]}
         />
       ) : null}
       {options.map((option) => (

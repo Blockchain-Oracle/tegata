@@ -31,7 +31,8 @@ export const timeOf = (iso: string) =>
 
 export function statusChip(status: string): { label: string; tone: "warn" | "down" } | null {
   if (SETTLED.has(status)) return null
-  if (FAILED.has(status)) return { label: status === "refunded" ? "Refunded" : "Didn't go through", tone: "down" }
+  if (FAILED.has(status))
+    return { label: status === "refunded" ? "Refunded" : "Didn't go through", tone: "down" }
   return { label: "Settling", tone: "warn" }
 }
 
@@ -43,9 +44,7 @@ export function ActivityRow({ item }: { item: ActivityItem }) {
   const account = /\.(near|testnet)$|^[0-9a-f]{64}$/.test(item.counterparty)
   return (
     <Row
-      onPress={() =>
-        router.push({ pathname: "/receipt", params: { item: JSON.stringify(item) } })
-      }
+      onPress={() => router.push({ pathname: "/receipt", params: { item: JSON.stringify(item) } })}
       mono={account}
       left={
         <View>
@@ -65,7 +64,11 @@ export function ActivityRow({ item }: { item: ActivityItem }) {
               borderColor: p.card,
             }}
           >
-            {incoming ? <ArrowDownLeft size={11} color={p.card} strokeWidth={3} /> : <ArrowUpRight size={11} color={p.card} strokeWidth={3} />}
+            {incoming ? (
+              <ArrowDownLeft size={11} color={p.card} strokeWidth={3} />
+            ) : (
+              <ArrowUpRight size={11} color={p.card} strokeWidth={3} />
+            )}
           </View>
         </View>
       }

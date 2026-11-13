@@ -74,7 +74,15 @@ export default function You() {
               setCopied(true)
               setTimeout(() => setCopied(false), 1500)
             }}
-            style={{ flexDirection: "row", alignItems: "center", gap: 8, backgroundColor: p.plate, borderRadius: 999, paddingHorizontal: 14, height: 36 }}
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              gap: 8,
+              backgroundColor: p.plate,
+              borderRadius: 999,
+              paddingHorizontal: 14,
+              height: 36,
+            }}
           >
             <Mark id="near" size={18} />
             <T role="mono">{account.accountId}</T>
@@ -101,8 +109,16 @@ export default function You() {
           onPress={() => choose("live")}
           left={<ModeDot />}
           title="Live"
-          meta={liveOn ? "Real USDC on NEAR" : "Live opens when Tegata's mainnet operator is switched on"}
-          right={mode === "live" && network === "mainnet" ? <Check size={22} color={SHU} strokeWidth={3} /> : null}
+          meta={
+            liveOn
+              ? "Real USDC on NEAR"
+              : "Live opens when Tegata's mainnet operator is switched on"
+          }
+          right={
+            mode === "live" && network === "mainnet" ? (
+              <Check size={22} color={SHU} strokeWidth={3} />
+            ) : null
+          }
         />
       </Card>
 
@@ -180,7 +196,9 @@ function ModeDot({ dashed }: { dashed?: boolean }) {
         justifyContent: "center",
       }}
     >
-      <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: dashed ? p.text3 : SHU }} />
+      <View
+        style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: dashed ? p.text3 : SHU }}
+      />
     </View>
   )
 }

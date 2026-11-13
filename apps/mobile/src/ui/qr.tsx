@@ -5,9 +5,19 @@ import { useMemo } from "react"
 import { View } from "react-native"
 import Svg, { G, Rect } from "react-native-svg"
 
+import { PAPER } from "@/theme/tokens"
+
 import { TegataSeal } from "./seal"
 
-export function Qr({ value, size = 232, color = "#000000" }: { value: string; size?: number; color?: string }) {
+export function Qr({
+  value,
+  size = 232,
+  color = PAPER.ink as string,
+}: {
+  value: string
+  size?: number
+  color?: string
+}) {
   const matrix = useMemo(() => QRCode.create(value, { errorCorrectionLevel: "H" }).modules, [value])
   const n = matrix.size
   const cell = size / n
@@ -19,12 +29,34 @@ export function Qr({ value, size = 232, color = "#000000" }: { value: string; si
     (x < 7 && y < 7) || (x >= n - 7 && y < 7) || (x < 7 && y >= n - 7)
   const dots: { x: number; y: number }[] = []
   for (let y = 0; y < n; y++)
-    for (let x = 0; x < n; x++) if (matrix.get(x, y) && !inHole(x, y) && !inEye(x, y)) dots.push({ x, y })
+    for (let x = 0; x < n; x++)
+      if (matrix.get(x, y) && !inHole(x, y) && !inEye(x, y)) dots.push({ x, y })
   const eye = (ex: number, ey: number) => (
     <G key={`${ex}-${ey}`}>
-      <Rect x={ex * cell} y={ey * cell} width={7 * cell} height={7 * cell} rx={cell * 2} fill={color} />
-      <Rect x={(ex + 1) * cell} y={(ey + 1) * cell} width={5 * cell} height={5 * cell} rx={cell * 1.4} fill="#FFFFFF" />
-      <Rect x={(ex + 2) * cell} y={(ey + 2) * cell} width={3 * cell} height={3 * cell} rx={cell} fill={color} />
+      <Rect
+        x={ex * cell}
+        y={ey * cell}
+        width={7 * cell}
+        height={7 * cell}
+        rx={cell * 2}
+        fill={color}
+      />
+      <Rect
+        x={(ex + 1) * cell}
+        y={(ey + 1) * cell}
+        width={5 * cell}
+        height={5 * cell}
+        rx={cell * 1.4}
+        fill={PAPER.face}
+      />
+      <Rect
+        x={(ex + 2) * cell}
+        y={(ey + 2) * cell}
+        width={3 * cell}
+        height={3 * cell}
+        rx={cell}
+        fill={color}
+      />
     </G>
   )
   const sealSize = hole * cell * 0.92

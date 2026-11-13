@@ -12,4 +12,4 @@ export const PRIVY_CLIENT_ID =
 export const APP_VERSION = Constants.expoConfig?.version ?? "1.0.0"
 
 /** The USDC contract on each network (Circle's native USDC, NEP-141); mirrors @tegata/config NETWORKS. */
-export { NETWORKS, MODE_LABEL, USDC_DECIMALS } from "@tegata/config"
+export { MODE_LABEL, NETWORKS, USDC_DECIMALS } from "@tegata/config"

@@ -37,7 +37,11 @@ export default function NewLink() {
     setProblem(null)
     try {
       const { link: created } = await api<{ link: PayLink }>("/api/links", {
-        body: { title: title.trim(), ...(note.trim() ? { note: note.trim() } : {}), ...(open ? {} : { amount }) },
+        body: {
+          title: title.trim(),
+          ...(note.trim() ? { note: note.trim() } : {}),
+          ...(open ? {} : { amount }),
+        },
       })
       setLink(created)
       setStep("done")
@@ -61,12 +65,25 @@ export default function NewLink() {
 
   if (step === "details")
     return (
-      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+      >
         <Screen>
           <Header title="Name the link" />
           <Animated.View entering={FadeInDown.duration(320)} style={{ gap: 14 }}>
-            <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
-              {open ? <T role="price">Any amount</T> : <Figure text={`$${typedAmount(amount)}`} size={40} color={p.ink} />}
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "space-between",
+              }}
+            >
+              {open ? (
+                <T role="price">Any amount</T>
+              ) : (
+                <Figure text={`$${typedAmount(amount)}`} size={40} color={p.ink} />
+              )}
               <Press haptic="tick" onPress={() => setStep("amount")}>
                 <T role="bodyMedium" tone="seal">
                   Change
@@ -80,7 +97,15 @@ export default function NewLink() {
               placeholderTextColor={p.text3}
               autoFocus
               maxLength={80}
-              style={{ height: 56, borderRadius: RADIUS.button, backgroundColor: p.plate, paddingHorizontal: 16, fontFamily: FONT.medium, fontSize: 17, color: p.ink }}
+              style={{
+                height: 56,
+                borderRadius: RADIUS.button,
+                backgroundColor: p.plate,
+                paddingHorizontal: 16,
+                fontFamily: FONT.medium,
+                fontSize: 17,
+                color: p.ink,
+              }}
             />
             <TextInput
               value={note}
@@ -89,14 +114,29 @@ export default function NewLink() {
               placeholderTextColor={p.text3}
               maxLength={280}
               multiline
-              style={{ minHeight: 88, borderRadius: RADIUS.button, backgroundColor: p.plate, padding: 16, fontFamily: FONT.regular, fontSize: 16, color: p.ink, textAlignVertical: "top" }}
+              style={{
+                minHeight: 88,
+                borderRadius: RADIUS.button,
+                backgroundColor: p.plate,
+                padding: 16,
+                fontFamily: FONT.regular,
+                fontSize: 16,
+                color: p.ink,
+                textAlignVertical: "top",
+              }}
             />
             {problem ? (
               <T role="detailMedium" tone="down">
                 {problem}
               </T>
             ) : null}
-            <Button label="Make the link" busy={busy} busyLabel="Making the link" disabled={!title.trim()} onPress={create} />
+            <Button
+              label="Make the link"
+              busy={busy}
+              busyLabel="Making the link"
+              disabled={!title.trim()}
+              onPress={create}
+            />
           </Animated.View>
         </Screen>
       </KeyboardAvoidingView>
@@ -105,7 +145,12 @@ export default function NewLink() {
   return (
     <Screen scroll={false}>
       <Header title="New pay link" />
-      <Animated.View key="amount" entering={FadeInDown.duration(320)} exiting={FadeOutUp.duration(160)} style={{ flex: 1, justifyContent: "space-between" }}>
+      <Animated.View
+        key="amount"
+        entering={FadeInDown.duration(320)}
+        exiting={FadeOutUp.duration(160)}
+        style={{ flex: 1, justifyContent: "space-between" }}
+      >
         <View style={{ alignItems: "center", gap: 14, paddingTop: 24 }}>
           {open ? (
             <T role="hero" center>
@@ -117,7 +162,13 @@ export default function NewLink() {
           <Press
             haptic="tick"
             onPress={() => setOpen((o) => !o)}
-            style={{ borderRadius: 999, paddingHorizontal: 14, height: 34, justifyContent: "center", backgroundColor: open ? p.sealWash : p.plate }}
+            style={{
+              borderRadius: 999,
+              paddingHorizontal: 14,
+              height: 34,
+              justifyContent: "center",
+              backgroundColor: open ? p.sealWash : p.plate,
+            }}
           >
             <T role="detailMedium" tone={open ? "seal" : "text2"}>
               {open ? "The payer types the amount" : "Let the payer choose"}

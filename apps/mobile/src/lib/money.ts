@@ -14,7 +14,10 @@ export function toUnits(amount: string): bigint {
 const group = (digits: string) => digits.replace(/\B(?=(\d{3})+(?!\d))/g, ",")
 
 /** 1234500000n → "$1,234.50"; `signed` writes "+$" / "−$". Cents are rounded down (money never rounds up). */
-export function usd(units: bigint | string | null | undefined, options: { signed?: boolean } = {}): string {
+export function usd(
+  units: bigint | string | null | undefined,
+  options: { signed?: boolean } = {},
+): string {
   const value = BigInt(units ?? 0)
   const negative = value < 0n
   const abs = negative ? -value : value
@@ -26,7 +29,8 @@ export function usd(units: bigint | string | null | undefined, options: { signed
 }
 
 /** Base units → a float for animation only. */
-export const dollars = (units: bigint | string | null | undefined) => Number(BigInt(units ?? 0)) / 1e6
+export const dollars = (units: bigint | string | null | undefined) =>
+  Number(BigInt(units ?? 0)) / 1e6
 
 /** What a keypad shows while typing: "1,250.5" with grouping, no forced cents. */
 export function typedAmount(raw: string): string {

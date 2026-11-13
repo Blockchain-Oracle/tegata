@@ -40,7 +40,16 @@ const VOLUME: Record<Cue, number> = {
   celebrate: 0.5,
 }
 
-export type HapticEvent = "tick" | "press" | "snap" | "confirm" | "filled" | "warn" | "fail" | "close" | "impact"
+export type HapticEvent =
+  | "tick"
+  | "press"
+  | "snap"
+  | "confirm"
+  | "filled"
+  | "warn"
+  | "fail"
+  | "close"
+  | "impact"
 
 const A = Haptics.AndroidHaptics
 const ANDROID: Record<HapticEvent, Haptics.AndroidHaptics> = {
@@ -146,7 +155,8 @@ export function warmFeedback() {
 
 export function haptic(event: HapticEvent) {
   if (!prefs.haptics || Platform.OS === "web") return
-  const run = Platform.OS === "android" ? Haptics.performAndroidHapticsAsync(ANDROID[event]) : ios(event)
+  const run =
+    Platform.OS === "android" ? Haptics.performAndroidHapticsAsync(ANDROID[event]) : ios(event)
   run.catch(() => undefined)
 }
 

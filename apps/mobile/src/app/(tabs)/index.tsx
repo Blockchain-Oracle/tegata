@@ -2,7 +2,16 @@
 // true now (payroll due, Sandbox test dollars), then the latest five movements. Money arriving plays `received` once.
 import { useMutation, useQuery } from "@tanstack/react-query"
 import { router } from "expo-router"
-import { ArrowDownLeft, ArrowUpRight, Banknote, Check, ChevronRight, Link2, Plus, ScanLine } from "lucide-react-native"
+import {
+  ArrowDownLeft,
+  ArrowUpRight,
+  Banknote,
+  Check,
+  ChevronRight,
+  Link2,
+  Plus,
+  ScanLine,
+} from "lucide-react-native"
 import { type ReactNode, useEffect, useRef, useState } from "react"
 import { View } from "react-native"
 import Animated, { FadeInDown } from "react-native-reanimated"
@@ -13,7 +22,7 @@ import { queryClient, useSession } from "@/auth/session"
 import { ActivityRow } from "@/features/activity/activity-row"
 import { fire } from "@/feedback/fire"
 import { usd } from "@/lib/money"
-import { SHADOW, STORY } from "@/theme/tokens"
+import { PAPER, SHADOW } from "@/theme/tokens"
 import { Figure } from "@/ui/figure"
 import { Card, Problem, SandboxPill, Screen, SectionTitle, StoryTile } from "@/ui/layout"
 import { Mark } from "@/ui/mark"
@@ -31,10 +40,35 @@ interface Due {
   total: string
 }
 
-function StageAction({ label, icon, onPress }: { label: string; icon: ReactNode; onPress: () => void }) {
+function StageAction({
+  label,
+  icon,
+  onPress,
+}: {
+  label: string
+  icon: ReactNode
+  onPress: () => void
+}) {
   return (
-    <Press haptic="tick" onPress={onPress} accessibilityLabel={label} style={{ alignItems: "center", gap: 8, width: 72 }}>
-      <View style={[{ width: 56, height: 56, borderRadius: 28, backgroundColor: "#FFFFFF", alignItems: "center", justifyContent: "center" }, SHADOW.object]}>
+    <Press
+      haptic="tick"
+      onPress={onPress}
+      accessibilityLabel={label}
+      style={{ alignItems: "center", gap: 8, width: 72 }}
+    >
+      <View
+        style={[
+          {
+            width: 56,
+            height: 56,
+            borderRadius: 28,
+            backgroundColor: PAPER.face,
+            alignItems: "center",
+            justifyContent: "center",
+          },
+          SHADOW.object,
+        ]}
+      >
         {icon}
       </View>
       <T role="detailMedium" tone="white">
@@ -47,7 +81,10 @@ function StageAction({ label, icon, onPress }: { label: string; icon: ReactNode;
 const paydayWord = (day: string) => {
   const today = new Date().toISOString().slice(0, 10)
   if (day === today) return "Today"
-  return new Date(`${day}T12:00:00`).toLocaleDateString(undefined, { day: "numeric", month: "short" })
+  return new Date(`${day}T12:00:00`).toLocaleDateString(undefined, {
+    day: "numeric",
+    month: "short",
+  })
 }
 
 export default function Home() {
@@ -71,7 +108,8 @@ export default function Home() {
   useEffect(() => {
     if (!account?.balance) return
     const now = BigInt(account.balance)
-    if (last.current !== null && now > last.current) fire("filled", { cue: "received", identity: `balance:${account.balance}` })
+    if (last.current !== null && now > last.current)
+      fire("filled", { cue: "received", identity: `balance:${account.balance}` })
     last.current = now
   }, [account?.balance])
 
@@ -88,7 +126,8 @@ export default function Home() {
     refetchInterval: (q) => (q.state.data && q.state.data.status !== "queued" ? false : 1500),
   })
   useEffect(() => {
-    if (grantStatus.data?.status === "sent") void queryClient.invalidateQueries({ queryKey: ["me"] })
+    if (grantStatus.data?.status === "sent")
+      void queryClient.invalidateQueries({ queryKey: ["me"] })
   }, [grantStatus.data?.status])
 
   const opening = account && !account.readyAt
@@ -126,7 +165,11 @@ export default function Home() {
 
       <Stage style={{ padding: 20, gap: 22 }}>
         <View style={{ gap: 6 }}>
-          <Press haptic="tick" onPress={() => router.push("/activity")} style={{ flexDirection: "row", alignItems: "center", gap: 8, alignSelf: "flex-start" }}>
+          <Press
+            haptic="tick"
+            onPress={() => router.push("/activity")}
+            style={{ flexDirection: "row", alignItems: "center", gap: 8, alignSelf: "flex-start" }}
+          >
             <Mark id="usdc" chain="near" size={22} />
             <T role="bodyMedium" color="#FFFFFFD9">
               Balance · USDC on NEAR
@@ -135,7 +178,11 @@ export default function Home() {
           </Press>
           {opening ? (
             <View style={{ paddingVertical: 8 }}>
-              <TaskSteps steps={["Creating your account on NEAR", "Registering for USDC", "Ready"]} current={account.registeredTx ? 2 : account.createdTx ? 1 : 0} onDark />
+              <TaskSteps
+                steps={["Creating your account on NEAR", "Registering for USDC", "Ready"]}
+                current={account.registeredTx ? 2 : account.createdTx ? 1 : 0}
+                onDark
+              />
             </View>
           ) : account?.balance !== undefined ? (
             <Figure units={account.balance} size={58} color="#FFFFFF" />
@@ -145,10 +192,26 @@ export default function Home() {
           {sandbox ? <SandboxPill onStage /> : null}
         </View>
         <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-          <StageAction label="Get paid" icon={<ArrowDownLeft size={24} color="#000" />} onPress={() => router.push("/get-paid")} />
-          <StageAction label="Send" icon={<ArrowUpRight size={24} color="#000" />} onPress={() => router.push("/send")} />
-          <StageAction label="Scan" icon={<ScanLine size={24} color="#000" />} onPress={() => router.push("/scan")} />
-          <StageAction label="Pay link" icon={<Link2 size={24} color="#000" />} onPress={() => router.push("/links/new")} />
+          <StageAction
+            label="Get paid"
+            icon={<ArrowDownLeft size={24} color={PAPER.ink} />}
+            onPress={() => router.push("/get-paid")}
+          />
+          <StageAction
+            label="Send"
+            icon={<ArrowUpRight size={24} color={PAPER.ink} />}
+            onPress={() => router.push("/send")}
+          />
+          <StageAction
+            label="Scan"
+            icon={<ScanLine size={24} color={PAPER.ink} />}
+            onPress={() => router.push("/scan")}
+          />
+          <StageAction
+            label="Pay link"
+            icon={<Link2 size={24} color={PAPER.ink} />}
+            onPress={() => router.push("/links/new")}
+          />
         </View>
       </Stage>
 
@@ -157,8 +220,8 @@ export default function Home() {
       {due.data ? (
         <Animated.View entering={FadeInDown.duration(320)}>
           <StoryTile
-            color={STORY.kin}
-            icon={<Banknote size={24} color="#000" />}
+            field="kin"
+            icon={<Banknote size={24} color={PAPER.ink} />}
             title="Payroll due"
             line={`${paydayWord(due.data.payday)} · ${usd(due.data.total)} to ${due.data.people} ${due.data.people === 1 ? "person" : "people"}`}
             action="Review"
@@ -169,8 +232,14 @@ export default function Home() {
 
       {sandbox ? (
         <StoryTile
-          color={STORY.matcha}
-          icon={grantStatus.data?.status === "sent" ? <Check size={24} color="#000" /> : <Plus size={24} color="#000" />}
+          field="matcha"
+          icon={
+            grantStatus.data?.status === "sent" ? (
+              <Check size={24} color={PAPER.ink} />
+            ) : (
+              <Plus size={24} color={PAPER.ink} />
+            )
+          }
           title={
             grantStatus.data?.status === "sent"
               ? "Test dollars added"
@@ -190,7 +259,11 @@ export default function Home() {
         />
       ) : null}
 
-      <SectionTitle title="Latest" action="All activity" onAction={() => router.push("/activity")} />
+      <SectionTitle
+        title="Latest"
+        action="All activity"
+        onAction={() => router.push("/activity")}
+      />
       {activity.isPending ? (
         <Card style={{ padding: 12, gap: 14 }}>
           {[0, 1, 2].map((i) => (
@@ -205,7 +278,11 @@ export default function Home() {
           ))}
         </Card>
       ) : activity.isError ? (
-        <Problem text="Couldn't load your activity. Your balance above is live." action="Retry" onAction={() => void activity.refetch()} />
+        <Problem
+          text="Couldn't load your activity. Your balance above is live."
+          action="Retry"
+          onAction={() => void activity.refetch()}
+        />
       ) : activity.data && activity.data.length > 0 ? (
         <Card>
           {activity.data.map((item, i) => (
@@ -216,15 +293,23 @@ export default function Home() {
         </Card>
       ) : (
         <StoryTile
-          color={STORY.sora}
-          icon={<ArrowDownLeft size={24} color="#000" />}
+          field="sora"
+          icon={<ArrowDownLeft size={24} color={PAPER.ink} />}
           title="Nothing has moved yet"
           line="Share your pay address or a pay link."
           action="Get paid"
           onPress={() => router.push("/get-paid")}
         />
       )}
-      <View style={{ alignItems: "center", flexDirection: "row", justifyContent: "center", gap: 6, opacity: 0.8 }}>
+      <View
+        style={{
+          alignItems: "center",
+          flexDirection: "row",
+          justifyContent: "center",
+          gap: 6,
+          opacity: 0.8,
+        }}
+      >
         <Mark id="near" size={14} />
         <T role="meta" tone="text3">
           Settled on NEAR · fees paid by Tegata

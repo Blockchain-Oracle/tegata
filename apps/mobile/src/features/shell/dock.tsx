@@ -18,7 +18,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context"
 
 import { useSession } from "@/auth/session"
 import { fire } from "@/feedback/fire"
-import { SHADOW, SHU, SPRING, usePalette } from "@/theme/tokens"
+import { PAPER, SHADOW, SHU, SPRING, usePalette } from "@/theme/tokens"
 import { Press } from "@/ui/press"
 import { BusinessSeal } from "@/ui/seal"
 import { T } from "@/ui/text"
@@ -40,7 +40,13 @@ export function Dock({ state, navigation }: BottomTabBarProps) {
   const [fan, setFan] = useState(false)
   const routes = state.routes
   // Slot order: two tabs, the "+", then the rest.
-  const slots: (string | "+")[] = [routes[0]?.name ?? "index", routes[1]?.name ?? "links", "+", routes[2]?.name ?? "activity", routes[3]?.name ?? "you"]
+  const slots: (string | "+")[] = [
+    routes[0]?.name ?? "index",
+    routes[1]?.name ?? "links",
+    "+",
+    routes[2]?.name ?? "activity",
+    routes[3]?.name ?? "you",
+  ]
   const activeName = routes[state.index]?.name
   const activeSlot = Math.max(0, slots.indexOf(activeName ?? "index"))
   const bubble = useSharedValue(activeSlot * SLOT)
@@ -53,7 +59,13 @@ export function Dock({ state, navigation }: BottomTabBarProps) {
     <>
       <View
         pointerEvents="box-none"
-        style={{ position: "absolute", left: 0, right: 0, bottom: Math.max(insets.bottom, 12) + 4, alignItems: "center" }}
+        style={{
+          position: "absolute",
+          left: 0,
+          right: 0,
+          bottom: Math.max(insets.bottom, 12) + 4,
+          alignItems: "center",
+        }}
       >
         <View
           style={[
@@ -63,7 +75,15 @@ export function Dock({ state, navigation }: BottomTabBarProps) {
         >
           <Animated.View
             style={[
-              { position: "absolute", left: 6, top: 6, width: SLOT, height: 56, borderRadius: 28, backgroundColor: p.plate },
+              {
+                position: "absolute",
+                left: 6,
+                top: 6,
+                width: SLOT,
+                height: 56,
+                borderRadius: 28,
+                backgroundColor: p.plate,
+              },
               bubbleStyle,
             ]}
           />
@@ -78,9 +98,23 @@ export function Dock({ state, navigation }: BottomTabBarProps) {
                     fire("press", { cue: "sheetOpen" })
                     setFan(true)
                   }}
-                  style={{ width: SLOT, height: 56, alignItems: "center", justifyContent: "center" }}
+                  style={{
+                    width: SLOT,
+                    height: 56,
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
                 >
-                  <View style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: p.primary, alignItems: "center", justifyContent: "center" }}>
+                  <View
+                    style={{
+                      width: 48,
+                      height: 48,
+                      borderRadius: 24,
+                      backgroundColor: p.primary,
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
                     <Plus size={26} color={p.onPrimary} strokeWidth={2.4} />
                   </View>
                 </Press>
@@ -99,10 +133,20 @@ export function Dock({ state, navigation }: BottomTabBarProps) {
                 onPress={() => {
                   const route = routes[index]
                   if (!route) return
-                  const event = navigation.emit({ type: "tabPress", target: route.key, canPreventDefault: true })
+                  const event = navigation.emit({
+                    type: "tabPress",
+                    target: route.key,
+                    canPreventDefault: true,
+                  })
                   if (!focused && !event.defaultPrevented) navigation.navigate(route.name)
                 }}
-                style={{ width: SLOT, height: 56, alignItems: "center", justifyContent: "center", gap: 2 }}
+                style={{
+                  width: SLOT,
+                  height: 56,
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 2,
+                }}
               >
                 {name === "you" ? (
                   <View style={{ opacity: focused ? 1 : 0.85 }}>
@@ -132,23 +176,43 @@ const FAN = [
 ] as const
 
 function Fan({ open, onClose, bottom }: { open: boolean; onClose: () => void; bottom: number }) {
+  const p = usePalette()
   const close = () => {
     fire("tick", { cue: "sheetClose" })
     onClose()
   }
   return (
-    <Modal visible={open} transparent animationType="none" onRequestClose={close} statusBarTranslucent>
+    <Modal
+      visible={open}
+      transparent
+      animationType="none"
+      onRequestClose={close}
+      statusBarTranslucent
+    >
       {open ? (
-        <Animated.View entering={FadeIn.duration(200)} exiting={FadeOut.duration(160)} style={{ flex: 1, backgroundColor: "#000000B3" }}>
+        <Animated.View
+          entering={FadeIn.duration(200)}
+          exiting={FadeOut.duration(160)}
+          style={{ flex: 1, backgroundColor: p.scrim }}
+        >
           <Pressable style={{ flex: 1 }} onPress={close} accessibilityLabel="Close" />
-          <View style={{ position: "absolute", left: 0, right: 0, bottom, alignItems: "center", gap: 22 }}>
+          <View
+            style={{
+              position: "absolute",
+              left: 0,
+              right: 0,
+              bottom,
+              alignItems: "center",
+              gap: 22,
+            }}
+          >
             <View style={{ flexDirection: "row", gap: 18 }}>
               {FAN.map((item, i) => (
                 <FanItem
                   key={item.label}
                   index={i}
                   label={item.label}
-                  icon={<item.icon size={26} color="#000" strokeWidth={2} />}
+                  icon={<item.icon size={26} color={PAPER.ink} strokeWidth={2} />}
                   onPress={() => {
                     onClose()
                     fire("press")
@@ -161,9 +225,17 @@ function Fan({ open, onClose, bottom }: { open: boolean; onClose: () => void; bo
               haptic={null}
               accessibilityLabel="Close"
               onPress={close}
-              style={{ width: 56, height: 56, borderRadius: 28, backgroundColor: SHU, alignItems: "center", justifyContent: "center", marginTop: 6 }}
+              style={{
+                width: 56,
+                height: 56,
+                borderRadius: 28,
+                backgroundColor: SHU,
+                alignItems: "center",
+                justifyContent: "center",
+                marginTop: 6,
+              }}
             >
-              <X size={26} color="#000" strokeWidth={2.4} />
+              <X size={26} color={PAPER.ink} strokeWidth={2.4} />
             </Press>
           </View>
         </Animated.View>
@@ -172,7 +244,17 @@ function Fan({ open, onClose, bottom }: { open: boolean; onClose: () => void; bo
   )
 }
 
-function FanItem({ label, icon, onPress, index }: { label: string; icon: ReactNode; onPress: () => void; index: number }) {
+function FanItem({
+  label,
+  icon,
+  onPress,
+  index,
+}: {
+  label: string
+  icon: ReactNode
+  onPress: () => void
+  index: number
+}) {
   const rise = useSharedValue(24)
   useEffect(() => {
     rise.value = withDelay(index * 40, withSpring(0, SPRING.layout))
@@ -180,8 +262,25 @@ function FanItem({ label, icon, onPress, index }: { label: string; icon: ReactNo
   const style = useAnimatedStyle(() => ({ transform: [{ translateY: rise.value }] }))
   return (
     <Animated.View entering={ZoomIn.delay(index * 40).springify()} style={style}>
-      <Press haptic="tick" onPress={onPress} accessibilityLabel={label} style={{ alignItems: "center", gap: 8, width: 68 }}>
-        <View style={[{ width: 60, height: 60, borderRadius: 30, backgroundColor: "#FFFFFF", alignItems: "center", justifyContent: "center" }, SHADOW.object]}>
+      <Press
+        haptic="tick"
+        onPress={onPress}
+        accessibilityLabel={label}
+        style={{ alignItems: "center", gap: 8, width: 68 }}
+      >
+        <View
+          style={[
+            {
+              width: 60,
+              height: 60,
+              borderRadius: 30,
+              backgroundColor: PAPER.face,
+              alignItems: "center",
+              justifyContent: "center",
+            },
+            SHADOW.object,
+          ]}
+        >
           {icon}
         </View>
         <T role="detailMedium" tone="white">

@@ -8,7 +8,7 @@ import { Share, View } from "react-native"
 
 import { useSession } from "@/auth/session"
 import { fire } from "@/feedback/fire"
-import { SHADOW, usePalette } from "@/theme/tokens"
+import { PAPER, SHADOW, usePalette } from "@/theme/tokens"
 import { Button } from "@/ui/button"
 import { Row, SandboxPill } from "@/ui/layout"
 import { Mark } from "@/ui/mark"
@@ -39,8 +39,14 @@ export default function GetPaid() {
     <View style={{ flex: 1, backgroundColor: p.page, padding: 20, paddingTop: 28, gap: 22 }}>
       <T role="sheetTitle">Get paid</T>
       <View style={{ alignItems: "center", gap: 18 }}>
-        <View style={[{ backgroundColor: "#FFFFFF", borderRadius: 24, padding: 18 }, SHADOW.receipt]}>
-          {account ? <Qr value={`near:${account.accountId}`} size={232} /> : <Skeleton width={232} height={232} />}
+        <View
+          style={[{ backgroundColor: PAPER.face, borderRadius: 24, padding: 18 }, SHADOW.receipt]}
+        >
+          {account ? (
+            <Qr value={`near:${account.accountId}`} size={232} />
+          ) : (
+            <Skeleton width={232} height={232} />
+          )}
           <View style={{ position: "absolute", right: -26, bottom: -26 }}>
             <SealPress delay={200} identity={`get-paid-${account?.accountId}`} cue={null}>
               <BusinessSeal name={name} size={80} />
@@ -86,7 +92,16 @@ export default function GetPaid() {
         <Row
           chevron
           left={
-            <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: p.sealWash, alignItems: "center", justifyContent: "center" }}>
+            <View
+              style={{
+                width: 40,
+                height: 40,
+                borderRadius: 20,
+                backgroundColor: p.sealWash,
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
               <Link2 size={20} color={p.sealInk} />
             </View>
           }

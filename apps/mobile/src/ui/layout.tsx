@@ -7,9 +7,10 @@ import { RefreshControl, ScrollView, type StyleProp, View, type ViewStyle } from
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 
 import { fire } from "@/feedback/fire"
-import { RADIUS, usePalette } from "@/theme/tokens"
+import { PAPER, RADIUS, usePalette } from "@/theme/tokens"
 
 import { Press } from "./press"
+import { useStatusBar } from "./status-bar"
 import { T } from "./text"
 
 /** Room under the content so the floating dock never covers the last row. */
@@ -35,13 +36,15 @@ export function Screen({
 }) {
   const p = usePalette()
   const insets = useSafeAreaInsets()
+  useStatusBar("page")
   const content: ViewStyle = {
     paddingTop: insets.top + 8,
     paddingBottom: (dock ? DOCK_CLEARANCE : 32) + insets.bottom,
     paddingHorizontal: padded ? 16 : 0,
     gap: 20,
   }
-  if (!scroll) return <View style={[{ flex: 1, backgroundColor: p.page }, content, style]}>{children}</View>
+  if (!scroll)
+    return <View style={[{ flex: 1, backgroundColor: p.page }, content, style]}>{children}</View>
   return (
     <ScrollView
       style={{ flex: 1, backgroundColor: p.page }}
@@ -65,7 +68,15 @@ export function Screen({
   )
 }
 
-export function Header({ title, right, back = true }: { title: string; right?: ReactNode; back?: boolean }) {
+export function Header({
+  title,
+  right,
+  back = true,
+}: {
+  title: string
+  right?: ReactNode
+  back?: boolean
+}) {
   const p = usePalette()
   return (
     <View style={{ gap: 8 }}>
@@ -87,7 +98,14 @@ export function Header({ title, right, back = true }: { title: string; right?: R
           <ChevronLeft size={24} color={p.ink} />
         </Press>
       ) : null}
-      <View style={{ flexDirection: "row", alignItems: "flex-end", justifyContent: "space-between", gap: 12 }}>
+      <View
+        style={{
+          flexDirection: "row",
+          alignItems: "flex-end",
+          justifyContent: "space-between",
+          gap: 12,
+        }}
+      >
         <T role="pageTitle" style={{ flex: 1 }} numberOfLines={2}>
           {title}
         </T>
@@ -100,7 +118,12 @@ export function Header({ title, right, back = true }: { title: string; right?: R
 export function Card({ children, style }: { children: ReactNode; style?: StyleProp<ViewStyle> }) {
   const p = usePalette()
   return (
-    <View style={[{ backgroundColor: p.card, borderRadius: RADIUS.group, padding: 4, overflow: "hidden" }, style]}>
+    <View
+      style={[
+        { backgroundColor: p.card, borderRadius: RADIUS.group, padding: 4, overflow: "hidden" },
+        style,
+      ]}
+    >
       {children}
     </View>
   )
@@ -126,7 +149,16 @@ export function Row({
 }) {
   const p = usePalette()
   const body = (
-    <View style={{ flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 12, paddingVertical: 12, minHeight: 60 }}>
+    <View
+      style={{
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 12,
+        paddingHorizontal: 12,
+        paddingVertical: 12,
+        minHeight: 60,
+      }}
+    >
       {left}
       <View style={{ flex: 1, gap: 2 }}>
         <T role={mono ? "mono" : "rowTitle"} numberOfLines={1}>
@@ -152,9 +184,24 @@ export function Row({
   )
 }
 
-export function SectionTitle({ title, action, onAction }: { title: string; action?: string; onAction?: () => void }) {
+export function SectionTitle({
+  title,
+  action,
+  onAction,
+}: {
+  title: string
+  action?: string
+  onAction?: () => void
+}) {
   return (
-    <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: -8 }}>
+    <View
+      style={{
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "space-between",
+        marginBottom: -8,
+      }}
+    >
       <T role="sectionTitle">{title}</T>
       {action ? (
         <Press haptic="tick" onPress={onAction} hitSlop={10}>
@@ -180,7 +227,15 @@ export function Chip({ label, tone = "quiet" }: { label: string; tone?: ChipTone
   }
   const [bg, fg] = colors[tone]
   return (
-    <View style={{ backgroundColor: bg, borderRadius: RADIUS.pill, paddingHorizontal: 10, paddingVertical: 4, alignSelf: "flex-start" }}>
+    <View
+      style={{
+        backgroundColor: bg,
+        borderRadius: RADIUS.pill,
+        paddingHorizontal: 10,
+        paddingVertical: 4,
+        alignSelf: "flex-start",
+      }}
+    >
       <T role="meta" color={fg}>
         {label}
       </T>
@@ -189,7 +244,13 @@ export function Chip({ label, tone = "quiet" }: { label: string; tone?: ChipTone
 }
 
 /** "Sandbox" said in words with a dashed rim, never by a hue. */
-export function SandboxPill({ label = "Sandbox · test dollars", onStage }: { label?: string; onStage?: boolean }) {
+export function SandboxPill({
+  label = "Sandbox · test dollars",
+  onStage,
+}: {
+  label?: string
+  onStage?: boolean
+}) {
   const p = usePalette()
   return (
     <View
@@ -212,46 +273,72 @@ export function SandboxPill({ label = "Sandbox · test dollars", onStage }: { la
 
 /** A story-field tile: colour for empty states and next steps, black text, one line and one action. */
 export function StoryTile({
-  color,
+  field,
   title,
   line,
   icon,
   action,
   onPress,
 }: {
-  color: string
+  /** The story field: matcha money arrived, sora pay links, kin payroll, sakura cards. Deep at night. */
+  field: "matcha" | "sora" | "sakura" | "kin"
   title: string
   line?: string
   icon?: ReactNode
   action?: string
   onPress?: () => void
 }) {
+  const p = usePalette()
   return (
     <Press
       onPress={onPress}
       disabled={!onPress}
       haptic="tick"
       scaleTo={0.98}
-      style={{ backgroundColor: color, borderRadius: RADIUS.group, padding: 16, flexDirection: "row", alignItems: "center", gap: 14 }}
+      style={{
+        backgroundColor: p[field],
+        borderRadius: RADIUS.group,
+        padding: 16,
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 14,
+      }}
     >
       {icon ? (
-        <View style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: "#FFFFFF", alignItems: "center", justifyContent: "center" }}>
+        <View
+          style={{
+            width: 48,
+            height: 48,
+            borderRadius: 24,
+            backgroundColor: PAPER.face,
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
           {icon}
         </View>
       ) : null}
       <View style={{ flex: 1, gap: 2 }}>
-        <T role="rowTitle" tone="black">
+        <T role="rowTitle" color={p.fieldInk}>
           {title}
         </T>
         {line ? (
-          <T role="detail" color="#000000B3" numberOfLines={2}>
+          <T role="detail" color={`${p.fieldInk}B3`} numberOfLines={2}>
             {line}
           </T>
         ) : null}
       </View>
       {action ? (
-        <View style={{ backgroundColor: "#000", borderRadius: RADIUS.pill, paddingHorizontal: 14, height: 36, justifyContent: "center" }}>
-          <T role="detailMedium" tone="white">
+        <View
+          style={{
+            backgroundColor: p.primary,
+            borderRadius: RADIUS.pill,
+            paddingHorizontal: 14,
+            height: 36,
+            justifyContent: "center",
+          }}
+        >
+          <T role="detailMedium" color={p.onPrimary}>
             {action}
           </T>
         </View>
@@ -261,10 +348,27 @@ export function StoryTile({
 }
 
 /** What went wrong, what still works, and one action. */
-export function Problem({ text, action, onAction }: { text: string; action?: string; onAction?: () => void }) {
+export function Problem({
+  text,
+  action,
+  onAction,
+}: {
+  text: string
+  action?: string
+  onAction?: () => void
+}) {
   const p = usePalette()
   return (
-    <View style={{ backgroundColor: p.downSurface, borderRadius: RADIUS.row, padding: 14, flexDirection: "row", alignItems: "center", gap: 12 }}>
+    <View
+      style={{
+        backgroundColor: p.downSurface,
+        borderRadius: RADIUS.row,
+        padding: 14,
+        flexDirection: "row",
+        alignItems: "center",
+        gap: 12,
+      }}
+    >
       <T role="detailMedium" color={p.down} style={{ flex: 1 }}>
         {text}
       </T>

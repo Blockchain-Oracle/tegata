@@ -47,7 +47,10 @@ export function SealPress({
       onLanded?.()
     }
     if (reduce) {
-      progress.value = withDelay(delay, withTiming(1, { duration: 100 }, () => runOnJS(land)()))
+      progress.value = withDelay(
+        delay,
+        withTiming(1, { duration: 100 }, () => runOnJS(land)()),
+      )
       return
     }
     const ease = Easing.bezier(0.2, 0.8, 0.2, 1)

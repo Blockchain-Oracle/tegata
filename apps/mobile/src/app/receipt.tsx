@@ -38,19 +38,32 @@ export default function Receipt() {
   const params = useLocalSearchParams<{ item?: string; token?: string }>()
   const { profile } = useSession()
   const item = params.item ? (JSON.parse(params.item) as ActivityItem) : null
-  const token = params.token ?? (item?.receiptUrl?.startsWith("/r/") && !item.receiptUrl.slice(3).includes("/") ? item.receiptUrl.slice(3) : null)
+  const token =
+    params.token ??
+    (item?.receiptUrl?.startsWith("/r/") && !item.receiptUrl.slice(3).includes("/")
+      ? item.receiptUrl.slice(3)
+      : null)
   const payment = useQuery({
     queryKey: ["receipt", token],
     queryFn: () => api<PaymentReceipt>(`/api/receipts/${token}`, { auth: false }),
     enabled: Boolean(token),
   })
   const business = profile?.workspace?.name ?? "Your business"
-  const publicUrl = item?.receiptUrl ? webUrl(item.receiptUrl) : token ? webUrl(`/r/${token}`) : null
+  const publicUrl = item?.receiptUrl
+    ? webUrl(item.receiptUrl)
+    : token
+      ? webUrl(`/r/${token}`)
+      : null
 
   const actions = (explorer: string | null) => (
     <View style={{ gap: 10 }}>
       {explorer ? (
-        <Button variant="secondary" label="Open on NEAR" icon={<Mark id="near" size={20} />} onPress={() => void WebBrowser.openBrowserAsync(explorer)} />
+        <Button
+          variant="secondary"
+          label="Open on NEAR"
+          icon={<Mark id="near" size={20} />}
+          onPress={() => void WebBrowser.openBrowserAsync(explorer)}
+        />
       ) : null}
       {publicUrl ? (
         <View style={{ flexDirection: "row", gap: 10 }}>
@@ -72,12 +85,13 @@ export default function Receipt() {
     </View>
   )
 
-  if (token && payment.isPending) return (
-    <Screen>
-      <Header title="Receipt" />
-      <Skeleton width={340} height={420} radius={20} style={{ alignSelf: "center" }} />
-    </Screen>
-  )
+  if (token && payment.isPending)
+    return (
+      <Screen>
+        <Header title="Receipt" />
+        <Skeleton width={340} height={420} radius={20} style={{ alignSelf: "center" }} />
+      </Screen>
+    )
 
   if (token && payment.data) {
     const r = payment.data
@@ -93,7 +107,13 @@ export default function Receipt() {
           settledAt={r.settledAt}
           identity={token}
           rows={[
-            ["Date", new Date(r.settledAt ?? Date.now()).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })],
+            [
+              "Date",
+              new Date(r.settledAt ?? Date.now()).toLocaleString(undefined, {
+                dateStyle: "medium",
+                timeStyle: "short",
+              }),
+            ],
             ["From", r.payer ?? "A payer"],
             ["To", r.receiverId],
             ["How", HOW[r.rail] ?? "Pay link"],
@@ -126,7 +146,13 @@ export default function Receipt() {
         settledAt={SETTLED.has(item.status) ? item.at : null}
         identity={`${item.kind}-${item.id}`}
         rows={[
-          ["Date", new Date(item.at).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })],
+          [
+            "Date",
+            new Date(item.at).toLocaleString(undefined, {
+              dateStyle: "medium",
+              timeStyle: "short",
+            }),
+          ],
           [incoming ? "From" : "To", item.counterparty],
           ["How", item.rail ? (HOW[item.rail] ?? HOW[item.kind] ?? "") : (HOW[item.kind] ?? "")],
           ["Network fee", "Paid by Tegata"],

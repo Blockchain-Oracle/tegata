@@ -8,13 +8,13 @@ import Animated, { FadeInDown } from "react-native-reanimated"
 import { api } from "@/api/client"
 import type { PayLink } from "@/api/types"
 import { useSession } from "@/auth/session"
+import { linkStatus } from "@/features/links/link-card"
 import { usd } from "@/lib/money"
-import { STORY, usePalette } from "@/theme/tokens"
+import { PAPER, usePalette } from "@/theme/tokens"
 import { Button } from "@/ui/button"
 import { Card, Chip, Header, Problem, Row, Screen, StoryTile } from "@/ui/layout"
 import { Skeleton } from "@/ui/shimmer"
 import { T } from "@/ui/text"
-import { linkStatus } from "@/features/links/link-card"
 
 export default function Links() {
   const p = usePalette()
@@ -27,7 +27,11 @@ export default function Links() {
   return (
     <Screen dock refreshing={links.isRefetching} onRefresh={() => void links.refetch()}>
       <Header title="Pay links" back={false} />
-      <Button label="New pay link" icon={<Plus size={20} color={p.onPrimary} />} onPress={() => router.push("/links/new")} />
+      <Button
+        label="New pay link"
+        icon={<Plus size={20} color={p.onPrimary} />}
+        onPress={() => router.push("/links/new")}
+      />
       {links.isPending ? (
         <Card style={{ padding: 12, gap: 16 }}>
           {[0, 1, 2].map((i) => (
@@ -38,11 +42,15 @@ export default function Links() {
           ))}
         </Card>
       ) : links.isError ? (
-        <Problem text="Couldn't load your links." action="Retry" onAction={() => void links.refetch()} />
+        <Problem
+          text="Couldn't load your links."
+          action="Retry"
+          onAction={() => void links.refetch()}
+        />
       ) : (links.data ?? []).length === 0 ? (
         <StoryTile
-          color={STORY.sora}
-          icon={<Link2 size={24} color="#000" />}
+          field="sora"
+          icon={<Link2 size={24} color={PAPER.ink} />}
           title="Your first pay link"
           line="Anyone pays it from any chain; you get dollars."
           action="New link"
@@ -58,7 +66,16 @@ export default function Links() {
                   chevron
                   onPress={() => router.push({ pathname: "/links/[id]", params: { id: link.id } })}
                   left={
-                    <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: p.sealWash, alignItems: "center", justifyContent: "center" }}>
+                    <View
+                      style={{
+                        width: 40,
+                        height: 40,
+                        borderRadius: 20,
+                        backgroundColor: p.sealWash,
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
+                    >
                       <Link2 size={20} color={p.sealInk} />
                     </View>
                   }

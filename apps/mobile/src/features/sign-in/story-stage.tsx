@@ -16,7 +16,7 @@ import Animated, {
 } from "react-native-reanimated"
 
 import { fire } from "@/feedback/fire"
-import { RADIUS, STORY } from "@/theme/tokens"
+import { PAPER, RADIUS, STORY } from "@/theme/tokens"
 import { Figure } from "@/ui/figure"
 import { Mark } from "@/ui/mark"
 import { BusinessSeal, TegataSeal } from "@/ui/seal"
@@ -33,8 +33,15 @@ const SCENES = [
 
 function Example() {
   return (
-    <View style={{ backgroundColor: "#F0F0F0", borderRadius: RADIUS.pill, paddingHorizontal: 8, paddingVertical: 2 }}>
-      <T role="meta" color="#666666" style={{ fontSize: 11 }}>
+    <View
+      style={{
+        backgroundColor: PAPER.sunk,
+        borderRadius: RADIUS.pill,
+        paddingHorizontal: 8,
+        paddingVertical: 2,
+      }}
+    >
+      <T role="meta" color={PAPER.text2} style={{ fontSize: 11 }}>
         Example
       </T>
     </View>
@@ -45,7 +52,11 @@ function Segments({ index, paused }: { index: number; paused: boolean }) {
   return (
     <View style={{ flexDirection: "row", gap: 6 }}>
       {SCENES.map((scene, i) => (
-        <Segment key={scene.key} state={i < index ? "done" : i === index ? "now" : "next"} paused={paused} />
+        <Segment
+          key={scene.key}
+          state={i < index ? "done" : i === index ? "now" : "next"}
+          paused={paused}
+        />
       ))}
     </View>
   )
@@ -64,7 +75,15 @@ function Segment({ state, paused }: { state: "done" | "now" | "next"; paused: bo
   }, [state, paused, fill])
   const style = useAnimatedStyle(() => ({ width: `${fill.value * 100}%` }))
   return (
-    <View style={{ flex: 1, height: 3, borderRadius: 2, backgroundColor: "#FFFFFF4D", overflow: "hidden" }}>
+    <View
+      style={{
+        flex: 1,
+        height: 3,
+        borderRadius: 2,
+        backgroundColor: "#FFFFFF4D",
+        overflow: "hidden",
+      }}
+    >
       <Animated.View style={[{ height: 3, backgroundColor: "#FFFFFF" }, style]} />
     </View>
   )
@@ -79,24 +98,26 @@ function LinkScene() {
   return (
     <StageObject from={{ y: 28, rotate: -3 }}>
       <Paper style={{ width: 280, padding: 18, gap: 10 }}>
-        <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+        <View
+          style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}
+        >
           <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
             <TegataSeal size={18} />
-            <T role="detailMedium" color="#666">
+            <T role="detailMedium" color={PAPER.text2}>
               Pay link
             </T>
             <Example />
           </View>
         </View>
-        <T role="bodyMedium" color="#000">
+        <T role="bodyMedium" color={PAPER.ink}>
           Design sprint · Week 2
         </T>
-        <Figure text="$1,250.00" size={46} color="#000" />
+        <Figure text="$1,250.00" size={46} color={PAPER.ink} />
         <View
           style={{
             height: 38,
             borderRadius: RADIUS.button,
-            backgroundColor: paid ? "#EEF9DC" : "#F0F0F0",
+            backgroundColor: paid ? PAPER.upSurface : PAPER.sunk,
             flexDirection: "row",
             alignItems: "center",
             gap: 8,
@@ -104,7 +125,7 @@ function LinkScene() {
           }}
         >
           <Mark id={paid ? "usdc" : "usdt"} chain={paid ? "near" : "tron"} size={20} />
-          <T role="detailMedium" color={paid ? "#2F7A00" : "#000"}>
+          <T role="detailMedium" color={paid ? PAPER.up : PAPER.ink}>
             {paid ? "Paid in USDC on NEAR" : "Paying with USDT on Tron"}
           </T>
         </View>
@@ -135,37 +156,79 @@ function PayrollScene() {
   return (
     <StageObject from={{ y: 28, rotate: 2 }}>
       <Paper style={{ width: 290, padding: 18, gap: 6 }}>
-        <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
-          <T role="detailMedium" color="#666">
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "space-between",
+            marginBottom: 4,
+          }}
+        >
+          <T role="detailMedium" color={PAPER.text2}>
             Payroll · November
           </T>
           <Example />
         </View>
         {TEAM.map((person, i) => (
-          <View key={person.name} style={{ flexDirection: "row", alignItems: "center", gap: 10, height: 36 }}>
-            <View style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: person.tone, alignItems: "center", justifyContent: "center" }}>
-              <T role="meta" color="#000" style={{ fontSize: 13 }}>
+          <View
+            key={person.name}
+            style={{ flexDirection: "row", alignItems: "center", gap: 10, height: 36 }}
+          >
+            <View
+              style={{
+                width: 28,
+                height: 28,
+                borderRadius: 14,
+                backgroundColor: person.tone,
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <T role="meta" color={PAPER.ink} style={{ fontSize: 13 }}>
                 {person.name[0]}
               </T>
             </View>
-            <T role="bodyMedium" color="#000" style={{ flex: 1 }}>
+            <T role="bodyMedium" color={PAPER.ink} style={{ flex: 1 }}>
               {person.name}
             </T>
             <Mark id={person.mark} chain={person.chain} size={20} />
-            <T role="bodyMedium" color="#000" style={{ width: 82, textAlign: "right", fontVariant: ["tabular-nums"] }}>
+            <T
+              role="bodyMedium"
+              color={PAPER.ink}
+              style={{ width: 82, textAlign: "right", fontVariant: ["tabular-nums"] }}
+            >
               {person.amount}
             </T>
             <View style={{ width: 20, alignItems: "center" }}>
               {i < paid ? (
-                <Animated.View entering={ZoomIn.springify()} style={{ width: 20, height: 20, borderRadius: 10, backgroundColor: "#2F7A00", alignItems: "center", justifyContent: "center" }}>
-                  <Check size={12} color="#fff" strokeWidth={3} />
+                <Animated.View
+                  entering={ZoomIn.springify()}
+                  style={{
+                    width: 20,
+                    height: 20,
+                    borderRadius: 10,
+                    backgroundColor: PAPER.up,
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <Check size={12} color={PAPER.face} strokeWidth={3} />
                 </Animated.View>
               ) : null}
             </View>
           </View>
         ))}
-        <View style={{ height: 44, borderRadius: RADIUS.button, backgroundColor: "#000", alignItems: "center", justifyContent: "center", marginTop: 6 }}>
-          <T role="detailMedium" color="#fff">
+        <View
+          style={{
+            height: 44,
+            borderRadius: RADIUS.button,
+            backgroundColor: PAPER.ink,
+            alignItems: "center",
+            justifyContent: "center",
+            marginTop: 6,
+          }}
+        >
+          <T role="detailMedium" color={PAPER.face}>
             {paid === 3 ? "Paid · one transaction on NEAR" : "Hold to pay 3 people"}
           </T>
         </View>
@@ -178,23 +241,25 @@ function ReceiptScene() {
   return (
     <StageObject from={{ y: 28, rotate: -2 }}>
       <Paper style={{ width: 280, padding: 18, gap: 8 }}>
-        <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
-          <T role="detailMedium" color="#666">
+        <View
+          style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}
+        >
+          <T role="detailMedium" color={PAPER.text2}>
             Receipt · No. 0042
           </T>
           <Example />
         </View>
-        <Figure text="+$480.00" size={40} color="#2F7A00" />
+        <Figure text="+$480.00" size={40} color={PAPER.up} />
         {[
           ["From", "0x9a3…41c on Base"],
           ["To", "studio.tegata.near"],
           ["Network fee", "Paid by Tegata"],
         ].map(([label, value]) => (
           <View key={label} style={{ flexDirection: "row", justifyContent: "space-between" }}>
-            <T role="detail" color="#666">
+            <T role="detail" color={PAPER.text2}>
               {label}
             </T>
-            <T role="detailMedium" color="#000">
+            <T role="detailMedium" color={PAPER.ink}>
               {value}
             </T>
           </View>
@@ -226,19 +291,37 @@ export function StoryStage({ height }: { height: number }) {
     <View style={{ height }}>
       <View style={{ flex: 1, paddingHorizontal: 20, gap: 16 }}>
         <Segments index={index} paused={Boolean(reduce)} />
-        <Animated.View key={`t-${scene.key}`} entering={FadeIn.duration(320)} exiting={FadeOut.duration(160)}>
+        <Animated.View
+          key={`t-${scene.key}`}
+          entering={FadeIn.duration(320)}
+          exiting={FadeOut.duration(160)}
+        >
           <T role="pageTitle" color="#FFFFFF" style={{ fontSize: 30, lineHeight: 32 }}>
             {scene.title}
           </T>
         </Animated.View>
         <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
-          <Animated.View key={scene.key} entering={FadeIn.duration(320)} exiting={FadeOut.duration(160)}>
-            {scene.key === "link" ? <LinkScene /> : scene.key === "payroll" ? <PayrollScene /> : <ReceiptScene />}
+          <Animated.View
+            key={scene.key}
+            entering={FadeIn.duration(320)}
+            exiting={FadeOut.duration(160)}
+          >
+            {scene.key === "link" ? (
+              <LinkScene />
+            ) : scene.key === "payroll" ? (
+              <PayrollScene />
+            ) : (
+              <ReceiptScene />
+            )}
           </Animated.View>
         </View>
       </View>
       <View style={{ position: "absolute", inset: 0, flexDirection: "row" }}>
-        <Pressable style={{ flex: 1 }} onPress={() => go(index - 1)} accessibilityLabel="Previous" />
+        <Pressable
+          style={{ flex: 1 }}
+          onPress={() => go(index - 1)}
+          accessibilityLabel="Previous"
+        />
         <Pressable style={{ flex: 2 }} onPress={() => go(index + 1)} accessibilityLabel="Next" />
       </View>
     </View>

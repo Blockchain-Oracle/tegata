@@ -12,20 +12,39 @@ import Animated, {
 } from "react-native-reanimated"
 
 import { usd } from "@/lib/money"
-import { FONT, MOTION } from "@/theme/tokens"
+import { FONT, MOTION, PAPER } from "@/theme/tokens"
 
 const DIGITS = "0123456789"
 const EASE = Easing.bezier(0.22, 1, 0.36, 1)
 
-function Digit({ value, size, color, width }: { value: number; size: number; color: string; width: number }) {
+function Digit({
+  value,
+  size,
+  color,
+  width,
+}: {
+  value: number
+  size: number
+  color: string
+  width: number
+}) {
   const reduce = useReducedMotion()
   const line = Math.round(size * 1.04)
   const y = useSharedValue(-value * line)
   useEffect(() => {
-    y.value = reduce ? -value * line : withTiming(-value * line, { duration: MOTION.roll, easing: EASE })
+    y.value = reduce
+      ? -value * line
+      : withTiming(-value * line, { duration: MOTION.roll, easing: EASE })
   }, [value, line, reduce, y])
   const animated = useAnimatedStyle(() => ({ transform: [{ translateY: y.value }] }))
-  const style: TextStyle = { fontFamily: FONT.display, fontSize: size, lineHeight: line, color, textAlign: "center", width }
+  const style: TextStyle = {
+    fontFamily: FONT.display,
+    fontSize: size,
+    lineHeight: line,
+    color,
+    textAlign: "center",
+    width,
+  }
   return (
     <View style={{ height: line, width, overflow: "hidden" }}>
       <Animated.View style={animated}>
@@ -44,7 +63,7 @@ export function Figure({
   units,
   text,
   size = 56,
-  color = "#000000",
+  color = PAPER.ink as string,
   signed = false,
 }: {
   units?: bigint | string | null
@@ -67,7 +86,9 @@ export function Figure({
       {/* Measure one tabular digit once, so every column has the same width and nothing jumps as digits roll. */}
       <Text
         style={[symbol, { position: "absolute", opacity: 0 }]}
-        onLayout={(event: LayoutChangeEvent) => setDigitWidth(Math.ceil(event.nativeEvent.layout.width))}
+        onLayout={(event: LayoutChangeEvent) =>
+          setDigitWidth(Math.ceil(event.nativeEvent.layout.width))
+        }
         allowFontScaling={false}
       >
         0
@@ -76,7 +97,13 @@ export function Figure({
         ? null
         : value.split("").map((char, i) =>
             DIGITS.includes(char) ? (
-              <Digit key={`d${value.length - i}`} value={Number(char)} size={size} color={color} width={digitWidth} />
+              <Digit
+                key={`d${value.length - i}`}
+                value={Number(char)}
+                size={size}
+                color={color}
+                width={digitWidth}
+              />
             ) : (
               <Text key={`s${value.length - i}`} style={symbol} allowFontScaling={false}>
                 {char}

@@ -8,7 +8,11 @@ export default function TabsLayout() {
   return (
     <Tabs
       tabBar={(props) => <Dock {...props} />}
-      screenOptions={{ headerShown: false, sceneStyle: { backgroundColor: p.page }, animation: "fade" }}
+      screenOptions={{
+        headerShown: false,
+        sceneStyle: { backgroundColor: p.page },
+        animation: "fade",
+      }}
     >
       <Tabs.Screen name="index" />
       <Tabs.Screen name="links" />

@@ -29,7 +29,10 @@ export const currentMode = () => session.mode
 
 const TIMEOUT_MS = 30_000
 
-export async function api<T>(path: string, init: { method?: string; body?: unknown; auth?: boolean } = {}): Promise<T> {
+export async function api<T>(
+  path: string,
+  init: { method?: string; body?: unknown; auth?: boolean } = {},
+): Promise<T> {
   const token = init.auth === false ? null : await session.token()
   const controller = new AbortController()
   const timer = setTimeout(() => controller.abort(), TIMEOUT_MS)

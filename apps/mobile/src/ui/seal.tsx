@@ -6,7 +6,7 @@ import { useId, useMemo } from "react"
 import Svg, { Circle, Defs, G, Path, Rect, Text as SvgText, TextPath } from "react-native-svg"
 
 import { SEAL_FACES } from "@/brand/glyphs"
-import { FONT, SHU } from "@/theme/tokens"
+import { FONT, PAPER, SHU } from "@/theme/tokens"
 
 const VIEW = 200
 type Box = readonly [number, number, number, number]
@@ -31,7 +31,8 @@ function seeded(seed: number) {
   }
 }
 
-const hash = (text: string) => [...text].reduce((h, c) => Math.imul(h ^ c.charCodeAt(0), 16777619), 2166136261)
+const hash = (text: string) =>
+  [...text].reduce((h, c) => Math.imul(h ^ c.charCodeAt(0), 16777619), 2166136261)
 
 function useSpecks(seed: string, count: number, inside: (x: number, y: number) => boolean) {
   return useMemo(() => {
@@ -52,19 +53,31 @@ function useSpecks(seed: string, count: number, inside: (x: number, y: number) =
 export type SealTone = "shu" | "paper" | "ink"
 
 const TONES: Record<SealTone, { field: string; glyph: string }> = {
-  shu: { field: SHU, glyph: "#FFFFFF" },
-  paper: { field: "#FFFFFF", glyph: SHU },
-  ink: { field: "#000000", glyph: "#FFFFFF" },
+  shu: { field: SHU, glyph: PAPER.face },
+  paper: { field: PAPER.face, glyph: SHU },
+  ink: { field: PAPER.ink, glyph: PAPER.face },
 }
 
-export function TegataSeal({ size = 40, tone = "shu", tilt = 0 }: { size?: number; tone?: SealTone; tilt?: number }) {
+export function TegataSeal({
+  size = 40,
+  tone = "shu",
+  tilt = 0,
+}: {
+  size?: number
+  tone?: SealTone
+  tilt?: number
+}) {
   const { field, glyph } = TONES[tone]
   const glyphs = SEAL_FACES.shippori.glyphs
   const pad = 30
   const cellH = (VIEW - pad * 2 - 6) / 2
   const top = fit(glyphs.手.box, pad, pad - 2, VIEW - pad * 2, cellH)
   const bottom = fit(glyphs.形.box, pad, pad + cellH + 8, VIEW - pad * 2, cellH)
-  const specks = useSpecks(`tegata-${tone}`, size < 48 ? 0 : 46, (x, y) => x > 8 && x < 192 && y > 8 && y < 192)
+  const specks = useSpecks(
+    `tegata-${tone}`,
+    size < 48 ? 0 : 46,
+    (x, y) => x > 8 && x < 192 && y > 8 && y < 192,
+  )
   return (
     <Svg
       width={size}
@@ -74,12 +87,35 @@ export function TegataSeal({ size = 40, tone = "shu", tilt = 0 }: { size?: numbe
       style={tilt ? { transform: [{ rotate: `${tilt}deg` }] } : undefined}
     >
       <Rect x={6} y={6} width={VIEW - 12} height={VIEW - 12} rx={30} fill={field} />
-      <Rect x={18} y={18} width={VIEW - 36} height={VIEW - 36} rx={20} fill="none" stroke={glyph} strokeWidth={5} />
-      <Path d={glyphs.手.d} fill={glyph} transform={`translate(${top.tx} ${top.ty}) scale(${top.s})`} />
-      <Path d={glyphs.形.d} fill={glyph} transform={`translate(${bottom.tx} ${bottom.ty}) scale(${bottom.s})`} />
+      <Rect
+        x={18}
+        y={18}
+        width={VIEW - 36}
+        height={VIEW - 36}
+        rx={20}
+        fill="none"
+        stroke={glyph}
+        strokeWidth={5}
+      />
+      <Path
+        d={glyphs.手.d}
+        fill={glyph}
+        transform={`translate(${top.tx} ${top.ty}) scale(${top.s})`}
+      />
+      <Path
+        d={glyphs.形.d}
+        fill={glyph}
+        transform={`translate(${bottom.tx} ${bottom.ty}) scale(${bottom.s})`}
+      />
       <G opacity={0.55}>
         {specks.map((speck, i) => (
-          <Circle key={i} cx={speck.x} cy={speck.y} r={speck.r} fill={i % 3 === 0 ? glyph : field} />
+          <Circle
+            key={i}
+            cx={speck.x}
+            cy={speck.y}
+            r={speck.r}
+            fill={i % 3 === 0 ? glyph : field}
+          />
         ))}
       </G>
     </Svg>
@@ -120,10 +156,17 @@ export function BusinessSeal({
   const ringText = `${name.trim() || "Your business"} · TEGATA ·`.toUpperCase()
   const circumference = 2 * Math.PI * ringR
   const monogram = monogramOf(name)
-  const specks = useSpecks(`biz-${name}`, size < 64 ? 0 : 60, (x, y) => (x - c) ** 2 + (y - c) ** 2 < 96 ** 2)
+  const specks = useSpecks(
+    `biz-${name}`,
+    size < 64 ? 0 : 60,
+    (x, y) => (x - c) ** 2 + (y - c) ** 2 < 96 ** 2,
+  )
   // Letter-spacing that fills the ring evenly for any length of name (Archivo Bold caps and spaces average ~0.86 em as react-native-svg lays them on a path).
   const fontSize = 17
-  const spacing = Math.max(0.5, (circumference - 6 - ringText.length * fontSize * 0.86) / ringText.length)
+  const spacing = Math.max(
+    0.5,
+    (circumference - 6 - ringText.length * fontSize * 0.86) / ringText.length,
+  )
   return (
     <Svg
       width={size}
@@ -162,7 +205,7 @@ export function BusinessSeal({
             fontFamily={FONT.display}
             fontSize={21}
             letterSpacing={1}
-            fill={color === SHU ? "#FFFFFF" : SHU}
+            fill={color === SHU ? PAPER.face : SHU}
           >
             {band.toUpperCase()}
           </SvgText>
@@ -181,7 +224,7 @@ export function BusinessSeal({
       )}
       <G opacity={0.5}>
         {specks.map((speck, i) => (
-          <Circle key={i} cx={speck.x} cy={speck.y} r={speck.r * 0.8} fill="#FFFFFF" />
+          <Circle key={i} cx={speck.x} cy={speck.y} r={speck.r * 0.8} fill={PAPER.face} />
         ))}
       </G>
     </Svg>

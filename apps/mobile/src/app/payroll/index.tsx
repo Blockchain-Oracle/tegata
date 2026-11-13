@@ -11,7 +11,7 @@ import type { PayrollOverview } from "@/api/types"
 import { queryClient, useSession } from "@/auth/session"
 import { fire } from "@/feedback/fire"
 import { usd } from "@/lib/money"
-import { STORY, usePalette } from "@/theme/tokens"
+import { PAPER, usePalette } from "@/theme/tokens"
 import { Card, Chip, Header, Problem, Row, Screen, SectionTitle, StoryTile } from "@/ui/layout"
 import { Skeleton } from "@/ui/shimmer"
 import { T } from "@/ui/text"
@@ -32,7 +32,8 @@ export default function Payroll() {
   })
   const due = useQuery({
     queryKey: ["payroll-due", network],
-    queryFn: () => api<{ due: { payday: string; people: number; total: string } | null }>("/api/payroll/due"),
+    queryFn: () =>
+      api<{ due: { payday: string; people: number; total: string } | null }>("/api/payroll/due"),
     select: (d) => d.due,
   })
   const draft = useMutation({
@@ -56,14 +57,18 @@ export default function Payroll() {
         overview.error instanceof ApiError && overview.error.code === "no_business" ? (
           <Problem text="Name your business first." />
         ) : (
-          <Problem text="Couldn't load payroll." action="Retry" onAction={() => void overview.refetch()} />
+          <Problem
+            text="Couldn't load payroll."
+            action="Retry"
+            onAction={() => void overview.refetch()}
+          />
         )
       ) : (
         <>
           {open ? (
             <StoryTile
-              color={STORY.kin}
-              icon={<Banknote size={24} color="#000" />}
+              field="kin"
+              icon={<Banknote size={24} color={PAPER.ink} />}
               title={open.label}
               line={`${usd(open.total)} to ${open.people} ${open.people === 1 ? "person" : "people"}`}
               action="Review"
@@ -71,21 +76,37 @@ export default function Payroll() {
             />
           ) : due.data ? (
             <StoryTile
-              color={STORY.kin}
-              icon={<Banknote size={24} color="#000" />}
+              field="kin"
+              icon={<Banknote size={24} color={PAPER.ink} />}
               title="Payday has come"
-              line={draft.error instanceof ApiError ? draft.error.message : `${usd(due.data.total)} to ${due.data.people} ${due.data.people === 1 ? "person" : "people"}`}
+              line={
+                draft.error instanceof ApiError
+                  ? draft.error.message
+                  : `${usd(due.data.total)} to ${due.data.people} ${due.data.people === 1 ? "person" : "people"}`
+              }
               action={draft.isPending ? "Drafting…" : "Draft the run"}
               onPress={draft.isPending ? undefined : () => draft.mutate()}
             />
           ) : (
             <StoryTile
-              color={STORY.sora}
-              icon={<Users size={24} color="#000" />}
-              title={overview.data?.schedule ? `Next payday · ${overview.data.schedule.label}` : "Set up payroll"}
-              line={overview.data?.schedule ? "Its run appears here to approve." : "Add people and a schedule on the web."}
+              field="sora"
+              icon={<Users size={24} color={PAPER.ink} />}
+              title={
+                overview.data?.schedule
+                  ? `Next payday · ${overview.data.schedule.label}`
+                  : "Set up payroll"
+              }
+              line={
+                overview.data?.schedule
+                  ? "Its run appears here to approve."
+                  : "Add people and a schedule on the web."
+              }
               action={overview.data?.schedule ? undefined : "Open"}
-              onPress={overview.data?.schedule ? undefined : () => void WebBrowser.openBrowserAsync(webUrl("/app/payroll"))}
+              onPress={
+                overview.data?.schedule
+                  ? undefined
+                  : () => void WebBrowser.openBrowserAsync(webUrl("/app/payroll"))
+              }
             />
           )}
           {runs.length > 0 ? (
@@ -98,9 +119,20 @@ export default function Payroll() {
                     <Row
                       key={run.id}
                       chevron
-                      onPress={() => router.push({ pathname: "/payroll/[id]", params: { id: run.id } })}
+                      onPress={() =>
+                        router.push({ pathname: "/payroll/[id]", params: { id: run.id } })
+                      }
                       left={
-                        <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: p.plate, alignItems: "center", justifyContent: "center" }}>
+                        <View
+                          style={{
+                            width: 40,
+                            height: 40,
+                            borderRadius: 20,
+                            backgroundColor: p.plate,
+                            alignItems: "center",
+                            justifyContent: "center",
+                          }}
+                        >
                           <Banknote size={20} color={p.ink} />
                         </View>
                       }

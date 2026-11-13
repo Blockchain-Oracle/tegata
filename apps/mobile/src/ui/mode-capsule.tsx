@@ -37,7 +37,9 @@ export function ModeCapsule() {
         backgroundColor: sandbox ? "transparent" : p.ink,
       }}
     >
-      <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: sandbox ? p.text3 : SHU }} />
+      <View
+        style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: sandbox ? p.text3 : SHU }}
+      />
       <T role="detailMedium" color={sandbox ? p.ink : p.page}>
         {sandbox ? "Sandbox" : "Live"}
       </T>

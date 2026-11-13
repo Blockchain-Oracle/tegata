@@ -2,7 +2,7 @@
 // words use Archivo at width 100; accounts and hashes use DM Mono. Sentence case everywhere.
 import { Text as RNText, type TextProps, type TextStyle } from "react-native"
 
-import { TYPE, usePalette } from "@/theme/tokens"
+import { PAPER, TYPE, usePalette } from "@/theme/tokens"
 
 type Role = keyof typeof TYPE
 type Tone = "ink" | "text2" | "text3" | "white" | "black" | "up" | "down" | "seal" | "warn"
@@ -21,7 +21,7 @@ export function T({
     text2: p.text2,
     text3: p.text3,
     white: "#FFFFFF",
-    black: "#000000",
+    black: PAPER.ink,
     up: p.up,
     down: p.down,
     seal: p.sealInk,
