@@ -26,12 +26,15 @@ import {
   paidRowsToEmail,
   paymentEmails,
   paymentsToVerify,
+  payoutsToPoll,
   pendingDeliveries,
   pollOneClickPayment,
+  pollPayout,
   processRelay,
   queuedTestDollars,
   registerDestination,
   registerForAutopilot,
+  registerPayoutAddress,
   reminderTarget,
   reminderTimes,
   runAutopilots,
@@ -41,6 +44,7 @@ import {
   settleAutopilotAction,
   settleAutopilotRelay,
   settlePayment,
+  settlePayoutRelay,
   settleRefund,
   settleRelayedPayment,
   settleRunRelay,
@@ -92,6 +96,8 @@ await boss.work(QUEUES.relaySend.name, async ([job]) => {
   const network = pending.find((relay) => relay.id === relayId)?.network
   const operator = network ? operators.get(network) : undefined
   if (!operator) return
+  // A payout: its 1Click deposit address must hold a USDC registration before the transfer lands (operator-paid).
+  await registerPayoutAddress(db, operator, relayId)
   const relay = await processRelay(db, operator, relayId)
   if (relay) console.log(`[relay] ${relay.purpose} ${relay.status} ${relay.txHash ?? ""}`)
   // A payment from a Tegata balance settles as soon as its relay lands.
@@ -116,6 +122,11 @@ await boss.work(QUEUES.relaySend.name, async ([job]) => {
   // A settled payment or refund may have raised webhook events: send them now rather than at the next sweep.
   if (relay?.purpose.startsWith("pay:") || relay?.purpose.startsWith("refund:"))
     await queueDeliveries()
+  // A payout: once its transfer lands, tell 1Click and follow it to delivery.
+  if (relay?.purpose.startsWith("payout:")) {
+    const payoutId = await settlePayoutRelay(db, relay.id, operator.accountId, env.ONECLICK_API_KEY)
+    if (payoutId) await enqueue(boss, "payoutPoll", { payoutId }, `payout:${payoutId}`)
+  }
   // A payroll batch: its rows are paid only once the USDC events are read from NEAR.
   if (relay?.purpose.startsWith("run:")) {
     const settled = await settleRunRelay(db, relay.id, operator.accountId)
@@ -246,6 +257,23 @@ await boss.work(QUEUES.oneclickPoll.name, async ([job]) => {
     await queueDeliveries()
     if (mailer) await enqueue(boss, "paymentEmail", { paymentId }, `payment:${paymentId}`)
   }
+})
+await boss.work(QUEUES.payoutPoll.name, async ([job]) => {
+  if (!job) return
+  const { payoutId } = QUEUES.payoutPoll.payload.parse(job.data)
+  const result = await pollPayout(db, payoutId, env.ONECLICK_API_KEY)
+  if (result === "pending") {
+    await enqueue(boss, "payoutPoll", { payoutId }, `payout:${payoutId}`, {
+      startAfter: new Date(Date.now() + ONECLICK_POLL_MS),
+    })
+    return
+  }
+  console.log(`[payout] ${payoutId} ${result}`)
+})
+await boss.schedule(QUEUES.payoutSweep.name, "* * * * *", {})
+await boss.work(QUEUES.payoutSweep.name, async () => {
+  for (const open of await payoutsToPoll(db))
+    await enqueue(boss, "payoutPoll", { payoutId: open.id }, `payout:${open.id}`)
 })
 await boss.schedule(QUEUES.oneclickSweep.name, "* * * * *", {})
 await boss.work(QUEUES.oneclickSweep.name, async () => {

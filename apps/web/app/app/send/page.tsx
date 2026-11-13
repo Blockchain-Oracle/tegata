@@ -8,6 +8,8 @@ import { toUnits } from "@tegata/core/money"
 import { useEffect, useState } from "react"
 
 import { viewDollars } from "@/components/kit/figure"
+import { Segmented } from "@/components/kit/segmented"
+import { ChainSend } from "@/components/send/chain-send"
 import { type SendStep, SendView } from "@/components/send/send-view"
 import { useShell } from "@/components/shell/shell-context"
 import { useNetwork } from "@/hooks/use-network"
@@ -21,6 +23,26 @@ const POLL_MS = 1_200
 const TERMINAL: RelayStatus["status"][] = ["success", "failed", "expired"]
 
 export default function SendPage() {
+  const network = useNetwork()
+  const [mode, setMode] = useState<"near" | "chain">("near")
+  // Live only: NEAR Intents has no testnet, so Sandbox sends stay on NEAR.
+  const switcher =
+    network === "mainnet" ? (
+      <Segmented
+        label="Send to"
+        value={mode}
+        onValueChange={(v) => setMode(v as "near" | "chain")}
+        options={[
+          { value: "near", label: "A NEAR account" },
+          { value: "chain", label: "Another chain" },
+        ]}
+      />
+    ) : null
+  if (network === "mainnet" && mode === "chain") return <ChainSend switcher={switcher} />
+  return <NearSend switcher={switcher} />
+}
+
+function NearSend({ switcher }: { switcher: React.ReactNode }) {
   const { profile } = useProfile()
   const { openReceive } = useShell()
   const signer = useSigner()
@@ -145,7 +167,7 @@ export default function SendPage() {
       }}
       balance={balance}
       businessName={profile?.workspace?.name ?? "Your business"}
-      suffix={`.${NETWORKS.testnet.operator}`}
+      suffix={`.${NETWORKS[network].operator}`}
       busy={busy || !signer.ready}
       problem={problem}
       progress={progress}
@@ -159,6 +181,7 @@ export default function SendPage() {
       }}
       onReceive={openReceive}
       team={team.data}
+      switcher={switcher}
       onAgain={() => {
         setSend(null)
         setAmount("")

@@ -1,0 +1,13 @@
+"use client"
+
+import { useEffect, useState } from "react"
+
+/** The value, once it has stopped changing for `ms` (live quotes ask once per pause, not per keystroke). */
+export function useDebounced<T>(value: T, ms: number) {
+  const [v, setV] = useState(value)
+  useEffect(() => {
+    const t = setTimeout(() => setV(value), ms)
+    return () => clearTimeout(t)
+  }, [value, ms])
+  return v
+}

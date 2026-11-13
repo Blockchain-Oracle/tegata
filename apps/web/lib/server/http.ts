@@ -4,6 +4,7 @@ import {
   InvoiceError,
   OnboardError,
   PaymentError,
+  PayoutError,
   PayrollError,
   ReferralError,
   RelayError,
@@ -89,6 +90,15 @@ function toResponse(error: unknown): Response {
         : error.code === "bad_input"
           ? STATUS.badRequest
           : STATUS.conflict
+    return Response.json({ error: { code: error.code, message: error.message } }, { status })
+  }
+  if (error instanceof PayoutError) {
+    const status =
+      error.code === "not_found"
+        ? STATUS.notFound
+        : error.code === "wrong_state"
+          ? STATUS.conflict
+          : STATUS.badRequest
     return Response.json({ error: { code: error.code, message: error.message } }, { status })
   }
   if (error instanceof WalletSignInError) {

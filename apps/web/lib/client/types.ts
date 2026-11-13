@@ -55,6 +55,44 @@ export interface SendDraft {
   amount: string
 }
 
+/** A payout to another chain through NEAR Intents (plan 6.8 AB), as the screens see it. */
+export interface PayoutView {
+  id: string
+  status: "drafted" | "sending" | "processing" | "delivered" | "refunded" | "failed"
+  swapStatus: string | null
+  /** USDC base units sent from the balance. */
+  amount: string
+  symbol: string
+  chain: string
+  recipient: string
+  /** What the quote said arrives, in the coin. */
+  amountOutFormatted: string | null
+  /** The transfer on NEAR. */
+  txHash: string | null
+  /** The delivery on the other chain. */
+  destinationTx: string | null
+  error: string | null
+  deliveredAt: string | null
+  timeEstimate: number | null
+  createdAt: string
+}
+
+/** A committed payout: the gas-free transfer to approve. */
+export interface PayoutDraft {
+  payout: PayoutView
+  relayId: string
+  draft: DelegateDraft
+  depositAddress: string
+}
+
+/** What a payout would deliver, before anything is committed. */
+export interface PayoutPreview {
+  amountOutFormatted: string
+  minAmountOut: string
+  amountOutUsd: string
+  timeEstimate: number | null
+}
+
 /** Where one attempt to pay a request stands (plan section 2, "Paying in"). */
 export type PaymentStatus =
   | "awaiting"

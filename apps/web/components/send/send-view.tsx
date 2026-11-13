@@ -45,6 +45,8 @@ export interface SendViewProps {
   onAgain: () => void
   /** Your team's ready people: one tap fills "To" with the account their pay lands in. */
   team?: { id: string; name: string; accountId: string }[]
+  /** Shown under the title on the form, in Live: NEAR account / Another chain. */
+  switcher?: React.ReactNode
 }
 
 const STEPS = [
@@ -93,6 +95,7 @@ export function SendView(p: SendViewProps) {
         )}
         <h1 className="display text-page-title">Send</h1>
       </div>
+      {p.step === "form" ? p.switcher : null}
 
       <AnimatePresence mode="wait" initial={false}>
         {p.step === "form" ? (

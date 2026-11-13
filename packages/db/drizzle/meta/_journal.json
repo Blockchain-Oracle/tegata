@@ -85,6 +85,13 @@
       "when": 1794564406379,
       "tag": "0011_live_payins",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1794564806586,
+      "tag": "0012_payouts",
+      "breakpoints": true
     }
   ]
 }

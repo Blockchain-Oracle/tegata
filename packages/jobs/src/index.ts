@@ -105,6 +105,18 @@ export const QUEUES = {
     payload: z.object({}),
     options: { retryLimit: 0, expireInSeconds: 120 },
   },
+  /** A payout to another chain on its way: read 1Click once; re-queued until delivered or refunded. */
+  payoutPoll: {
+    name: "payout-poll",
+    payload: z.object({ payoutId: z.uuid() }),
+    options: { retryLimit: 0, expireInSeconds: 60 },
+  },
+  /** Every minute: a poll for every payout still on its way. */
+  payoutSweep: {
+    name: "payout-sweep",
+    payload: z.object({}),
+    options: { retryLimit: 0, expireInSeconds: 120 },
+  },
   /** Create a user's NEAR account and register it on USDC. Safe to repeat. */
   accountSetup: {
     name: "account-setup",

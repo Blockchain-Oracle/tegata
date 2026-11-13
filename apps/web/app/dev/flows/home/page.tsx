@@ -5,8 +5,29 @@ import { useState } from "react"
 
 import { HomeView } from "@/components/home/home-view"
 import { Segmented } from "@/components/kit/segmented"
+import { type ChainSendStep, ChainSendView } from "@/components/send/chain-send-view"
 import { type SendStep, SendView } from "@/components/send/send-view"
-import type { ActivityItem } from "@/lib/client/types"
+import type { ActivityItem, PayoutView } from "@/lib/client/types"
+import { PAYER_ROUTES } from "@/lib/routes"
+
+const PAYOUT: PayoutView = {
+  id: "dev-payout",
+  status: "delivered",
+  swapStatus: "SUCCESS",
+  amount: "240000000",
+  symbol: "USDT",
+  chain: "Tron",
+  recipient: "TQn9Y2khEsLJW1ChVWFMSMeRDow5KcbLSE",
+  amountOutFormatted: "239.71",
+  txHash: "4a5U9osgJrXKN5EDT3mvrWGT6NrFXoQXwH4bYZjqH6TX",
+  destinationTx: "a3f1c2d4e5b6a7980b1c2d3e4f5a6b7c8d9e0f1a2b3c4d5e6f7a8b9c0d1e2f3a",
+  error: null,
+  deliveredAt: "2026-11-13T12:04:00.000Z",
+  timeEstimate: 150,
+  createdAt: "2026-11-13T12:01:00.000Z",
+}
+
+type ChainState = ChainSendStep | "quoting" | "no-route"
 
 const ACTIVITY: ActivityItem[] = [
   {
@@ -63,6 +84,18 @@ export default function HomeFlow() {
   const [to, setTo] = useState("kofi.tegata.testnet")
   const [amount, setAmount] = useState("240")
   const [progress, setProgress] = useState(1)
+  const [chain, setChain] = useState<ChainState>("form")
+  const [chainProgress, setChainProgress] = useState(1)
+  const [chainRoute, setChainRoute] = useState("usdt-tron")
+  const [chainTo, setChainTo] = useState("TQn9Y2khEsLJW1ChVWFMSMeRDow5KcbLSE")
+  const [chainAmount, setChainAmount] = useState("240")
+  const playChain = () => {
+    setChain("sending")
+    setChainProgress(1)
+    setTimeout(() => setChainProgress(2), 1200)
+    setTimeout(() => setChainProgress(3), 2600)
+    setTimeout(() => setChain("delivered"), 4200)
+  }
 
   return (
     <div className="flex flex-col gap-10 pt-6">
@@ -140,6 +173,68 @@ export default function HomeFlow() {
         onEdit={() => setSend("form")}
         onReceive={() => undefined}
         onAgain={() => setSend("form")}
+      />
+
+      <div className="flex flex-wrap items-center gap-3 pt-8">
+        <span className="display text-[30px]">Send to another chain (Live)</span>
+        <Segmented
+          label="Send to another chain state"
+          value={chain}
+          onValueChange={(v) => (v === "sending" ? playChain() : setChain(v as ChainState))}
+          options={[
+            { value: "form", label: "Form" },
+            { value: "quoting", label: "Quoting" },
+            { value: "no-route", label: "No route" },
+            { value: "review", label: "Review" },
+            { value: "sending", label: "Sending" },
+            { value: "delivered", label: "Delivered" },
+            { value: "refunded", label: "Refunded" },
+            { value: "failed", label: "Failed" },
+          ]}
+        />
+      </div>
+      <ChainSendView
+        step={chain === "quoting" || chain === "no-route" ? "form" : chain}
+        routes={PAYER_ROUTES}
+        routeId={chainRoute}
+        onRoute={setChainRoute}
+        to={chainTo}
+        onTo={setChainTo}
+        amount={chainAmount}
+        onAmount={setChainAmount}
+        balance={12480}
+        businessName="Studio Kaze"
+        preview={
+          chain === "quoting"
+            ? { loading: true }
+            : chain === "no-route"
+              ? {
+                  loading: false,
+                  error: "That amount is below this route's minimum. Send a little more.",
+                }
+              : {
+                  loading: false,
+                  data: {
+                    amountOutFormatted: "239.71",
+                    minAmountOut: "239470000",
+                    amountOutUsd: "239.69",
+                    timeEstimate: 150,
+                  },
+                }
+        }
+        payout={{
+          ...PAYOUT,
+          status: chain === "refunded" ? "refunded" : chain === "failed" ? "failed" : PAYOUT.status,
+          txHash: chain === "failed" ? null : PAYOUT.txHash,
+        }}
+        progress={chainProgress}
+        busy={false}
+        problem={chain === "failed" ? "NEAR didn't accept the transfer. Nothing moved." : null}
+        onReview={() => setChain("review")}
+        onApprove={playChain}
+        onEdit={() => setChain("form")}
+        onAgain={() => setChain("form")}
+        onReceive={() => undefined}
       />
     </div>
   )

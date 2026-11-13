@@ -31,6 +31,7 @@ import { DepositPanel } from "@/components/pay/deposit-panel"
 import type { TestDollars } from "@/hooks/use-test-dollars"
 import type { AttemptView, PaymentRail, PublicRequest } from "@/lib/client/types"
 import { fire } from "@/lib/feedback"
+import { eta } from "@/lib/routes"
 import { cn } from "@/lib/utils"
 
 export type PayStep = "choose" | "paying" | "paid" | "failed"
@@ -706,11 +707,6 @@ const REFUND_HINT: Record<string, string> = {
   sol: "Your Solana address",
   btc: "bc1…",
   tron: "T…",
-}
-
-function eta(seconds: number) {
-  if (seconds < 90) return `about ${Math.max(10, Math.round(seconds / 10) * 10)} s`
-  return `about ${Math.round(seconds / 60)} min`
 }
 
 /** The paid slip: paper, perforation, the business seal stamped PAID with the "received" cue, once. */

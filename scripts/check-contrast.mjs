@@ -85,5 +85,9 @@ for (const [fg, bg, label] of FIXED) report(label, fg, bg)
 for (const [fg, bg, label] of LARGE) report(label, fg, bg, AA_LARGE)
 for (const [fg, bg, label] of KNOWN)
   console.log(`warn ${ratio(fg, bg).toFixed(2).padStart(5)}  ${label}`)
-console.log(failed ? `\n${failed} pair(s) fail AA` : `\nEvery pair passes AA (${AA}:1 for text, ${AA_LARGE}:1 for display figures)`)
+console.log(
+  failed
+    ? `\n${failed} pair(s) fail AA`
+    : `\nEvery pair passes AA (${AA}:1 for text, ${AA_LARGE}:1 for display figures)`,
+)
 process.exit(failed ? 1 : 0)

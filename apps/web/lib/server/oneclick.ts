@@ -3,6 +3,10 @@
 // exactly the amount; the payer's side carries the route cost). A dry quote never creates a deposit address.
 import { NETWORKS } from "@tegata/config"
 
+import { PAYER_ROUTES, type PayerRoute } from "@/lib/routes"
+
+export { PAYER_ROUTES, type PayerRoute }
+
 const BASE = "https://1click.chaindefuser.com"
 const TOKENS_TTL_S = 300
 const QUOTE_TTL_MS = 30_000
@@ -20,92 +24,6 @@ export interface OneClickToken {
   /** The token's contract on its own chain; absent for a chain's native coin. */
   contractAddress?: string
 }
-
-/** The routes a payer is most likely to hold, in the order the calculator shows them. Mark ids match public/marks. */
-export const PAYER_ROUTES = [
-  {
-    id: "usdt-tron",
-    symbol: "USDT",
-    blockchain: "tron",
-    chain: "Tron",
-    coin: "usdt",
-    chainMark: "tron",
-  },
-  {
-    id: "usdc-base",
-    symbol: "USDC",
-    blockchain: "base",
-    chain: "Base",
-    coin: "usdc",
-    chainMark: "base",
-  },
-  {
-    id: "usdt-eth",
-    symbol: "USDT",
-    blockchain: "eth",
-    chain: "Ethereum",
-    coin: "usdt",
-    chainMark: "eth",
-  },
-  {
-    id: "usdc-sol",
-    symbol: "USDC",
-    blockchain: "sol",
-    chain: "Solana",
-    coin: "usdc",
-    chainMark: "sol",
-  },
-  {
-    id: "usdc-arb",
-    symbol: "USDC",
-    blockchain: "arb",
-    chain: "Arbitrum",
-    coin: "usdc",
-    chainMark: "arb",
-  },
-  {
-    id: "btc-btc",
-    symbol: "BTC",
-    blockchain: "btc",
-    chain: "Bitcoin",
-    coin: "btc",
-    chainMark: "btc",
-  },
-  {
-    id: "eth-eth",
-    symbol: "ETH",
-    blockchain: "eth",
-    chain: "Ethereum",
-    coin: "eth",
-    chainMark: "eth",
-  },
-  {
-    id: "sol-sol",
-    symbol: "SOL",
-    blockchain: "sol",
-    chain: "Solana",
-    coin: "sol",
-    chainMark: "sol",
-  },
-  {
-    id: "usdt-bsc",
-    symbol: "USDT",
-    blockchain: "bsc",
-    chain: "BNB Chain",
-    coin: "usdt",
-    chainMark: "bnb",
-  },
-  {
-    id: "usdc-pol",
-    symbol: "USDC",
-    blockchain: "pol",
-    chain: "Polygon",
-    coin: "usdc",
-    chainMark: "pol",
-  },
-] as const
-
-export type PayerRoute = (typeof PAYER_ROUTES)[number]
 
 export async function tokens(): Promise<OneClickToken[]> {
   const response = await fetch(`${BASE}/v0/tokens`, { next: { revalidate: TOKENS_TTL_S } })

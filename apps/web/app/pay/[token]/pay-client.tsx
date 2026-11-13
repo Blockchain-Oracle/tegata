@@ -14,6 +14,7 @@ import { useEffect, useState } from "react"
 
 import { viewDollars } from "@/components/kit/figure"
 import { type PayRoute, type PayStep, PayView, type TegataState } from "@/components/pay/pay-view"
+import { useDebounced } from "@/hooks/use-debounced"
 import { useProfile } from "@/hooks/use-profile"
 import { useSigner } from "@/hooks/use-signer"
 import { useTestDollars } from "@/hooks/use-test-dollars"
@@ -41,15 +42,6 @@ function units(dollars: string): bigint | null {
   } catch {
     return null
   }
-}
-
-function useDebounced<T>(value: T, ms: number) {
-  const [v, setV] = useState(value)
-  useEffect(() => {
-    const t = setTimeout(() => setV(value), ms)
-    return () => clearTimeout(t)
-  }, [value, ms])
-  return v
 }
 
 /** What a wallet error means for the payer, in their words. */
