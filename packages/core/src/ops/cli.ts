@@ -356,8 +356,13 @@ async function deployAutopilot(network: NetworkId) {
 
 /** The mainnet operator key, made here and kept in .env only; tegata.near is created with it. */
 const BOOTSTRAP_ENV = "MAINNET_OPERATOR_KEY"
-/** NEAR kept on the implicit account for the create transaction's gas; everything else goes to tegata.near. */
-const CREATE_RESERVE_YOCTO = 50_000_000_000_000_000_000_000n
+/**
+ * NEAR holds a transaction's attached gas up front at a pessimistic price, about 10x the current one (measured
+ * 2026-11-13: 100 Tgas at 1e8 yocto/gas needed 0.1009 NEAR on top of the deposit), and refunds what isn't burnt.
+ */
+const PESSIMISTIC_GAS_FACTOR = 10n
+/** Action fees on top of that. */
+const CREATE_MARGIN_YOCTO = 20_000_000_000_000_000_000_000n
 const MIN_OPERATOR_YOCTO = 2_000_000_000_000_000_000_000_000n
 
 function bootstrapKey(): KeyPair {
@@ -400,16 +405,20 @@ async function createOperator() {
   const balance = (await accountExists("mainnet", implicit))
     ? await nearBalance("mainnet", implicit)
     : 0n
-  const deposit = balance - CREATE_RESERVE_YOCTO
+  const block = await nearProvider("mainnet").viewBlock({ finality: "final" })
+  const reserve =
+    GAS.registrarCreateAccount * BigInt(block.header.gas_price) * PESSIMISTIC_GAS_FACTOR +
+    CREATE_MARGIN_YOCTO
+  const deposit = balance - reserve
   if (deposit < MIN_OPERATOR_YOCTO) {
     console.log(
-      `${implicit} holds ${near(balance)} NEAR; send at least 2.1 NEAR first. Nothing was sent.`,
+      `${implicit} holds ${near(balance)} NEAR; send at least 2.15 NEAR first. Nothing was sent.`,
     )
     process.exitCode = 1
     return
   }
   console.log(
-    `Creating ${operatorId} with ${near(deposit)} NEAR (keeping ${near(CREATE_RESERVE_YOCTO)} for gas)…`,
+    `Creating ${operatorId} with ${near(deposit)} NEAR (holding ${near(reserve)} for gas; what isn't burnt stays here)…`,
   )
   const funder = new Operator("mainnet", [key.toString()], implicit)
   const created = await funder.send(NETWORKS.mainnet.registrar, [
