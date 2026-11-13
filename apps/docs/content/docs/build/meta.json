@@ -3,11 +3,5 @@
   "description": "How it's built, and how to run it",
   "icon": "Wrench",
   "root": true,
-  "pages": [
-    "index",
-    "checkout",
-    "developers",
-    "self-host",
-    "limits"
-  ]
+  "pages": ["index", "checkout", "developers", "self-host", "limits"]
 }

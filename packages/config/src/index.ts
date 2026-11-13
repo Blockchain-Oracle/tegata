@@ -133,7 +133,9 @@ export const PAYROLL_CONVERSION = { maxExtraBps: 200n, maxExtraUnits: 1_000_000n
 /** The most a row's transfer may exceed its pay (USDC base units), by `PAYROLL_CONVERSION`. */
 export const maxConversionExtra = (pay: bigint) => {
   const share = (pay * PAYROLL_CONVERSION.maxExtraBps) / 10_000n
-  return share > PAYROLL_CONVERSION.maxExtraUnits ? share : PAYROLL_CONVERSION.maxExtraUnits
+  // The larger of the two (Math.max doesn't take bigint).
+  if (share > PAYROLL_CONVERSION.maxExtraUnits) return share
+  return PAYROLL_CONVERSION.maxExtraUnits
 }
 
 /**

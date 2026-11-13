@@ -95,10 +95,10 @@ export default function Home() {
           <p className="text-[17px] text-fd-muted-foreground">
             The studio signs in with email and Tegata opens a NEAR account named after it, with no
             wallet and no NEAR to buy: Tegata pays every network fee. The client opens the invoice
-            and pays the way they can: a Tegata balance, any NEAR wallet, or a coin on another
-            chain that NEAR Intents converts. The studio receives exactly $1,250.00, the invoice
-            turns Paid when NEAR itself shows the transfer, and both sides get a sealed, numbered
-            receipt. One approval then pays the whole team, each person where they chose.
+            and pays the way they can: a Tegata balance, any NEAR wallet, or a coin on another chain
+            that NEAR Intents converts. The studio receives exactly $1,250.00, the invoice turns
+            Paid when NEAR itself shows the transfer, and both sides get a sealed, numbered receipt.
+            One approval then pays the whole team, each person where they chose.
           </p>
           <Link
             href={DOCS.money}

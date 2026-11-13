@@ -3,5 +3,14 @@
   "description": "Accounts without gas, what makes a payment paid, and money across chains, banks and cards",
   "icon": "ArrowLeftRight",
   "root": true,
-  "pages": ["index", "paid", "gas-free", "any-chain", "bank-and-cards", "autopilot", "quotes", "proof"]
+  "pages": [
+    "index",
+    "paid",
+    "gas-free",
+    "any-chain",
+    "bank-and-cards",
+    "autopilot",
+    "quotes",
+    "proof"
+  ]
 }
