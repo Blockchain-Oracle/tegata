@@ -398,6 +398,9 @@ export function BankView(p: BankViewProps) {
                     </>
                   ) : p.quote.error ? (
                     <li className="font-semibold text-[#8A5800]">{p.quote.error}</li>
+                  ) : !p.available ? (
+                    // Live: Noah's rate isn't asked for until Live payouts open, so nothing spins.
+                    <li>Noah's live rate shows in the Sandbox</li>
                   ) : (
                     <li>
                       <TextShimmer className="text-[14px]">Getting Noah's rate…</TextShimmer>

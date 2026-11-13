@@ -230,7 +230,7 @@ export function CommandMenu({
                   Withdraw to a bank · bank details
                 </Item>
                 <Item icon={<CreditCard />} onSelect={run(() => router.push("/app/cards"))}>
-                  Cards: top up your Gnosis Pay card
+                  Cards: spend cards for you and your team
                 </Item>
                 <Item icon={<Gift />} onSelect={run(() => router.push("/app/refer"))}>
                   Refer a business

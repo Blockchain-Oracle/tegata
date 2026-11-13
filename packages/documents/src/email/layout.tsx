@@ -158,7 +158,10 @@ function Rows({ rows, assets }: { rows: EmailRow[]; assets: string }) {
                   fontSize: row.mono ? 13 : 14,
                   fontWeight: 600,
                   color: INK,
-                  wordBreak: "break-all",
+                  // Only an account or hash may break anywhere; words wrap between words.
+                  ...(row.mono
+                    ? { wordBreak: "break-all" as const }
+                    : { overflowWrap: "break-word" as const }),
                 }}
               >
                 {picture ? (

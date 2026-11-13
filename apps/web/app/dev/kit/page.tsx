@@ -226,7 +226,7 @@ export default function KitPage() {
         title="Task steps"
         note="Each finished step ticks with a sound. The one in flight shimmers."
       >
-        <div className="grid gap-4 md:grid-cols-[1fr_auto]">
+        <div className="grid grid-cols-[minmax(0,1fr)] gap-4 md:grid-cols-[minmax(0,1fr)_auto]">
           <Specimen label="Opening an account">
             <TaskSteps steps={STEPS} current={step} failed={failed} />
           </Specimen>

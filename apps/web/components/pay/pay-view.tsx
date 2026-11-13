@@ -923,7 +923,9 @@ function PaidSlip(p: PanelProps) {
         ? (paidVia(assetIn) ?? "Another chain")
         : rail === "manual"
           ? "By hand"
-          : "Tegata balance"
+          : rail === "card"
+            ? "Card · through Transak"
+            : "Tegata balance"
   return (
     <Stage className="p-3 sm:p-4" grid={false}>
       <ReceiptSlip
