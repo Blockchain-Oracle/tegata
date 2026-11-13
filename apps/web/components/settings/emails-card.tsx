@@ -29,6 +29,8 @@ const KIND: Record<string, string> = {
   "payroll.due": "Payroll due",
   "destination.pending": "Pay destination change",
   "destination.set": "Pay destination set",
+  "team.invite": "Approver invite",
+  "approval.needed": "Payroll needs approval",
   "autopilot.underfunded": "Autopilot short",
   "autopilot.on": "Autopilot on",
   "payout.delivered": "Delivered to another chain",

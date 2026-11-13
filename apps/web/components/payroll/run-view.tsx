@@ -52,6 +52,8 @@ export function RunView({
   onEdit,
   onPay,
   onRetry,
+  payLabel,
+  payNote,
 }: {
   run: PayRun | undefined
   error: boolean
@@ -66,6 +68,9 @@ export function RunView({
   onEdit?: (row: PayRunRow) => void
   onPay: () => void
   onRetry: () => void
+  /** The team treasury pays: the hold sends the run for approval instead of paying. */
+  payLabel?: string
+  payNote?: string
 }) {
   const reduce = useReducedMotion()
   const header = (
@@ -180,15 +185,20 @@ export function RunView({
           ) : null}
           {problem ? <p className="text-[15px] font-medium text-down">{problem}</p> : null}
           <HoldButton
-            label={`Hold to pay ${included.length} ${included.length === 1 ? "person" : "people"} ${money(total)}`}
+            label={
+              payLabel ??
+              `Hold to pay ${included.length} ${included.length === 1 ? "person" : "people"} ${money(total)}`
+            }
             ready={included.length > 0 && !short}
             busy={busy}
             onConfirm={onPay}
           />
           <p className="-mt-2 text-center text-detail text-muted-foreground">
-            {included.length > 50
-              ? `${Math.ceil(included.length / 50)} batches of up to 50. Each one pays everyone in it, or nobody.`
-              : "One transaction on NEAR: everyone in it is paid, or nobody is."}
+            {payNote
+              ? payNote
+              : included.length > 50
+                ? `${Math.ceil(included.length / 50)} batches of up to 50. Each one pays everyone in it, or nobody.`
+                : "One transaction on NEAR: everyone in it is paid, or nobody is."}
           </p>
         </motion.div>
       ) : run.status === "approved" ? (

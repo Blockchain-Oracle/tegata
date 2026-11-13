@@ -28,6 +28,7 @@ import {
   cardMovesToFund,
   cardPaymentsToPoll,
   claimEmails,
+  createTreasuryOnChain,
   creditBankDeposits,
   deliver,
   destinationsToRegister,
@@ -91,8 +92,13 @@ import {
   settleRefund,
   settleRelayedPayment,
   settleRunRelay,
+  settleTreasuryRelay,
   setupAccount,
   sweepReferrals,
+  syncTreasuryRuns,
+  topUpTreasuries,
+  topUpTreasury,
+  treasuriesToCreate,
   USDC_DECIMALS,
   unfinishedRelays,
   WEBHOOK_BACKOFF_MS,
@@ -154,6 +160,13 @@ await boss.work(QUEUES.relaySend.name, async ([job]) => {
   await registerPayoutAddress(db, operator, relayId)
   // A payroll batch with rows to another chain: each row's NEAR Intents deposit address needs the same.
   await registerRunAddresses(db, operator, relayId)
+  // A treasury proposal or vote: the treasury pays its own storage, so make sure it has NEAR before it's relayed.
+  const [ahead] = await db
+    .select({ purpose: schema.relays.purpose, receiverId: schema.relays.receiverId })
+    .from(schema.relays)
+    .where(eq(schema.relays.id, relayId))
+  if (ahead?.purpose.startsWith("treasury-propose:") || ahead?.purpose.startsWith("treasury-vote:"))
+    await topUpTreasury(operator, ahead.receiverId)
   const relay = await processRelay(db, operator, relayId)
   if (relay) console.log(`[relay] ${relay.purpose} ${relay.status} ${relay.txHash ?? ""}`)
   // A payment from a Tegata balance settles as soon as its relay lands.
@@ -195,6 +208,13 @@ await boss.work(QUEUES.relaySend.name, async ([job]) => {
   if (relay?.purpose.startsWith("card:")) {
     const moveId = await settleCardRelay(db, relay.id, operator.accountId)
     if (moveId) await enqueue(boss, "cardFund", { moveId }, `card-fund:${moveId}`)
+  }
+  // The team treasury: the seal makes it ready; a vote that reaches k pays the run from the treasury's USDC events.
+  if (relay?.purpose.startsWith("treasury-")) {
+    const settled = await settleTreasuryRelay(db, relay.id, operator.accountId)
+    console.log(`[treasury] ${relay.purpose} ${settled}`)
+    if (settled === "paid" || settled === "failed")
+      await queueRunEmails(db, relay.purpose.split(":")[1] ?? "")
   }
   // A payroll batch: its rows are paid only once the USDC events are read from NEAR.
   if (relay?.purpose.startsWith("run:")) {
@@ -291,6 +311,29 @@ await boss.work(QUEUES.autopilotRegister.name, async ([job]) => {
   if (!row || !operator) return
   const ready = await registerForAutopilot(db, operator, autopilotId)
   console.log(`[autopilot] ${autopilotId} ${ready?.status ?? "gone"}`)
+})
+
+await boss.work(QUEUES.treasuryOpen.name, async ([job]) => {
+  if (!job) return
+  const { treasuryId } = QUEUES.treasuryOpen.payload.parse(job.data)
+  const row = (await treasuriesToCreate(db)).find((t) => t.id === treasuryId)
+  const operator = row ? operators.get(row.network) : undefined
+  if (!row || !operator) return
+  const made = await createTreasuryOnChain(db, operator, treasuryId)
+  console.log(`[treasury] ${row.accountId} ${made?.status ?? "gone"} ${made?.error ?? ""}`)
+})
+
+/** Every minute: treasury payrolls follow their proposals on NEAR, and every ready treasury keeps NEAR for storage. */
+await boss.schedule(QUEUES.treasuryKeeper.name, "* * * * *", {})
+await boss.work(QUEUES.treasuryKeeper.name, async () => {
+  for (const operator of operators.values()) {
+    const synced = await syncTreasuryRuns(db, operator.network, operator.accountId)
+    for (const run of synced) {
+      if (run.state !== "pending") console.log(`[treasury] run ${run.id} ${run.state}`)
+      if (run.state === "paid" || run.state === "failed") await queueRunEmails(db, run.id)
+    }
+    await topUpTreasuries(db, operator)
+  }
 })
 
 /** The keeper: every minute, pay the autopilot plans whose payday has come (anyone may call `run`; we do). */

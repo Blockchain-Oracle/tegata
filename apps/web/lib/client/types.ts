@@ -565,10 +565,10 @@ export interface PaySlipRow {
 
 export interface PayRunSummary {
   id: string
-  source: "approval" | "autopilot"
+  source: "approval" | "autopilot" | "treasury"
   payday: string
   label: string
-  status: "draft" | "approved" | "paid" | "failed"
+  status: "draft" | "approved" | "paid" | "failed" | "proposed" | "declined" | "expired"
   total: string
   people: number
   paidAt: string | null
@@ -616,10 +616,10 @@ export interface PayRunRow {
 
 export interface PayRun {
   id: string
-  source: "approval" | "autopilot"
+  source: "approval" | "autopilot" | "treasury"
   payday: string
   label: string
-  status: "draft" | "approved" | "paid" | "failed"
+  status: "draft" | "approved" | "paid" | "failed" | "proposed" | "declined" | "expired"
   total: string
   attempt: number
   error: string | null

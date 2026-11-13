@@ -4,7 +4,8 @@
 // re-encoded here and checked against the rows on screen (who, which account, how much, which memo), so the key
 // only ever signs what the owner reviewed.
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { use, useState } from "react"
+import { useRouter } from "next/navigation"
+import { use, useEffect, useState } from "react"
 
 import { type RowPayInput, RowPaySheet } from "@/components/payroll/row-pay-sheet"
 import { RunView } from "@/components/payroll/run-view"
@@ -12,6 +13,7 @@ import { useNetwork } from "@/hooks/use-network"
 import { useProfile } from "@/hooks/use-profile"
 import { useSigner } from "@/hooks/use-signer"
 import { ApiError, api } from "@/lib/client/api"
+import { proposeDraftMatches } from "@/lib/client/treasury-check"
 import type { PayRun, PayRunRow, RunBatchDraft } from "@/lib/client/types"
 import { fire } from "@/lib/feedback"
 
@@ -33,6 +35,28 @@ export default function RunPage({ params }: { params: Promise<{ id: string }> })
   })
   const network = useNetwork()
   const account = profile?.accounts.find((entry) => entry.network === network)
+  const router = useRouter()
+  // A team treasury that's ready pays payroll after its approvers vote: the hold sends the run for approval.
+  const team = useQuery({
+    queryKey: ["team", network],
+    queryFn: () =>
+      api<{
+        treasury: {
+          accountId: string
+          status: string
+          balance: string
+          threshold: number
+          approvers: string[]
+        } | null
+      }>("/api/team"),
+    staleTime: 30_000,
+  })
+  const treasury = team.data?.treasury?.status === "ready" ? team.data.treasury : null
+  // Sent to the treasury: its approvals page follows the votes and the payment.
+  useEffect(() => {
+    if (run.data?.source === "treasury" && run.data.status !== "draft")
+      router.replace(`/app/approvals/${id}`)
+  }, [run.data?.source, run.data?.status, id, router])
   const refresh = () => {
     void queryClient.invalidateQueries({ queryKey: ["run", id] })
     void queryClient.invalidateQueries({ queryKey: ["payroll"] })
@@ -57,9 +81,53 @@ export default function RunPage({ params }: { params: Promise<{ id: string }> })
     onSettled: refresh,
   })
 
+  async function sendForApproval() {
+    const shown = run.data
+    if (!shown || !treasury) return
+    setBusy(true)
+    setProblem(null)
+    try {
+      const prepared = await api<{
+        relayId: string
+        draft: RunBatchDraft["draft"]
+        proposalId: number
+        usdc: string
+      }>(`/api/payroll/runs/${id}/treasury`, { method: "POST" })
+      const { draftMatchesHash } = await import("@tegata/core/near")
+      const onScreen = shown.rows.filter((r) => r.status === "included")
+      if (
+        !draftMatchesHash(prepared.draft) ||
+        !proposeDraftMatches(
+          prepared.draft,
+          treasury.accountId,
+          prepared.usdc,
+          prepared.proposalId,
+          onScreen,
+        )
+      )
+        throw new Error("The payroll to send doesn't match what you reviewed")
+      const [approval] = await signer.approve([prepared])
+      if (!approval) throw new Error("Nothing was signed")
+      await api(`/api/payroll/runs/${id}/treasury`, {
+        method: "PUT",
+        body: { proposalId: prepared.proposalId, approval },
+      })
+      fire("confirm", { cue: "sent" })
+      refresh()
+      router.push(`/app/approvals/${id}`)
+    } catch (error) {
+      fire("fail", { cue: "error" })
+      setProblem(error instanceof Error ? error.message : "Couldn't send the run for approval")
+      refresh()
+    } finally {
+      setBusy(false)
+    }
+  }
+
   async function pay() {
     const shown = run.data
     if (!shown) return
+    if (treasury) return sendForApproval()
     setBusy(true)
     setProblem(null)
     try {
@@ -139,7 +207,7 @@ export default function RunPage({ params }: { params: Promise<{ id: string }> })
         error={run.isError && !run.data}
         onReload={() => void run.refetch()}
         business={profile?.workspace?.name ?? "Your business"}
-        balance={account?.balance ?? null}
+        balance={treasury ? treasury.balance : (account?.balance ?? null)}
         busy={busy || !signer.ready || retry.isPending}
         problem={problem}
         onToggle={(row, included) => toggle.mutate({ row, included })}
@@ -149,6 +217,16 @@ export default function RunPage({ params }: { params: Promise<{ id: string }> })
         }}
         onPay={pay}
         onRetry={() => retry.mutate()}
+        payLabel={
+          treasury && run.data
+            ? `Hold to send for approval · ${run.data.rows.filter((r) => r.status === "included").length} people`
+            : undefined
+        }
+        payNote={
+          treasury
+            ? `From the team treasury: it pays once ${treasury.threshold} of ${treasury.approvers.length} approve, yours included.`
+            : undefined
+        }
       />
       <RowPaySheet
         row={editing}

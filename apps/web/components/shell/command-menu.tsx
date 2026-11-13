@@ -26,7 +26,9 @@ import {
   Plus,
   ScanLine,
   Settings,
+  ShieldCheck,
   ShoppingBag,
+  Stamp,
   Store,
   Sun,
   Users,
@@ -235,6 +237,12 @@ export function CommandMenu({
                 </Item>
                 <Item icon={<CreditCard />} onSelect={run(() => router.push("/app/cards"))}>
                   Cards: spend cards for you and your team
+                </Item>
+                <Item icon={<Stamp />} onSelect={run(() => router.push("/app/approvals"))}>
+                  Approvals: payroll waiting for your vote
+                </Item>
+                <Item icon={<ShieldCheck />} onSelect={run(() => router.push("/app/team"))}>
+                  Team: approvers and the team treasury
                 </Item>
                 <Item icon={<Gift />} onSelect={run(() => router.push("/app/refer"))}>
                   Refer a business

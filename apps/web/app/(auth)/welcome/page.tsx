@@ -65,10 +65,12 @@ export default function WelcomePage() {
   const [invite, setInvite] = useState<Invite | null>(null)
   useEffect(() => setInvite(loadInvite()), [])
   // A person joining a team's payroll from their page names themselves, not a business.
-  const [joining, setJoining] = useState<{ business: string } | null>(null)
+  const [joining, setJoining] = useState<{ business: string; approver?: boolean } | null>(null)
   useEffect(() => {
     const payroll = loadPayrollInvite()
-    setJoining(payroll ? { business: payroll.business } : null)
+    setJoining(
+      payroll ? { business: payroll.business, approver: payroll.role === "approver" } : null,
+    )
   }, [])
 
   const open = useMutation({

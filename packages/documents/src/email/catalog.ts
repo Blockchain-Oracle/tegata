@@ -211,6 +211,23 @@ export type EmailEvent =
       }
     }
   | {
+      kind: "team.invite"
+      data: { business: string; sandbox: boolean; name: string; url: string }
+    }
+  | {
+      kind: "approval.needed"
+      data: {
+        business: string
+        sandbox: boolean
+        label: string
+        total: Units
+        people: number
+        approvals: number
+        threshold: number
+        url: string
+      }
+    }
+  | {
       kind: "destination.set"
       data: { business: string; sandbox: boolean; person: string; destination: string; url: string }
     }
@@ -674,6 +691,46 @@ export function compose(event: EmailEvent, assets: string): EmailContent {
           : ["Until then, payroll pays the old destination."],
         button: { label: person ? "See where your pay lands" : "Review the change", href: d.url },
         audience: person ? "person" : "owner",
+        business: d.business,
+        sandbox: d.sandbox,
+      }
+    }
+    case "team.invite": {
+      const d = event.data
+      return {
+        ...base,
+        shape: "card",
+        subject: `${d.business} asked you to approve its payroll`,
+        preview: "Payroll waits for your yes before it pays.",
+        brand: { name: d.business },
+        label: "Team",
+        hero: "Approve payroll",
+        body: [
+          `${d.business}'s payroll waits for your yes before it pays. You vote with your own key on NEAR; Tegata pays the fees.`,
+        ],
+        button: { label: "Join as an approver", href: d.url },
+        audience: "person",
+        business: d.business,
+        sandbox: d.sandbox,
+      }
+    }
+    case "approval.needed": {
+      const d = event.data
+      return {
+        ...base,
+        shape: "card",
+        subject: `${d.business}'s payroll needs your approval: ${usd(d.total)}`,
+        preview: `${d.label} · ${d.people} ${d.people === 1 ? "person" : "people"} · ${d.approvals} of ${d.threshold} approvals`,
+        brand: { name: d.business },
+        label: "Approval",
+        hero: usd(d.total),
+        rows: [
+          { label: "For", value: d.label },
+          { label: "People", value: String(d.people) },
+          { label: "Approvals", value: `${d.approvals} of ${d.threshold}` },
+        ],
+        button: { label: "Review and approve", href: d.url },
+        audience: "person",
         business: d.business,
         sandbox: d.sandbox,
       }

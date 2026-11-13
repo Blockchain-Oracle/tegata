@@ -13,6 +13,7 @@ import {
   ReferralError,
   RelayError,
   SandboxError,
+  TeamError,
   WalletSignInError,
 } from "@tegata/services"
 import { ZodError } from "zod"
@@ -20,6 +21,7 @@ import { ZodError } from "zod"
 const STATUS = {
   badRequest: 400,
   unauthorized: 401,
+  forbidden: 403,
   notFound: 404,
   conflict: 409,
   tooMany: 429,
@@ -93,6 +95,17 @@ function toResponse(error: unknown): Response {
       { error: { code: error.field ?? error.code, message: error.message } },
       { status },
     )
+  }
+  if (error instanceof TeamError) {
+    const status =
+      error.code === "not_found"
+        ? STATUS.notFound
+        : error.code === "forbidden"
+          ? STATUS.forbidden
+          : error.code === "bad_input"
+            ? STATUS.badRequest
+            : STATUS.conflict
+    return Response.json({ error: { code: error.code, message: error.message } }, { status })
   }
   if (error instanceof PayrollError) {
     const status =

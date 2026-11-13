@@ -1,0 +1,60 @@
+---
+title: Team approvals
+description: Payroll that needs more than one person. Approvers vote with their own keys; a team treasury on NEAR (a Sputnik DAO, the contract Trezu runs on) pays only when enough of them say yes, every row in one batch.
+icon: ShieldCheck
+---
+
+A rule only Tegata checks would be a promise: the owner's key could still move the money. With team approvals the
+payroll money sits in a **team treasury** on NEAR, a Sputnik DAO v2 contract that pays only when *k* of *n* approvers
+vote yes. Each approver votes with their own key, through Tegata's relayer, so nobody pays a network fee. Tegata isn't
+in the treasury's rules at all: it can't propose a payment, vote, or move what the treasury holds.
+
+## Set it up
+
+1. **Business → Team → Add an approver.** Their name and email. They get an email with a link to `/team/<token>`,
+   sign in with that email (their own Tegata account opens if they don't have one) and press **Join as an approver**.
+2. **Pick the rule.** "Payroll needs **2** of **3** approvals". You count as one of them. At least 2.
+3. **Open the team treasury** once everyone has joined. Tegata creates it on NEAR and registers it for USDC
+   (Tegata pays both), then you **hold to seal it**: one action that switches off code updates and locks the rule,
+   so changing anything later needs the same *k* of *n* approvals.
+4. **Add money**: one gas-free transfer from your balance into the treasury. From then on it only leaves by approvals.
+
+On Live the treasury is `<name>.sputnik-dao.near`, from the same factory Trezu uses, so it also opens in
+[Trezu](https://trezu.app) for anyone with a wallet for their account. In the Sandbox it is `<name>-team.tegata.testnet`,
+running the same contract code.
+
+## Paying payroll with approvals
+
+- Review the run as usual. The hold reads **Hold to send for approval**: it files the payroll on the treasury (one
+  USDC transfer per person, each with the memo `tegata:payroll:<row>`) together with your own yes.
+- Every other approver gets an email, and the run waits in their **Approvals** (in the rail under Pay people, and ⌘K).
+  They see who it pays and who has voted, then **hold to approve** or **decline**.
+- The vote that reaches *k* makes the treasury pay everyone in one batch: every row lands or none does. Rows turn paid
+  only from USDC's own transfer events in that transaction, the same rule as every payment in Tegata, and payslips go
+  out as usual.
+- Enough declines end it as **Declined**; a proposal left open for 7 days **Expires**. Nothing moves either way, and
+  the owner can send it again.
+
+Before anyone signs, their browser re-reads the action: the payroll's transfers must be exactly the rows on screen, on
+the USDC contract, on this business's treasury. A vote also names the exact proposal it approves, so it can't land on
+another one.
+
+## Limits, said plainly
+
+- The treasury pays NEAR accounts (Tegata accounts and your people's own NEAR accounts). A row for another chain is
+  paid from your own balance, outside the treasury.
+- Up to 50 people per proposal: the vote that pays carries the gas for every transfer.
+- Approvers are fixed when the treasury opens. Changing them is a proposal the current approvers approve; the screen
+  for that comes later.
+- The treasury keeps a little NEAR for the proposals it stores; Tegata tops it up.
+
+## Proof on testnet
+
+A business with two approvers, through the same code the app uses (`packages/services/src/proofs/team.ts`):
+
+| Step | Transaction |
+|---|---|
+| Treasury `team-c8e90baa-team.tegata.testnet` created from the shared DAO code | <Tx hash="DAPX9WB515Qoh6ntUPkquGSwkY7NNc4APNGnHyVmNsFJ" /> |
+| Sealed by the owner (no code updates; every change needs 2 of 3) | <Tx hash="HbpMFR6waQDby3Ho7uNsTQAkKhC3aS3Kg9aW9DghFSxG" /> |
+| Payroll filed with the owner's yes (1 of 2) | <Tx hash="4rgemZ1h9KuYGDfYaVoS8KMvqgCC7Q5ABqAfqtq2Mc6S" /> |
+| Ana's yes (2 of 2): both rows paid in one batch | <Tx hash="6KLZFaa87enrDSbh9hn9yoChVSf7TbvEcGEXi2JyJ6by" /> |

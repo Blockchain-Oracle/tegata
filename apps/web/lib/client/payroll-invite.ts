@@ -13,6 +13,8 @@ export interface PayrollInvite {
   accountId?: string
   /** For another chain: the route ("usdt-tron"). */
   route?: string
+  /** Joining as someone paid (default) or as an approver of the payroll. */
+  role?: "payee" | "approver"
 }
 
 export function rememberPayrollInvite(invite: PayrollInvite): void {

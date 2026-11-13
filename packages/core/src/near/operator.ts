@@ -1,3 +1,4 @@
+import { base58 } from "@scure/base"
 import { NETWORKS, type NetworkId, TIMEOUTS } from "@tegata/config"
 import {
   Account,
@@ -174,6 +175,31 @@ export class Operator {
       actions.transfer(dustYocto),
       actions.addFullAccessKey(PublicKey.fromString(publicKey)),
     ])
+  }
+
+  /**
+   * Create a team treasury (a Sputnik DAO) at `name.<operator>` from the DAO code shared on chain by hash, and
+   * initialise it in the same transaction. It gets no access key: only its own approvers' votes can move what it holds.
+   */
+  createTreasury(
+    accountId: string,
+    init: { config: object; policy: object },
+    depositYocto: bigint,
+    codeHash: string,
+    gas: bigint,
+  ): Promise<TxResult> {
+    return this.send(accountId, [
+      actions.createAccount(),
+      actions.transfer(depositYocto),
+      // The action wants the hash's 32 bytes, not its base58 text.
+      actions.useGlobalContract({ codeHash: base58.decode(codeHash) }),
+      actions.functionCall("new", init, gas, 0n),
+    ])
+  }
+
+  /** Send NEAR from the operator (a treasury's storage for the proposals it keeps). */
+  sendNear(accountId: string, yocto: bigint): Promise<TxResult> {
+    return this.send(accountId, [actions.transfer(yocto)])
   }
 
   /** Register an account on USDC so it can receive dollars. */

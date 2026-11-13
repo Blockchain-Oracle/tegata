@@ -38,6 +38,9 @@ export function RunStatusPill({ status }: { status: PayRunSummary["status"] }) {
   if (status === "paid") return <StatusPill tone="up">Paid</StatusPill>
   if (status === "failed") return <StatusPill tone="down">Didn't go through</StatusPill>
   if (status === "approved") return <StatusPill tone="wait">Paying</StatusPill>
+  if (status === "proposed") return <StatusPill tone="wait">Waiting for approval</StatusPill>
+  if (status === "declined") return <StatusPill tone="down">Declined</StatusPill>
+  if (status === "expired") return <StatusPill tone="quiet">Expired</StatusPill>
   return <StatusPill tone="quiet">Draft</StatusPill>
 }
 

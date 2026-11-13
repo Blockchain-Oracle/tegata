@@ -27,7 +27,9 @@ import {
   ScanLine,
   Search,
   Settings,
+  ShieldCheck,
   ShoppingBag,
+  Stamp,
   Store,
   Sun,
   Users,
@@ -79,6 +81,7 @@ const GROUPS: { id: string; label: string; places: Place[] }[] = [
       { href: "/app/send", label: "Send", icon: <ArrowUpRight /> },
       { href: "/app/people", label: "People", icon: <UsersRound /> },
       { href: "/app/payroll", label: "Payroll", icon: <Banknote /> },
+      { href: "/app/approvals", label: "Approvals", icon: <Stamp /> },
     ],
   },
   {
@@ -95,6 +98,7 @@ const GROUPS: { id: string; label: string; places: Place[] }[] = [
 /** At the foot: used now and then. */
 const FOOT: Place[] = [
   { href: "/app/refer", label: "Refer", icon: <Gift /> },
+  { href: "/app/team", label: "Team", icon: <ShieldCheck /> },
   { href: "/app/developers", label: "Developers", icon: <Code2 /> },
   { href: "/app/settings", label: "Business", icon: <Settings /> },
 ]

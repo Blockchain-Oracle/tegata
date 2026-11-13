@@ -1242,6 +1242,23 @@ export const EMAIL_SAMPLES = [
       url: "/app/developers",
     },
   },
+  {
+    kind: "team.invite",
+    data: { business: "Studio Kaze", sandbox: false, name: "Ana Ruiz", url: "/team/sample" },
+  },
+  {
+    kind: "approval.needed",
+    data: {
+      business: "Studio Kaze",
+      sandbox: false,
+      label: "Pay · 1–30 Nov 2026",
+      total: "5500000000",
+      people: 2,
+      approvals: 1,
+      threshold: 2,
+      url: "/app/approvals/sample",
+    },
+  },
 ] as const
 
 // --- bank (/dev/flows/bank) ---------------------------------------------------------------------------------------
@@ -1545,5 +1562,86 @@ export const SAMPLE_CARDS = {
     { id: "dev-person-1", name: "Mei Tanaka", email: "mei@example.com" },
     { id: "dev-person-2", name: "Kofi Mensah", email: "kofi@example.com" },
     { id: "dev-person-3", name: "Sara Lind", email: null },
+  ],
+}
+
+// --- Team approvals (/dev/flows/team) ------------------------------------------------------------------------------
+
+export const SAMPLE_TEAM_MEMBERS = [
+  {
+    id: "7e000000-0000-4000-8000-000000000001",
+    name: "Ana Ruiz",
+    email: "ana@studio-kaze.example",
+    status: "active" as const,
+    accountId: "ana-ruiz.tegata.testnet",
+    token: "AnaInviteToken",
+  },
+  {
+    id: "7e000000-0000-4000-8000-000000000002",
+    name: "Ben Osei",
+    email: "ben@studio-kaze.example",
+    status: "invited" as const,
+    accountId: null,
+    token: "BenInviteToken",
+  },
+]
+
+export const SAMPLE_TREASURY = {
+  id: "7e000000-0000-4000-8000-000000000010",
+  accountId: "studio-kaze-team.tegata.testnet",
+  threshold: 2,
+  approvers: [SAMPLE_ACCOUNT, "ana-ruiz.tegata.testnet", "ben-osei.tegata.testnet"],
+  status: "ready" as const,
+  error: null,
+  balance: "7600000000",
+  explorerUrl: "https://testnet.nearblocks.io/address/studio-kaze-team.tegata.testnet",
+  trezuUrl: null,
+}
+
+export const SAMPLE_APPROVAL = {
+  runId: "9c8d0000-0000-4000-8000-000000000002",
+  status: "proposed",
+  business: "Studio Kaze",
+  label: "Pay · 31 Oct – 30 Nov 2026",
+  total: "5500000000",
+  network: "testnet" as const,
+  treasury: "studio-kaze-team.tegata.testnet",
+  treasuryUrl: "https://testnet.nearblocks.io/address/studio-kaze-team.tegata.testnet",
+  proposalId: 2,
+  threshold: 2,
+  me: "ana-ruiz.tegata.testnet",
+  error: null,
+  rows: [
+    {
+      id: "1a00-mei",
+      name: "Mei Tanaka",
+      role: "Designer",
+      accountId: "mei.tegata.testnet",
+      amount: "2400000000",
+      status: "included",
+      txHash: null,
+      txUrl: null,
+    },
+    {
+      id: "1a00-kofi",
+      name: "Kofi Mensah",
+      role: null,
+      accountId: "kofi-mensah.testnet",
+      amount: "3100000000",
+      status: "included",
+      txHash: null,
+      txUrl: null,
+    },
+  ],
+  approvers: [
+    {
+      account: SAMPLE_ACCOUNT,
+      name: "Studio Kaze",
+      owner: true,
+      vote: "approve" as const,
+      at: "2026-11-13T09:02:00.000Z",
+    },
+    { account: "ana-ruiz.tegata.testnet", name: "Ana Ruiz", owner: false, vote: null, at: null },
+    { account: "ben-osei.tegata.testnet", name: "Ben Osei", owner: false, vote: null, at: null },
   ],
 }

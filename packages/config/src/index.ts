@@ -174,3 +174,37 @@ export const TIMEOUTS = {
  * arrives at an exact amount. */
 export const isStableSymbol = (symbol: string) =>
   symbol === "USDC" || symbol === "USDT" || symbol === "USDT0"
+
+/**
+ * Team treasuries: a Sputnik DAO v2 per business that pays payroll only after k of n approvers vote yes. Both networks
+ * run the current mainnet DAO code (it checks the proposal kind on every vote), shared on chain as a global contract.
+ */
+export const TREASURY = {
+  /** The DAO code's hash (commit 2b0f34a3), the same global contract on mainnet and testnet. */
+  codeHash: "DtHZA1mUmGYeScEaUoUZYQGGFHSMpnjMCvkr5U9hJXuF",
+  /** Mainnet treasuries come from the factory Trezu uses, so they open there too. */
+  mainnetFactory: "sputnik-dao.near",
+  /** NEAR a new treasury starts with: its own state (≈0.01) and room for its first proposals. */
+  startYocto: 100_000_000_000_000_000_000_000n,
+  /** Kept free for the next proposal; below this the worker tops it up from the operator. */
+  minFreeYocto: 50_000_000_000_000_000_000_000n,
+  topUpYocto: 100_000_000_000_000_000_000_000n,
+  /** `new` on a fresh treasury. */
+  initGas: 40n * TGAS,
+  /** A vote that doesn't pay anything, and `add_proposal` (a 50-row proposal writes ≈13 KB). */
+  voteGas: 30n * TGAS,
+  proposeGas: 60n * TGAS,
+  /** Each row's `ft_transfer` inside the proposal, and the callback and fees around the batch. */
+  rowGas: 10n * TGAS,
+  executeOverheadGas: 50n * TGAS,
+  /** A proposal stays open this long (Trezu's period). */
+  periodNs: 604_800_000_000_000n,
+  maxRows: 50,
+  /** k can't be 1: one person approving alone is what payroll does without a treasury. */
+  minThreshold: 2,
+  maxApprovers: 10,
+} as const
+
+/** Gas for a vote that may be the one that pays: every row's transfer, the callback, and the vote itself. */
+export const treasuryVoteGas = (rows: number) =>
+  TREASURY.voteGas + TREASURY.executeOverheadGas + BigInt(rows) * (TREASURY.rowGas + TGAS)

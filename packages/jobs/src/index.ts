@@ -149,6 +149,18 @@ export const QUEUES = {
     payload: z.object({}),
     options: { retryLimit: 0, expireInSeconds: 600 },
   },
+  /** Create a business's team treasury on NEAR and register it for USDC (the operator pays). Safe to repeat. */
+  treasuryOpen: {
+    name: "treasury-open",
+    payload: z.object({ treasuryId: z.uuid() }),
+    options: { retryLimit: 3, retryDelay: 5, retryBackoff: true, expireInSeconds: 180 },
+  },
+  /** Every minute: treasury payrolls read from NEAR (votes in Trezu, declines, expiry), and treasuries kept in NEAR. */
+  treasuryKeeper: {
+    name: "treasury-keeper",
+    payload: z.object({}),
+    options: { retryLimit: 0, expireInSeconds: 600 },
+  },
   /** Send one webhook delivery. Retries are scheduled by the handler itself (30 s, 2 min, 10 min, 1 h, 6 h). */
   webhookDeliver: {
     name: "webhook-deliver",

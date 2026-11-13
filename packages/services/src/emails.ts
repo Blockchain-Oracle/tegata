@@ -1045,3 +1045,73 @@ export async function queueBankDepositEmail(db: Db, depositId: string) {
     workspaceId: workspace.id,
   })
 }
+
+/** An approver was invited: their link to join. */
+export async function queueTeamInvite(db: Db, memberId: string) {
+  const [member] = await db
+    .select()
+    .from(schema.teamMembers)
+    .where(eq(schema.teamMembers.id, memberId))
+  if (!member) return
+  const workspace = await workspaceOf(db, member.workspaceId)
+  if (!workspace) return
+  await queueEmail(db, {
+    event: {
+      kind: "team.invite",
+      data: {
+        business: workspace.name,
+        sandbox: member.network === "testnet",
+        name: member.name,
+        url: `/team/${member.token}`,
+      },
+    },
+    to: member.email,
+    dedupe: `team.invite:${member.id}:${member.invitedAt?.getTime() ?? 0}`,
+    workspaceId: workspace.id,
+  })
+}
+
+/** A run went to the team treasury: every approver but the owner hears it waits for them. */
+export async function queueApprovalNeeded(db: Db, runId: string) {
+  const [run] = await db.select().from(schema.payRuns).where(eq(schema.payRuns.id, runId))
+  if (!run?.treasuryId) return
+  const [treasury] = await db
+    .select()
+    .from(schema.treasuries)
+    .where(eq(schema.treasuries.id, run.treasuryId))
+  const workspace = await workspaceOf(db, run.workspaceId)
+  if (!treasury || !workspace) return
+  const members = await db
+    .select()
+    .from(schema.teamMembers)
+    .where(
+      and(
+        eq(schema.teamMembers.workspaceId, run.workspaceId),
+        eq(schema.teamMembers.network, run.network),
+        eq(schema.teamMembers.status, "active"),
+      ),
+    )
+  const rows = await db
+    .select({ id: schema.payRows.id })
+    .from(schema.payRows)
+    .where(and(eq(schema.payRows.runId, run.id), eq(schema.payRows.status, "included")))
+  for (const member of members)
+    await queueEmail(db, {
+      event: {
+        kind: "approval.needed",
+        data: {
+          business: workspace.name,
+          sandbox: run.network === "testnet",
+          label: periodLabel(run.periodFrom, run.periodTo),
+          total: run.total.toString(),
+          people: rows.length,
+          approvals: 1,
+          threshold: treasury.threshold,
+          url: `/app/approvals/${run.id}`,
+        },
+      },
+      to: member.email,
+      dedupe: `approval.needed:${run.id}:${run.attempt}:${member.id}`,
+      workspaceId: workspace.id,
+    })
+}

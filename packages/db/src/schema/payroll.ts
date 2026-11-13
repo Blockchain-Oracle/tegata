@@ -181,10 +181,22 @@ export const autopilotPlans = pgTable(
   ],
 )
 
-export const payRunSource = pgEnum("pay_run_source", ["approval", "autopilot"])
+/** approval: the owner's hold · autopilot: the contract on its own · treasury: the team treasury, k of n approvers. */
+export const payRunSource = pgEnum("pay_run_source", ["approval", "autopilot", "treasury"])
 
-/** draft: being reviewed · approved: signed, on its way · paid: every included row landed · failed: nothing moved. */
-export const payRunStatus = pgEnum("pay_run_status", ["draft", "approved", "paid", "failed"])
+/**
+ * draft: being reviewed · approved: signed, on its way · paid: every included row landed · failed: nothing moved ·
+ * proposed: sent to the team treasury, waiting for approvals · declined / expired: the approvers said no, or time ran out.
+ */
+export const payRunStatus = pgEnum("pay_run_status", [
+  "draft",
+  "approved",
+  "paid",
+  "failed",
+  "proposed",
+  "declined",
+  "expired",
+])
 
 /** One payday's run. Rows are a snapshot taken when the run is drafted, so later edits never change a run. */
 export const payRuns = pgTable(
@@ -202,6 +214,9 @@ export const payRuns = pgTable(
     /** Approved by the owner, or paid by the autopilot contract on its own. */
     source: payRunSource().notNull().default("approval"),
     autopilotId: uuid().references(() => autopilotPlans.id),
+    /** Paid by the team treasury: which one, and its proposal (the transfers the approvers vote on). */
+    treasuryId: uuid(),
+    proposalId: integer(),
     /** The business's account the run pays from. */
     senderId: text().notNull(),
     /** Included rows, in USDC base units. */

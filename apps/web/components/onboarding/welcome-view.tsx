@@ -56,7 +56,7 @@ export interface WelcomeViewProps {
   invite?: { business: string } | null
   onDropInvite?: () => void
   /** Set when the person is joining a team's payroll: step 1 asks for their own name. */
-  joining?: { business: string } | null
+  joining?: { business: string; approver?: boolean } | null
   /** Signed in with a NEAR wallet: this account is the pay address, so step 2 shows it instead of a name to pick. */
   walletAccount?: string | null
 }
@@ -142,7 +142,10 @@ export function WelcomeView(p: WelcomeViewProps) {
             ) : null}
             {p.joining ? (
               <span className="inline-flex items-center gap-2 self-start rounded-full bg-matcha px-3 py-1 text-[14px] font-semibold text-field-ink">
-                <Users className="size-4" /> Joining {p.joining.business}'s payroll
+                <Users className="size-4" />{" "}
+                {p.joining.approver
+                  ? `Approving ${p.joining.business}'s payroll`
+                  : `Joining ${p.joining.business}'s payroll`}
               </span>
             ) : null}
             <h1 className="display text-[44px] leading-[0.95] sm:text-[56px]">

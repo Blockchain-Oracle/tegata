@@ -1222,7 +1222,7 @@ export async function settleRunRelay(
 }
 
 /** Paid once no included row is left and none failed; failed once every batch is final and one didn't land. */
-async function closeRun(db: Db, runId: string): Promise<RunSettle> {
+export async function closeRun(db: Db, runId: string): Promise<RunSettle> {
   return db.transaction(async (tx) => {
     const [run] = await tx.select().from(payRuns).where(eq(payRuns.id, runId)).for("update")
     if (run?.status !== "approved") return "ignored"
