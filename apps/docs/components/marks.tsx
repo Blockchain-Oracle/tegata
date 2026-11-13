@@ -24,6 +24,8 @@ export const PRICED = [
   { id: "bnb", name: "BNB Chain" },
   { id: "pol", name: "Polygon" },
   { id: "gnosis", name: "Gnosis" },
+  { id: "avax", name: "Avalanche" },
+  { id: "sui", name: "Sui" },
   { id: "usdt", name: "USDT" },
 ] as const
 

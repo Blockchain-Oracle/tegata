@@ -1,6 +1,6 @@
 ---
 title: Any chain, in and out
-description: In Live, a customer pays in any of 11 coins on 9 chains and you receive exact USDC on NEAR; you send, refund and pay your team back out the same way, all through NEAR Intents.
+description: In Live, a customer pays in USDT, USDC, BTC, ETH or SOL from 11 chains and you receive exact USDC on NEAR; you send, refund and pay your team back out the same way, all through NEAR Intents.
 icon: Waypoints
 ---
 
@@ -23,16 +23,18 @@ sending, refunds, payroll and adding money from another chain are locked. Each i
 
 | Coin | Chains |
 | --- | --- |
-| USDT | Tron, Ethereum, BNB Chain |
-| USDC | Base, Solana, Arbitrum, Polygon, Gnosis |
+| USDT | Tron, Ethereum, BNB Chain, Solana, Polygon, Avalanche, Gnosis, and USDT0 (Tether's omnichain USDT) on Arbitrum |
+| USDC | Base, Solana, Arbitrum, Polygon, Gnosis, Ethereum, BNB Chain, Avalanche, Sui |
 | BTC | Bitcoin |
 | ETH | Ethereum |
 | SOL | Solana |
 
-Eleven routes on nine chains, fixed in code (`apps/web/lib/routes.ts`); each one's asset is looked up in 1Click's
-token list. USDC on Gnosis is the coin a Gnosis Pay card spends, so [topping up a card](/docs/guide/cards#a-crypto-card-you-already-have)
-is a send to Gnosis. 1Click sets its own minimums: on 13 Nov 2026 its live answer was "Temporary swap limits:
-minimum swap amount is $100".
+Twenty routes on eleven chains (Tron, Base, Ethereum, Solana, Arbitrum, Bitcoin, BNB Chain, Polygon, Gnosis, Avalanche,
+Sui), fixed in code (`apps/web/lib/routes.ts`); each one's asset is looked up in 1Click's token list. The pay page,
+Send and a person's **Another chain** share one picker: the coin first (USDT, USDC, BTC, ETH, SOL, each with how many
+chains it's on), then the chain. USDT0 sits with USDT, and counts as a dollar coin. USDC on Gnosis is the coin a Gnosis Pay card spends, so [topping up a card](/docs/guide/cards#a-crypto-card-you-already-have)
+is a send to Gnosis. 1Click sets its own minimums per route, and Tegata says them in dollars: "USDC on Base needs at
+least $0.15 right now", "USDT on Tron needs at least $100 right now".
 
 ## A customer pays from another chain
 
@@ -90,12 +92,12 @@ sent.
 ## You send to another chain
 
 <Phones>
-  <Phone src="/shots/phone/send-chain.webp" alt="Send with Another chain chosen on the live app in the Sandbox: you send $1, the eleven coins, Their address on Base, They get, Live only · NEAR Intents has no testnet, and Runs in Live" caption="Real, in the Sandbox: the coins, and Live only." />
+  <Phone src="/shots/phone/send-chain.webp" alt="Send with Another chain chosen on the live app in the Sandbox: you send $1, the coins, Their address on Base, They get, Live only · NEAR Intents has no testnet, and Runs in Live" caption="Real, in the Sandbox: the coins, and Live only." />
   <Phone src="/shots/phone/ex-send-chain-review.webp" alt="Example: Send review: you send exactly $240.00 to TQn9Y2…bLSE, they receive about 239.71 USDT, arrives about 3 min on Tron, converted by NEAR Intents, network fee paid by Tegata, Hold to send $240.00" caption="Example: the review, before you hold." />
   <Phone src="/shots/phone/ex-send-chain-delivered.webp" alt="Example: Receipt · Delivered: $240.00, route USDC on NEAR to USDT on Tron, quoted to arrive 239.71 USDT, converted by NEAR Intents, with On NEAR and On Tron links" caption="Example: delivered, with both transactions." />
 </Phones>
 
-**Send → Another chain**: pick the coin and chain, paste **Their address on Base** (or another chain), and the
+**Send → Another chain**: pick the coin, then the chain, paste **Their address on Base** (or another chain), and the
 **Live quote from NEAR Intents** shows what they get. The review says **You send exactly**, **They receive** about,
 **Arrives**, **Converted by** NEAR Intents and **Network fee: Paid by Tegata**.
 

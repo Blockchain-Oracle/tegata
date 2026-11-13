@@ -4,7 +4,7 @@ description: Every dollar is USDC on NEAR, every action is signed by its owner a
 icon: ArrowLeftRight
 ---
 
-<Diagram name="system" alt="Tegata's parts: the owner and the customer use the web app; the web app keeps the books in Postgres and hands jobs to the worker, the only holder of operator keys, which relays signed actions to NEAR, pays the fee and reads USDC events; at the edge, NEAR Intents (11 coins on 9 chains, in and out, Live), Noah (Sandbox), Bitnob and Transak (opening soon)" caption="Who talks to whom. The worker is the only process holding Tegata's NEAR keys." />
+<Diagram name="system" alt="Tegata's parts: the owner and the customer use the web app; the web app keeps the books in Postgres and hands jobs to the worker, the only holder of operator keys, which relays signed actions to NEAR, pays the fee and reads USDC events; at the edge, NEAR Intents (20 routes on 11 chains, in and out, Live), Noah (Sandbox), Bitnob and Transak (opening soon)" caption="Who talks to whom. The worker is the only process holding Tegata's NEAR keys." />
 
 Four rules hold everything up:
 
@@ -46,7 +46,7 @@ they add up to its total.
 <Cards>
   <Card icon={<Icon name="ShieldCheck" />} title="When is it paid?" href="/docs/how-money-moves/paid" description="The check that turns a transfer into a sealed receipt." />
   <Card icon={<Icon name="KeyRound" />} title="Accounts without gas" href="/docs/how-money-moves/gas-free" description="Email sign-in, a NEAR account, and a relayer that pays the fee." />
-  <Card icon={<Icon name="Waypoints" />} title="Any chain, in and out" href="/docs/how-money-moves/any-chain" description="Pay-ins, sends, refunds and payroll across 11 coins on 9 chains." />
+  <Card icon={<Icon name="Waypoints" />} title="Any chain, in and out" href="/docs/how-money-moves/any-chain" description="Pay-ins, sends, refunds and payroll across 20 routes on 11 chains." />
   <Card icon={<Icon name="Landmark" />} title="Bank and cards" href="/docs/how-money-moves/bank-and-cards" description="Noah, Bitnob and Transak, and who holds the money at each step." />
   <Card icon={<Icon name="Globe" />} title="Prices from other chains" href="/docs/how-money-moves/quotes" description="Live NEAR Intents quotes for exactly the amount owed." />
   <Card icon={<Icon name="BadgeCheck" />} title="Proof on NEAR" href="/docs/how-money-moves/proof" description="Every claim here, as a transaction you can open." />

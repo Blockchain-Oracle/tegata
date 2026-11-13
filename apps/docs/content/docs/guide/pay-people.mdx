@@ -14,14 +14,20 @@ icon: Banknote
 
 <Shot src="/shots/wide/app-people.webp" alt="People for Studio Kaze: pay per run $0.20, 2 people, 2 ready, 0 waiting; Kofi Mensah, Developer, Ready, $0.10 and Mei Tanaka, Designer, Ready, $0.10" caption="People: who you pay, and whether each is ready." address="tegata.xyz/app/people" />
 
-Open **People** and press **Add person**: name, email, role (optional) and pay per run in dollars. Or press
-**Import CSV** with a header row naming `name`, `email`, `role` and `amount`:
+Open **People** and press **Add person**: name, email, role (optional), pay per run in dollars, and **Paid as**:
+**Employee** (the default, "Gets a payslip each payday.") or **Contractor** ("Gets a payment receipt each payday, not
+a payslip."). Or press **Import CSV** with a header row naming `name`, `email`, `role` and `amount`, and if you like
+`type`:
 
 ```csv
-name,email,role,amount
-Mei Tanaka,mei@studio.example,Designer,2400
-Kofi Mensah,kofi@studio.example,Engineer,"3,100.50"
+name,email,role,amount,type
+Mei Tanaka,mei@studio.example,Designer,2400,employee
+Kofi Mensah,kofi@studio.example,Engineer,"3,100.50",contractor
 ```
+
+In `type` (also read from a column named `kind`, `paid as` or `employment type`), "contractor", "freelancer",
+"consultant" or "1099" makes a contractor; anything else, or nothing, an employee. Contractors show "Contractor" on
+their row.
 
 Every row is shown before anything is saved. A row with a mistake says which line and what to fix ("Line 3:
 "leo@example" isn't an email"), and only the good rows are imported. A team holds up to 200 people.
@@ -37,7 +43,7 @@ The person opens their page and chooses:
 | --- | --- |
 | **Tegata account** (Recommended) | "Your own dollar account. No wallet, no fees." They sign in with the email they were invited with, name themselves, and their own Tegata account opens (`name.tegata.testnet`, or `name.tegata.near` in Live) |
 | **NEAR account** | "One you already have" (`name.testnet` or `name.near`). Tegata checks it exists and, if it can't hold USDC yet, registers it and pays for that |
-| **Another chain** | "USDT, USDC, BTC… through NEAR Intents". In Live: a coin and chain from the eleven, their address there, and **Get paid in USDT on Tron** (or whichever). In the Sandbox it's locked with a **Live** badge, because NEAR Intents has no testnet |
+| **Another chain** | "USDT, USDC, BTC… through NEAR Intents". In Live: a coin, then a chain (the same picker as the pay page), their address there, and **Get paid in USDT on Tron** (or whichever). In the Sandbox it's locked with a **Live** badge, because NEAR Intents has no testnet |
 | **Bank account** | "Cash out to your own bank", shown with the flags of Nigeria, Ghana and South Africa and marked **Coming**: a person can't choose a bank yet. The business can already [withdraw to a bank](/docs/guide/bank) itself |
 
 <Phones>
@@ -71,6 +77,8 @@ payday on the 31st lands on the last day of shorter months.
 **Run payroll** drafts the run from your team as it is now: each person, the account their pay lands in, and this
 run's amount. Switch anyone off to leave them out. People who aren't ready are skipped with the reason ("Hasn't
 chosen where pay lands", "Their Tegata account is still opening"). The total is shown against your balance.
+
+To change one person's pay for this run only, tap their amount (see [This run's pay](#this-runs-pay) below).
 </Step>
 <Step>
 ### Hold to pay
@@ -99,10 +107,33 @@ it.
 If a batch fails, nothing in it moved. The run says so, and **Try again** drafts it fresh. People already paid stay
 paid and are never paid twice.
 
+## This run's pay
+
+<Phones>
+  <Phone src="/shots/phone/ex-run-review.webp" alt="Example: a draft run for $5,500.00: Mei Tanaka $2,400.00; Kofi Mensah $3,100.00, shown as $2,850.00 + $250.00 bonus; Diego Alvarez and Sara Okafor skipped; Hold to pay 2 people $5,500.00" caption="Example: Kofi's row shows what changed." />
+  <Phone src="/shots/phone/ex-row-pay.webp" alt="Example: Kofi Mensah's pay sheet for Pay · 31 Oct to 30 Nov 2026: Pay this run $2850; a bonus, Q4 target, $250; add Bonus, Reimbursement or Deduction; Kofi gets $3,100.00, $2,850.00 pay + $250.00 bonus; Save for this run; Only this run. Their usual pay stays $2,850.00" caption="Example: this run's pay, and a bonus." />
+</Phones>
+
+While a run is a draft, tap a person's amount to open their pay for this run:
+
+| | |
+| --- | --- |
+| **Pay this run** | Their usual pay unless you change it; changed, it shows **Usual $… · Reset** |
+| **Bonus**, **Reimbursement**, **Deduction** | One-off lines, each with a label ("Q4 target", "Train tickets", "Laptop advance") and an amount. Up to 10 for one person in a run |
+| "Kofi gets" | What they'll receive, worked out as you type: pay plus bonuses and reimbursements, less deductions |
+| **Save for this run** | "Only this run. Their usual pay stays $…" |
+
+The row then reads like "$2,850.00 + $250.00 bonus". Edits stay if you leave and open the run again. Deductions can't
+be more than the pay and additions together, and one person's pay in a run is at most $1,000,000.
+[Autopilot](#or-let-autopilot-pay) pays its fixed plan: these edits are for runs you approve.
+
 ## Payslips
 
 Every paid row gets a payslip at `/r/slip/<row>`, stamped with the business's seal, with **Download PDF** and **Save as
-PDF**. The person's own page and your sheet for them list every payslip with a download button, and the "You've been
+PDF**. A contractor gets a **Payment receipt** instead: the same page and PDF titled "Payment receipt", without the
+income tax and pension lines, and with the note "You are paid as an independent contractor and handle your own
+taxes". The run's row button reads **Receipt**, and the "You've been paid" email carries the receipt. Each paid row
+keeps the kind it was paid as, so switching someone later never rewrites an old payslip or receipt. The person's own page and your sheet for them list every payslip with a download button, and the "You've been
 paid" email carries the PDF.
 
 <div style={{ maxWidth: 560, marginInline: "auto" }}>
@@ -112,10 +143,16 @@ paid" email carries the PDF.
 | Part | What it shows |
 | --- | --- |
 | Header | The business, the person and their role, the pay period, pay date, when it was paid and how often |
-| Gross, deductions, net | Gross pay, deductions $0.00, net pay, and the PAID seal |
-| Earnings | This period, and the year to date |
-| Deductions | Income tax and pension and social contributions, each "Not withheld"; Tegata and network fees "Paid by Tegata". Tegata doesn't calculate or withhold tax, and the payslip says so |
+| Gross, deductions, net | Gross pay, deductions, net pay (what arrived), and the PAID seal |
+| Earnings | Pay, then each bonus and reimbursement of this run, and **Gross pay** with the year to date |
+| Deductions | Each deduction you added for this run ("By Studio Kaze"), then income tax and pension and social contributions, each "Not withheld", and Tegata and network fees, "Paid by Tegata". Tegata doesn't calculate or withhold tax, and the payslip says so |
 | How it was paid | USDC on NEAR, the account and the NEAR transaction; for another chain, what NEAR Intents delivered and the delivery transaction |
+
+The payslip page lists the same lines. With a bonus, a reimbursement and a deduction, a payslip reads like this sample:
+
+<div style={{ maxWidth: 560, marginInline: "auto" }}>
+<Shot src="/shots/wide/ex-payslip-lines.webp" alt="Example payslip PDF from Studio Kaze for Mei Tanaka, Pay 1 to 30 Nov 2026: gross pay $2,692.50, deductions $100.00, net pay $2,592.50, stamped PAID; earnings: pay $2,400.00, a Q4 target bonus $250.00, a train-to-Abuja reimbursement $42.50, gross pay with year to date; deductions: a laptop advance $100.00 by Studio Kaze, then income tax and pension and social contributions not withheld, Tegata and network fees paid by Tegata; how it was paid" caption="Example: a payslip with a bonus, a reimbursement and a deduction (/dev/payslip.pdf?lines=1)." address="tegata.xyz/dev/payslip.pdf?lines=1" />
+</div>
 
 ## Or let autopilot pay
 
