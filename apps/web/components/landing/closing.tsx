@@ -37,7 +37,7 @@ const QUESTIONS = [
   },
   {
     q: "Who holds the money?",
-    a: "Your business's own NEAR account does: name.tegata.near in Live, name.tegata.testnet in the Sandbox. Money on its way to a card or a bank passes through Tegata's operator account for minutes; everywhere else it moves from your account.",
+    a: "Your business's own NEAR account does: name.tegata.near in Live, name.tegata.testnet in the Sandbox. Money on its way to a card or a bank passes through Tegata's operator account for minutes; everywhere else it moves from your account. With team approvals, payroll money waits in your team treasury on NEAR, which only your approvers can move.",
   },
   {
     q: "Is it live?",

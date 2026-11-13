@@ -23,6 +23,10 @@ const LEDGER = [
     tx: "7hEg9DgZdEaq7e4AHtY9FZ4ReB3sveq5XwewiEanCKFr",
   },
   {
+    what: "Team approvals: the second approver's yes paid both rows from the team's Sputnik DAO treasury, in one batch",
+    tx: "6KLZFaa87enrDSbh9hn9yoChVSf7TbvEcGEXi2JyJ6by",
+  },
+  {
     what: "Autopilot: after payday, with nobody online, one run paid three people",
     tx: "DrvyRxFLWQjYRr9xMgbPXZ2qSW2hwrZNMLrShYUTvvUb",
   },

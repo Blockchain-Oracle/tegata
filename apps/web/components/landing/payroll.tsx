@@ -3,7 +3,7 @@
 // Payroll (DESIGN.md "The landing page" §7): a run that plays itself once it is on screen. People arrive (Magic UI
 // animated list), one hold fills, every row turns Paid in the same transaction, and the business seal presses.
 // The three destinations are the three the app offers: a Tegata account, a NEAR account, a coin on another chain.
-import { Check, FileSpreadsheet, Mail, RotateCcw, Timer } from "lucide-react"
+import { Check, FileSpreadsheet, Mail, RotateCcw, ShieldCheck, Timer } from "lucide-react"
 import { AnimatePresence, motion, useInView, useReducedMotion } from "motion/react"
 import { useEffect, useRef, useState } from "react"
 
@@ -196,6 +196,13 @@ const FACTS = [
       "Up to 50 people in a single all-or-nothing transaction on NEAR, with a payslip each by email.",
   },
   {
+    icon: <ShieldCheck />,
+    title: "Team approvals",
+    detail:
+      "Need two of three to sign off? Pay waits in a team treasury on NEAR and goes out only when enough approvers say yes, each with their own key.",
+    pill: "Sandbox",
+  },
+  {
     icon: <Timer />,
     title: "Autopilot",
     detail: "Set money aside and Tegata's contract pays on payday with nobody online.",
@@ -223,7 +230,12 @@ export function Payroll() {
           </SectionTitle>
           <ul className="grid gap-x-6 gap-y-5 sm:grid-cols-2 lg:grid-cols-1">
             {FACTS.map((f, i) => (
-              <Rise as="li" key={f.title} delay={i * 0.05} className="flex gap-4">
+              <Rise
+                as="li"
+                key={f.title}
+                delay={i * 0.05}
+                className="flex gap-4 sm:max-lg:[&:nth-child(odd):last-child]:col-span-2"
+              >
                 <span className="grid size-11 shrink-0 place-items-center rounded-full bg-card [&_svg]:size-5">
                   {f.icon}
                 </span>
