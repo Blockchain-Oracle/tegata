@@ -5,6 +5,7 @@
 import { useState } from "react"
 
 import { type ActivityFilter, ActivityView } from "@/components/books/activity-view"
+import { AddMoneySheet } from "@/components/books/add-money-sheet"
 import { BalanceView } from "@/components/books/balance-view"
 import { RefundSheet } from "@/components/books/refund-sheet"
 import { Segmented } from "@/components/kit/segmented"
@@ -20,6 +21,7 @@ export default function BooksFlow() {
   const [filter, setFilter] = useState<ActivityFilter>("all")
   const [query, setQuery] = useState("")
   const [refunding, setRefunding] = useState<MovementView | null>(null)
+  const [adding, setAdding] = useState(false)
   return (
     <div className="flex flex-col gap-12 pt-6">
       <section className="flex flex-col gap-4">
@@ -57,6 +59,7 @@ export default function BooksFlow() {
           exporting={null}
           onExport={() => undefined}
           onRefund={setRefunding}
+          businessName="Studio Kaze"
         />
         <RefundSheet
           movement={refunding}
@@ -94,8 +97,17 @@ export default function BooksFlow() {
             balance === "down" ? "NearBlocks didn't answer. Try again in a minute." : null
           }
           onReconcile={() => undefined}
-          onReceive={() => undefined}
+          onAddMoney={() => setAdding(true)}
+        />
+        <AddMoneySheet
+          open={adding}
+          onOpenChange={setAdding}
+          live={false}
+          accountId={SAMPLE_ACCOUNT}
+          onPayAddress={() => undefined}
+          testDollars={{ state: "idle", error: null, explorerUrl: null }}
           onTestDollars={() => undefined}
+          chain={{ busy: false, problem: null, onContinue: () => setAdding(false) }}
         />
       </section>
     </div>

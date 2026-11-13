@@ -35,6 +35,7 @@ import {
 import { useRouter } from "next/navigation"
 import { Dialog } from "radix-ui"
 import { useEffect, useState } from "react"
+import { CustomerDisc } from "@/components/invoices/customer-picker"
 import { api } from "@/lib/client/api"
 import { fire } from "@/lib/feedback"
 import { LINKS } from "@/lib/links"
@@ -140,7 +141,7 @@ export function CommandMenu({
                     <Item
                       key={c.id}
                       keywords={[debounced]}
-                      icon={<Users />}
+                      icon={<CustomerDisc name={c.name} size={28} />}
                       onSelect={run(() => router.push(`/app/customers?id=${c.id}`))}
                     >
                       {c.name} <span className="text-muted-foreground">· customer</span>
@@ -150,7 +151,7 @@ export function CommandMenu({
                     <Item
                       key={person.id}
                       keywords={[debounced]}
-                      icon={<UsersRound />}
+                      icon={<CustomerDisc name={person.name} size={28} />}
                       onSelect={run(() => router.push(`/app/people?id=${person.id}`))}
                     >
                       {person.name}{" "}

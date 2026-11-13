@@ -5,15 +5,24 @@
 import { Check, Copy, ExternalLink, Mail, Share2, Trash2 } from "lucide-react"
 import Link from "next/link"
 import { useEffect, useState } from "react"
+import { BusinessSeal } from "@/components/brand/seal"
 import { CustomerDisc } from "@/components/invoices/customer-picker"
 import { AccountLink } from "@/components/kit/account-link"
 import { Button } from "@/components/kit/button"
 import { Field } from "@/components/kit/field"
 import { viewDollars } from "@/components/kit/figure"
-import { changesOn, DestinationMark, KIND_WORD } from "@/components/people/destination"
+import { Skeleton, StatusPill } from "@/components/kit/states"
+import { ChainPicker } from "@/components/people/chain-picker"
+import {
+  changesOn,
+  DestinationMark,
+  destinationWord,
+  shortAddress,
+} from "@/components/people/destination"
 import { Sheet } from "@/components/shell/sheet"
 import type { PaySlipRow, TeamPerson } from "@/lib/client/types"
 import { fire } from "@/lib/feedback"
+import { usdUnits } from "@/lib/fiat"
 
 const COPIED_MS = 1500
 
@@ -140,6 +149,10 @@ export function PersonSheet({
   onResendInvite,
   resending,
   resent,
+  onSetChain,
+  settingChain,
+  business,
+  network = "testnet",
 }: {
   person: TeamPerson | null
   slips: PaySlipRow[] | undefined
@@ -156,9 +169,16 @@ export function PersonSheet({
   onResendInvite?: () => void
   resending?: boolean
   resent?: string | null
+  /** Live: pay them on another chain through NEAR Intents. */
+  onSetChain?: (choice: { route: string; address: string }) => void
+  settingChain?: boolean
+  /** The business, for the PAID seal on payslips. */
+  business?: string
+  network?: "testnet" | "mainnet"
 }) {
   const [form, setForm] = useState<PersonForm>(blank)
   const [account, setAccount] = useState("")
+  const [chainOpen, setChainOpen] = useState(false)
   const [copied, setCopied] = useState(false)
   const [confirmRemove, setConfirmRemove] = useState(false)
   useEffect(() => {
@@ -202,12 +222,7 @@ export function PersonSheet({
           <span className="flex min-w-0 flex-col">
             <span className="truncate text-[18px] font-semibold">{person.name}</span>
             <span className="truncate text-detail text-muted-foreground">
-              {[
-                person.role,
-                `$${viewDollars(person.amount).toLocaleString("en-US", { minimumFractionDigits: 2 })} a run`,
-              ]
-                .filter(Boolean)
-                .join(" · ")}
+              {[person.role, `${usdUnits(person.amount)} a run`].filter(Boolean).join(" · ")}
             </span>
           </span>
         </div>
@@ -218,31 +233,43 @@ export function PersonSheet({
           </span>
           {person.ready.state === "none" ? (
             <span className="text-[16px] font-semibold">
-              {person.email ? "They haven't chosen yet" : "Nowhere yet: set a NEAR account below"}
+              {person.email ? "They haven't chosen yet" : "Nowhere yet: set an account below"}
             </span>
           ) : (
             <span className="flex items-center gap-2.5">
-              <DestinationMark kind={person.ready.kind} size={28} />
+              <DestinationMark
+                kind={person.ready.kind}
+                route={person.ready.state === "ready" ? person.ready.route : null}
+                size={32}
+              />
               <span className="flex min-w-0 flex-col">
                 <span className="text-[16px] font-semibold">
-                  {KIND_WORD[person.ready.kind]}
+                  {destinationWord(
+                    person.ready.kind,
+                    person.ready.state === "ready" ? person.ready.route : null,
+                  )}
                   {person.ready.state === "opening" ? " · getting ready" : ""}
                 </span>
                 {person.ready.accountId ? (
-                  <AccountLink
-                    accountId={person.ready.accountId}
-                    className="text-[13px] text-muted-foreground"
-                  />
+                  person.ready.kind === "chain" ? (
+                    <span className="font-mono text-[13px] text-muted-foreground">
+                      {shortAddress(person.ready.accountId)}
+                    </span>
+                  ) : (
+                    <AccountLink
+                      accountId={person.ready.accountId}
+                      className="text-[13px] text-muted-foreground"
+                    />
+                  )
                 ) : null}
               </span>
             </span>
           )}
           {person.pending ? (
-            <p className="rounded-[12px] bg-warn-surface px-3 py-2 text-[14px] font-medium text-warn">
-              They changed it to {KIND_WORD[person.pending.kind]}
-              {person.pending.accountId ? ` ${person.pending.accountId}` : ""}. It takes over{" "}
-              {changesOn(person.pending.activatesAt)}.
-            </p>
+            <StatusPill tone="warn" className="self-start">
+              {destinationWord(person.pending.kind, person.pending.route)} from{" "}
+              {changesOn(person.pending.activatesAt)}
+            </StatusPill>
           ) : null}
           {person.email ? (
             <div className="flex flex-wrap gap-2">
@@ -278,7 +305,7 @@ export function PersonSheet({
           <Field
             id="person-near"
             label="Pay a NEAR account instead"
-            placeholder="name.testnet"
+            placeholder={network === "mainnet" ? "name.near" : "name.testnet"}
             value={account}
             autoComplete="off"
             spellCheck={false}
@@ -295,6 +322,32 @@ export function PersonSheet({
             Use this account
           </Button>
         </form>
+
+        {onSetChain ? (
+          chainOpen ? (
+            <section className="flex flex-col gap-2">
+              <span className="text-detail font-medium text-muted-foreground">
+                Pay them on another chain
+              </span>
+              <ChainPicker
+                busy={Boolean(settingChain)}
+                onPick={(choice) => {
+                  onSetChain(choice)
+                  setChainOpen(false)
+                }}
+                initial={
+                  person.ready.state === "ready" && person.ready.kind === "chain"
+                    ? { route: person.ready.route, address: person.ready.accountId }
+                    : undefined
+                }
+              />
+            </section>
+          ) : (
+            <Button variant="secondary" size="md" onClick={() => setChainOpen(true)}>
+              Pay them on another chain
+            </Button>
+          )
+        ) : null}
 
         <form
           className="flex flex-col gap-4"
@@ -315,20 +368,21 @@ export function PersonSheet({
         <section className="flex flex-col gap-2">
           <span className="text-detail font-medium text-muted-foreground">Payslips</span>
           {slips === undefined ? (
-            <span className="text-[15px] text-muted-foreground">Loading…</span>
+            <Skeleton className="h-12 rounded-[12px]" />
           ) : slips.length === 0 ? (
             <span className="text-[15px] text-muted-foreground">
-              No pay yet. Each run adds one.
+              No pay yet. Their first run adds one.
             </span>
           ) : (
             slips.map((slip) => (
               <Link
                 key={slip.id}
                 href={`/r/slip/${slip.id}`}
-                className="press flex items-center justify-between rounded-[12px] bg-secondary px-3 py-2.5 text-[15px] hover:bg-plate-pressed"
+                className="press flex items-center gap-3 rounded-[12px] bg-secondary px-3 py-2.5 text-[15px] hover:bg-plate-pressed"
               >
-                <span>{slip.label}</span>
-                <span className="tnum font-semibold">${viewDollars(slip.amount).toFixed(2)}</span>
+                <BusinessSeal name={business ?? person.name} band="Paid" size={32} tilt={0} />
+                <span className="flex-1">{slip.label}</span>
+                <span className="tnum font-semibold">{usdUnits(slip.amount)}</span>
               </Link>
             ))
           )}

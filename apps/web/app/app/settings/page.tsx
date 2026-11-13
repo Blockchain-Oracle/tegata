@@ -93,7 +93,7 @@ export default function SettingsPage() {
         }
         onSave={(draft, logoChanged) => save.mutate({ draft, logoChanged })}
       />
-      <EmailsCard />
+      <EmailsCard businessName={workspace.name} />
     </div>
   )
 }

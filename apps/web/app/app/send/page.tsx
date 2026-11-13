@@ -9,8 +9,8 @@ import { useSearchParams } from "next/navigation"
 import { Suspense, useEffect, useMemo, useState } from "react"
 
 import { viewDollars } from "@/components/kit/figure"
-import { Segmented } from "@/components/kit/segmented"
 import { ChainSend } from "@/components/send/chain-send"
+import { type SendMode, SendToSwitch } from "@/components/send/send-to-switch"
 import { type SendStep, SendView } from "@/components/send/send-view"
 import { useShell } from "@/components/shell/shell-context"
 import { useNetwork } from "@/hooks/use-network"
@@ -32,8 +32,7 @@ export default function SendPage() {
 }
 
 function SendRoutes() {
-  const network = useNetwork()
-  const [mode, setMode] = useState<"near" | "chain">("near")
+  const [mode, setMode] = useState<SendMode>("near")
   // A scanned QR code or Balance's "Move out" arrives with what to fill in: an account, or a route and an address.
   // Read reactively, so a scan while already on Send fills it in too.
   const params = useSearchParams()
@@ -49,20 +48,9 @@ function SendRoutes() {
   useEffect(() => {
     if (prefill.chain) setMode("chain")
   }, [prefill.chain])
-  // Live only: NEAR Intents has no testnet, so Sandbox sends stay on NEAR.
-  const switcher =
-    network === "mainnet" ? (
-      <Segmented
-        label="Send to"
-        value={mode}
-        onValueChange={(v) => setMode(v as "near" | "chain")}
-        options={[
-          { value: "near", label: "A NEAR account" },
-          { value: "chain", label: "Another chain" },
-        ]}
-      />
-    ) : null
-  if (network === "mainnet" && mode === "chain")
+  // Both ways are offered in the Sandbox too (R5): another chain then shows the reason it runs in Live.
+  const switcher = <SendToSwitch value={mode} onChange={setMode} />
+  if (mode === "chain")
     return (
       <ChainSend
         key={`${prefill?.routeId}:${prefill?.to}`}
@@ -70,28 +58,10 @@ function SendRoutes() {
         initial={prefill?.chain ? prefill : undefined}
       />
     )
-  return (
-    <NearSend
-      switcher={switcher}
-      prefillTo={prefill?.chain ? undefined : prefill?.to}
-      notice={
-        prefill?.chain && network === "testnet"
-          ? "That's an address on another chain. Paying other chains runs in Live: switch to Live at the top to send it."
-          : null
-      }
-    />
-  )
+  return <NearSend switcher={switcher} prefillTo={prefill?.chain ? undefined : prefill?.to} />
 }
 
-function NearSend({
-  switcher,
-  prefillTo,
-  notice,
-}: {
-  switcher: React.ReactNode
-  prefillTo?: string
-  notice?: string | null
-}) {
+function NearSend({ switcher, prefillTo }: { switcher: React.ReactNode; prefillTo?: string }) {
   const { profile } = useProfile()
   const { openReceive, openScan } = useShell()
   const signer = useSigner()
@@ -116,7 +86,8 @@ function NearSend({
     queryFn: () => api<{ people: TeamPerson[] }>("/api/people"),
     select: (data) =>
       data.people.flatMap((person) =>
-        person.ready.state === "ready"
+        // Only people paid on NEAR: an address on another chain can't go in a NEAR "To".
+        person.ready.state === "ready" && person.ready.kind !== "chain"
           ? [{ id: person.id, name: person.name, accountId: person.ready.accountId }]
           : [],
       ),
@@ -220,6 +191,7 @@ function NearSend({
       balance={balance}
       businessName={profile?.workspace?.name ?? "Your business"}
       suffix={`.${NETWORKS[network].operator}`}
+      network={network}
       busy={busy || !signer.ready}
       problem={problem}
       progress={progress}
@@ -235,7 +207,6 @@ function NearSend({
       team={team.data}
       switcher={switcher}
       onScan={openScan}
-      notice={notice}
       onAgain={() => {
         setSend(null)
         setAmount("")

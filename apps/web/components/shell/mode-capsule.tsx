@@ -2,8 +2,8 @@
 
 // The Sandbox / Live switch (plan feature 22: "one tap, like dark mode"): a two-position track whose selected side
 // slides across. Sandbox is said in words and a dashed rim, never a hue. In the compact rail it shows the two icons
-// only, and on a phone only the current mode is in words, so it always fits. Live carries a lock until the operator account on mainnet exists; tapping it then opens
-// the sheet that says what Live is and what it waits for.
+// only, and on a phone only the current mode is in words, so it always fits. Live carries a lock until it opens;
+// tapping it then opens the sheet that says what each mode is.
 import { FlaskConical, Lock, Radio } from "lucide-react"
 import { motion } from "motion/react"
 import { useId, useState } from "react"
@@ -64,8 +64,8 @@ export function ModeCapsule({
               key={id}
               type="button"
               aria-pressed={on}
-              aria-label={locked ? `${label} (not open yet)` : label}
-              title={locked ? "Live isn't open yet" : label}
+              aria-label={locked ? `${label} (opens soon)` : label}
+              title={locked ? "Live opens soon" : label}
               onClick={() => pick(id)}
               className={cn(
                 "relative z-10 flex h-full items-center justify-center gap-1.5 rounded-full px-3 text-[13px] font-semibold transition-colors",
@@ -124,7 +124,7 @@ export function ModeCapsule({
             <div className="flex flex-col gap-1">
               <span className="text-[17px] font-semibold">Sandbox {!live ? "· on" : ""}</span>
               <span className="text-[15px] text-muted-foreground">
-                Test dollars on NEAR testnet, free. Nothing here costs real money.
+                Free test dollars on NEAR testnet.
               </span>
             </div>
           </div>
@@ -153,7 +153,7 @@ export function ModeCapsule({
               </span>
               {!liveAvailable ? (
                 <span className="inline-flex items-center gap-1.5 text-detail font-semibold text-warn">
-                  <Lock className="size-3.5" /> Not open yet: Live is still being built.
+                  <Lock className="size-3.5" /> Opens soon
                 </span>
               ) : null}
             </div>

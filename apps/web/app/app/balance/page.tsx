@@ -2,9 +2,9 @@
 
 import { useMutation, useQuery } from "@tanstack/react-query"
 import { useRouter } from "next/navigation"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 
-import { AddFromChainSheet } from "@/components/books/add-from-chain-sheet"
+import { AddMoneySheet } from "@/components/books/add-money-sheet"
 import { BalanceView } from "@/components/books/balance-view"
 import { useShell } from "@/components/shell/shell-context"
 import { useNetwork } from "@/hooks/use-network"
@@ -20,6 +20,13 @@ export default function BalancePage() {
   const network = useNetwork()
   const router = useRouter()
   const [adding, setAdding] = useState(false)
+  // Home's "Add money" lands here with ?add=1: open the chooser, then drop the flag so a refresh doesn't reopen it.
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get("add")) {
+      setAdding(true)
+      window.history.replaceState(null, "", window.location.pathname)
+    }
+  }, [])
   const topUp = useMutation({
     mutationFn: (amount: string) =>
       api<{ url: string }>("/api/balance/topup", { body: { amount } }),
@@ -39,6 +46,7 @@ export default function BalancePage() {
   })
   const funds = autopilot.data?.funds
   const setAside = funds ? (BigInt(funds.available) + BigInt(funds.reserved)).toString() : "0"
+  const sandbox = account?.network === "testnet"
   return (
     <>
       <BalanceView
@@ -54,23 +62,27 @@ export default function BalancePage() {
             : null
         }
         onReconcile={() => void reconcile.refetch()}
-        onReceive={openReceive}
-        onTestDollars={account?.network === "testnet" ? testDollars.add : undefined}
+        onAddMoney={() => setAdding(true)}
         live={network === "mainnet"}
-        onAddFromChain={() => setAdding(true)}
       />
-      <AddFromChainSheet
+      <AddMoneySheet
         open={adding}
         onOpenChange={setAdding}
-        busy={topUp.isPending}
-        problem={
-          topUp.error instanceof ApiError
-            ? topUp.error.message
-            : topUp.error
-              ? "Couldn't start it. Try again."
-              : null
-        }
-        onContinue={(amount) => topUp.mutate(amount)}
+        live={network === "mainnet"}
+        accountId={account?.accountId ?? ""}
+        onPayAddress={openReceive}
+        testDollars={sandbox ? testDollars : undefined}
+        onTestDollars={sandbox ? testDollars.add : undefined}
+        chain={{
+          busy: topUp.isPending,
+          problem:
+            topUp.error instanceof ApiError
+              ? topUp.error.message
+              : topUp.error
+                ? "Couldn't start it. Try again."
+                : null,
+          onContinue: (amount) => topUp.mutate(amount),
+        }}
       />
     </>
   )

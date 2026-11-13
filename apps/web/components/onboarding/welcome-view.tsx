@@ -1,18 +1,33 @@
 "use client"
 
 // The welcome flow's look (plan 6.8 B), separate from its logic so /dev/flows can show every state.
-// 1 "What's your business called?" → 2 "Your pay address." → 3 "Opening your account." → open.
-import { ArrowLeft, ArrowRight, Clock3, Gift, Stamp, Users, X } from "lucide-react"
+// 1 "What's your business called?" → 2 "Your pay address." → 3 "Opening your account." → open, with the two first
+// steps spec B names: add test dollars (Sandbox) and create a pay link.
+import {
+  ArrowLeft,
+  ArrowRight,
+  Check,
+  Clock3,
+  Gift,
+  Link2,
+  Plus,
+  Stamp,
+  Users,
+  X,
+} from "lucide-react"
 import { AnimatePresence, motion, useReducedMotion } from "motion/react"
+import Link from "next/link"
 
 import { AuthShell } from "@/components/auth/auth-shell"
-import { Button } from "@/components/kit/button"
+import { Button, Spinner } from "@/components/kit/button"
 import { Field, type FieldStatus } from "@/components/kit/field"
 import { ErrorState, WaitingText } from "@/components/kit/states"
 import type { TaskStep } from "@/components/kit/task-steps"
 import { Mark } from "@/components/marks/mark"
 import { BillStage, type WelcomeStage } from "@/components/onboarding/bill-stage"
+import { useTestDollars } from "@/hooks/use-test-dollars"
 import { cn } from "@/lib/utils"
+import { zoneLabel } from "@/lib/zone"
 
 export interface WelcomeViewProps {
   stage: WelcomeStage
@@ -143,11 +158,6 @@ export function WelcomeView(p: WelcomeViewProps) {
               big
               autoComplete={p.joining ? "name" : "organization"}
             />
-            <p className="-mt-3 text-detail text-text-3">
-              {p.joining
-                ? "It goes on your payslips and your seal. You can bill people too, later."
-                : "It goes on your invoices, receipts and your seal."}
-            </p>
             <Button type="submit" cue="tap" disabled={!p.canContinue}>
               Continue <ArrowRight />
             </Button>
@@ -202,11 +212,11 @@ export function WelcomeView(p: WelcomeViewProps) {
                 }
               />
             )}
-            <div className="flex items-center justify-between rounded-[14px] bg-card px-4 py-3 text-[15px]">
-              <span className="inline-flex items-center gap-2 text-muted-foreground">
+            <div className="flex items-center justify-between gap-3 rounded-[14px] bg-card px-4 py-3 text-[15px]">
+              <span className="inline-flex shrink-0 items-center gap-2 text-muted-foreground">
                 <Clock3 className="size-4" /> Time zone
               </span>
-              <span className="font-semibold">{p.timezone.replace(/_/g, " ")}</span>
+              <span className="truncate font-semibold">{zoneLabel(p.timezone)}</span>
             </div>
             {p.openError ? (
               <p className="text-[15px] font-medium text-down">{p.openError}</p>
@@ -228,19 +238,12 @@ export function WelcomeView(p: WelcomeViewProps) {
                 onRetry={p.onRetry}
               />
             ) : (
-              <>
-                <WaitingText
-                  verb="Working on NEAR"
-                  startedAt={p.setupStartedAt}
-                  onRetry={p.onRetry}
-                  className="text-[17px]"
-                />
-                <p className="text-[15px] text-muted-foreground">
-                  {p.walletAccount
-                    ? "Tegata registers your account for USDC and pays the network fee. It takes a few seconds."
-                    : "Tegata creates your account on NEAR and pays the network fee. It takes a few seconds."}
-                </p>
-              </>
+              <WaitingText
+                verb="Working on NEAR"
+                startedAt={p.setupStartedAt}
+                onRetry={p.onRetry}
+                className="text-[17px]"
+              />
             )}
           </motion.div>
         ) : (
@@ -250,16 +253,77 @@ export function WelcomeView(p: WelcomeViewProps) {
                 Your account is open.
               </h1>
               <p className="text-[17px] text-muted-foreground">
-                <span className="font-semibold text-foreground">{p.name.trim()}</span> can now send
-                invoices and get paid in dollars.
+                <span className="font-semibold text-foreground">{p.name.trim()}</span> can get paid
+                in dollars.
               </p>
             </div>
-            <Button cue="tap" onClick={p.onDone}>
+            {p.joining ? null : <FirstSteps sandbox={p.suffix.endsWith(".testnet")} />}
+            <Button cue="tap" variant={p.joining ? "primary" : "secondary"} onClick={p.onDone}>
               Open Tegata <ArrowRight />
             </Button>
           </motion.div>
         )}
       </AnimatePresence>
     </AuthShell>
+  )
+}
+
+/** Spec B's two first steps, on story fields: test dollars to try paying (Sandbox only) and a first pay link. */
+function FirstSteps({ sandbox }: { sandbox: boolean }) {
+  const dollars = useTestDollars()
+  const tile =
+    "press-lift flex min-h-32 flex-col justify-between gap-4 rounded-[20px] p-5 text-left text-black"
+  return (
+    <div className={cn("grid gap-3", sandbox && "sm:grid-cols-2")}>
+      {sandbox ? (
+        <button
+          type="button"
+          onClick={dollars.add}
+          disabled={dollars.state === "sending" || dollars.state === "sent"}
+          className={cn(tile, "bg-kin disabled:cursor-default")}
+        >
+          <span className="grid size-11 place-items-center rounded-full bg-black/10 [&_svg]:size-5">
+            {dollars.state === "sending" ? (
+              <Spinner />
+            ) : dollars.state === "sent" ? (
+              <Check />
+            ) : (
+              <Plus />
+            )}
+          </span>
+          <span className="flex flex-col gap-1">
+            <span className="display text-[24px] leading-none">
+              {dollars.state === "sent" ? "Test dollars added" : "Add test dollars"}
+            </span>
+            <span className="inline-flex items-center gap-1.5 text-[14px] text-black/70">
+              <Mark id="usdc" size={16} />
+              {dollars.state === "sending"
+                ? "Sending $5.00…"
+                : dollars.state === "sent"
+                  ? "$5.00 in your balance"
+                  : dollars.state === "failed"
+                    ? (dollars.error ?? "That didn't work. Try again.")
+                    : "$5.00 of test USDC"}
+            </span>
+          </span>
+        </button>
+      ) : null}
+      <Link href="/app/links?new=1" className={cn(tile, "bg-sora")}>
+        <span className="grid size-11 place-items-center rounded-full bg-black/10 [&_svg]:size-5">
+          <Link2 />
+        </span>
+        <span className="flex flex-col gap-1">
+          <span className="display text-[24px] leading-none">Create a pay link</span>
+          <span className="inline-flex items-center gap-1.5 text-[14px] text-black/70">
+            <span className="inline-flex -space-x-1">
+              {(["usdc", "eth", "sol", "btc"] as const).map((id) => (
+                <Mark key={id} id={id} size={16} />
+              ))}
+            </span>
+            Paid from any chain
+          </span>
+        </span>
+      </Link>
+    </div>
   )
 }

@@ -3,7 +3,19 @@
 // Refer (plan 6.8 H; Wise's invite screens, Copperx's stablecoin referral panel): your join link and its QR on the
 // stage, what you've earned, a tracker for each business you invited with its progress to the threshold, who invited
 // you, and the terms in five lines. Separate from its logic so /dev/flows can show every state.
-import { Check, Copy, ExternalLink, Gift, ReceiptText, Share2, Users } from "lucide-react"
+import {
+  BadgeCheck,
+  CalendarRange,
+  Check,
+  Clock3,
+  Copy,
+  ExternalLink,
+  Gift,
+  ReceiptText,
+  Share2,
+  UserRound,
+  Users,
+} from "lucide-react"
 import Link from "next/link"
 import { QRCodeSVG } from "qrcode.react"
 import { useState } from "react"
@@ -12,25 +24,53 @@ import { BusinessSeal } from "@/components/brand/seal"
 import { Button } from "@/components/kit/button"
 import { Field } from "@/components/kit/field"
 import { Figure, viewDollars } from "@/components/kit/figure"
+import { SandboxPill } from "@/components/kit/sandbox-pill"
 import { Paper, Stage, StageAction } from "@/components/kit/stage"
 import { EmptyState, ErrorState, Skeleton, StatusPill } from "@/components/kit/states"
 import { useNow } from "@/hooks/use-now"
 import type { ReferralRow, ReferralRules, ReferralsView } from "@/lib/client/types"
 import { fire } from "@/lib/feedback"
+import { usdUnits } from "@/lib/fiat"
 import { cn } from "@/lib/utils"
 
 const COPIED_MS = 1500
 const YEAR_MS = 365 * 86_400_000
 
-const dollars = (units: string | bigint, digits = 2) => `$${viewDollars(units).toFixed(digits)}`
-
 function minutesLeft(iso: string | null, now: number | null): string {
-  if (!iso) return ""
+  if (!iso) return "Qualified"
   if (now === null) return "Qualified"
   const ms = Date.parse(iso) - now
-  if (ms <= 0) return "paying now"
+  if (ms <= 0) return "Paying now"
   const min = Math.ceil(ms / 60_000)
-  return min >= 120 ? `pays in ${Math.round(min / 60)} h` : `pays in ${min} min`
+  return min >= 120 ? `Pays in ${Math.round(min / 60)} h` : `Pays in ${min} min`
+}
+
+/** Why an invite didn't count, in plain words (the server stores its own sentence). */
+function voidWords(reason: string | null, rules: ReferralRules): string {
+  if (reason?.includes("days passed"))
+    return `Didn't reach ${usdUnits(rules.threshold)} in ${rules.windowDays} days`
+  if (reason?.includes("refunded")) return "A payment that counted was refunded"
+  if (reason?.includes("rewards this year")) return `Past ${rules.yearlyCap} rewards this year`
+  return "Didn't meet the rules"
+}
+
+/** A reward transfer that hasn't landed yet; the sweep tries again every few minutes. */
+function payoutWords(error: string | null): string {
+  return error?.includes("topped up")
+    ? "Sends once the reward pot is refilled"
+    : "Trying again shortly"
+}
+
+/** The rules in five short lines (plan 6.8 H), each with its own colour so the block isn't grey (D-R2). */
+function terms(rules: ReferralRules, sandbox: boolean) {
+  const hold = sandbox ? `${rules.holdMinutes} min` : `${Math.round(rules.holdMinutes / 60)} h`
+  return [
+    { icon: <BadgeCheck />, field: "bg-matcha", text: "Real customers only" },
+    { icon: <UserRound />, field: "bg-sora", text: "One invite per paying customer" },
+    { icon: <Users />, field: "bg-sakura", text: "One referrer per business" },
+    { icon: <Clock3 />, field: "bg-kin", text: `Paid ${hold} after it counts` },
+    { icon: <CalendarRange />, field: "bg-shu", text: `Up to ${rules.yearlyCap} a year` },
+  ]
 }
 
 export interface ReferViewProps {
@@ -59,8 +99,8 @@ export function ReferView(p: ReferViewProps) {
       </div>
     )
   const { rules, invited, referredBy } = p.data
-  const reward = dollars(rules.reward, 0)
-  const threshold = dollars(rules.threshold, 0)
+  const reward = usdUnits(rules.reward)
+  const threshold = usdUnits(rules.threshold)
   const sandbox = p.data.network === "testnet"
   const earned =
     BigInt(invited.filter((r) => r.payout?.status === "sent").length) * BigInt(rules.reward)
@@ -104,17 +144,20 @@ export function ReferView(p: ReferViewProps) {
               <span className="display text-[44px] leading-none text-white sm:text-[56px]">
                 You both get {reward}
               </span>
-              <span className="max-w-md text-[15px] text-white/90">
-                When they receive {threshold} from their customers in their first {rules.windowDays}{" "}
-                days, you each get {reward} in USDC on NEAR
-                {sandbox ? " (test USDC in the Sandbox)" : ""}.
+              <span className="flex flex-wrap items-center gap-2 text-[15px] text-white/90">
+                When they receive {threshold} in {rules.windowDays} days
+                {sandbox ? <SandboxPill tone="stage">Sandbox · test USDC</SandboxPill> : null}
               </span>
             </div>
             <Paper className="flex items-center gap-3 px-4 py-3">
-              <Gift className="size-5 shrink-0 text-[#FF4F00]" />
-              <span className="min-w-0 flex-1 truncate font-mono text-[14px]">
-                {p.url?.replace(/^https?:\/\//, "") ?? "…"}
-              </span>
+              <Gift className="size-5 shrink-0 text-shu" />
+              {p.url ? (
+                <span className="min-w-0 flex-1 truncate font-mono text-[14px]">
+                  {p.url.replace(/^https?:\/\//, "")}
+                </span>
+              ) : (
+                <Skeleton className="h-4 flex-1" />
+              )}
             </Paper>
             <div className="flex gap-4 sm:gap-6">
               <StageAction
@@ -165,7 +208,7 @@ export function ReferView(p: ReferViewProps) {
             art={<Users />}
             field="sora"
             title="No one yet"
-            detail="Send your link to a business you work with. They sign in with email; no wallet needed."
+            detail="They sign in with email, no wallet needed."
             action={
               <Button variant="shu" onClick={share}>
                 <Share2 /> Share your link
@@ -229,23 +272,26 @@ export function ReferView(p: ReferViewProps) {
         )}
       </section>
 
-      <section className="flex flex-col gap-2 rounded-[20px] bg-secondary/60 p-5 text-[14px] text-muted-foreground">
-        <span className="font-semibold text-foreground">How it works</span>
-        <span>
-          · Only money from real customers counts: not from you, not from them, not from anyone
-          either of you sent money to.
-        </span>
-        <span>
-          · Each paying customer counts toward one invite only. Payments marked paid by hand don't
-          count.
-        </span>
-        <span>· A business has one referrer; it can change it until it is first paid.</span>
-        <span>
-          · Rewards are paid{" "}
-          {sandbox ? `${rules.holdMinutes} minutes` : `${Math.round(rules.holdMinutes / 60)} hours`}{" "}
-          after the invite qualifies, after one last check of these rules.
-        </span>
-        <span>· Up to {rules.yearlyCap} rewards a year for each business that invites.</span>
+      <section className="flex flex-col gap-3">
+        <h2 className="text-section-title font-semibold">How it works</h2>
+        <ul className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+          {terms(rules, sandbox).map((term) => (
+            <li
+              key={term.text}
+              className="flex items-center gap-3 rounded-[16px] bg-card px-3 py-2.5 text-[15px] font-medium"
+            >
+              <span
+                className={cn(
+                  "grid size-8 shrink-0 place-items-center rounded-full text-black [&_svg]:size-4",
+                  term.field,
+                )}
+              >
+                {term.icon}
+              </span>
+              {term.text}
+            </li>
+          ))}
+        </ul>
       </section>
     </div>
   )
@@ -275,7 +321,7 @@ export function InvitedRow({
   const progress = threshold > 0n ? Math.min(100, Number((received * 100n) / threshold)) : 0
   const pill =
     row.status === "paid" ? (
-      <StatusPill tone="up">Paid {dollars(rules.reward, 0)}</StatusPill>
+      <StatusPill tone="up">Paid {usdUnits(rules.reward)}</StatusPill>
     ) : row.status === "qualified" ? (
       <StatusPill tone="wait">{minutesLeft(row.payoutAfter, now)}</StatusPill>
     ) : row.status === "void" ? (
@@ -293,7 +339,9 @@ export function InvitedRow({
           </span>
         </span>
         {row.status === "void" ? (
-          <span className="text-detail text-muted-foreground">{row.voidReason}</span>
+          <span className="text-detail text-muted-foreground">
+            {voidWords(row.voidReason, rules)}
+          </span>
         ) : row.status === "paid" && row.payout?.status === "sent" ? (
           <Link
             href={`/r/reward/${row.payout.id}`}
@@ -312,9 +360,9 @@ export function InvitedRow({
                 style={{ width: `${progress}%` }}
               />
             </span>
-            <span className="text-detail text-muted-foreground">
-              {dollars(received)} of {dollars(threshold, 0)} from customers
-              {row.payout?.status === "failed" && row.payout.error ? ` · ${row.payout.error}` : ""}
+            <span className="tnum text-detail text-muted-foreground">
+              {usdUnits(received)} of {usdUnits(threshold)} from customers
+              {row.payout?.status === "failed" ? ` · ${payoutWords(row.payout.error)}` : ""}
             </span>
           </>
         )}

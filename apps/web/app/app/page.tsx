@@ -1,7 +1,6 @@
 "use client"
 
 import { useQuery } from "@tanstack/react-query"
-import { NETWORKS } from "@tegata/config"
 
 import { HomeView } from "@/components/home/home-view"
 import { useShell } from "@/components/shell/shell-context"
@@ -48,8 +47,8 @@ export default function HomePage() {
     <HomeView
       businessName={profile.workspace?.name ?? "Your business"}
       accountId={account.accountId}
+      network={account.network}
       balance={account.balance === undefined ? null : BigInt(account.balance)}
-      explorerUrl={`${NETWORKS[account.network].explorer}/address/${account.accountId}`}
       activity={activity.data?.items}
       activityError={activity.isError}
       onReceive={openReceive}

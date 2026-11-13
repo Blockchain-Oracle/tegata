@@ -61,7 +61,7 @@ export function NewLinkSheet({
       >
         <Stage className="p-4" grid={false}>
           <Paper className="relative p-5">
-            <span className="text-[13px] font-semibold text-[#666]">Pay {businessName}</span>
+            <span className="text-[13px] font-semibold text-paper-text-2">Pay {businessName}</span>
             <span className="mt-1 block truncate text-[17px] font-semibold">
               {title.trim() || "What it's for"}
             </span>
@@ -70,7 +70,7 @@ export function NewLinkSheet({
             ) : (
               <Figure value={value} className="mt-1 text-[48px]" />
             )}
-            <span className="mt-3 flex items-center gap-2 text-[13px] text-[#666]">
+            <span className="mt-3 flex items-center gap-2 text-[13px] text-paper-text-2">
               <MarkStack ids={["usdc", "near"]} size={18} /> USDC on NEAR
             </span>
             <div className="absolute -top-4 -right-3">
@@ -104,12 +104,7 @@ export function NewLinkSheet({
             className="tnum"
           />
           <div className="flex items-center justify-between gap-4 rounded-[14px] bg-secondary px-4 py-3">
-            <span className="flex flex-col">
-              <span className="text-[15px] font-semibold">Any amount</span>
-              <span className="text-detail text-muted-foreground">
-                The payer types what they owe
-              </span>
-            </span>
+            <span className="text-[15px] font-semibold">Any amount</span>
             <Switch checked={anyAmount} onCheckedChange={setAnyAmount} label="Any amount" />
           </div>
         </div>

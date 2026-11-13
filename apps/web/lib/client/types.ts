@@ -153,6 +153,8 @@ export interface LinkPayment {
   settledAt: string | null
   createdAt: string
   receiptToken: string | null
+  /** Paid through NEAR Intents: the 1Click asset id the payer sent (its coin and chain mark). */
+  assetIn?: string | null
 }
 
 export interface LinkDetail {
@@ -211,6 +213,9 @@ export interface AttemptView {
     timeEstimate: number | null
     symbol: string | null
     chain: string | null
+    /** Mark ids for the coin sent and its chain ("usdt", "tron"). */
+    coin?: string | null
+    chainMark?: string | null
     payUri: string | null
   } | null
 }
@@ -232,6 +237,48 @@ export interface WalletAttempt {
 }
 
 /** A receipt for any money movement: a customer payment (numbered), a send, or a referral reward. */
+// --- spend cards (plan 6.8 AD) -----------------------------------------------------------------------------------
+
+export type CardToneName = "ink" | "matcha" | "sora" | "sakura" | "kin" | "ai"
+
+export interface IssuedCardView {
+  id: string
+  /** Null: the owner's own card. */
+  personId: string | null
+  holderName: string
+  nickname: string
+  tone: CardToneName
+  last4: string | null
+  status: "making" | "active" | "frozen" | "removed" | "failed"
+  frozenBy: "owner" | "person" | null
+  /** USDC base units a month; null is no limit. */
+  monthlyLimit: string | null
+  onCard: string
+  spentThisMonth: string
+  error: string | null
+  createdAt: string
+}
+
+export interface CardPurchaseView {
+  id: string
+  cardId: string
+  kind: "authorization" | "settlement" | "reversal" | "declined"
+  merchant: string | null
+  amount: string | null
+  reason: string | null
+  createdAt: string
+}
+
+export interface CardMoveView {
+  id: string
+  direction: "in" | "out"
+  amount: string
+  status: "drafted" | "sent" | "done" | "failed"
+  txHash: string | null
+  error: string | null
+  createdAt: string
+}
+
 export interface ReceiptView {
   kind: "payment" | "send" | "reward" | "payslip"
   /** The business's receipt number; only customer payments are numbered. */
@@ -260,6 +307,8 @@ export interface ReceiptView {
   refunded?: string | null
   /** Live from another chain: the coin and chain it was paid in, e.g. "USDT on Tron". */
   via?: string | null
+  /** Live from another chain: the 1Click asset id the payer sent, for its coin and chain marks. */
+  assetIn?: string | null
   /** Live to another chain: what NEAR Intents delivered, where, and that chain's transaction. */
   deliveredAs?: {
     route: string
@@ -445,15 +494,22 @@ export interface ReferralsView {
 
 export type PayCadence = "weekly" | "fortnightly" | "monthly"
 
-/** Whether a person can be paid now, and the NEAR account their pay lands in. */
+/** Where pay lands: a Tegata account, a NEAR account, or an address on another chain (Live, through NEAR Intents). */
+export type DestinationKind = "tegata" | "near" | "chain"
+
+/**
+ * Whether a person can be paid now, and where: the NEAR account, or for `chain` the address on that chain and its
+ * route ("usdt-tron").
+ */
 export type PayReadiness =
-  | { state: "ready"; kind: "tegata" | "near"; accountId: string }
-  | { state: "opening"; kind: "tegata" | "near"; accountId: string | null }
+  | { state: "ready"; kind: DestinationKind; accountId: string; route?: string | null }
+  | { state: "opening"; kind: DestinationKind; accountId: string | null }
   | { state: "none" }
 
 export interface PendingDestination {
-  kind: "tegata" | "near"
+  kind: DestinationKind
   accountId: string | null
+  route?: string | null
   activatesAt: string
 }
 
@@ -503,8 +559,10 @@ export interface PayRunRow {
   personId: string
   name: string
   role: string | null
-  destinationKind: "tegata" | "near" | null
+  destinationKind: DestinationKind | null
   accountId: string | null
+  /** For a row paid to another chain: its route ("usdt-tron"). */
+  route?: string | null
   amount: string
   status: "included" | "excluded" | "skipped" | "paid" | "failed"
   skipReason: string | null
@@ -534,7 +592,17 @@ export interface PayRun {
 export interface RunBatchDraft {
   relayId: string
   draft: DelegateDraft
-  rows: { id: string; accountId: string; amount: string }[]
+  /**
+   * What each transfer in the batch does. `accountId` is where the USDC goes on NEAR: the person's account, or for a
+   * row paid to another chain the NEAR Intents deposit address, with `via` naming where it lands and no memo.
+   */
+  rows: {
+    id: string
+    accountId: string
+    amount: string
+    memo: string | null
+    via: { route: string; recipient: string; amountOut: string | null } | null
+  }[]
 }
 
 /** What `/p/<token>` shows the person. */
@@ -560,7 +628,7 @@ export interface AutopilotRowView {
   personId: string
   name: string
   role: string | null
-  destinationKind: "tegata" | "near"
+  destinationKind: DestinationKind
   accountId: string
   amount: string
 }

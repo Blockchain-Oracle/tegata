@@ -14,6 +14,7 @@ import {
 
 import { createdAt, id, money, updatedAt } from "./columns.ts"
 import { network, relays, users, workspaces } from "./identity.ts"
+import { payouts } from "./payouts.ts"
 
 export const personStatus = pgEnum("person_status", ["active", "removed"])
 
@@ -52,8 +53,11 @@ export const people = pgTable(
   ],
 )
 
-/** tegata: the person's own Tegata account on this network · near: a NEAR account they already have. */
-export const destinationKind = pgEnum("destination_kind", ["tegata", "near"])
+/**
+ * tegata: the person's own Tegata account on this network · near: a NEAR account they already have · chain: an address
+ * on another chain, paid through NEAR Intents (Live only: 1Click has no testnet).
+ */
+export const destinationKind = pgEnum("destination_kind", ["tegata", "near", "chain"])
 export const destinationSetBy = pgEnum("destination_set_by", ["person", "owner"])
 
 /**
@@ -68,8 +72,13 @@ export const personDestinations = pgTable(
       .notNull()
       .references(() => people.id, { onDelete: "cascade" }),
     kind: destinationKind().notNull(),
-    /** The NEAR account for `near`. Null for `tegata`: it is the person's account, read when a run is drafted. */
+    /**
+     * The NEAR account for `near`, the address on the other chain for `chain`. Null for `tegata`: it is the person's
+     * account, read when a run is drafted.
+     */
     accountId: text(),
+    /** For `chain`: which coin on which chain (a route id like "usdt-tron"). */
+    route: text(),
     setBy: destinationSetBy().notNull(),
     activatesAt: timestamp({ withTimezone: true }).notNull(),
     /** For `near`: when the account could receive USDC (already registered, or registered by Tegata's operator). */
@@ -124,7 +133,7 @@ export interface AutopilotRowSnapshot {
   personId: string
   name: string
   role: string | null
-  destinationKind: "tegata" | "near"
+  destinationKind: "tegata" | "near" | "chain"
   accountId: string
   /** USDC base units. */
   amount: string
@@ -229,6 +238,9 @@ export const payRows = pgTable(
     role: text(),
     destinationKind: destinationKind(),
     accountId: text(),
+    /** For a row paid to another chain: the route, and the NEAR Intents payout that carries it there. */
+    route: text(),
+    payoutId: uuid().references(() => payouts.id),
     amount: money().notNull(),
     status: payRowStatus().notNull(),
     skipReason: text(),

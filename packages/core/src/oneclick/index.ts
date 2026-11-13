@@ -249,18 +249,53 @@ let tokenCache: {
   list: { assetId: string; symbol: string; blockchain: string }[]
 } | null = null
 
-/** "USDT" on "Tron" for a 1Click asset id (the token list, cached ten minutes); null when 1Click doesn't list it. */
-export async function assetLabel(
-  assetId: string,
-): Promise<{ symbol: string; chain: string } | null> {
+/** 1Click's token list, cached ten minutes. */
+async function tokenList() {
   if (!tokenCache || Date.now() - tokenCache.at > TOKENS_TTL_MS) {
     const response = await fetch(`${ONECLICK_BASE}/v0/tokens`)
     if (!response.ok)
       throw new OneClickError(`1Click tokens: HTTP ${response.status}`, response.status)
     tokenCache = { at: Date.now(), list: await response.json() }
   }
-  const token = tokenCache.list.find((t) => t.assetId === assetId)
+  return tokenCache.list
+}
+
+/** "USDT" on "Tron" for a 1Click asset id; null when 1Click doesn't list it. */
+export async function assetLabel(
+  assetId: string,
+): Promise<{ symbol: string; chain: string } | null> {
+  const token = (await tokenList()).find((t) => t.assetId === assetId)
   return token
     ? { symbol: token.symbol, chain: CHAIN_NAMES[token.blockchain] ?? token.blockchain }
     : null
+}
+
+/**
+ * A Tegata route id ("usdt-tron": the coin, then 1Click's chain code) as the 1Click asset it names, with its symbol
+ * and chain as people say them; null when 1Click doesn't list it.
+ */
+export async function routeAsset(routeId: string) {
+  const dash = routeId.indexOf("-")
+  if (dash < 1) return null
+  const symbol = routeId.slice(0, dash).toUpperCase()
+  const blockchain = routeId.slice(dash + 1)
+  const token = (await tokenList()).find((t) => t.symbol === symbol && t.blockchain === blockchain)
+  return token
+    ? {
+        assetId: token.assetId,
+        symbol,
+        blockchain,
+        chain: CHAIN_NAMES[blockchain] ?? blockchain,
+        stable: symbol === "USDC" || symbol === "USDT",
+      }
+    : null
+}
+
+/** "USDT on Tron" from a route id, without asking 1Click. */
+export function routeLabel(routeId: string | null | undefined): string | null {
+  if (!routeId) return null
+  const dash = routeId.indexOf("-")
+  if (dash < 1) return null
+  const blockchain = routeId.slice(dash + 1)
+  return `${routeId.slice(0, dash).toUpperCase()} on ${CHAIN_NAMES[blockchain] ?? blockchain}`
 }

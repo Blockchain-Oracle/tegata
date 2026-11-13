@@ -51,6 +51,14 @@
   --color-shu-foreground: var(--shu-foreground);
   --color-shu-ink: var(--shu-ink);
   --color-shu-wash: var(--shu-wash);
+  --color-paper-text-2: var(--paper-text-2);
+  --color-paper-text-3: var(--paper-text-3);
+  --color-paper-rule: var(--paper-rule);
+  --color-paper-sunk: var(--paper-sunk);
+  --color-paper-seal: var(--paper-seal);
+  --color-paper-up: var(--paper-up);
+  --color-paper-down: var(--paper-down);
+  --color-paper-wash: var(--paper-wash);
 
   /* The lit stage and the story fields. */
   --color-stage: var(--stage);
@@ -149,6 +157,15 @@
       opacity: 1;
     }
   }
+  /* A card being made: one light sweep across the face. */
+  @keyframes card-shimmer {
+    from {
+      transform: translateX(0);
+    }
+    to {
+      transform: translateX(300%);
+    }
+  }
 }
 
 :root {
@@ -182,6 +199,16 @@
   --shu-foreground: #000000;
   --shu-ink: #b23700;
   --shu-wash: #ffe9df;
+
+  /* Paper (receipts, invoices, objects on the stage) stays light in both themes, so its colours never flip. */
+  --paper-text-2: #666666;
+  --paper-text-3: #6e6e6e;
+  --paper-rule: #ececec;
+  --paper-sunk: #f5f5f5;
+  --paper-seal: #b23700;
+  --paper-up: #2f7a00;
+  --paper-down: #c8283f;
+  --paper-wash: #ffe9df;
 
   --stage: #ff4f00;
   --stage-hot: #ff7a2e;

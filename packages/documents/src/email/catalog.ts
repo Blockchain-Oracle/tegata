@@ -2,12 +2,16 @@
 // `EmailEvent` in the same transaction as the event it tells about; the worker composes it here and renders it with
 // the one layout. The subject is the Activity row's words; the facts are the receipt page's rows.
 import type { EmailContent, EmailRow } from "./layout.tsx"
+import { coinFigure, FIAT_FLAG, fiatMoney, usdUnits } from "./money.ts"
 
 /** USDC base units, as a string. */
 type Units = string
 
-export const usd = (units: Units) =>
-  (Number(BigInt(units)) / 1e6).toLocaleString("en-US", { style: "currency", currency: "USD" })
+/** USDC base units as "$1,250.00" (money.ts, the web app's formatter). */
+export const usd = (units: Units) => usdUnits(units)
+
+/** The round flag for a currency's row, when there is one. */
+const flagOf = (fiat: string) => FIAT_FLAG[fiat.toUpperCase()]
 
 export const longDay = (iso: string) =>
   new Date(iso.length === 10 ? `${iso}T12:00:00Z` : iso).toLocaleDateString("en-GB", {
@@ -29,6 +33,42 @@ const when = (iso: string, timezone: string) =>
 
 const shortHash = (hash: string) => `${hash.slice(0, 6)}…${hash.slice(-5)}`
 const shortAddress = (a: string) => (a.length > 20 ? `${a.slice(0, 8)}…${a.slice(-6)}` : a)
+
+/** The marks the emails carry (public/email/marks); anything else falls back to NEAR Intents. */
+const EMAIL_MARKS = new Set([
+  "arb",
+  "base",
+  "bnb",
+  "btc",
+  "circle",
+  "eth",
+  "gnosis",
+  "intents",
+  "near",
+  "pol",
+  "sol",
+  "tron",
+  "usdc",
+  "usdt",
+])
+const markOr = (id: string) => (EMAIL_MARKS.has(id) ? id : "intents")
+
+/**
+ * The mark for a "Paid with" row (audit S3): the seal for a Tegata balance, NEAR for a NEAR wallet, the coin actually
+ * sent for a payment from another chain ("USDT on Tron → USDC on NEAR"), NEAR Intents when the coin isn't known.
+ */
+function paidWithMark(paidWith: string): string | undefined {
+  if (paidWith === "Tegata balance") return "tegata"
+  if (paidWith === "NEAR wallet") return "near"
+  if (!paidWith.includes("→")) return undefined
+  return markOr(paidWith.split(" ")[0]?.toLowerCase() ?? "")
+}
+
+/** A NEAR account is shown in mono with the NEAR mark; a description ("a Tegata account") in words with the seal. */
+const destinationRow = (label: string, destination: string): EmailRow =>
+  /\s/.test(destination)
+    ? { label, value: destination, mark: "tegata" }
+    : { label, value: shortAddress(destination), mono: true, mark: "near" }
 
 /** What every money email knows about where it settled. */
 interface Settled {
@@ -284,7 +324,7 @@ export type EmailKind = EmailEvent["kind"]
 
 /** Emails an owner can switch off in Business → Emails. Security and money-out notices always go. */
 export const OPTIONAL_EMAILS: { kind: EmailKind; label: string }[] = [
-  { kind: "payment.received", label: "You got paid (one email per payment)" },
+  { kind: "payment.received", label: "You got paid" },
   { kind: "payroll.due", label: "Payroll is ready to approve" },
   { kind: "invoice.overdue", label: "An invoice is overdue" },
   { kind: "statement.monthly", label: "Monthly statement" },
@@ -331,7 +371,7 @@ export function compose(event: EmailEvent, assets: string): EmailContent {
         rows: [
           { label: "For", value: d.title },
           ...(d.from ? [{ label: "From", value: shortAddress(d.from), mono: true }] : []),
-          { label: "Paid with", value: d.paidWith },
+          { label: "Paid with", value: d.paidWith, mark: paidWithMark(d.paidWith) },
           ...(part ? [{ label: "Left to pay", value: usd(d.remaining ?? "0") }] : []),
           ...usdcRows(d),
         ],
@@ -370,7 +410,7 @@ export function compose(event: EmailEvent, assets: string): EmailContent {
         rows: [
           { label: "Paid to", value: d.business },
           { label: "For", value: d.title },
-          { label: "Paid with", value: d.paidWith },
+          { label: "Paid with", value: d.paidWith, mark: paidWithMark(d.paidWith) },
           ...(part ? [{ label: "Left to pay", value: usd(d.remaining ?? "0") }] : []),
           ...usdcRows(d),
         ],
@@ -489,7 +529,7 @@ export function compose(event: EmailEvent, assets: string): EmailContent {
         hero: "Choose where your pay lands",
         body: [
           `Hi ${d.person},`,
-          "Pick a Tegata account (sign in with this email; no wallet, no fees) or a NEAR account you already have. You only do this once.",
+          "Pick a Tegata account (sign in with this email) or a NEAR account you already have.",
         ],
         rows: [
           ...(d.role ? [{ label: "Role", value: d.role }] : []),
@@ -519,7 +559,11 @@ export function compose(event: EmailEvent, assets: string): EmailContent {
           { label: "For", value: d.period },
           { label: "From", value: d.business },
           { label: "Paid to", value: d.account, mono: true },
-          { label: "Paid with", value: d.autopilot ? "Payroll, by autopilot on NEAR" : "Payroll" },
+          {
+            label: "Paid with",
+            value: d.autopilot ? "Payroll, by autopilot on NEAR" : "Payroll",
+            mark: d.autopilot ? "near" : "tegata",
+          },
           ...usdcRows(d),
         ],
         button: { label: "Open your payslip", href: d.url },
@@ -564,7 +608,7 @@ export function compose(event: EmailEvent, assets: string): EmailContent {
         brand: { name: d.business },
         label: `Payday · ${longDay(d.payday)}`,
         hero: `${usd(d.total)} to ${d.people} ${d.people === 1 ? "person" : "people"}`,
-        body: ["Review the run and approve it: one gas-free approval pays everyone at once."],
+        body: ["One approval pays everyone at once. Tegata pays the network fee."],
         button: { label: "Review and approve", href: d.url },
         audience: "owner",
         business: d.business,
@@ -574,26 +618,26 @@ export function compose(event: EmailEvent, assets: string): EmailContent {
     case "destination.pending": {
       const d = event.data
       const person = d.to === "person"
+      const where = person ? d.destination.replace(/^their /, "your ") : d.destination
       return {
         ...base,
         shape: "card",
         subject: person
-          ? `Your pay will go to ${d.destination} from ${when(d.activatesAt, d.timezone)}`
+          ? `Your pay will go to ${where} from ${when(d.activatesAt, d.timezone)}`
           : `${d.person} changed where their pay lands`,
         preview: person
           ? `Not you? Tell ${d.business} before then.`
           : `It takes effect ${when(d.activatesAt, d.timezone)}.`,
         brand: { name: d.business },
         label: "Where pay lands",
-        hero: d.destination,
+        hero: person ? "Your pay is moving" : `${d.person} changed where pay lands`,
+        rows: [
+          destinationRow("To", where),
+          { label: "Takes effect", value: when(d.activatesAt, d.timezone) },
+        ],
         body: person
-          ? [
-              `Hi ${d.person}, your pay from ${d.business} will land in ${d.destination} from ${when(d.activatesAt, d.timezone)}.`,
-              `If you didn't make this change, tell ${d.business} now: the 24-hour wait is there so nobody can move your pay unseen.`,
-            ]
-          : [
-              `${d.person} asked for their pay to land in ${d.destination}. It takes effect ${when(d.activatesAt, d.timezone)}; until then, payroll pays the old destination.`,
-            ],
+          ? [`Not you? Tell ${d.business} before then.`]
+          : ["Until then, payroll pays the old destination."],
         button: { label: person ? "See where your pay lands" : "Review the change", href: d.url },
         audience: person ? "person" : "owner",
         business: d.business,
@@ -602,17 +646,17 @@ export function compose(event: EmailEvent, assets: string): EmailContent {
     }
     case "destination.set": {
       const d = event.data
+      const where = d.destination.replace(/^their /, "your ")
       return {
         ...base,
         shape: "card",
-        subject: `${d.business} set your pay to land in ${d.destination}`,
+        subject: `${d.business} set your pay to land in ${where}`,
         preview: "You can change it on your page.",
         brand: { name: d.business },
         label: "Where pay lands",
-        hero: d.destination,
-        body: [
-          `Hi ${d.person}, ${d.business} set your pay to land in ${d.destination}. You can choose somewhere else on your page.`,
-        ],
+        hero: "Your pay destination is set",
+        rows: [destinationRow("To", where)],
+        body: ["You can choose somewhere else on your page."],
         button: { label: "See where your pay lands", href: d.url },
         audience: "person",
         business: d.business,
@@ -679,12 +723,12 @@ export function compose(event: EmailEvent, assets: string): EmailContent {
               ? "Paid"
               : "Sent"
       const delivered = d.delivered
+      const deliveredAs = delivered
+        ? `${delivered.amountOut ? `${coinFigure(delivered.amountOut, delivered.coin)} ` : ""}${delivered.route}`
+        : ""
       const subject =
         event.kind === "payout.delivered"
-          ? `Delivered: ${usd(d.amount)} → ${delivered?.amountOut ?? ""} ${delivered?.route ?? ""}`.replace(
-              /\s+/g,
-              " ",
-            )
+          ? `Delivered: ${usd(d.amount)} → ${deliveredAs}`.trim()
           : event.kind === "refund.sent"
             ? `Refund sent: ${usd(d.amount)} to ${shortAddress(d.counterparty)}`
             : event.kind === "refund.received"
@@ -723,8 +767,8 @@ export function compose(event: EmailEvent, assets: string): EmailContent {
             ? [
                 {
                   label: "Delivered as",
-                  value: `${delivered.amountOut ?? ""} ${delivered.route}`.trim(),
-                  mark: delivered.coin,
+                  value: deliveredAs,
+                  mark: markOr(delivered.coin),
                 },
                 { label: "Converted by", value: "NEAR Intents", mark: "intents" },
               ]
@@ -768,7 +812,7 @@ export function compose(event: EmailEvent, assets: string): EmailContent {
       return {
         ...base,
         shape: "slip",
-        subject: `Paid to ${d.account}: ${d.fiatAmount} ${d.fiat}`,
+        subject: `Paid to ${d.account}: ${fiatMoney(d.fiat, d.fiatAmount)}`,
         preview: `${usd(d.amount)} from your balance, paid by Noah`,
         brand: { name: d.business, logo: d.logo },
         label: "Withdrawn to a bank",
@@ -778,8 +822,12 @@ export function compose(event: EmailEvent, assets: string): EmailContent {
         stamp: "Paid",
         rows: [
           { label: "To", value: d.account },
-          { label: "They received", value: `${d.fiatAmount} ${d.fiat}` },
-          { label: "Rate", value: `${d.rate} ${d.fiat} per dollar` },
+          {
+            label: "They received",
+            value: fiatMoney(d.fiat, d.fiatAmount),
+            flag: flagOf(d.fiat),
+          },
+          { label: "Rate", value: `${fiatMoney(d.fiat, d.rate)} per dollar` },
           { label: "Paid out by", value: "Noah, a licensed partner" },
           ...usdcRows(d),
         ],
@@ -813,7 +861,7 @@ export function compose(event: EmailEvent, assets: string): EmailContent {
       return {
         ...base,
         shape: "slip",
-        subject: `${d.fiatAmount} ${d.fiat} arrived by bank transfer: ${usd(d.amount)} in your balance`,
+        subject: `${fiatMoney(d.fiat, d.fiatAmount)} arrived by bank transfer: ${usd(d.amount)} in your balance`,
         preview: "Converted to USDC on NEAR.",
         brand: { name: d.business, logo: d.logo },
         label: "Received by bank transfer",
@@ -822,7 +870,11 @@ export function compose(event: EmailEvent, assets: string): EmailContent {
         sub: sub(d.sandbox),
         stamp: "Paid",
         rows: [
-          { label: "Bank transfer", value: `${d.fiatAmount} ${d.fiat}` },
+          {
+            label: "Bank transfer",
+            value: fiatMoney(d.fiat, d.fiatAmount),
+            flag: flagOf(d.fiat),
+          },
           { label: "Converted by", value: "Noah, to USDC" },
           ...usdcRows(d),
         ],
@@ -878,21 +930,18 @@ export function compose(event: EmailEvent, assets: string): EmailContent {
         ...base,
         shape: "card",
         subject: live
-          ? `Live is on: ${d.accountId} can take real dollars`
+          ? `Live is on: ${d.business} can take real dollars`
           : `${d.business} is open on Tegata`,
         preview: live
           ? "Real USDC on NEAR. Tegata pays every network fee."
           : "Send an invoice or a pay link and get paid from any chain.",
         brand: { name: d.business },
         label: live ? "Live" : "Welcome to Tegata",
-        hero: d.accountId,
+        hero: live ? "Live is on" : "Your account is open",
+        rows: [{ label: "Pay address", value: d.accountId, mono: true, mark: "near" }],
         body: live
-          ? [
-              "Your Live account holds real USDC on NEAR. Customers can pay from any coin on any chain through NEAR Intents, and you never pay a network fee.",
-            ]
-          : [
-              "Your pay address is ready. Send an invoice or share a pay link: customers pay from any chain, and you receive dollars on NEAR. No wallet, no fees.",
-            ],
+          ? ["Real dollars from any chain. Tegata pays every network fee."]
+          : ["Send an invoice or a pay link and get paid in dollars from any chain."],
         button: {
           label: live ? "Make your first pay link" : "Send your first invoice",
           href: d.url,
@@ -913,7 +962,7 @@ export function compose(event: EmailEvent, assets: string): EmailContent {
         label: d.title,
         hero: "Payment refunded to the payer",
         body: [
-          `NEAR Intents couldn't complete a ${usd(d.amount)} payment from ${d.route} in time, so it returned the payer's coins to their address. Nothing reached your balance; the link is still open.`,
+          `NEAR Intents returned the payer's coins. Nothing reached your balance; the link is still open.`,
         ],
         button: { label: "Open it in Tegata", href: d.url },
         audience: "owner",
@@ -951,7 +1000,7 @@ export function compose(event: EmailEvent, assets: string): EmailContent {
         label: "Developers",
         hero: `${d.event} wasn't delivered`,
         body: [
-          `Tegata tried ${d.tries} times to deliver ${d.event} to ${d.endpoint} and got no 2xx answer. You can resend it from the delivery log once the endpoint is back.`,
+          `No 2xx answer after ${d.tries} tries. Resend it from the delivery log once the endpoint is back.`,
         ],
         button: { label: "Open Developers", href: d.url },
         audience: "owner",

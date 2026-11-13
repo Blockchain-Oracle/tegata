@@ -95,3 +95,22 @@ export function lastFour(value: string): string {
   const digits = value.replace(/\D/g, "")
   return digits.slice(-4)
 }
+
+const UNITS = 1_000_000
+
+/** "$1,250.00": dollars, grouped, two decimals. */
+export const usd = (dollars: number) => fiatMoney("USD", dollars)
+
+/** USDC base units (6 decimals) as "$1,250.00". */
+export const usdUnits = (units: bigint | string | number) => usd(Number(BigInt(units)) / UNITS)
+
+/** Decimals worth showing for a coin: cents for stablecoins, more for coins worth more per unit. */
+const COIN_DECIMALS: Record<string, number> = { BTC: 6, WBTC: 6, ETH: 5, SOL: 4, BNB: 4, NEAR: 3 }
+
+/** "12.35 USDT", "0.004812 BTC": a coin amount at a sensible precision, grouped. Draw its Mark beside it. */
+export function coinAmount(amount: string | number, symbol: string): string {
+  const value = typeof amount === "string" ? Number(amount) : amount
+  if (!Number.isFinite(value)) return "—"
+  const decimals = COIN_DECIMALS[symbol.toUpperCase()] ?? 2
+  return `${value.toLocaleString("en-US", { minimumFractionDigits: Math.min(2, decimals), maximumFractionDigits: decimals })} ${symbol}`
+}

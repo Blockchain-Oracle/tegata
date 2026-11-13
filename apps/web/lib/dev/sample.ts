@@ -1309,3 +1309,98 @@ export const SAMPLE_BANK = {
     },
   ],
 }
+
+// --- cards (plan 6.8 AD): sample spend cards for /dev/flows/cards only ---------------------------------------------
+const CARD_BASE = {
+  frozenBy: null,
+  error: null,
+  createdAt: "2026-11-10T09:00:00.000Z",
+} as const
+
+export const SAMPLE_CARDS = {
+  cards: [
+    {
+      ...CARD_BASE,
+      id: "dev-card-1",
+      personId: null,
+      holderName: "Studio Kaze",
+      nickname: "Ads",
+      tone: "ink" as const,
+      last4: "4821",
+      status: "active" as const,
+      monthlyLimit: "500000000",
+      onCard: "182400000",
+      spentThisMonth: "317600000",
+    },
+    {
+      ...CARD_BASE,
+      id: "dev-card-2",
+      personId: "dev-person-1",
+      holderName: "Mei Tanaka",
+      nickname: "Travel",
+      tone: "matcha" as const,
+      last4: "7009",
+      status: "active" as const,
+      monthlyLimit: null,
+      onCard: "64000000",
+      spentThisMonth: "41250000",
+    },
+    {
+      ...CARD_BASE,
+      id: "dev-card-3",
+      personId: "dev-person-2",
+      holderName: "Kofi Mensah",
+      nickname: "Supplies",
+      tone: "sora" as const,
+      last4: "1290",
+      status: "frozen" as const,
+      frozenBy: "owner" as const,
+      monthlyLimit: "200000000",
+      onCard: "25000000",
+      spentThisMonth: "12000000",
+    },
+  ],
+  purchases: [
+    {
+      id: "dev-pur-1",
+      cardId: "dev-card-1",
+      kind: "settlement" as const,
+      merchant: "Meta Ads",
+      amount: "120000000",
+      reason: null,
+      createdAt: "2026-11-13T10:12:00.000Z",
+    },
+    {
+      id: "dev-pur-2",
+      cardId: "dev-card-2",
+      kind: "settlement" as const,
+      merchant: "Uber",
+      amount: "18400000",
+      reason: null,
+      createdAt: "2026-11-13T08:40:00.000Z",
+    },
+    {
+      id: "dev-pur-3",
+      cardId: "dev-card-1",
+      kind: "authorization" as const,
+      merchant: "Figma",
+      amount: "15000000",
+      reason: null,
+      createdAt: "2026-11-13T07:02:00.000Z",
+    },
+    {
+      id: "dev-pur-4",
+      cardId: "dev-card-3",
+      kind: "declined" as const,
+      merchant: "Staples",
+      amount: "62000000",
+      reason: "card frozen",
+      createdAt: "2026-11-12T16:30:00.000Z",
+    },
+  ],
+  people: [
+    { id: "dev-person-1", name: "Mei Tanaka", email: "mei@example.com" },
+    { id: "dev-person-2", name: "Kofi Mensah", email: "kofi@example.com" },
+    { id: "dev-person-3", name: "Sara Lind", email: null },
+  ],
+}

@@ -650,6 +650,7 @@ export async function publicInvoice(db: Db, token: string) {
       .select({
         amount: payments.amount,
         rail: payments.rail,
+        assetIn: payments.assetIn,
         settledAt: payments.settledAt,
         receiptToken: receipts.token,
       })

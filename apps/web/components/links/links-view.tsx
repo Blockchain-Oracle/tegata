@@ -13,6 +13,7 @@ import { Stage } from "@/components/kit/stage"
 import { EmptyState, ErrorState, LoadingShape, StatusPill } from "@/components/kit/states"
 import { MarkStack } from "@/components/marks/mark"
 import type { PayLink } from "@/lib/client/types"
+import { usdUnits } from "@/lib/fiat"
 import { cn } from "@/lib/utils"
 
 /** Each link gets a story field from its id, so the list is never grey and a link keeps its colour. */
@@ -109,7 +110,7 @@ export function LinksView({
                   <span className="flex min-w-0 flex-1 flex-col">
                     <span className="truncate text-[16px] font-semibold">{link.title}</span>
                     <span className="truncate text-detail text-muted-foreground">
-                      {link.amount ? `$${viewDollars(link.amount).toFixed(2)}` : "Any amount"} ·{" "}
+                      {link.amount ? usdUnits(link.amount) : "Any amount"} ·{" "}
                       {link.paidCount === 0
                         ? "Not paid yet"
                         : `Paid ${link.paidCount} ${link.paidCount === 1 ? "time" : "times"}`}
@@ -126,9 +127,7 @@ export function LinksView({
                       BigInt(link.paidTotal) > 0n ? "text-up" : "text-text-3",
                     )}
                   >
-                    {BigInt(link.paidTotal) > 0n
-                      ? `+$${viewDollars(link.paidTotal).toFixed(2)}`
-                      : "$0.00"}
+                    {BigInt(link.paidTotal) > 0n ? `+${usdUnits(link.paidTotal)}` : usdUnits(0)}
                   </span>
                   <ChevronRight className="size-4 text-text-3" />
                 </Link>

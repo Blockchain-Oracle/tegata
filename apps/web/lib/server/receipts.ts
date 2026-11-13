@@ -32,6 +32,7 @@ export async function paymentReceiptView(token: string): Promise<ReceiptView | n
     explorerUrl: payment.txHash ? explorerTx(payment.network, payment.txHash) : null,
     forUrl: request.kind === "invoice" ? `/i/${request.token}` : `/pay/${request.token}`,
     via: payment.rail === "oneclick" && payment.assetIn ? await viaOf(payment.assetIn) : null,
+    assetIn: payment.rail === "oneclick" ? payment.assetIn : null,
     refunded: payment.refunded > 0n ? payment.refunded.toString() : null,
   }
 }

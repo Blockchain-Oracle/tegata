@@ -4,7 +4,7 @@
 // type, with the round seal beside it (it follows the name); beside it, one card of fields. Save appears only when
 // something changed. Separate from its logic so /dev/flows can show every state.
 import { Check, Copy, ImagePlus, Trash2 } from "lucide-react"
-import { useMemo, useRef, useState } from "react"
+import { useRef, useState } from "react"
 import { BusinessSeal, SealPress } from "@/components/brand/seal"
 import { AccountLink } from "@/components/kit/account-link"
 import { Button } from "@/components/kit/button"
@@ -13,6 +13,8 @@ import { Paper, Stage } from "@/components/kit/stage"
 import { Mark } from "@/components/marks/mark"
 import { fire } from "@/lib/feedback"
 import { cn } from "@/lib/utils"
+
+import { ZonePicker } from "./zone-picker"
 
 const LOGO_EDGE = 256
 const LOGO_QUALITY = 0.9
@@ -54,14 +56,6 @@ async function shrink(file: File): Promise<string> {
   return png.length < LOGO_MAX_CHARS ? png : canvas.toDataURL("image/jpeg", LOGO_QUALITY)
 }
 
-function zones(): string[] {
-  try {
-    return Intl.supportedValuesOf("timeZone")
-  } catch {
-    return ["UTC"]
-  }
-}
-
 export function BusinessView(p: BusinessViewProps) {
   const [draft, setDraft] = useState(p.initial)
   const [logoChanged, setLogoChanged] = useState(false)
@@ -69,10 +63,6 @@ export function BusinessView(p: BusinessViewProps) {
   const [copied, setCopied] = useState(false)
   const [pressKey, setPressKey] = useState(0)
   const file = useRef<HTMLInputElement>(null)
-  const timezones = useMemo(() => {
-    const all = zones()
-    return all.includes(draft.timezone) ? all : [draft.timezone, ...all]
-  }, [draft.timezone])
 
   const dirty =
     logoChanged ||
@@ -125,24 +115,25 @@ export function BusinessView(p: BusinessViewProps) {
                   {draft.name.trim() || "Your business"}
                 </span>
                 {draft.address.trim() ? (
-                  <span className="whitespace-pre-line text-[13px] text-[#666]">
+                  <span className="whitespace-pre-line text-[13px] text-paper-text-2">
                     {draft.address.trim()}
                   </span>
                 ) : (
-                  <span className="text-[13px] text-[#999]">Address</span>
+                  <span className="text-[13px] text-paper-text-3">Address</span>
                 )}
                 {draft.taxId.trim() ? (
-                  <span className="text-[13px] text-[#666]">Tax ID {draft.taxId.trim()}</span>
+                  <span className="text-[13px] text-paper-text-2">Tax ID {draft.taxId.trim()}</span>
                 ) : null}
                 {draft.email.trim() ? (
-                  <span className="text-[13px] text-[#666]">{draft.email.trim()}</span>
+                  <span className="text-[13px] text-paper-text-2">{draft.email.trim()}</span>
                 ) : null}
               </div>
             </div>
-            <div className="mt-5 flex items-center justify-between border-t-2 border-dashed border-[#ECECEC] pt-4 text-[13px] text-[#666]">
-              <span>Receipt · No. 0001</span>
-              <span className="inline-flex items-center gap-1.5">
-                <Mark id="near" size={14} /> {p.accountId}
+            <div className="mt-5 flex items-center justify-between gap-3 border-t-2 border-dashed border-paper-rule pt-4 text-[13px] text-paper-text-2">
+              <span className="shrink-0">Receipt · No. 0001</span>
+              <span className="inline-flex min-w-0 items-center gap-1.5">
+                <Mark id="near" size={14} />
+                <span className="truncate font-mono">{p.accountId}</span>
               </span>
             </div>
           </Paper>
@@ -156,9 +147,7 @@ export function BusinessView(p: BusinessViewProps) {
                 <BusinessSeal name={draft.name} size={96} />
               </SealPress>
             </span>
-            <p className="text-[15px] font-medium text-white">
-              Your seal follows your name. It stamps every receipt and invoice.
-            </p>
+            <p className="text-[15px] font-medium text-white">Your seal follows your name.</p>
           </div>
         </Stage>
 
@@ -281,21 +270,7 @@ export function BusinessView(p: BusinessViewProps) {
             >
               Time zone
             </label>
-            <select
-              id="business-timezone"
-              value={draft.timezone}
-              onChange={(e) => set("timezone")(e.target.value)}
-              className="h-14 w-full rounded-[14px] bg-input px-4 text-[17px] font-medium outline-none focus:bg-card focus:shadow-[0_0_0_2px_var(--shu)]"
-            >
-              {timezones.map((zone) => (
-                <option key={zone} value={zone}>
-                  {zone.replace(/_/g, " ")}
-                </option>
-              ))}
-            </select>
-            <span className="text-detail text-muted-foreground">
-              Due dates, reminders and repeat invoices run on this clock.
-            </span>
+            <ZonePicker id="business-timezone" value={draft.timezone} onChange={set("timezone")} />
           </div>
 
           <div className="flex flex-col divide-y divide-secondary rounded-[16px] bg-secondary/60 px-4">

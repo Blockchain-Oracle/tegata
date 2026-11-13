@@ -1,8 +1,8 @@
-import { parseDollars } from "@tegata/core/invoices"
+import { atLocal, localToday, parseDollars } from "@tegata/core/invoices"
 import { schema } from "@tegata/db"
 import { serverEnv } from "@tegata/env"
-import { createSession, monthRange } from "@tegata/services"
-import { and, desc, eq, gte, sql } from "drizzle-orm"
+import { createSession } from "@tegata/services"
+import { and, desc, eq, gte, inArray, sql } from "drizzle-orm"
 import { z } from "zod"
 
 import { requireOwner } from "@/lib/server/auth.ts"
@@ -12,10 +12,15 @@ import { requestNetwork } from "@/lib/server/mode.ts"
 
 const SALES_SHOWN = 20
 
-/** Today's counter sales (since the start of the month, in the business's time zone, newest first). */
+/** Today's counter sales (since midnight in the business's time zone, newest first), each paid one with its receipt. */
 export const GET = route(async (request) => {
   const { workspace } = await requireOwner(request)
-  const { from } = monthRange(new Date().toISOString().slice(0, 7), workspace.timezone)
+  const [year, month, day] = localToday(workspace.timezone).split("-").map(Number) as [
+    number,
+    number,
+    number,
+  ]
+  const from = atLocal({ year, month, day }, 0, workspace.timezone)
   const rows = await db()
     .select()
     .from(schema.requests)
@@ -29,15 +34,38 @@ export const GET = route(async (request) => {
     )
     .orderBy(desc(schema.requests.createdAt))
     .limit(SALES_SHOWN)
+  // A paid sale opens its receipt and shows how it was paid (plan 6.8 Z).
+  const paidIds = rows.filter((r) => r.status === "paid").map((r) => r.id)
+  const paid = paidIds.length
+    ? await db()
+        .select({
+          requestId: schema.payments.requestId,
+          rail: schema.payments.rail,
+          assetIn: schema.payments.assetIn,
+          receiptToken: schema.receipts.token,
+        })
+        .from(schema.payments)
+        .leftJoin(schema.receipts, eq(schema.receipts.paymentId, schema.payments.id))
+        .where(
+          and(inArray(schema.payments.requestId, paidIds), eq(schema.payments.status, "succeeded")),
+        )
+    : []
+  const paymentOf = new Map(paid.map((p) => [p.requestId, p]))
   return {
-    sales: rows.map((r) => ({
-      id: r.id,
-      token: r.token,
-      title: r.title,
-      amount: (r.amount ?? 0n).toString(),
-      status: r.status,
-      createdAt: r.createdAt.toISOString(),
-    })),
+    sales: rows.map((r) => {
+      const payment = paymentOf.get(r.id)
+      return {
+        id: r.id,
+        token: r.token,
+        title: r.title,
+        amount: (r.amount ?? 0n).toString(),
+        status: r.status,
+        createdAt: r.createdAt.toISOString(),
+        receiptToken: payment?.receiptToken ?? null,
+        rail: payment?.rail ?? null,
+        assetIn: payment?.assetIn ?? null,
+      }
+    }),
   }
 })
 

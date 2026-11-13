@@ -9,7 +9,7 @@ import { useState } from "react"
 import { Button } from "@/components/kit/button"
 import { Field } from "@/components/kit/field"
 import { Stage } from "@/components/kit/stage"
-import { ErrorState, LoadingShape, StatusPill } from "@/components/kit/states"
+import { EmptyState, ErrorState, LoadingShape, StatusPill } from "@/components/kit/states"
 import { Switch } from "@/components/kit/switch"
 import { Sheet } from "@/components/shell/sheet"
 import type { DevelopersView as Data } from "@/lib/client/types"
@@ -17,11 +17,18 @@ import { fire } from "@/lib/feedback"
 import { LINKS } from "@/lib/links"
 
 const COPIED_MS = 1500
+/** What a webhook endpoint receives (plan 6.8 Y). */
+const EVENTS = [
+  "checkout.session.completed",
+  "payment.succeeded",
+  "payment.refunded",
+  "invoice.paid",
+] as const
 
 export function Code({ text, label }: { text: string; label: string }) {
   const [copied, setCopied] = useState(false)
   return (
-    <div className="relative rounded-[16px] bg-[#111] text-[#F5F5F5]">
+    <div className="relative rounded-[16px] bg-black text-white/90 ring-1 ring-white/12 ring-inset">
       <button
         type="button"
         aria-label={`Copy ${label}`}
@@ -136,15 +143,14 @@ if (event.type === "checkout.session.completed") fulfil(event.data.metadata.orde
       <header className="flex flex-col gap-1">
         <h1 className="display text-page-title">Developers</h1>
         <p className="text-[15px] text-muted-foreground">
-          Take payments from your own site: create a checkout session, send the payer to its page,
-          and get a signed webhook when NEAR settles it. Sandbox keys work on testnet.{" "}
+          Take payments on your own site.{" "}
           <a
             href={`${LINKS.docs}/docs/build/developers`}
             target="_blank"
             rel="noreferrer"
             className="font-semibold text-shu-ink underline-offset-[3px] hover:underline"
           >
-            API and webhook docs ↗
+            Docs ↗
           </a>
         </p>
       </header>
@@ -153,24 +159,30 @@ if (event.type === "checkout.session.completed") fulfil(event.data.metadata.orde
         <div className="flex flex-col gap-3">
           <span className="text-[15px] font-semibold text-white">Create a checkout session</span>
           <Code text={curl} label="the curl command" />
-          <span className="text-[14px] text-white/85">
-            The response has a <code className="font-mono">url</code>: send your customer there.
-            When it's paid you get <code className="font-mono">checkout.session.completed</code>.
-          </span>
         </div>
       </Stage>
 
       <section className="flex flex-col gap-3">
         <div className="flex items-center justify-between gap-3">
           <h2 className="text-section-title font-semibold">API keys</h2>
-          <Button variant="shu" size="sm" onClick={() => setCreating(true)}>
-            <Plus /> New key
-          </Button>
+          {data.keys.length > 0 ? (
+            <Button variant="shu" size="sm" onClick={() => setCreating(true)}>
+              <Plus /> New key
+            </Button>
+          ) : null}
         </div>
         {data.keys.length === 0 ? (
-          <p className="rounded-[20px] bg-card px-4 py-5 text-[15px] text-muted-foreground">
-            No keys yet. A key lets your server create checkout sessions.
-          </p>
+          <EmptyState
+            art={<KeyRound />}
+            field="kin"
+            title="No API keys yet"
+            detail="A key lets your server take payments."
+            action={
+              <Button variant="shu" size="md" onClick={() => setCreating(true)}>
+                <Plus /> New key
+              </Button>
+            }
+          />
         ) : (
           <div className="flex flex-col rounded-[20px] bg-card p-2">
             {data.keys.map((k) => (
@@ -260,10 +272,16 @@ if (event.type === "checkout.session.completed") fulfil(event.data.metadata.orde
             </Button>
           )}
           {problem ? <p className="text-[14px] font-medium text-down">{problem}</p> : null}
-          <p className="text-[13px] text-muted-foreground">
-            Events: checkout.session.completed, payment.succeeded, payment.refunded, invoice.paid.
-            Signed with Standard Webhooks; a non-2xx is retried at 30 s, 2 min, 10 min, 1 h and 6 h.
-          </p>
+          <div className="flex flex-wrap items-center gap-1.5">
+            {EVENTS.map((event) => (
+              <span
+                key={event}
+                className="rounded-full bg-secondary px-2.5 py-1 font-mono text-[12px] text-muted-foreground"
+              >
+                {event}
+              </span>
+            ))}
+          </div>
         </div>
       </section>
 
@@ -335,7 +353,7 @@ if (event.type === "checkout.session.completed") fulfil(event.data.metadata.orde
       <section className="flex flex-col gap-3">
         <h2 className="text-section-title font-semibold">A pay button</h2>
         <p className="text-[15px] text-muted-foreground">
-          For a fixed price, no server needed: point a button at one of your pay links.
+          Point it at a pay link. No server needed.
         </p>
         <Code text={button} label="the button HTML" />
       </section>
@@ -351,9 +369,7 @@ if (event.type === "checkout.session.completed") fulfil(event.data.metadata.orde
       >
         {newKey ? (
           <div className="flex flex-col gap-3">
-            <p className="text-[15px] font-semibold">
-              Copy it now: this is the only time it's shown.
-            </p>
+            <p className="text-[15px] font-semibold">Copy it now. It's shown only once.</p>
             <Code text={newKey} label="the key" />
             <Button
               onClick={() => {
@@ -391,9 +407,7 @@ if (event.type === "checkout.session.completed") fulfil(event.data.metadata.orde
         title="Signing secret"
       >
         <div className="flex flex-col gap-3">
-          <p className="text-[15px]">
-            Use it to check each webhook's signature. You can reveal it again on this page.
-          </p>
+          <p className="text-[15px]">It checks each webhook's signature.</p>
           {newSecret ? <Code text={newSecret} label="the secret" /> : null}
           <Button onClick={onCloseSecret}>Done</Button>
         </div>

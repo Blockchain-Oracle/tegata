@@ -29,10 +29,29 @@ export function initials(name: string): string {
   ).toUpperCase()
 }
 
+/** Story fields for name discs; the same name always lands on the same one (as `BankDisc` does). */
+const DISC = [
+  "bg-sora text-black",
+  "bg-matcha text-black",
+  "bg-sakura text-black",
+  "bg-kin text-black",
+  "bg-ai text-white",
+] as const
+
+export function discTone(name: string): (typeof DISC)[number] {
+  let hash = 0
+  for (const char of name.trim().toLowerCase()) hash = (hash * 31 + char.charCodeAt(0)) >>> 0
+  return DISC[hash % DISC.length] ?? DISC[0]
+}
+
+/** A person or company as a monogram disc, its colour picked from the name. */
 export function CustomerDisc({ name, size = 40 }: { name: string; size?: number }) {
   return (
     <span
-      className="grid shrink-0 place-items-center rounded-full bg-sora font-semibold text-black"
+      className={cn(
+        "grid shrink-0 place-items-center rounded-full font-semibold",
+        name === "?" ? "bg-secondary text-muted-foreground" : discTone(name),
+      )}
       style={{ width: size, height: size, fontSize: Math.round(size * 0.36) }}
       aria-hidden
     >
@@ -60,8 +79,10 @@ export function CustomerPicker({
 }) {
   const [open, setOpen] = useState(false)
   const [sheet, setSheet] = useState(false)
+  const [search, setSearch] = useState("")
   const [form, setForm] = useState<NewCustomer>({ name: "", email: "", address: "", taxId: "" })
   const chosen = customers?.find((c) => c.id === value)
+  const typed = search.trim()
 
   return (
     <div className="flex flex-col gap-2">
@@ -108,11 +129,13 @@ export function CustomerPicker({
             <Command label="Customers">
               <Command.Input
                 autoFocus
+                value={search}
+                onValueChange={setSearch}
                 placeholder="Search customers…"
                 className="h-12 w-full border-b border-secondary bg-transparent px-4 text-[16px] outline-none placeholder:text-text-3"
               />
               <Command.List className="max-h-72 overflow-y-auto p-1.5">
-                <Command.Empty className="px-3 py-4 text-[14px] text-muted-foreground">
+                <Command.Empty className="px-3 pt-3 pb-1 text-[14px] text-muted-foreground">
                   No customer by that name.
                 </Command.Empty>
                 {(customers ?? []).map((customer) => (
@@ -137,10 +160,14 @@ export function CustomerPicker({
                     {customer.id === value ? <Check className="size-4" /> : null}
                   </Command.Item>
                 ))}
+                {/* Always shown, so a search that finds no one still has its next action: add them. */}
                 <Command.Item
+                  forceMount
                   value="+ new customer"
                   onSelect={() => {
                     setOpen(false)
+                    setForm((f) => ({ ...f, name: typed || f.name }))
+                    setSearch("")
                     setSheet(true)
                   }}
                   className="flex h-12 cursor-pointer items-center gap-3 rounded-[10px] px-2.5 font-semibold text-shu-ink data-[selected=true]:bg-secondary"
@@ -148,7 +175,7 @@ export function CustomerPicker({
                   <span className="grid size-[30px] place-items-center rounded-full bg-shu-wash">
                     <Plus className="size-4" />
                   </span>
-                  New customer
+                  <span className="truncate">{typed ? `Add “${typed}”` : "New customer"}</span>
                 </Command.Item>
               </Command.List>
             </Command>

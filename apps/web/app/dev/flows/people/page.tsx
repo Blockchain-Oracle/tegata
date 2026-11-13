@@ -16,7 +16,7 @@ import type { TeamPerson } from "@/lib/client/types"
 import { SAMPLE_PAYSLIP, SAMPLE_PEOPLE, SAMPLE_PERSON_PAGE, SAMPLE_SLIPS } from "@/lib/dev/sample"
 
 type State = "mix" | "empty" | "loading" | "error"
-type PageState = "choose" | "set" | "pending" | "no-email"
+type PageState = "choose" | "set" | "pending" | "no-email" | "live" | "chain"
 
 export default function PeopleFlow() {
   const [state, setState] = useState<State>("mix")
@@ -28,26 +28,42 @@ export default function PeopleFlow() {
   const personPage =
     page === "choose"
       ? SAMPLE_PERSON_PAGE
-      : page === "no-email"
-        ? { ...SAMPLE_PERSON_PAGE, emailHint: null }
-        : {
-            ...SAMPLE_PERSON_PAGE,
-            claimed: true,
-            ready: {
-              state: "ready" as const,
-              kind: "tegata" as const,
-              accountId: "mei.tegata.testnet",
-            },
-            pending:
-              page === "pending"
-                ? {
-                    kind: "near" as const,
-                    accountId: "mei-tanaka.testnet",
-                    activatesAt: new Date(Date.now() + 22 * 3_600_000).toISOString(),
-                  }
-                : null,
-            slips: SAMPLE_SLIPS,
-          }
+      : page === "live"
+        ? { ...SAMPLE_PERSON_PAGE, network: "mainnet" as const }
+        : page === "chain"
+          ? {
+              ...SAMPLE_PERSON_PAGE,
+              network: "mainnet" as const,
+              claimed: true,
+              ready: {
+                state: "ready" as const,
+                kind: "chain" as const,
+                accountId: "TQn9Y2khEsLJW1ChVWFMSMeRDow5KcbLSE",
+                route: "usdt-tron",
+              },
+              pending: null,
+              slips: SAMPLE_SLIPS,
+            }
+          : page === "no-email"
+            ? { ...SAMPLE_PERSON_PAGE, emailHint: null }
+            : {
+                ...SAMPLE_PERSON_PAGE,
+                claimed: true,
+                ready: {
+                  state: "ready" as const,
+                  kind: "tegata" as const,
+                  accountId: "mei.tegata.testnet",
+                },
+                pending:
+                  page === "pending"
+                    ? {
+                        kind: "near" as const,
+                        accountId: "mei-tanaka.testnet",
+                        activatesAt: new Date(Date.now() + 22 * 3_600_000).toISOString(),
+                      }
+                    : null,
+                slips: SAMPLE_SLIPS,
+              }
 
   return (
     <div className="flex flex-col gap-12 pt-6">
@@ -127,6 +143,8 @@ export default function PeopleFlow() {
               { value: "set", label: "Set" },
               { value: "pending", label: "Change waiting" },
               { value: "no-email", label: "No email" },
+              { value: "live", label: "Live: choose a chain" },
+              { value: "chain", label: "Paid on another chain" },
             ]}
           />
         </div>
@@ -138,6 +156,7 @@ export default function PeopleFlow() {
             problem={null}
             onTegata={() => setPage("set")}
             onNear={() => setPage("set")}
+            onChain={() => setPage("chain")}
           />
         </div>
       </section>

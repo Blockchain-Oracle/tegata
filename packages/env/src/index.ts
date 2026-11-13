@@ -60,6 +60,10 @@ const serverSchema = z.object({
    * worker's only. */
   SOLANA_DEVNET_ADDRESS: optional(z.string()),
   SOLANA_DEVNET_SECRET: optional(z.string()),
+  /** Bitnob (spend cards): the API client id and secret, and the secret its card webhooks are signed with. */
+  BITNOB_CLIENT_ID: optional(z.string()),
+  BITNOB_CLIENT_SECRET: optional(z.string()),
+  BITNOB_WEBHOOK_SECRET: optional(z.string()),
   /** Development only: let webhook endpoints be http://localhost (production always requires public https). */
   ALLOW_LOCAL_WEBHOOKS: optional(z.enum(["true", "false"])),
 })

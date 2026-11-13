@@ -1,7 +1,8 @@
 "use client"
 
-// Customers (plan 6.8 N): everyone the business bills, with what they were billed, paid and still owe. A row opens a
-// sheet to edit them or start an invoice for them. Empty: a sora tile.
+// Customers (plan 6.8 N): what customers owe on the stage (one hero figure, two facts, as on Invoices), then everyone
+// the business bills, each on a disc coloured from their name, with what they still owe. A row opens a sheet to edit
+// them or start an invoice for them. Empty: a sora tile; a search that finds no one offers to add them.
 import { ChevronRight, FileText, Plus, Search, Users } from "lucide-react"
 import Link from "next/link"
 import { useEffect, useMemo, useRef, useState } from "react"
@@ -10,9 +11,11 @@ import { CustomerDisc } from "@/components/invoices/customer-picker"
 import { Button } from "@/components/kit/button"
 import { Field } from "@/components/kit/field"
 import { Figure, viewDollars } from "@/components/kit/figure"
+import { Stage } from "@/components/kit/stage"
 import { EmptyState, ErrorState, LoadingShape } from "@/components/kit/states"
 import { Sheet } from "@/components/shell/sheet"
 import type { Customer } from "@/lib/client/types"
+import { usdUnits } from "@/lib/fiat"
 import { cn } from "@/lib/utils"
 
 export interface CustomerForm {
@@ -63,11 +66,22 @@ export function CustomersView({
     )
   }, [customers, query])
 
-  const open = (customer: Customer | "new") => {
+  const facts = useMemo(() => {
+    const rows = customers ?? []
+    const sum = (key: "outstanding" | "paid") =>
+      rows.reduce((total, c) => total + BigInt(c[key] ?? "0"), 0n)
+    return {
+      owed: sum("outstanding"),
+      paid: sum("paid"),
+      owing: rows.filter((c) => BigInt(c.outstanding ?? "0") > 0n).length,
+    }
+  }, [customers])
+
+  const open = (customer: Customer | "new", name = "") => {
     setEditing(customer)
     setForm(
       customer === "new"
-        ? blank
+        ? { ...blank, name }
         : {
             name: customer.name,
             email: customer.email ?? "",
@@ -90,8 +104,11 @@ export function CustomersView({
       {error ? (
         <ErrorState title="Couldn't load your customers" onRetry={onRetry} />
       ) : customers === undefined ? (
-        <div className="rounded-[20px] bg-card p-3">
-          <LoadingShape shape="list" />
+        <div className="flex flex-col gap-4">
+          <LoadingShape shape="card" className="h-[150px] rounded-[24px]" />
+          <div className="rounded-[20px] bg-card p-3">
+            <LoadingShape shape="list" />
+          </div>
         </div>
       ) : customers.length === 0 ? (
         <EmptyState
@@ -107,6 +124,29 @@ export function CustomersView({
         />
       ) : (
         <>
+          <Stage className="p-6 sm:p-8">
+            <div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
+              <div className="flex flex-col gap-1">
+                <span className="text-[15px] font-medium text-white/85">Customers owe you</span>
+                <Figure
+                  value={viewDollars(facts.owed)}
+                  className="text-[56px] text-white sm:text-[72px]"
+                />
+              </div>
+              <div className="flex gap-3">
+                <div className="flex flex-col rounded-[16px] bg-white/18 px-4 py-3">
+                  <span className="text-[13px] font-medium text-white/85">Owing</span>
+                  <span className="figure text-[24px] text-white">
+                    {facts.owing} of {customers.length}
+                  </span>
+                </div>
+                <div className="flex flex-col rounded-[16px] bg-white/18 px-4 py-3">
+                  <span className="text-[13px] font-medium text-white/85">Paid you</span>
+                  <Figure value={viewDollars(facts.paid)} className="text-[24px] text-white" />
+                </div>
+              </div>
+            </div>
+          </Stage>
           <label className="flex h-11 items-center gap-2 rounded-[12px] bg-card px-3 sm:w-72">
             <Search className="size-4 text-text-3" />
             <span className="sr-only">Search customers</span>
@@ -137,9 +177,12 @@ export function CustomersView({
                   </span>
                   <span className="flex flex-col items-end">
                     <span
-                      className={cn("tnum text-[16px] font-semibold", owed > 0n && "text-warn")}
+                      className={cn(
+                        "tnum text-[16px] font-semibold",
+                        owed > 0n ? "text-warn" : "text-text-3",
+                      )}
                     >
-                      ${viewDollars(owed).toFixed(2)}
+                      {usdUnits(owed)}
                     </span>
                     <span className="text-[12px] text-muted-foreground">owed</span>
                   </span>
@@ -148,9 +191,12 @@ export function CustomersView({
               )
             })}
             {shown.length === 0 ? (
-              <span className="px-3 py-6 text-center text-[15px] text-muted-foreground">
-                No one by that name.
-              </span>
+              <div className="flex flex-col items-center gap-3 px-3 py-6 text-center">
+                <span className="text-[15px] text-muted-foreground">No one by that name.</span>
+                <Button variant="secondary" size="md" onClick={() => open("new", query.trim())}>
+                  <Plus /> Add “{query.trim()}”
+                </Button>
+              </div>
             ) : null}
           </div>
         </>

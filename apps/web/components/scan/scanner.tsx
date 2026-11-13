@@ -4,11 +4,15 @@
 // with the browser's own BarcodeDetector where it exists (Chrome, Android) and jsQR everywhere else (iPhone Safari);
 // a photo or screenshot can be chosen instead. What was read is shown with the one thing to do next: open the pay link,
 // send to the NEAR account, or send to the address on its chain.
-import { ArrowRight, Camera, ImageUp, ScanLine, TriangleAlert } from "lucide-react"
+import { ArrowRight, Camera, Globe, ImageUp, ScanLine, TriangleAlert } from "lucide-react"
 import { useCallback, useEffect, useRef, useState } from "react"
 
+import { shortAccount } from "@/components/books/movement-mark"
+import { TegataSeal } from "@/components/brand/seal"
 import { Button } from "@/components/kit/button"
-import { Mark } from "@/components/marks/mark"
+import { SandboxPill } from "@/components/kit/sandbox-pill"
+import { Mark, MarkStack } from "@/components/marks/mark"
+import { useNetwork } from "@/hooks/use-network"
 import { fire } from "@/lib/feedback"
 import { PAYER_ROUTES } from "@/lib/routes"
 import { readScanned, type Scanned, scannedHref } from "@/lib/scan"
@@ -201,15 +205,14 @@ export function Scanner({ onGo, active }: { onGo: (href: string) => void; active
                   <>
                     <TriangleAlert className="size-8 text-shu" />
                     <span className="text-[15px] font-medium">
-                      The camera is blocked for this site. Allow it in your browser's settings, or
-                      choose a photo of the code.
+                      Camera blocked. Allow it in your browser, or choose a photo.
                     </span>
                   </>
                 ) : camera === "none" ? (
                   <>
                     <ImageUp className="size-8" />
                     <span className="text-[15px] font-medium">
-                      No camera here. Choose a photo or screenshot of the code.
+                      No camera here. Choose a photo of the code.
                     </span>
                   </>
                 ) : (
@@ -221,8 +224,9 @@ export function Scanner({ onGo, active }: { onGo: (href: string) => void; active
               </div>
             )}
           </div>
-          <p className="text-center text-detail text-muted-foreground">
-            A Tegata pay link or invoice, a NEAR account, or a wallet's address on another chain.
+          <p className="inline-flex items-center justify-center gap-2 text-detail text-muted-foreground">
+            <MarkStack ids={["near", "eth", "sol", "tron"]} size={18} />
+            Pay links, NEAR accounts, wallet addresses
           </p>
           {problem ? (
             <p className="text-center text-[15px] font-medium text-down">{problem}</p>
@@ -265,6 +269,7 @@ function ScanResult({
   onAgain: () => void
 }) {
   const href = scannedHref(scanned)
+  const sandbox = useNetwork() !== "mainnet"
   const route = scanned.kind === "chain" ? PAYER_ROUTES.find((r) => r.id === scanned.routeId) : null
   const title =
     scanned.kind === "tegata"
@@ -276,21 +281,22 @@ function ScanResult({
           : scanned.kind === "url"
             ? "A web link"
             : "Some text"
+  // Accounts and addresses shortened (the next screen shows them whole); links without their scheme.
   const value =
     scanned.kind === "tegata"
-      ? scanned.href
+      ? scanned.href.replace(/^https?:\/\//, "")
       : scanned.kind === "near"
-        ? scanned.accountId
+        ? shortAccount(scanned.accountId)
         : scanned.kind === "chain"
-          ? scanned.address
+          ? shortAccount(scanned.address)
           : scanned.kind === "url"
-            ? scanned.url
+            ? scanned.url.replace(/^https?:\/\//, "")
             : scanned.text
   const action =
     scanned.kind === "tegata"
       ? "Open it"
       : scanned.kind === "near"
-        ? `Send to ${scanned.accountId}`
+        ? `Send to ${shortAccount(scanned.accountId)}`
         : scanned.kind === "chain"
           ? `Send ${scanned.symbol} on ${scanned.chain}`
           : null
@@ -302,19 +308,31 @@ function ScanResult({
             <Mark id="near" size={28} />
           ) : route ? (
             <Mark id={route.coin} chain={route.chainMark} size={28} />
+          ) : scanned.kind === "tegata" ? (
+            <TegataSeal size={26} textured={false} tilt={0} />
+          ) : scanned.kind === "url" ? (
+            <Globe className="size-6" />
           ) : (
             <ScanLine className="size-6" />
           )}
         </span>
         <span className="flex min-w-0 flex-col">
           <span className="text-[15px] font-semibold">{title}</span>
-          <span className="break-all font-mono text-[13px] text-muted-foreground">{value}</span>
+          <span
+            className={
+              scanned.kind === "text"
+                ? "line-clamp-3 text-[13px] text-muted-foreground [overflow-wrap:anywhere]"
+                : "truncate font-mono text-[13px] text-muted-foreground"
+            }
+          >
+            {value}
+          </span>
         </span>
       </div>
-      {scanned.kind === "chain" ? (
-        <p className="text-detail text-muted-foreground">
-          Paying another chain runs in Live: NEAR Intents converts your dollars on the way.
-        </p>
+      {scanned.kind === "chain" && sandbox ? (
+        <SandboxPill className="self-center">
+          <Mark id="intents" size={14} /> Live only · NEAR Intents has no testnet
+        </SandboxPill>
       ) : null}
       {href && action ? (
         <Button onClick={() => onGo(href)} cue="tap">
@@ -327,10 +345,7 @@ function ScanResult({
           </a>
         </Button>
       ) : (
-        <p className="text-[15px] text-muted-foreground">
-          That code isn't something Tegata can pay. Try a pay link, a NEAR account or a wallet
-          address.
-        </p>
+        <p className="text-center text-[15px] text-muted-foreground">Tegata can't pay this code.</p>
       )}
       <Button variant="secondary" onClick={onAgain}>
         Scan another

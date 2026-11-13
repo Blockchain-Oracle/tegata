@@ -11,7 +11,6 @@ import {
   KeyRound,
   Lock,
   Plus,
-  Radio,
   ReceiptText,
   Wallet,
 } from "lucide-react"
@@ -23,14 +22,18 @@ import { Button } from "@/components/kit/button"
 import { Field } from "@/components/kit/field"
 import { Figure, viewDollars } from "@/components/kit/figure"
 import { HoldButton } from "@/components/kit/hold-button"
+import { SandboxPill } from "@/components/kit/sandbox-pill"
 import { Paper, Stage } from "@/components/kit/stage"
 import { ErrorState, Skeleton, TextShimmer, WaitingText } from "@/components/kit/states"
 import { TaskSteps } from "@/components/kit/task-steps"
-import { Mark, type MarkId, MarkStack } from "@/components/marks/mark"
+import { Mark, MarkStack } from "@/components/marks/mark"
+import { PaidWithMark, paidVia } from "@/components/marks/paid-with"
 import { DepositPanel } from "@/components/pay/deposit-panel"
+import { ReceiptSlip, SlipRow } from "@/components/receipt/receipt-slip"
 import type { TestDollars } from "@/hooks/use-test-dollars"
 import type { AttemptView, PaymentRail, PublicRequest } from "@/lib/client/types"
 import { fire } from "@/lib/feedback"
+import { coinAmount, usd, usdUnits } from "@/lib/fiat"
 import { eta } from "@/lib/routes"
 import { cn } from "@/lib/utils"
 
@@ -102,28 +105,39 @@ const TEGATA_STEPS = [
   {
     id: "sign",
     label: "Approved with your key",
-    detail: "signed on this device",
     icon: <KeyRound />,
   },
-  { id: "relay", label: "Sent by Tegata", detail: "network fee paid by Tegata", icon: <Radio /> },
+  {
+    id: "relay",
+    label: "Sent by Tegata · no fee to you",
+    icon: <TegataSeal size={18} textured={false} tilt={0} />,
+  },
   {
     id: "near",
     label: "Checked on NEAR",
-    detail: "the USDC transfer to the business",
     mark: "near" as const,
   },
 ]
 
 const WALLET_STEPS = [
-  { id: "wallet", label: "Sent from your wallet", detail: "one USDC transfer", icon: <Wallet /> },
+  {
+    id: "wallet",
+    label: "Sent from your wallet",
+    mark: "usdc" as const,
+  },
   {
     id: "near",
     label: "Checked on NEAR",
-    detail: "the USDC transfer to the business",
     mark: "near" as const,
   },
-  { id: "receipt", label: "Receipt issued", detail: "numbered and sealed", icon: <ReceiptText /> },
+  { id: "receipt", label: "Receipt issued", icon: <ReceiptText /> },
 ]
+
+/** Buttons on white paper, which stays light in both themes: ink, or a sunk plate. */
+const ON_PAPER = {
+  primary: "bg-black text-white hover:bg-black/85",
+  secondary: "bg-paper-sunk text-black hover:bg-paper-rule",
+} as const
 
 export function PayView(p: PayViewProps) {
   const reduce = useReducedMotion()
@@ -162,6 +176,7 @@ export function PayView(p: PayViewProps) {
           detail: `Ask ${p.request.business} for a new link if you still owe them.`,
         }
   const sandbox = p.request.network === "testnet"
+  const chains = new Set(p.routes.map((r) => r.chain)).size
   const slide = {
     initial: reduce ? { opacity: 0 } : { opacity: 0, y: 12 },
     animate: { opacity: 1, y: 0 },
@@ -188,9 +203,9 @@ export function PayView(p: PayViewProps) {
               </span>
             </span>
             {sandbox ? (
-              <span className="ml-auto shrink-0 rounded-full border border-dashed border-white/80 px-3 py-1 text-[12px] font-semibold text-white">
+              <SandboxPill tone="stage" className="ml-auto shrink-0">
                 Sandbox
-              </span>
+              </SandboxPill>
             ) : null}
           </div>
           <div className="mt-7 flex flex-col items-center gap-1.5 text-center">
@@ -230,7 +245,7 @@ export function PayView(p: PayViewProps) {
                   })}
                 </span>
                 {invoice.allowPartial && open && p.step === "choose" ? (
-                  <span>· up to ${viewDollars(invoice.remaining).toFixed(2)}</span>
+                  <span>· up to {usdUnits(invoice.remaining)}</span>
                 ) : null}
                 <Link
                   href={`/i/${p.request.token}`}
@@ -252,38 +267,44 @@ export function PayView(p: PayViewProps) {
         <AnimatePresence mode="wait" initial={false}>
           {!open && p.step === "choose" ? (
             <motion.div key="closed" {...slide}>
-              <Paper className="flex flex-col items-center gap-3 p-8 text-center">
-                {p.request.receiptToken ? (
-                  <BusinessSeal name={p.request.business} band="Paid" size={96} />
-                ) : (
-                  <span className="grid size-14 place-items-center rounded-full bg-[#F5F5F5]">
-                    <Lock className="size-6" />
-                  </span>
-                )}
-                <span className="text-[18px] font-semibold">{closed.title}</span>
-                <span className="text-[15px] text-[#666]">{closed.detail}</span>
-                {invoice ? (
-                  <Button asChild variant="secondary" className="mt-2">
-                    <Link href={`/i/${p.request.token}`}>
-                      <ReceiptText /> View invoice
-                    </Link>
-                  </Button>
-                ) : null}
-                {p.request.receiptToken ? (
-                  <div className="mt-2 grid w-full grid-cols-1 gap-2">
-                    {p.request.successUrl ? (
-                      <Button asChild>
-                        <a href={p.request.successUrl}>Back to {p.request.business}</a>
-                      </Button>
-                    ) : null}
-                    <Button variant={p.request.successUrl ? "secondary" : "primary"} asChild>
-                      <Link href={`/r/${p.request.receiptToken}`}>
-                        <ReceiptText /> View your receipt
+              <Stage className="p-3 sm:p-4" grid={false}>
+                <Paper className="flex flex-col items-center gap-3 p-8 text-center">
+                  {p.request.receiptToken ? (
+                    <BusinessSeal name={p.request.business} band="Paid" size={96} />
+                  ) : (
+                    <span className="grid size-14 place-items-center rounded-full bg-paper-sunk">
+                      <Lock className="size-6" />
+                    </span>
+                  )}
+                  <span className="text-[18px] font-semibold">{closed.title}</span>
+                  <span className="text-[15px] text-paper-text-2">{closed.detail}</span>
+                  {invoice ? (
+                    <Button asChild variant="secondary" className={cn("mt-2", ON_PAPER.secondary)}>
+                      <Link href={`/i/${p.request.token}`}>
+                        <ReceiptText /> View invoice
                       </Link>
                     </Button>
-                  </div>
-                ) : null}
-              </Paper>
+                  ) : null}
+                  {p.request.receiptToken ? (
+                    <div className="mt-2 grid w-full grid-cols-1 gap-2">
+                      {p.request.successUrl ? (
+                        <Button asChild className={ON_PAPER.primary}>
+                          <a href={p.request.successUrl}>Back to {p.request.business}</a>
+                        </Button>
+                      ) : null}
+                      <Button
+                        variant={p.request.successUrl ? "secondary" : "primary"}
+                        className={p.request.successUrl ? ON_PAPER.secondary : ON_PAPER.primary}
+                        asChild
+                      >
+                        <Link href={`/r/${p.request.receiptToken}`}>
+                          <ReceiptText /> View your receipt
+                        </Link>
+                      </Button>
+                    </div>
+                  ) : null}
+                </Paper>
+              </Stage>
             </motion.div>
           ) : p.step === "choose" ? (
             <motion.section key="choose" className="flex flex-col gap-3" {...slide}>
@@ -315,9 +336,9 @@ export function PayView(p: PayViewProps) {
               <RailRow
                 selected={p.rail === "oneclick"}
                 onSelect={() => p.onRail(p.rail === "oneclick" ? null : "oneclick")}
-                art={<MarkStack ids={["eth", "sol", "btc"]} size={30} />}
+                art={<MarkStack ids={["usdt", "usdc", "btc", "eth", "sol"]} size={24} />}
                 title="Another chain"
-                detail={`USDT, USDC, BTC, ETH… on ${new Set(p.routes.map((r) => r.chain)).size} chains`}
+                detail={chains > 0 ? `${chains} chains` : "Any chain"}
               >
                 <ChainPanel {...p} dollars={dollars} />
               </RailRow>
@@ -328,12 +349,15 @@ export function PayView(p: PayViewProps) {
             </motion.div>
           ) : p.step === "paying" ? (
             <motion.div key="paying" className="flex flex-col gap-4" {...slide}>
-              <div className="rounded-[20px] bg-secondary p-2">
-                <TaskSteps
-                  steps={p.usedRail === "near_wallet" ? WALLET_STEPS : TEGATA_STEPS}
-                  current={p.progress}
-                />
-              </div>
+              <Stage className="p-3 sm:p-4" grid={false}>
+                <Paper className="p-2">
+                  <TaskSteps
+                    steps={p.usedRail === "near_wallet" ? WALLET_STEPS : TEGATA_STEPS}
+                    current={p.progress}
+                    tone="paper"
+                  />
+                </Paper>
+              </Stage>
               <div className="flex justify-center">
                 <WaitingText verb="Checking NEAR" startedAt={p.startedAt} />
               </div>
@@ -428,7 +452,7 @@ function RailRow({
         }}
         className="press flex w-full items-center gap-4 p-4 text-left"
       >
-        <span className="grid size-12 shrink-0 place-items-center">{art}</span>
+        <span className="flex h-12 min-w-12 shrink-0 items-center justify-center">{art}</span>
         <span className="flex min-w-0 flex-1 flex-col">
           <span className="flex items-center gap-2">
             <span className="text-[17px] font-semibold">{title}</span>
@@ -501,25 +525,15 @@ function TegataPanel(p: PanelProps) {
     )
   if (t.kind === "signed_out")
     return (
-      <>
-        <p className="text-[15px] text-muted-foreground">
-          Sign in with your email to pay from your Tegata dollars. Tegata pays the network fee.
-        </p>
-        <Button onClick={p.onSignIn} cue="tap">
-          Sign in to pay
-        </Button>
-      </>
+      <Button onClick={p.onSignIn} cue="tap">
+        Sign in to pay
+      </Button>
     )
   if (t.kind === "no_account")
     return (
-      <>
-        <p className="text-[15px] text-muted-foreground">
-          Your Tegata account isn't open yet. It takes about ten seconds.
-        </p>
-        <Button onClick={p.onFinishAccount} cue="tap">
-          Open my account
-        </Button>
-      </>
+      <Button onClick={p.onFinishAccount} cue="tap">
+        Open my account · 10 s
+      </Button>
     )
   if (t.kind === "own_link")
     return (
@@ -537,7 +551,7 @@ function TegataPanel(p: PanelProps) {
         account={t.accountId}
         aside={
           <span className={cn("tnum text-[15px] font-semibold", short && "text-warn")}>
-            ${t.balance.toFixed(2)}
+            {usd(t.balance)}
           </span>
         }
       />
@@ -545,7 +559,7 @@ function TegataPanel(p: PanelProps) {
         <p className="text-[15px] font-medium text-warn">
           {p.testDollars?.state === "failed" && p.testDollars.error
             ? p.testDollars.error
-            : `You have $${t.balance.toFixed(2)}. Add dollars to your Tegata account first.`}
+            : `You have ${usd(t.balance)}. Add dollars to your Tegata account first.`}
         </p>
       ) : null}
       {short && p.testDollars && p.onAddTestDollars && p.testDollars.state !== "sent" ? (
@@ -559,7 +573,7 @@ function TegataPanel(p: PanelProps) {
       ) : null}
       <Problem text={p.problem} />
       <HoldButton
-        label={p.dollars > 0 ? `Hold to pay $${p.dollars.toFixed(2)}` : "Enter an amount"}
+        label={p.dollars > 0 ? `Hold to pay ${usd(p.dollars)}` : "Enter an amount"}
         busy={p.busy || short || p.dollars <= 0}
         onConfirm={p.onPayTegata}
       />
@@ -568,15 +582,9 @@ function TegataPanel(p: PanelProps) {
 }
 
 function WalletPanel(p: PanelProps) {
-  const sandbox = p.request.network === "testnet"
   if (!p.walletAccount)
     return (
       <>
-        <p className="text-[15px] text-muted-foreground">
-          {sandbox
-            ? "Use a wallet on NEAR testnet that holds test USDC."
-            : "Any NEAR wallet holding USDC, or an Ethereum wallet through NEAR."}
-        </p>
         <Problem text={p.problem} />
         <Button variant="secondary" onClick={p.onConnect} busy={p.connecting}>
           <Wallet /> Connect a NEAR wallet
@@ -601,7 +609,7 @@ function WalletPanel(p: PanelProps) {
       <ReceiptEmailField p={p} />
       <Problem text={p.problem} />
       <Button onClick={p.onPayWallet} busy={p.busy} disabled={p.dollars <= 0} cue="tap">
-        {p.dollars > 0 ? `Pay $${p.dollars.toFixed(2)} from your wallet` : "Enter an amount"}
+        {p.dollars > 0 ? `Pay ${usd(p.dollars)} from your wallet` : "Enter an amount"}
       </Button>
     </>
   )
@@ -626,7 +634,7 @@ function ChainPanel(p: PanelProps) {
               r.id === p.routeId && "bg-card shadow-[0_0_0_2px_var(--shu)]",
             )}
           >
-            <Mark id={r.coin as MarkId} chain={r.chainMark as MarkId} size={30} />
+            <Mark id={r.coin} chain={r.chainMark} size={30} />
             <span className="text-[13px] font-semibold leading-tight">
               {r.symbol}
               <span className="block font-medium text-muted-foreground">{r.chain}</span>
@@ -646,8 +654,11 @@ function ChainPanel(p: PanelProps) {
             <span className="text-[17px] font-semibold text-text-3">Enter an amount</span>
           ) : p.quote.data ? (
             <span className="flex items-center justify-between gap-3">
-              <span className="tnum text-[20px] font-semibold">
-                {p.quote.data.amountInFormatted} {route.symbol}
+              <span className="tnum inline-flex min-w-0 items-center gap-2 text-[20px] font-semibold">
+                <Mark id={route.coin} chain={route.chainMark} size={22} />
+                <span className="truncate">
+                  {coinAmount(p.quote.data.amountInFormatted, route.symbol)}
+                </span>
               </span>
               <span className="inline-flex items-center gap-1 text-detail text-muted-foreground">
                 <Clock3 className="size-3.5" /> {eta(p.quote.data.timeEstimate)}
@@ -670,7 +681,7 @@ function ChainPanel(p: PanelProps) {
         >
           <Field
             id="refund-to"
-            label={`Your address on ${route.chain}, for a refund if anything goes wrong`}
+            label={`Refund address on ${route.chain}`}
             placeholder={REFUND_HINT[route.chainMark] ?? "Your address"}
             value={p.refundTo}
             onChange={(e) => p.onRefundTo(e.target.value)}
@@ -690,13 +701,9 @@ function ChainPanel(p: PanelProps) {
           </Button>
         </form>
       ) : (
-        <div className="flex items-start gap-3 rounded-[14px] bg-sora/60 px-4 py-3 text-black">
-          <Mark id="intents" size={24} />
-          <p className="text-[14px]">
-            Paying from other chains runs in Live: NEAR Intents has no testnet. The price above is
-            real.
-          </p>
-        </div>
+        <SandboxPill>
+          <Mark id="intents" size={16} /> Live only · real price
+        </SandboxPill>
       )}
     </>
   )
@@ -732,72 +739,82 @@ const REFUND_HINT: Record<string, string> = {
   tron: "T…",
 }
 
-/** The paid slip: paper, perforation, the business seal stamped PAID with the "received" cue, once. */
+/** The paid slip: the receipt's own paper (audit S4) on the stage, stamped PAID with the "received" cue, once. */
 function PaidSlip(p: PanelProps) {
   const rail = p.usedRail ?? "tegata"
+  const assetIn = p.attempt?.oneclick?.assetIn ?? null
   const when = new Date().toLocaleString("en-GB", {
     day: "numeric",
     month: "short",
     hour: "2-digit",
     minute: "2-digit",
   })
-  const railMark: MarkId = rail === "near_wallet" ? "near" : "usdc"
+  const paidWith =
+    rail === "near_wallet"
+      ? "NEAR wallet"
+      : rail === "oneclick"
+        ? (paidVia(assetIn) ?? "Another chain")
+        : rail === "manual"
+          ? "By hand"
+          : "Tegata balance"
   return (
-    <div className="relative rounded-[20px] bg-white text-black shadow-receipt">
-      <div className="p-6 pb-4">
-        <span className="flex items-center gap-2 text-[13px] font-semibold text-[#666]">
-          <TegataSeal size={20} textured={false} /> Paid
-        </span>
-        <Figure value={p.dollars} className="mt-3 flex text-[56px]" />
-        <div className="mt-2 flex items-center gap-2 text-[15px] font-semibold">
-          <Mark id="near" size={22} /> {p.request.business}
-        </div>
-      </div>
-      <div className="relative h-4">
-        <span className="absolute top-1/2 -left-2 size-4 -translate-y-1/2 rounded-full bg-background" />
-        <span className="absolute top-1/2 -right-2 size-4 -translate-y-1/2 rounded-full bg-background" />
-        <span className="absolute inset-x-4 top-1/2 border-t-2 border-dashed border-[#E2E2E2]" />
-      </div>
-      <div className="flex flex-col gap-2.5 p-6 pt-3 text-[14px]">
+    <Stage className="p-3 sm:p-4" grid={false}>
+      <ReceiptSlip
+        label="Paid"
+        amount={p.dollars}
+        sub={
+          <span className="inline-flex min-w-0 items-center gap-2 font-semibold text-black">
+            {p.request.logo ? (
+              <img src={p.request.logo} alt="" className="size-[22px] rounded-full object-cover" />
+            ) : (
+              <BusinessSeal name={p.request.business} size={22} tilt={0} />
+            )}
+            <span className="truncate">{p.request.business}</span>
+          </span>
+        }
+        seal={
+          <SealPress
+            delay={0.2}
+            onLanded={() => fire("filled", { cue: "received", identity: p.attempt?.id })}
+          >
+            <BusinessSeal name={p.request.business} band="Paid" size={96} />
+          </SealPress>
+        }
+      >
         <SlipRow label="For">{p.request.title}</SlipRow>
         <SlipRow label="Paid with">
           <span className="inline-flex items-center gap-1.5">
-            <Mark id={railMark} size={16} />{" "}
-            {rail === "near_wallet" ? "NEAR wallet" : "Tegata balance"}
+            <PaidWithMark rail={rail} assetIn={assetIn} size={18} /> {paidWith}
           </span>
         </SlipRow>
+        {rail === "oneclick" ? (
+          <SlipRow label="Converted by">
+            <span className="inline-flex items-center gap-1.5">
+              <Mark id="intents" size={18} /> NEAR Intents
+            </span>
+          </SlipRow>
+        ) : null}
         <SlipRow label="Settled">{when}</SlipRow>
         <SlipRow label="Network fee">
-          {rail === "tegata" ? "Paid by Tegata" : "Paid by your wallet"}
+          {rail === "tegata"
+            ? "Paid by Tegata"
+            : rail === "oneclick"
+              ? "In the price you sent"
+              : "Paid by your wallet"}
         </SlipRow>
         {p.attempt?.explorerUrl ? (
-          <a
-            href={p.attempt.explorerUrl}
-            target="_blank"
-            rel="noreferrer"
-            className="mt-1 inline-flex items-center gap-1.5 self-start font-semibold text-[#B23700] hover:underline"
-          >
-            See it on NEAR <ExternalLink className="size-3.5" />
-          </a>
+          <SlipRow label="Transaction">
+            <a
+              href={p.attempt.explorerUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-1.5 text-paper-seal hover:underline"
+            >
+              See it on NEAR <ExternalLink className="size-3.5" />
+            </a>
+          </SlipRow>
         ) : null}
-      </div>
-      <div className="absolute top-4 right-4">
-        <SealPress
-          delay={0.2}
-          onLanded={() => fire("filled", { cue: "received", identity: p.attempt?.id })}
-        >
-          <BusinessSeal name={p.request.business} band="Paid" size={96} />
-        </SealPress>
-      </div>
-    </div>
-  )
-}
-
-function SlipRow({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div className="flex justify-between gap-4">
-      <span className="text-[#666]">{label}</span>
-      <span className="truncate text-right font-semibold">{children}</span>
-    </div>
+      </ReceiptSlip>
+    </Stage>
   )
 }

@@ -1,7 +1,8 @@
 "use client"
 
-// One invoice (plan 6.8 L; Stripe's invoice page): the document on the stage, stamped when paid; beside it what is
-// received and left, the actions, the payments (each opens its receipt) and the timeline of everything that
+// One invoice (plan 6.8 L; Stripe's invoice page): the number in display type, the document on the stage, stamped
+// when paid; beside it, on its own stage, what is received and left with the actions as an icon row; then the
+// payments (each with the real mark of how it was paid, opening its receipt) and the timeline of everything that
 // happened. Separate from its logic so /dev/flows can show every state.
 import { quantityText } from "@tegata/core/invoices"
 import {
@@ -20,7 +21,6 @@ import {
   ReceiptText,
   Send,
   Share2,
-  Wallet,
 } from "lucide-react"
 import Link from "next/link"
 import { useState } from "react"
@@ -31,10 +31,12 @@ import { Field } from "@/components/kit/field"
 import { Figure, viewDollars } from "@/components/kit/figure"
 import { Stage } from "@/components/kit/stage"
 import { ErrorState, Skeleton } from "@/components/kit/states"
-import { RailMark } from "@/components/links/link-detail-view"
+import { PayerName, railWord } from "@/components/links/link-detail-view"
+import { PaidWithMark } from "@/components/marks/paid-with"
 import { Sheet } from "@/components/shell/sheet"
-import type { InvoiceDetail, InvoiceEvent } from "@/lib/client/types"
+import type { InvoiceDetail, InvoiceEvent, LinkPayment } from "@/lib/client/types"
 import { fire } from "@/lib/feedback"
+import { usd, usdUnits } from "@/lib/fiat"
 import { cn } from "@/lib/utils"
 
 import { InvoicePaper } from "./invoice-paper"
@@ -124,7 +126,7 @@ export function InvoiceDetailView(p: InvoiceDetailViewProps) {
         >
           <ArrowLeft className="size-4" />
         </Link>
-        <h1 className="display font-mono text-page-title">{label}</h1>
+        <h1 className="display text-page-title">{label}</h1>
         <InvoiceStatusPill status={d.status} />
         <span
           className={cn(
@@ -138,9 +140,11 @@ export function InvoiceDetailView(p: InvoiceDetailViewProps) {
 
       {p.justSent && open ? (
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-[20px] bg-shu-wash px-5 py-4">
-          <span className="flex items-center gap-3 text-[15px] font-medium text-shu-ink">
-            <Send className="size-5" /> {label} is on its way to {inv.billTo?.name}. Share its link
-            to get paid.
+          <span className="flex min-w-0 items-center gap-3 text-[15px] font-semibold text-shu-ink">
+            <Send className="size-5 shrink-0" />
+            <span className="truncate">
+              {label} sent{inv.billTo?.name ? ` to ${inv.billTo.name}` : ""}
+            </span>
           </span>
           <Button size="sm" onClick={copy}>
             {copied ? <Check /> : <Copy />} {copied ? "Copied" : "Copy link"}
@@ -187,21 +191,21 @@ export function InvoiceDetailView(p: InvoiceDetailViewProps) {
         </Stage>
 
         <div className="flex flex-col gap-4">
-          <section className="flex flex-col gap-3 rounded-[20px] bg-card p-5">
+          <Stage className="p-5 sm:p-6" grid={false} tone={inv.status === "paid" ? "paid" : "shu"}>
             <div className="flex items-end justify-between gap-3">
               <div className="flex flex-col">
-                <span className="text-detail font-medium text-muted-foreground">Received</span>
-                <Figure value={viewDollars(paid)} className="text-[34px]" />
+                <span className="text-[14px] font-medium text-white/85">Received</span>
+                <Figure value={viewDollars(paid)} className="text-[44px] text-white" />
               </div>
               <div className="flex flex-col items-end">
-                <span className="text-detail font-medium text-muted-foreground">
+                <span className="text-[14px] font-medium text-white/85">
                   {inv.status === "void" ? "Cancelled" : "Left to pay"}
                 </span>
-                <Figure value={viewDollars(d.remaining)} className="text-[22px]" />
+                <Figure value={viewDollars(d.remaining)} className="text-[24px] text-white" />
               </div>
             </div>
             <div
-              className="h-2 overflow-hidden rounded-full bg-secondary"
+              className="mt-3 h-2 overflow-hidden rounded-full bg-white/25"
               role="progressbar"
               aria-valuenow={progress}
               aria-valuemin={0}
@@ -209,18 +213,50 @@ export function InvoiceDetailView(p: InvoiceDetailViewProps) {
               aria-label="Paid so far"
             >
               <div
-                className={cn(
-                  "h-full rounded-full transition-[width] duration-500",
-                  inv.status === "paid" ? "bg-up" : "bg-shu",
-                )}
+                className="h-full rounded-full bg-white transition-[width] duration-500"
                 style={{ width: `${progress}%` }}
               />
             </div>
-            <span className="text-detail text-muted-foreground">
-              of ${viewDollars(total).toFixed(2)}
-              {inv.allowPartial ? " · part-payments allowed" : ""}
+            <span className="mt-2 block text-[14px] text-white/85">
+              of {usdUnits(total)}
+              {inv.allowPartial ? " · part-payments on" : ""}
             </span>
-          </section>
+            <div className="mt-6 grid grid-cols-3 gap-x-2 gap-y-4">
+              <Action
+                icon={copied ? <Check /> : <Copy />}
+                label={copied ? "Copied" : "Copy link"}
+                onClick={copy}
+                disabled={!p.url}
+              />
+              <Action icon={<Share2 />} label="Share" onClick={share} disabled={!p.url} />
+              <Action
+                icon={<ExternalLink />}
+                label="Open"
+                href={p.url ?? undefined}
+                disabled={!p.url}
+              />
+              <Action
+                icon={<CopyPlus />}
+                label="Duplicate"
+                onClick={p.onDuplicate}
+                busy={p.busy === "duplicate"}
+              />
+              {open ? (
+                <>
+                  <Action
+                    icon={<HandCoins />}
+                    label="Paid by hand"
+                    onClick={() => {
+                      setAmount(viewDollars(d.remaining).toFixed(2))
+                      setNote("")
+                      setSheet("paid")
+                    }}
+                  />
+                  <Action icon={<Ban />} label="Void" onClick={() => setSheet("void")} />
+                </>
+              ) : null}
+            </div>
+          </Stage>
 
           {d.customer ? (
             <Link
@@ -235,36 +271,6 @@ export function InvoiceDetailView(p: InvoiceDetailViewProps) {
               <ChevronRight className="size-4 shrink-0 text-text-3" />
             </Link>
           ) : null}
-          <section className="grid grid-cols-2 gap-2">
-            <Action
-              icon={copied ? <Check /> : <Copy />}
-              label={copied ? "Copied" : "Copy link"}
-              onClick={copy}
-              disabled={!p.url}
-            />
-            <Action icon={<Share2 />} label="Share" onClick={share} disabled={!p.url} />
-            <Action icon={<ExternalLink />} label="Open as customer" href={p.url ?? undefined} />
-            <Action
-              icon={<CopyPlus />}
-              label="Duplicate"
-              onClick={p.onDuplicate}
-              busy={p.busy === "duplicate"}
-            />
-            {open ? (
-              <>
-                <Action
-                  icon={<HandCoins />}
-                  label="Mark paid by hand"
-                  onClick={() => {
-                    setAmount(viewDollars(d.remaining).toFixed(2))
-                    setNote("")
-                    setSheet("paid")
-                  }}
-                />
-                <Action icon={<Ban />} label="Void" tone="down" onClick={() => setSheet("void")} />
-              </>
-            ) : null}
-          </section>
           {p.problem ? <p className="text-[15px] font-medium text-down">{p.problem}</p> : null}
 
           {d.payments.some((pay) => pay.status === "succeeded") ? (
@@ -273,34 +279,26 @@ export function InvoiceDetailView(p: InvoiceDetailViewProps) {
               <div className="flex flex-col rounded-[20px] bg-card p-2">
                 {d.payments
                   .filter((pay) => pay.status === "succeeded")
-                  .map((pay) => (
-                    <Link
-                      key={pay.id}
-                      href={pay.receiptToken ? `/r/${pay.receiptToken}` : "#"}
-                      className="press flex items-center gap-3 rounded-[14px] px-3 py-3 hover:bg-secondary"
-                    >
-                      <RailMark rail={pay.rail} size={36} />
-                      <span className="flex min-w-0 flex-1 flex-col">
-                        <span className="truncate font-mono text-[14px] font-medium">
-                          {pay.rail === "manual"
-                            ? (pay.payer ?? "Paid by hand")
-                            : (pay.payer ?? "Payer")}
-                        </span>
-                        <span className="text-detail text-muted-foreground">
-                          {new Date(pay.settledAt ?? pay.createdAt).toLocaleString("en-GB", {
-                            day: "numeric",
-                            month: "short",
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })}
-                        </span>
-                      </span>
-                      <span className="tnum text-[15px] font-semibold text-up">
-                        +${viewDollars(pay.amount).toFixed(2)}
-                      </span>
-                      <ReceiptText className="size-4 text-text-3" />
-                    </Link>
-                  ))}
+                  .map((pay) =>
+                    // A payment opens its receipt; one without a receipt yet is a plain row, never a dead link.
+                    pay.receiptToken ? (
+                      <Link
+                        key={pay.id}
+                        href={`/r/${pay.receiptToken}`}
+                        className="press flex items-center gap-3 rounded-[14px] px-3 py-3 hover:bg-secondary"
+                      >
+                        <PaymentLine pay={pay} />
+                        <ReceiptText className="size-4 shrink-0 text-text-3" />
+                      </Link>
+                    ) : (
+                      <div
+                        key={pay.id}
+                        className="flex items-center gap-3 rounded-[14px] px-3 py-3"
+                      >
+                        <PaymentLine pay={pay} />
+                      </div>
+                    ),
+                  )}
               </div>
             </section>
           ) : null}
@@ -309,7 +307,12 @@ export function InvoiceDetailView(p: InvoiceDetailViewProps) {
             <h2 className="text-section-title font-semibold">Timeline</h2>
             <ol className="flex flex-col rounded-[20px] bg-card p-4">
               {[...d.events].reverse().map((event, i, all) => (
-                <TimelineItem key={event.id} event={event} last={i === all.length - 1} />
+                <TimelineItem
+                  key={event.id}
+                  event={event}
+                  last={i === all.length - 1}
+                  payment={d.payments.find((pay) => pay.id === event.detail?.paymentId)}
+                />
               ))}
             </ol>
           </section>
@@ -329,13 +332,9 @@ export function InvoiceDetailView(p: InvoiceDetailViewProps) {
             setSheet(null)
           }}
         >
-          <p className="text-[15px] text-muted-foreground">
-            For money that reached you outside Tegata, like a bank transfer or cash. It counts
-            toward this invoice and gets a receipt that says it isn't on NEAR.
-          </p>
           <Field
             id="paid-amount"
-            label="Amount received"
+            label="Received outside Tegata"
             inputMode="decimal"
             value={amount}
             onChange={(e) => setAmount(e.target.value.replace(/[^0-9.]/g, ""))}
@@ -351,7 +350,7 @@ export function InvoiceDetailView(p: InvoiceDetailViewProps) {
             onChange={(e) => setNote(e.target.value)}
           />
           <Button type="submit" busy={p.busy === "paid"} disabled={!Number(amount)}>
-            Record ${Number(amount || 0).toFixed(2)}
+            Record {usd(Number(amount || 0))}
           </Button>
         </form>
       </Sheet>
@@ -363,12 +362,14 @@ export function InvoiceDetailView(p: InvoiceDetailViewProps) {
       >
         <div className="flex flex-col gap-4">
           <p className="text-[15px] text-muted-foreground">
-            Its link stops taking payments{inv.scheduleId ? " and the repeat stops" : ""}.{" "}
-            {paid > 0n
-              ? `The $${viewDollars(paid).toFixed(2)} already received stays in your balance.`
-              : "Nothing has been paid on it."}{" "}
-            You can't undo this; duplicate it to send a corrected copy.
+            Stops its link{inv.scheduleId ? " and its repeat" : ""}. Can't be undone.
           </p>
+          {paid > 0n ? (
+            <div className="flex items-center justify-between gap-3 rounded-[14px] bg-secondary px-4 py-3 text-[15px]">
+              <span className="text-muted-foreground">Already received, stays yours</span>
+              <span className="tnum font-semibold">{usdUnits(paid)}</span>
+            </div>
+          ) : null}
           <Button
             variant="destructive"
             busy={p.busy === "void"}
@@ -385,6 +386,7 @@ export function InvoiceDetailView(p: InvoiceDetailViewProps) {
   )
 }
 
+/** An action on the stage: a white circle and its label (the icon row, like Home's stage actions). */
 function Action({
   icon,
   label,
@@ -392,7 +394,6 @@ function Action({
   href,
   disabled,
   busy,
-  tone,
 }: {
   icon: React.ReactNode
   label: string
@@ -400,28 +401,62 @@ function Action({
   href?: string
   disabled?: boolean
   busy?: boolean
-  tone?: "down"
 }) {
-  const cls = cn(
-    "press flex h-12 items-center gap-2.5 rounded-[14px] bg-card px-4 text-[15px] font-semibold disabled:opacity-40 [&_svg]:size-[18px]",
-    tone === "down" ? "text-down" : "text-foreground",
+  const cls =
+    "group press flex flex-col items-center gap-2 text-center disabled:opacity-50 aria-disabled:opacity-50"
+  const circle = (
+    <>
+      <span className="grid size-12 place-items-center rounded-full bg-white text-black shadow-object transition-transform group-active:scale-95 [&_svg]:size-5">
+        {busy ? (
+          <span className="size-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+        ) : (
+          icon
+        )}
+      </span>
+      <span className="text-[13px] leading-tight font-semibold text-white">{label}</span>
+    </>
   )
   if (href)
     return (
       <a href={href} target="_blank" rel="noreferrer" className={cls}>
-        {icon} {label}
+        {circle}
       </a>
     )
   return (
     <button
       type="button"
       className={cls}
-      onClick={onClick}
+      onClick={() => {
+        fire("tick")
+        onClick?.()
+      }}
       disabled={disabled || busy}
       aria-busy={busy || undefined}
     >
-      {icon} {label}
+      {circle}
     </button>
+  )
+}
+
+/** A payment to this invoice: how it was paid (its real mark), who paid, when, and the amount. */
+function PaymentLine({ pay }: { pay: LinkPayment }) {
+  return (
+    <>
+      <PaidWithMark rail={pay.rail} assetIn={pay.assetIn} size={36} />
+      <span className="flex min-w-0 flex-1 flex-col">
+        <PayerName payer={pay.payer} email={pay.payerEmail} rail={pay.rail} />
+        <span className="truncate text-detail text-muted-foreground">
+          {railWord(pay.rail, pay.assetIn)} ·{" "}
+          {new Date(pay.settledAt ?? pay.createdAt).toLocaleString("en-GB", {
+            day: "numeric",
+            month: "short",
+            hour: "2-digit",
+            minute: "2-digit",
+          })}
+        </span>
+      </span>
+      <span className="tnum text-[15px] font-semibold text-up">+{usdUnits(pay.amount)}</span>
+    </>
   )
 }
 
@@ -438,9 +473,10 @@ const EVENT: Record<
   email_failed: { icon: <Mail />, text: () => "The email didn't go out" },
   viewed: { icon: <Eye />, text: () => "Opened by the customer" },
   payment: {
-    icon: <Wallet />,
+    // Drawn with the payment's own mark in TimelineItem; this is the fallback.
+    icon: <HandCoins />,
     text: (e) =>
-      `$${viewDollars(String(e.detail?.amount ?? "0")).toFixed(2)} received${e.detail?.rail === "manual" ? " (by hand)" : " on NEAR"}`,
+      `${usdUnits(String(e.detail?.amount ?? "0"))} received${e.detail?.rail === "manual" ? " by hand" : " on NEAR"}`,
   },
   reminder: { icon: <Bell />, text: () => "Reminder sent" },
   marked_paid: {
@@ -451,25 +487,41 @@ const EVENT: Record<
   voided: { icon: <Ban />, text: () => "Voided" },
 }
 
-function TimelineItem({ event, last }: { event: InvoiceEvent; last: boolean }) {
+function TimelineItem({
+  event,
+  last,
+  payment,
+}: {
+  event: InvoiceEvent
+  last: boolean
+  /** For a payment event: the payment, so it shows how it was paid. */
+  payment?: LinkPayment
+}) {
   const meta = EVENT[event.kind]
+  const rail = (payment?.rail ?? event.detail?.rail ?? null) as LinkPayment["rail"] | null
   return (
     <li className="relative flex gap-3 pb-4 last:pb-0">
       {!last ? (
         <span aria-hidden className="absolute top-8 bottom-0 left-[15px] w-px bg-secondary" />
       ) : null}
-      <span
-        className={cn(
-          "relative grid size-8 shrink-0 place-items-center rounded-full [&_svg]:size-4",
-          event.kind === "paid"
-            ? "bg-up-surface text-up"
-            : event.kind === "voided"
-              ? "bg-down-surface text-down"
-              : "bg-secondary text-foreground",
-        )}
-      >
-        {meta.icon}
-      </span>
+      {event.kind === "payment" && rail ? (
+        <span className="relative grid size-8 shrink-0 place-items-center">
+          <PaidWithMark rail={rail} assetIn={payment?.assetIn} size={32} />
+        </span>
+      ) : (
+        <span
+          className={cn(
+            "relative grid size-8 shrink-0 place-items-center rounded-full [&_svg]:size-4",
+            event.kind === "paid"
+              ? "bg-up-surface text-up"
+              : event.kind === "voided"
+                ? "bg-down-surface text-down"
+                : "bg-secondary text-foreground",
+          )}
+        >
+          {meta.icon}
+        </span>
+      )}
       <span className="flex min-w-0 flex-col pt-1">
         <span className="text-[15px] font-medium">{meta.text(event)}</span>
         <span className="text-detail text-muted-foreground">

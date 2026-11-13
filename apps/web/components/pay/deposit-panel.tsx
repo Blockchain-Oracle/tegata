@@ -1,15 +1,21 @@
 "use client"
 
-// A Live payment from another chain, in flight (plan 6.8 AB): exactly what to send, where, a QR in the chain's own
-// payment link (or the plain address where no standard exists), the payer's window, and the steps 1Click reports.
-// "Paid" still comes from NEAR: the page moves on when the server has read the USDC delivery.
-import { Check, Copy, KeyRound, RefreshCw, Repeat2 } from "lucide-react"
+// A Live payment from another chain, in flight (plan 6.8 AB): exactly what to send (with the coin's own mark), where
+// (grouped in fours, copied whole), a QR in the chain's own payment link (or the plain address where no standard
+// exists), the payer's window, and the steps 1Click reports, each with its chain's mark. "Paid" still comes from
+// NEAR: the page moves on when the server has read the USDC delivery.
+import { Check, Copy, RefreshCw, Repeat2 } from "lucide-react"
 import { QRCodeSVG } from "qrcode.react"
 import { useEffect, useState } from "react"
 
-import { TaskSteps } from "@/components/kit/task-steps"
+import { Paper, Stage } from "@/components/kit/stage"
+import { type TaskStep, TaskSteps } from "@/components/kit/task-steps"
+import { MARKS, Mark, type MarkId } from "@/components/marks/mark"
 import type { AttemptView } from "@/lib/client/types"
 import { fire } from "@/lib/feedback"
+import { groupNumber } from "@/lib/fiat"
+import { routeOfAsset } from "@/lib/routes"
+import { cn } from "@/lib/utils"
 
 type OneClick = NonNullable<AttemptView["oneclick"]>
 
@@ -34,7 +40,37 @@ function useCountdown(deadline: string | null) {
   return { left, text: `${m}:${s.toString().padStart(2, "0")}` }
 }
 
-function CopyRow({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
+/**
+ * The exact amount to send, grouped but never rounded: rounding down would leave the deposit short. "1251.387" →
+ * "1,251.387".
+ */
+function exactAmount(formatted: string): string {
+  const [whole = "0", fraction] = formatted.split(".")
+  const grouped = whole.replace(/\B(?=(\d{3})+(?!\d))/g, ",")
+  return fraction ? `${grouped}.${fraction}` : grouped
+}
+
+/** "T9yD…3kPq": an address short enough for one line. */
+const shortAddress = (value: string) =>
+  value.length > 14 ? `${value.slice(0, 4)}…${value.slice(-4)}` : value
+
+const isMark = (id: string | null | undefined): id is MarkId => Boolean(id && id in MARKS)
+
+function CopyRow({
+  label,
+  value,
+  shown,
+  art,
+  mono,
+}: {
+  label: string
+  /** What's copied. */
+  value: string
+  /** What's drawn, when it differs (grouped). */
+  shown?: string
+  art?: React.ReactNode
+  mono?: boolean
+}) {
   const [copied, setCopied] = useState(false)
   return (
     <button
@@ -47,14 +83,13 @@ function CopyRow({ label, value, mono }: { label: string; value: string; mono?: 
       }}
       className="press flex w-full items-center gap-3 rounded-[14px] bg-secondary px-4 py-3 text-left"
     >
+      {art}
       <span className="flex min-w-0 flex-1 flex-col">
         <span className="text-detail text-muted-foreground">{label}</span>
         <span
-          className={
-            mono ? "break-all font-mono text-[14px] font-medium" : "tnum text-[20px] font-semibold"
-          }
+          className={mono ? "font-mono text-[14px] font-medium" : "tnum text-[20px] font-semibold"}
         >
-          {value}
+          {shown ?? value}
         </span>
       </span>
       <span className="grid size-9 shrink-0 place-items-center rounded-full bg-card [&_svg]:size-4">
@@ -67,22 +102,19 @@ function CopyRow({ label, value, mono }: { label: string; value: string; mono?: 
 export function DepositPanel({ oneclick, business }: { oneclick: OneClick; business: string }) {
   const countdown = useCountdown(oneclick.deadline)
   const step = stepOf(oneclick.swapStatus)
-  const chain = oneclick.chain ?? "their chain"
-  const steps = [
-    { id: "deposit", label: "Waiting for your deposit", detail: `on ${chain}`, icon: <KeyRound /> },
-    { id: "seen", label: `Seen on ${chain}`, detail: "your transaction arrived", icon: <Check /> },
-    {
-      id: "convert",
-      label: "Converting on NEAR Intents",
-      detail: "to USDC on NEAR",
-      mark: "intents" as const,
-    },
-    {
-      id: "near",
-      label: "Paid on NEAR",
-      detail: `${business} receives the exact amount`,
-      mark: "near" as const,
-    },
+  const route = routeOfAsset(oneclick.assetIn)
+  const chain = oneclick.chain ?? route?.chain ?? "their chain"
+  const symbol = oneclick.symbol ?? route?.symbol ?? ""
+  const coin = oneclick.coin ?? route?.coin ?? null
+  const chainMark = oneclick.chainMark ?? route?.chainMark ?? null
+  // The coin you send, then the chain it lands on, then NEAR Intents, then NEAR: each step with its real mark.
+  const coinArt = isMark(coin) ? { mark: coin } : isMark(chainMark) ? { mark: chainMark } : {}
+  const chainArt = isMark(chainMark) ? { mark: chainMark } : {}
+  const steps: TaskStep[] = [
+    { id: "deposit", label: `Waiting for your ${symbol || "deposit"}`, ...coinArt },
+    { id: "seen", label: `Seen on ${chain}`, ...chainArt },
+    { id: "convert", label: "Converting on NEAR Intents", mark: "intents" },
+    { id: "near", label: `Paid to ${business} on NEAR`, mark: "near" },
   ]
   const until = oneclick.deadline
     ? new Date(oneclick.deadline).toLocaleTimeString(undefined, {
@@ -90,7 +122,8 @@ export function DepositPanel({ oneclick, business }: { oneclick: OneClick; busin
         minute: "2-digit",
       })
     : null
-  const amount = `${oneclick.amountInFormatted ?? "…"} ${oneclick.symbol ?? ""}`.trim()
+  const exact = oneclick.amountInFormatted ? exactAmount(oneclick.amountInFormatted) : "…"
+  const amount = `${exact} ${symbol}`.trim()
   return (
     <div className="flex flex-col gap-4">
       {step === 0 && oneclick.depositAddress ? (
@@ -99,16 +132,34 @@ export function DepositPanel({ oneclick, business }: { oneclick: OneClick; busin
             <span className="text-[15px] font-semibold">Send exactly</span>
             {countdown ? (
               <span
-                className={`tnum rounded-full px-3 py-1 text-[13px] font-semibold ${countdown.left < 120_000 ? "bg-warn-surface text-warn" : "bg-secondary"}`}
+                className={cn(
+                  "tnum rounded-full px-3 py-1 text-[13px] font-semibold",
+                  countdown.left < 120_000 ? "bg-warn-surface text-warn" : "bg-secondary",
+                )}
               >
                 {countdown.left > 0 ? `Pay within ${countdown.text}` : "Time's up"}
               </span>
             ) : null}
           </div>
-          <CopyRow label={`${oneclick.symbol ?? ""} on ${chain}`} value={amount} />
-          <CopyRow label="To this address" value={oneclick.depositAddress} mono />
+          <CopyRow
+            label={`${symbol} on ${chain}`}
+            value={oneclick.amountInFormatted ?? ""}
+            shown={amount}
+            art={coin ? <Mark id={coin} chain={chainMark ?? undefined} size={28} /> : undefined}
+          />
+          <CopyRow
+            label="To this address"
+            value={oneclick.depositAddress}
+            shown={groupNumber(oneclick.depositAddress)}
+            mono
+          />
           {oneclick.depositMemo ? (
-            <CopyRow label="With this memo" value={oneclick.depositMemo} mono />
+            <CopyRow
+              label="With this memo"
+              value={oneclick.depositMemo}
+              shown={groupNumber(oneclick.depositMemo)}
+              mono
+            />
           ) : null}
           <div className="flex flex-col items-center gap-2 py-2">
             <div className="rounded-[20px] bg-white p-3">
@@ -120,9 +171,7 @@ export function DepositPanel({ oneclick, business }: { oneclick: OneClick; busin
               />
             </div>
             <span className="text-center text-detail text-muted-foreground">
-              {oneclick.payUri
-                ? "Scan with your wallet: the amount is filled in."
-                : "Scan the address, then enter the amount above."}
+              {oneclick.payUri ? "Amount filled in" : "Address only · type the amount"}
             </span>
           </div>
         </div>
@@ -134,13 +183,23 @@ export function DepositPanel({ oneclick, business }: { oneclick: OneClick; busin
           {until ? ` before ${until}` : ""}, or it's refunded.
         </p>
       ) : null}
-      <div className="rounded-[20px] bg-secondary p-2">
-        <TaskSteps steps={steps} current={step} />
+      <Stage className="p-3 sm:p-4" grid={false}>
+        <Paper className="p-2">
+          <TaskSteps steps={steps} current={step} tone="paper" />
+        </Paper>
+      </Stage>
+      <div className="flex items-center justify-between gap-3 rounded-[14px] bg-card px-4 py-3 text-[14px]">
+        <span className="inline-flex items-center gap-2 text-muted-foreground">
+          <RefreshCw className="size-4" /> Refunds to
+        </span>
+        <span
+          className="inline-flex min-w-0 items-center gap-1.5 font-mono font-medium"
+          title={oneclick.refundTo ?? undefined}
+        >
+          {isMark(chainMark) ? <Mark id={chainMark} size={16} /> : null}
+          {oneclick.refundTo ? shortAddress(oneclick.refundTo) : "your address"}
+        </span>
       </div>
-      <p className="flex items-start gap-2 px-1 text-detail text-muted-foreground">
-        <RefreshCw className="mt-0.5 size-3.5 shrink-0" />
-        If anything goes wrong, it's refunded to {oneclick.refundTo ?? "your address"} on {chain}.
-      </p>
     </div>
   )
 }

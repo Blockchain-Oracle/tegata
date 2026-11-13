@@ -3,7 +3,7 @@
 // dedupe key, so calling it twice sends once. Links are app paths; the layout makes them absolute.
 import { NETWORKS, type NetworkId, REFERRALS } from "@tegata/config"
 import { explorerTx } from "@tegata/core/near"
-import { assetLabel, type QuoteResponse } from "@tegata/core/oneclick"
+import { assetLabel, type QuoteResponse, routeLabel } from "@tegata/core/oneclick"
 import { type Db, schema } from "@tegata/db"
 import type { MoveData, PaymentData } from "@tegata/documents"
 import { and, eq, gte, inArray } from "drizzle-orm"
@@ -261,8 +261,10 @@ export async function queuePayoutEmail(db: Db, payoutId: string) {
   if (!payout || !["delivered", "refunded", "failed"].includes(payout.status)) return
   const workspace = await workspaceOf(db, payout.workspaceId)
   if (!workspace) return
-  // A refund to the payer's chain is told by queueRefundEmails once it counts.
-  if (payout.kind === "refund" && payout.status === "delivered") return
+  // A refund to the payer's chain is told by queueRefundEmails once it counts; a payroll row by its payslip. Only a
+  // payroll row that came back is worth its own email.
+  if ((payout.kind === "refund" || payout.kind === "payroll") && payout.status === "delivered")
+    return
   const quote = payout.quote as QuoteResponse | null
   const data: MoveData = {
     ...moveBase(workspace, payout.network, payout.deliveredAt ?? payout.updatedAt, payout.txHash),
@@ -271,8 +273,15 @@ export async function queuePayoutEmail(db: Db, payoutId: string) {
     title:
       payout.kind === "refund"
         ? "Refund to the payer's chain"
-        : `To ${payout.symbol} on ${payout.chain}`,
-    receiptUrl: payout.relayId && payout.txHash ? `/r/send/${payout.relayId}` : null,
+        : payout.kind === "payroll"
+          ? `Pay to ${payout.symbol} on ${payout.chain}`
+          : `To ${payout.symbol} on ${payout.chain}`,
+    receiptUrl:
+      payout.kind === "payroll" && payout.reference
+        ? `/r/slip/${payout.reference}`
+        : payout.relayId && payout.txHash
+          ? `/r/send/${payout.relayId}`
+          : null,
     delivered: {
       route: `${payout.symbol} on ${payout.chain}`,
       coin: payout.symbol.toLowerCase(),
@@ -465,6 +474,10 @@ export async function queueRunEmails(db: Db, runId: string) {
   })
 }
 
+/** "T9yD…3kPq": an address on another chain, short enough for a sentence. */
+const shortAddress = (address: string) =>
+  address.length > 14 ? `${address.slice(0, 6)}…${address.slice(-4)}` : address
+
 /**
  * Where a person's pay lands changed. A change the person made waits 24 hours: both they and the business are told
  * (that wait exists so someone notices). A destination the owner set is told to the person.
@@ -481,7 +494,9 @@ export async function queueDestinationEmails(db: Db, destinationId: string) {
   const where =
     destination.kind === "near"
       ? (destination.accountId ?? "a NEAR account")
-      : `their Tegata account (.${NETWORKS[person.network].operator})`
+      : destination.kind === "chain"
+        ? `${routeLabel(destination.route) ?? "another chain"} at ${shortAddress(destination.accountId ?? "")}`
+        : `their Tegata account (.${NETWORKS[person.network].operator})`
   const base = { business: workspace.name, sandbox: sandbox(person.network), person: person.name }
   if (destination.setBy === "owner") {
     await queueEmail(db, {

@@ -1,5 +1,6 @@
 "use client"
 
+import type { NetworkId } from "@tegata/config"
 // Home (plan 6.8 C): the balance on a stage tile with four actions, the pay address as a sealed card, the latest
 // movements as rows that open their receipts, and colour-field first steps that retire as each is done. Separate
 // from its data so /dev/flows can show every state.
@@ -10,7 +11,6 @@ import {
   Check,
   ChevronRight,
   Copy,
-  ExternalLink,
   FileText,
   Link2,
   Plus,
@@ -20,16 +20,23 @@ import {
 import { motion, useReducedMotion } from "motion/react"
 import Link from "next/link"
 import { useState } from "react"
+import {
+  type MovementExtras,
+  MovementMark,
+  shortAccount,
+  subjectOfActivity,
+} from "@/components/books/movement-mark"
 import { BusinessSeal } from "@/components/brand/seal"
 import { AccountLink } from "@/components/kit/account-link"
-import { Spinner } from "@/components/kit/button"
+import { Button, Spinner } from "@/components/kit/button"
 import { Figure, viewDollars } from "@/components/kit/figure"
 import { Paper, Stage, StageAction, StageObject } from "@/components/kit/stage"
-import { LoadingShape, StatusPill } from "@/components/kit/states"
+import { EmptyState, LoadingShape, StatusPill } from "@/components/kit/states"
 import { Mark, MarkStack } from "@/components/marks/mark"
 import type { TestDollars } from "@/hooks/use-test-dollars"
 import type { ActivityItem } from "@/lib/client/types"
 import { fire } from "@/lib/feedback"
+import { usdUnits } from "@/lib/fiat"
 import { cn } from "@/lib/utils"
 
 const COPIED_MS = 1500
@@ -39,10 +46,12 @@ const ONE_DOLLAR = 1_000_000n
 export interface HomeViewProps {
   businessName: string
   accountId: string
+  /** The account's network, so its explorer link is right for an implicit (64-hex) account too. */
+  network?: NetworkId
   /** USDC base units; null while the live balance is loading. */
   balance: bigint | null
-  explorerUrl: string
-  activity: ActivityItem[] | undefined
+  /** The latest movements; a row may carry how it was paid (`rail`, `assetIn`) for its mark. */
+  activity: (ActivityItem & MovementExtras)[] | undefined
   activityError: boolean
   onReceive: () => void
   /** Open the QR scanner (pay a link, an account or an address by scanning it). */
@@ -68,8 +77,8 @@ export interface HomeViewProps {
 export function HomeView({
   businessName,
   accountId,
+  network,
   balance,
-  explorerUrl,
   activity,
   activityError,
   onReceive,
@@ -101,7 +110,7 @@ export function HomeView({
         key="invoice"
         field="bg-sakura"
         title="Send your first invoice"
-        detail="Bill a customer. They pay in dollars; you get the exact amount in USDC."
+        detail="They pay in dollars; you get the exact amount."
         href="/app/invoices/new"
         icon={<FileText />}
       />
@@ -111,7 +120,7 @@ export function HomeView({
         key="link"
         field="bg-sora"
         title="Create your first pay link"
-        detail="One link anyone can pay, from an email sign-in or a NEAR wallet."
+        detail="Anyone can pay it, by email or a NEAR wallet."
         href="/app/links?new=1"
         icon={<Link2 />}
       />
@@ -121,7 +130,7 @@ export function HomeView({
         key="people"
         field="bg-matcha"
         title="Add your people"
-        detail="They choose where their pay lands. One approval pays everyone."
+        detail="One approval pays everyone."
         href="/app/people"
         icon={<UsersRound />}
       />
@@ -133,12 +142,12 @@ export function HomeView({
         title={testDollars.state === "sent" ? "Test dollars added" : "Add test dollars"}
         detail={
           testDollars.state === "sending"
-            ? "Sending $5.00 from the Sandbox stash…"
+            ? "Sending $5.00…"
             : testDollars.state === "sent"
-              ? "$5.00 of test USDC is in your balance. More tomorrow."
+              ? "$5.00 is in your balance. More tomorrow."
               : testDollars.state === "failed"
                 ? (testDollars.error ?? "That didn't work. Try again.")
-                : "$5.00 of test USDC, so you can try paying a link. Once a day."
+                : "$5.00 of test USDC, once a day."
         }
         onClick={onAddTestDollars}
         disabled={testDollars.state === "sending" || testDollars.state === "sent"}
@@ -156,6 +165,7 @@ export function HomeView({
           <h1 className="display truncate text-page-title">{businessName}</h1>
           <AccountLink
             accountId={accountId}
+            network={network}
             className="text-detail text-muted-foreground hover:text-foreground"
           />
         </div>
@@ -188,31 +198,39 @@ export function HomeView({
             <div className="flex gap-4 sm:gap-6">
               <StageAction label="Get paid" onClick={onReceive} icon={<ArrowDownLeft />} />
               <StageAction label="Send" href="/app/send" icon={<ArrowUpRight />} />
+              <StageAction label="Add money" href="/app/balance?add=1" icon={<Plus />} />
               {onScan ? <StageAction label="Scan" onClick={onScan} icon={<ScanLine />} /> : null}
-              <StageAction
-                label={copied ? "Copied" : "Copy"}
-                onClick={copy}
-                icon={copied ? <Check /> : <Copy />}
-              />
-              <StageAction label="On NEAR" href={explorerUrl} external icon={<ExternalLink />} />
             </div>
           </div>
           <StageObject className="hidden md:block" from={{ y: 20, rotate: 3 }}>
             <Paper className="relative w-[300px] p-5">
-              <span className="text-[13px] font-semibold text-[#666]">Your pay address</span>
+              <span className="text-[13px] font-semibold text-paper-text-2">Your pay address</span>
               <div className="mt-2 flex items-center gap-2">
                 <Mark id="near" size={24} />
-                <AccountLink accountId={accountId} className="text-[15px] font-medium" />
+                <AccountLink
+                  accountId={accountId}
+                  network={network}
+                  className="text-[15px] font-medium"
+                />
               </div>
-              <div className="mt-4 flex items-center justify-between">
+              <div className="mt-4 flex items-center justify-between gap-3">
                 <MarkStack ids={["usdc", "near"]} size={24} />
-                <button
-                  type="button"
-                  onClick={onReceive}
-                  className="press text-[14px] font-semibold text-[#B23700] hover:underline"
-                >
-                  Show QR
-                </button>
+                <span className="flex items-center gap-4">
+                  <button
+                    type="button"
+                    onClick={copy}
+                    className="press inline-flex items-center gap-1 text-[14px] font-semibold text-paper-seal hover:underline [&_svg]:size-3.5"
+                  >
+                    {copied ? <Check /> : <Copy />} {copied ? "Copied" : "Copy"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={onReceive}
+                    className="press text-[14px] font-semibold text-paper-seal hover:underline"
+                  >
+                    Show QR
+                  </button>
+                </span>
               </div>
               <div className="absolute -top-7 -right-7">
                 <BusinessSeal name={businessName} size={72} />
@@ -233,8 +251,8 @@ export function HomeView({
           <span className="flex min-w-0 flex-1 flex-col">
             <span className="text-[17px] font-semibold">Payroll due</span>
             <span className="text-[14px] text-black/70">
-              {paydayWord(payrollDue.payday)} · ${viewDollars(payrollDue.total).toFixed(2)} to{" "}
-              {payrollDue.people} {payrollDue.people === 1 ? "person" : "people"}
+              {paydayWord(payrollDue.payday)} · {usdUnits(payrollDue.total)} to {payrollDue.people}{" "}
+              {payrollDue.people === 1 ? "person" : "people"}
             </span>
           </span>
           <span className="inline-flex h-10 items-center rounded-full bg-black px-4 text-[15px] font-semibold text-white">
@@ -252,10 +270,12 @@ export function HomeView({
             <BusinessSeal name={invite.business} size={40} tilt={0} />
           </span>
           <span className="flex min-w-0 flex-1 flex-col gap-1.5">
-            <span className="text-[16px] font-semibold">
-              {invite.qualified
-                ? `You and ${invite.business} each get $${viewDollars(invite.reward).toFixed(0)} shortly`
-                : `Invited by ${invite.business}: receive $${viewDollars(invite.threshold).toFixed(0)} from customers and you both get $${viewDollars(invite.reward).toFixed(0)}`}
+            <span className="text-[13px] font-medium text-black/70">
+              Invited by {invite.business}
+            </span>
+            <span className="display text-[24px] leading-none">
+              You both get {usdUnits(invite.reward)}
+              {invite.qualified ? " soon" : ""}
             </span>
             <span className="h-1.5 overflow-hidden rounded-full bg-black/10" aria-hidden>
               <span
@@ -265,9 +285,8 @@ export function HomeView({
                 }}
               />
             </span>
-            <span className="text-[13px] text-black/70">
-              ${viewDollars(invite.received).toFixed(2)} of $
-              {viewDollars(invite.threshold).toFixed(0)} received
+            <span className="tnum text-[13px] text-black/70">
+              {usdUnits(invite.received)} of {usdUnits(invite.threshold)} from customers
             </span>
           </span>
         </Link>
@@ -310,13 +329,29 @@ export function HomeView({
           ) : activity && activity.length > 0 ? (
             <div className="flex flex-col rounded-[20px] bg-card p-2">
               {activity.map((item, i) => (
-                <ActivityRow key={item.id} item={item} index={i} reduce={reduce === true} />
+                <ActivityRow
+                  key={item.id}
+                  item={item}
+                  business={businessName}
+                  index={i}
+                  reduce={reduce === true}
+                />
               ))}
             </div>
           ) : (
-            <div className="rounded-[20px] bg-card px-5 py-8 text-center text-[15px] text-muted-foreground">
-              Payments you send and receive show up here.
-            </div>
+            <EmptyState
+              art={<Link2 />}
+              field="sora"
+              title="Nothing has moved yet"
+              detail="Money in and out lands here."
+              action={
+                <Button variant="shu" size="md" asChild>
+                  <Link href="/app/links?new=1">
+                    <Link2 /> Create a pay link
+                  </Link>
+                </Button>
+              }
+            />
           )}
         </section>
 
@@ -331,17 +366,18 @@ export function HomeView({
   )
 }
 
+/** The same words as Activity: what the person would say, never the system's state. */
 const STATUS_WORD: Record<ActivityItem["status"], string> = {
-  drafted: "Not approved",
-  signed: "Sending",
-  sent: "Sending",
+  drafted: "Not sent",
+  signed: "On its way",
+  sent: "On its way",
   success: "Sent",
-  failed: "Failed",
-  unknown: "Checking",
-  expired: "Expired",
+  failed: "Didn't go through",
+  unknown: "On its way",
+  expired: "Didn't go through",
   awaiting: "Waiting",
-  detected: "Checking NEAR",
-  settling: "Settling",
+  detected: "On its way",
+  settling: "On its way",
   succeeded: "Paid",
   refunded: "Refunded",
 }
@@ -352,38 +388,45 @@ const BAD: ActivityItem["status"][] = ["failed", "expired", "refunded"]
 /** One movement: what happened, with whom, when, and the signed amount. It opens its receipt, never NEAR first. */
 function ActivityRow({
   item,
+  business,
   index,
   reduce,
 }: {
-  item: ActivityItem
+  item: ActivityItem & MovementExtras
+  business: string
   index: number
   reduce: boolean
 }) {
+  // Sends and payments in name an account (shortened when it's a long one); the others name a business.
+  const who =
+    item.kind === "send" || item.kind === "received"
+      ? shortAccount(item.counterparty)
+      : item.counterparty
   const incoming = item.kind === "received" || item.kind === "reward" || item.kind === "payslip"
   const headline =
     item.kind === "payroll"
       ? "Payroll"
       : item.kind === "payslip"
-        ? `Pay from ${item.counterparty}`
+        ? `Pay from ${who}`
         : item.kind === "reward"
           ? (item.title ?? "Referral reward")
           : item.kind === "received"
             ? `${item.title ?? "Pay link"} · paid`
             : item.kind === "paid"
-              ? `Paid ${item.counterparty}`
-              : `Sent to ${item.counterparty}`
+              ? `Paid ${who}`
+              : `Sent to ${who}`
   const detail =
     item.kind === "payroll" && item.title
       ? `${item.title} · ${timeAgo(item.at)}`
       : item.kind === "received"
-        ? `From ${item.counterparty} · ${timeAgo(item.at)}`
+        ? `From ${who} · ${timeAgo(item.at)}`
         : item.kind === "paid" && item.title
           ? `${item.title} · ${timeAgo(item.at)}`
           : timeAgo(item.at)
   const receipt = item.receiptUrl
   const body = (
     <>
-      <Mark id="usdc" chain="near" size={40} />
+      <MovementMark movement={subjectOfActivity(item)} business={business} size={40} />
       <span className="flex min-w-0 flex-1 flex-col">
         <span className="truncate text-[16px] font-semibold">{headline}</span>
         <span className="truncate text-detail text-muted-foreground">{detail}</span>
@@ -394,7 +437,8 @@ function ActivityRow({
         </StatusPill>
       )}
       <span className={cn("tnum text-[16px] font-semibold", incoming && "text-up")}>
-        {incoming ? "+" : "−"}${viewDollars(item.amount).toFixed(2)}
+        {incoming ? "+" : "−"}
+        {usdUnits(item.amount)}
       </span>
     </>
   )

@@ -5,6 +5,8 @@
 export const PAYER_ROUTES = [
   {
     id: "usdt-tron",
+    /** NEAR Intents' id for this coin on this chain. */
+    assetId: "nep141:tron-d28a265909efecdcee7c5028585214ea0b96f015.omft.near",
     symbol: "USDT",
     blockchain: "tron",
     chain: "Tron",
@@ -13,6 +15,7 @@ export const PAYER_ROUTES = [
   },
   {
     id: "usdc-base",
+    assetId: "nep141:base-0x833589fcd6edb6e08f4c7c32d4f71b54bda02913.omft.near",
     symbol: "USDC",
     blockchain: "base",
     chain: "Base",
@@ -21,6 +24,7 @@ export const PAYER_ROUTES = [
   },
   {
     id: "usdt-eth",
+    assetId: "nep141:eth-0xdac17f958d2ee523a2206206994597c13d831ec7.omft.near",
     symbol: "USDT",
     blockchain: "eth",
     chain: "Ethereum",
@@ -29,6 +33,7 @@ export const PAYER_ROUTES = [
   },
   {
     id: "usdc-sol",
+    assetId: "nep141:sol-5ce3bf3a31af18be40ba30f721101b4341690186.omft.near",
     symbol: "USDC",
     blockchain: "sol",
     chain: "Solana",
@@ -37,6 +42,7 @@ export const PAYER_ROUTES = [
   },
   {
     id: "usdc-arb",
+    assetId: "nep141:arb-0xaf88d065e77c8cc2239327c5edb3a432268e5831.omft.near",
     symbol: "USDC",
     blockchain: "arb",
     chain: "Arbitrum",
@@ -45,6 +51,7 @@ export const PAYER_ROUTES = [
   },
   {
     id: "btc-btc",
+    assetId: "nep141:btc.omft.near",
     symbol: "BTC",
     blockchain: "btc",
     chain: "Bitcoin",
@@ -53,6 +60,7 @@ export const PAYER_ROUTES = [
   },
   {
     id: "eth-eth",
+    assetId: "nep141:eth.omft.near",
     symbol: "ETH",
     blockchain: "eth",
     chain: "Ethereum",
@@ -61,6 +69,7 @@ export const PAYER_ROUTES = [
   },
   {
     id: "sol-sol",
+    assetId: "nep141:sol.omft.near",
     symbol: "SOL",
     blockchain: "sol",
     chain: "Solana",
@@ -69,6 +78,7 @@ export const PAYER_ROUTES = [
   },
   {
     id: "usdt-bsc",
+    assetId: "nep141:bnb-0x55d398326f99059ff775485246999027b3197955.omdep.near",
     symbol: "USDT",
     blockchain: "bsc",
     chain: "BNB Chain",
@@ -77,6 +87,7 @@ export const PAYER_ROUTES = [
   },
   {
     id: "usdc-pol",
+    assetId: "nep141:pol-0x3c499c542cef5e3811e1192ce70d8cc03d5c3359.omdep.near",
     symbol: "USDC",
     blockchain: "pol",
     chain: "Polygon",
@@ -86,6 +97,7 @@ export const PAYER_ROUTES = [
   // USDC.e on Gnosis: the coin a Gnosis Pay card account (a Safe on Gnosis) spends, so a payout here tops up a card.
   {
     id: "usdc-gnosis",
+    assetId: "nep141:gnosis-0x2a22f9c3b484c3629090feed35f17ff8f88f76f0.omft.near",
     symbol: "USDC",
     blockchain: "gnosis",
     chain: "Gnosis",
@@ -165,3 +177,7 @@ export function eta(seconds: number) {
   if (seconds < 90) return `about ${Math.max(10, Math.round(seconds / 10) * 10)} s`
   return `about ${Math.round(seconds / 60)} min`
 }
+
+/** The route a 1Click asset id names ("nep141:tron-…" → USDT on Tron), for marks on payments that came through it. */
+export const routeOfAsset = (assetId: string | null | undefined) =>
+  assetId ? PAYER_ROUTES.find((r) => r.assetId === assetId) : undefined

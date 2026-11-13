@@ -1,4 +1,5 @@
 import type { NetworkId } from "@tegata/config"
+import { bitnobClient } from "@tegata/core/bitnob"
 import { Operator } from "@tegata/core/near"
 import { NOAH_TEST_USDC_MINT, noahClient } from "@tegata/core/noah"
 import { sendToken } from "@tegata/core/solana"
@@ -22,10 +23,12 @@ import {
   accountsNotReady,
   autopilotsToRegister,
   bankPayoutsToMove,
+  cardMovesToFund,
   claimEmails,
   creditBankDeposits,
   deliver,
   destinationsToRegister,
+  fundCardMove,
   hopBankPayout,
   invoiceDocuments,
   invoiceToken,
@@ -40,6 +43,7 @@ import {
   pollBankPayout,
   pollOneClickPayment,
   pollPayout,
+  processMoveOut,
   processRelay,
   queueAccountEmail,
   queueAutopilotOn,
@@ -61,8 +65,10 @@ import {
   registerDestination,
   registerForAutopilot,
   registerPayoutAddress,
+  registerRunAddresses,
   reminderTarget,
   reminderTimes,
+  removeCard,
   returnFailedBankPayout,
   runAutopilots,
   runDueSchedules,
@@ -71,6 +77,7 @@ import {
   settleAutopilotAction,
   settleAutopilotRelay,
   settleBankRelay,
+  settleCardRelay,
   settlePayment,
   settlePayoutRelay,
   settleRefund,
@@ -137,6 +144,8 @@ await boss.work(QUEUES.relaySend.name, async ([job]) => {
   if (!operator) return
   // A payout: its 1Click deposit address must hold a USDC registration before the transfer lands (operator-paid).
   await registerPayoutAddress(db, operator, relayId)
+  // A payroll batch with rows to another chain: each row's NEAR Intents deposit address needs the same.
+  await registerRunAddresses(db, operator, relayId)
   const relay = await processRelay(db, operator, relayId)
   if (relay) console.log(`[relay] ${relay.purpose} ${relay.status} ${relay.txHash ?? ""}`)
   // A payment from a Tegata balance settles as soon as its relay lands.
@@ -174,9 +183,14 @@ await boss.work(QUEUES.relaySend.name, async ([job]) => {
     const payoutId = await settleBankRelay(db, relay.id, operator.accountId)
     if (payoutId) await enqueue(boss, "bankHop", { payoutId }, `bank-hop:${payoutId}`)
   }
+  // A card fill: once the USDC reached the card reserve, the issuer makes or raises the card.
+  if (relay?.purpose.startsWith("card:")) {
+    const moveId = await settleCardRelay(db, relay.id, operator.accountId)
+    if (moveId) await enqueue(boss, "cardFund", { moveId }, `card-fund:${moveId}`)
+  }
   // A payroll batch: its rows are paid only once the USDC events are read from NEAR.
   if (relay?.purpose.startsWith("run:")) {
-    const settled = await settleRunRelay(db, relay.id, operator.accountId)
+    const settled = await settleRunRelay(db, relay.id, operator.accountId, env.ONECLICK_API_KEY)
     console.log(`[payroll] ${relay.purpose} ${settled}`)
     // Paid, or a batch failed: payslips go to everyone who was paid, and the business hears how the run went.
     if (settled === "paid" || settled === "failed")
@@ -423,6 +437,41 @@ await boss.work(QUEUES.bankPoll.name, async ([job]) => {
   }
   await queueBankPayoutEmail(db, payoutId)
 })
+// Cards: Bitnob issues or raises a card once its money is in Tegata's card reserve. Purchases arrive by webhook at the
+// web app, which must be public (https), so local runs point Bitnob at the live site.
+const bitnob =
+  env.BITNOB_CLIENT_ID && env.BITNOB_CLIENT_SECRET
+    ? bitnobClient(env.BITNOB_CLIENT_ID, env.BITNOB_CLIENT_SECRET)
+    : null
+const cardWebhook = `${emailBase}/api/webhooks/bitnob`
+await boss.work(QUEUES.cardFund.name, async ([job]) => {
+  if (!job || !bitnob) return
+  const { moveId } = QUEUES.cardFund.payload.parse(job.data)
+  const [move] = await cardMovesToFund(db).then((rows) => rows.filter((r) => r.id === moveId))
+  if (!move) return
+  const network = move.network
+  const operator = operators.get(network)
+  if (!operator) return
+  const result =
+    move.direction === "in"
+      ? await fundCardMove(db, bitnob, operator, moveId, cardWebhook)
+      : await processMoveOut(db, bitnob, operator, moveId)
+  console.log(`[card] ${move.direction} ${moveId} ${result}`)
+})
+await boss.work(QUEUES.cardRemove.name, async ([job]) => {
+  if (!job || !bitnob) return
+  const { cardId, network } = QUEUES.cardRemove.payload.parse(job.data)
+  const operator = operators.get(network)
+  if (!operator) return
+  await removeCard(db, bitnob, operator, cardId)
+  console.log(`[card] removed ${cardId}`)
+})
+await boss.schedule(QUEUES.cardSweep.name, "* * * * *", {})
+await boss.work(QUEUES.cardSweep.name, async () => {
+  if (!bitnob) return
+  for (const move of await cardMovesToFund(db))
+    await enqueue(boss, "cardFund", { moveId: move.id }, `card-fund:${move.id}`)
+})
 await boss.schedule(QUEUES.bankSweep.name, "* * * * *", {})
 await boss.work(QUEUES.bankSweep.name, async () => {
   for (const moving of await bankPayoutsToMove(db)) {
@@ -603,7 +652,12 @@ for (const autopilot of await autopilotsToRegister(db)) {
 for (const { relayId, network } of await runRelaysToSettle(db)) {
   const operator = operators.get(network)
   if (relayId && operator) {
-    const settled = await settleRunRelay(db, relayId, operator.accountId).catch(() => "pending")
+    const settled = await settleRunRelay(
+      db,
+      relayId,
+      operator.accountId,
+      env.ONECLICK_API_KEY,
+    ).catch(() => "pending")
     console.log(`[payroll] resumed ${relayId} ${settled}`)
     const [runId] = (
       await db

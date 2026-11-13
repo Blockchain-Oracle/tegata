@@ -9,6 +9,7 @@ import { buttonVariants } from "@/components/kit/button-variants"
 import { Paper, Stage } from "@/components/kit/stage"
 import { Calculator } from "@/components/landing/calculator"
 import { Mark, MarkStack } from "@/components/marks/mark"
+import { usd } from "@/lib/fiat"
 import { LINKS } from "@/lib/links"
 import { PAYER_ROUTES } from "@/lib/server/oneclick"
 import { cn } from "@/lib/utils"
@@ -52,7 +53,7 @@ const FEES = [
   },
 ] as const
 const MAX_FEE = 67.8
-const feeText = (cost: number) => (cost === 0 ? "$0.00" : `−$${cost.toFixed(2)}`)
+const feeText = (cost: number) => (cost === 0 ? usd(0) : `−${usd(cost)}`)
 
 export default function Landing() {
   return (
@@ -128,8 +129,8 @@ export default function Landing() {
         >
           <div className="absolute right-6 bottom-8 hidden rotate-[5deg] xl:block">
             <Paper className="w-[210px] p-4 opacity-95">
-              <span className="text-[12px] font-semibold text-[#666]">Receipt · Paid</span>
-              <p className="figure mt-1 text-[30px]">$480.00</p>
+              <span className="text-[12px] font-semibold text-paper-text-2">Receipt · Paid</span>
+              <p className="figure mt-1 text-[30px]">{usd(480)}</p>
               <span className="mt-1 inline-flex items-center gap-1.5 text-[12px] font-semibold text-[#2F7A00]">
                 <Mark id="usdc" chain="near" size={18} /> USDC on NEAR
               </span>
@@ -156,11 +157,11 @@ export default function Landing() {
             detail="By email, chat or QR. Customers open it on any phone."
           >
             <Paper className="w-[230px] p-4">
-              <span className="inline-flex items-center gap-1.5 text-[12px] font-semibold text-[#666]">
+              <span className="inline-flex items-center gap-1.5 text-[12px] font-semibold text-paper-text-2">
                 <TegataSeal size={16} textured={false} /> Pay link
               </span>
-              <p className="figure mt-1 text-[34px]">$1,250.00</p>
-              <span className="mt-1 inline-flex items-center gap-1.5 rounded-[10px] bg-[#F5F5F5] px-2.5 py-1.5 text-[12px] font-semibold text-[#666]">
+              <p className="figure mt-1 text-[34px]">{usd(1250)}</p>
+              <span className="mt-1 inline-flex items-center gap-1.5 rounded-[10px] bg-paper-sunk px-2.5 py-1.5 text-[12px] font-semibold text-paper-text-2">
                 <Link2 className="size-3.5" /> Link copied
               </span>
             </Paper>
@@ -174,7 +175,7 @@ export default function Landing() {
               <MarkStack ids={["usdc", "near"]} size={40} />
               <ArrowRight className="size-6 rotate-90 text-white" />
               <span className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-2 text-[14px] font-semibold text-black shadow-object">
-                <Mark id="usdc" chain="near" size={24} /> $1,250.00 on NEAR
+                <Mark id="usdc" chain="near" size={24} /> {usd(1250)} on NEAR
               </span>
             </div>
           </Step>
@@ -185,8 +186,8 @@ export default function Landing() {
           >
             <div className="relative">
               <Paper className="w-[220px] p-4">
-                <span className="text-[12px] font-semibold text-[#666]">Receipt</span>
-                <p className="figure mt-1 text-[34px]">$1,250.00</p>
+                <span className="text-[12px] font-semibold text-paper-text-2">Receipt</span>
+                <p className="figure mt-1 text-[34px]">{usd(1250)}</p>
                 <span className="mt-1 inline-flex items-center gap-1.5 text-[12px] font-semibold text-[#2F7A00]">
                   <Check className="size-3.5" strokeWidth={3} /> Settled on NEAR
                 </span>
@@ -223,7 +224,7 @@ export default function Landing() {
             />
             <NearTile
               seal
-              title="No gas, no wallet"
+              title="No fees, no wallet"
               detail="Sign in with email. Tegata pays every network fee for you."
             />
           </div>
@@ -233,47 +234,62 @@ export default function Landing() {
       {/* What a payment costs the business (plan D3): the fee bars, each figure with its source. */}
       <section id="fees" className="mx-auto max-w-[1240px] scroll-mt-20 px-5 pt-16 sm:px-8">
         <h2 className="display max-w-[18ch] text-[44px] leading-[0.95] sm:text-[60px]">
-          A $1,250 payment. <span className="text-text-3">What it costs you.</span>
+          A {usd(1250)} payment. <span className="text-text-3">What it costs you.</span>
         </h2>
         <div className="mt-10 flex flex-col gap-2 rounded-[28px] bg-card p-4 sm:p-6">
-          {FEES.map((fee) => (
-            <div
-              key={fee.label}
-              className="grid grid-cols-[1fr_auto] items-center gap-x-4 gap-y-1.5 rounded-[18px] px-2 py-3 sm:grid-cols-[minmax(0,15rem)_1fr_auto]"
-            >
-              <span className="flex flex-col">
-                <span className="text-[16px] font-semibold">{fee.label}</span>
-                {fee.href ? (
-                  <a
-                    href={fee.href}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-[13px] text-muted-foreground underline decoration-dotted underline-offset-[3px] hover:text-foreground"
-                  >
-                    {fee.source}
-                  </a>
-                ) : (
-                  <span className="text-[13px] text-muted-foreground">{fee.source}</span>
+          {FEES.map((fee) => {
+            const tegata = fee.cost === 0
+            return (
+              <div
+                key={fee.label}
+                className={cn(
+                  "grid grid-cols-[1fr_auto] items-center gap-x-4 gap-y-1.5 rounded-[18px] px-3 py-3 sm:grid-cols-[minmax(0,16rem)_1fr_auto]",
+                  tegata && "bg-shu-wash",
                 )}
-              </span>
-              <span className="col-span-2 row-start-2 h-3 overflow-hidden rounded-full bg-secondary sm:col-span-1 sm:col-start-2 sm:row-start-1">
-                {fee.cost > 0 ? (
-                  <span
-                    className="block h-full rounded-full bg-foreground"
-                    style={{ width: `${(fee.cost / MAX_FEE) * 100}%` }}
-                  />
-                ) : null}
-              </span>
-              <span
-                className={`tnum text-right text-[17px] font-semibold ${fee.cost === 0 ? "text-up" : ""}`}
               >
-                {feeText(fee.cost)}
-              </span>
-            </div>
-          ))}
-          <p className="px-2 pt-2 text-[14px] text-muted-foreground">
-            With Tegata you receive exactly $1,250.00. A customer paying from another chain sees the
-            NEAR Intents route cost on their side before they pay; paying in USDC on NEAR has none.
+                <span className="flex items-center gap-3">
+                  {tegata ? <TegataSeal size={36} tilt={-4} /> : null}
+                  <span className="flex min-w-0 flex-col">
+                    <span className="text-[16px] font-semibold">{fee.label}</span>
+                    {fee.href ? (
+                      <a
+                        href={fee.href}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-[13px] text-muted-foreground underline decoration-dotted underline-offset-[3px] hover:text-foreground"
+                      >
+                        {fee.source}
+                      </a>
+                    ) : (
+                      <span className="text-[13px] font-medium text-shu-ink">{fee.source}</span>
+                    )}
+                  </span>
+                </span>
+                <span
+                  className={cn(
+                    "col-span-2 row-start-2 h-3 overflow-hidden rounded-full sm:col-span-1 sm:col-start-2 sm:row-start-1",
+                    tegata ? "bg-card" : "bg-secondary",
+                  )}
+                >
+                  {/* Tegata takes nothing: a single green cap where the others' bars start. */}
+                  <span
+                    className={cn("block h-full rounded-full", tegata ? "w-3 bg-up" : "bg-text-3")}
+                    style={tegata ? undefined : { width: `${(fee.cost / MAX_FEE) * 100}%` }}
+                  />
+                </span>
+                <span
+                  className={cn(
+                    "tnum text-right text-[17px] font-semibold",
+                    tegata && "figure text-[24px] text-up",
+                  )}
+                >
+                  {feeText(fee.cost)}
+                </span>
+              </div>
+            )
+          })}
+          <p className="px-3 pt-2 text-[14px] text-muted-foreground">
+            Payers from other chains see any route cost before they pay.
           </p>
         </div>
       </section>

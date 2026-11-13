@@ -135,7 +135,16 @@ const POPULAR = {
     "Guaranty Trust Bank (Ghana) Ltd",
     "ZENITH BANK (GHANA) LIMITED",
   ],
-  ZA: ["Capitec Bank", "First National Bank", "Standard Bank", "ABSA", "Nedbank Limited", "TYME", "Discovery Bank", "Investec Bank"],
+  ZA: [
+    "Capitec Bank",
+    "First National Bank",
+    "Standard Bank",
+    "ABSA",
+    "Nedbank Limited",
+    "TYME",
+    "Discovery Bank",
+    "Investec Bank",
+  ],
 }
 
 const STOP = new Set(
@@ -163,7 +172,11 @@ async function fetchImage(url) {
 }
 
 const width = (file) =>
-  Number(execFileSync("sips", ["-g", "pixelWidth", file]).toString().match(/pixelWidth: (\d+)/)?.[1] ?? 0)
+  Number(
+    execFileSync("sips", ["-g", "pixelWidth", file])
+      .toString()
+      .match(/pixelWidth: (\d+)/)?.[1] ?? 0,
+  )
 
 /** Saves a logo at 128 px; refuses icons too small to look sharp. */
 function save(buffer, file, min = 96) {
@@ -172,7 +185,9 @@ function save(buffer, file, min = 96) {
     rmSync(file)
     return false
   }
-  execFileSync("sips", ["-Z", "128", "-s", "format", "png", file, "--out", file], { stdio: "ignore" })
+  execFileSync("sips", ["-Z", "128", "-s", "format", "png", file, "--out", file], {
+    stdio: "ignore",
+  })
   return true
 }
 
@@ -183,9 +198,12 @@ mkdirSync(tmp, { recursive: true })
 // Nigeria.
 mkdirSync(join(web, "public/banks/ng"), { recursive: true })
 const list = await (await fetch("https://nigerianbanks.xyz/")).json()
-const bySlug = new Map(list.filter((b) => !b.logo.includes("default-image")).map((b) => [b.slug, b]))
+const bySlug = new Map(
+  list.filter((b) => !b.logo.includes("default-image")).map((b) => [b.slug, b]),
+)
 const byWords = new Map()
-for (const b of bySlug.values()) if (!byWords.has(words(b.name).join(" "))) byWords.set(words(b.name).join(" "), b)
+for (const b of bySlug.values())
+  if (!byWords.has(words(b.name).join(" "))) byWords.set(words(b.name).join(" "), b)
 for (const name of noah.NG) {
   const w = words(name)
   const bank =
@@ -233,6 +251,9 @@ export const POPULAR_BANKS: Record<string, readonly string[]> = ${JSON.stringify
 `
 writeFileSync(join(web, "lib/bank-logos.ts"), ts)
 const counts = Object.fromEntries(
-  ["ng", "gh", "za"].map((c) => [c, Object.values(out).filter((p) => p.startsWith(`/banks/${c}/`)).length]),
+  ["ng", "gh", "za"].map((c) => [
+    c,
+    Object.values(out).filter((p) => p.startsWith(`/banks/${c}/`)).length,
+  ]),
 )
 console.log("logos", counts)

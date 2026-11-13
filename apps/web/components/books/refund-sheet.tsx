@@ -8,14 +8,20 @@ import { Check, ExternalLink } from "lucide-react"
 import Link from "next/link"
 import { useEffect, useState } from "react"
 
+import {
+  MovementMark,
+  movementTitle,
+  shortAccount,
+  subjectOfMovement,
+} from "@/components/books/movement-mark"
 import { Button } from "@/components/kit/button"
 import { Field } from "@/components/kit/field"
 import { viewDollars } from "@/components/kit/figure"
 import { HoldButton } from "@/components/kit/hold-button"
 import { Mark } from "@/components/marks/mark"
-import { money } from "@/components/payroll/payroll-view"
 import { Sheet } from "@/components/shell/sheet"
 import type { MovementView, PayoutView } from "@/lib/client/types"
+import { coinAmount, usdUnits } from "@/lib/fiat"
 import { eta } from "@/lib/routes"
 
 export interface RefundDone {
@@ -24,9 +30,6 @@ export interface RefundDone {
   /** A refund to another chain, on its way through NEAR Intents. */
   payout: PayoutView | null
 }
-
-const short = (address: string) =>
-  address.length > 16 ? `${address.slice(0, 6)}…${address.slice(-4)}` : address
 
 export function RefundSheet({
   movement,
@@ -64,19 +67,20 @@ export function RefundSheet({
             </span>
             {done.payout && route ? (
               <>
-                <p className="text-[17px] font-semibold">Refund on its way: {money(units)}</p>
-                <p className="text-[15px] text-muted-foreground">
-                  About {done.payout.amountOutFormatted} {route.symbol} to{" "}
-                  {short(movement.refundable.payer)} on {route.chain}
-                  {done.payout.timeEstimate ? `, ${eta(done.payout.timeEstimate)}` : ""}. Converted
-                  by NEAR Intents.
+                <p className="text-[17px] font-semibold">Refund on its way: {usdUnits(units)}</p>
+                <p className="tnum inline-flex flex-wrap items-center justify-center gap-1.5 text-[15px] text-muted-foreground">
+                  <Mark id={route.coin} chain={route.chainMark} size={18} />
+                  About {coinAmount(done.payout.amountOutFormatted ?? Number.NaN, route.symbol)} to{" "}
+                  <span className="font-mono">{shortAccount(movement.refundable.payer)}</span>
+                  {done.payout.timeEstimate ? ` · ${eta(done.payout.timeEstimate)}` : ""}
                 </p>
               </>
             ) : (
               <>
-                <p className="text-[17px] font-semibold">Refunded {money(units)}</p>
-                <p className="text-[15px] text-muted-foreground">
-                  It's back in {movement.refundable.payer}.
+                <p className="text-[17px] font-semibold">Refunded {usdUnits(units)}</p>
+                <p className="inline-flex items-center gap-1.5 text-[15px] text-muted-foreground">
+                  <Mark id="near" size={18} /> Back to{" "}
+                  <span className="font-mono">{shortAccount(movement.refundable.payer)}</span>
                 </p>
               </>
             )}
@@ -95,22 +99,26 @@ export function RefundSheet({
           </div>
         ) : (
           <div className="flex flex-col gap-4">
-            <div className="flex flex-col gap-1 rounded-[16px] bg-secondary p-4">
-              <span className="text-detail text-muted-foreground">{movement.title}</span>
-              <span className="text-[17px] font-semibold">
-                {money(movement.amount)} received · {money(left)} can be refunded
+            <div className="flex items-center gap-3 rounded-[16px] bg-secondary p-4">
+              <MovementMark movement={subjectOfMovement(movement)} size={40} />
+              <span className="flex min-w-0 flex-col gap-0.5">
+                <span className="truncate text-detail text-muted-foreground">
+                  {movementTitle(movement.title)}
+                </span>
+                <span className="tnum text-[17px] font-semibold">{usdUnits(left)} can go back</span>
+                <span className="inline-flex items-center gap-1.5 text-[13px] text-muted-foreground">
+                  {route ? (
+                    <>
+                      {route.symbol} on {route.chain} to
+                    </>
+                  ) : (
+                    "To"
+                  )}{" "}
+                  <span className="truncate font-mono">
+                    {shortAccount(movement.refundable.payer)}
+                  </span>
+                </span>
               </span>
-              {route ? (
-                <span className="mt-1 inline-flex items-center gap-1.5 text-[13px] text-muted-foreground">
-                  <Mark id={route.coin} chain={route.chainMark} size={16} /> back in {route.symbol}{" "}
-                  to <span className="font-mono">{short(movement.refundable.payer)}</span> on{" "}
-                  {route.chain}
-                </span>
-              ) : (
-                <span className="mt-1 inline-flex items-center gap-1.5 font-mono text-[13px] text-muted-foreground">
-                  <Mark id="near" size={16} /> back to {movement.refundable.payer}
-                </span>
-              )}
             </div>
             <Field
               id="refund-amount"
@@ -120,21 +128,16 @@ export function RefundSheet({
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
               status={
-                units > left ? { kind: "bad", text: `At most ${money(left)}` } : { kind: "none" }
+                units > left ? { kind: "bad", text: `At most ${usdUnits(left)}` } : { kind: "none" }
               }
             />
             {problem ? <p className="text-[15px] font-medium text-down">{problem}</p> : null}
             <HoldButton
-              label={`Hold to refund ${money(units)}`}
+              label={`Hold to refund ${usdUnits(units)}`}
               ready={valid}
               busy={busy}
               onConfirm={() => onRefund(amount)}
             />
-            <p className="-mt-2 text-center text-detail text-muted-foreground">
-              {route
-                ? "Gas-free on NEAR; NEAR Intents converts it. If it can't be delivered, it comes back to you."
-                : "Gas-free: Tegata pays the network fee. It gets its own receipt."}
-            </p>
           </div>
         )
       ) : null}

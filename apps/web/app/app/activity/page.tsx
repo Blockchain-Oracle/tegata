@@ -10,6 +10,7 @@ import { useState } from "react"
 import { type ActivityFilter, ActivityView } from "@/components/books/activity-view"
 import { type RefundDone, RefundSheet } from "@/components/books/refund-sheet"
 import { useNetwork } from "@/hooks/use-network"
+import { useProfile } from "@/hooks/use-profile"
 import { useSigner } from "@/hooks/use-signer"
 import { ApiError, api, download } from "@/lib/client/api"
 import { signAndFollow } from "@/lib/client/sign-relay"
@@ -26,6 +27,7 @@ export default function ActivityPage() {
   const queryClient = useQueryClient()
   const signer = useSigner()
   const network = useNetwork()
+  const { profile } = useProfile()
   const [month, setMonth] = useState<string | null>(null)
   const [filter, setFilter] = useState<ActivityFilter>("all")
   const [query, setQuery] = useState("")
@@ -107,6 +109,7 @@ export default function ActivityPage() {
     <>
       <ActivityView
         data={books.data}
+        businessName={profile?.workspace?.name}
         error={books.isError && !books.data}
         onRetry={() => void books.refetch()}
         onPrev={() => current && setMonth(shift(current, -1))}

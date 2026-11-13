@@ -2,32 +2,41 @@
 
 // A receipt (plan 6.8 E, rule R1): a paper slip on the stage for every money movement, a customer payment (numbered,
 // stamped PAID with the business seal), a send (stamped SENT) or a referral reward (Tegata's own seal), with the
-// amount, who paid whom, how, when, and the NEAR transaction that proves it. Share it, save it as a PDF, then NEAR.
+// amount, who paid whom, how (with the real mark of the coin and chain), when, and the NEAR transaction that proves
+// it. Share it, save it as a PDF, then NEAR. The slip itself is `ReceiptSlip`, shared with the pay page.
 import { Check, ExternalLink, Printer, Share2 } from "lucide-react"
 import Link from "next/link"
 import { useState } from "react"
+
 import { BusinessSeal, SealPress, TegataSeal } from "@/components/brand/seal"
 import { AccountLink, TxLink } from "@/components/kit/account-link"
-import { Figure, viewDollars } from "@/components/kit/figure"
+import { viewDollars } from "@/components/kit/figure"
+import { SandboxPill } from "@/components/kit/sandbox-pill"
 import { Stage, StageObject } from "@/components/kit/stage"
-import { RailMark } from "@/components/links/link-detail-view"
 import { Mark } from "@/components/marks/mark"
+import { PaidWithMark } from "@/components/marks/paid-with"
+import { ReceiptSlip, RouteLine, SlipRow as Row } from "@/components/receipt/receipt-slip"
 import type { ReceiptView as Receipt } from "@/lib/client/types"
 import { fire } from "@/lib/feedback"
+import { coinAmount, usdUnits } from "@/lib/fiat"
+import { routeOfAsset } from "@/lib/routes"
 
 const COPIED_MS = 1500
 
 const METHOD_WORD = {
   tegata: "Tegata balance",
   near_wallet: "NEAR wallet",
-  oneclick: "Another chain (NEAR Intents)",
-  manual: "Marked paid by hand (not on NEAR)",
+  oneclick: "Another chain",
+  manual: "By hand · not on NEAR",
   reward: "Tegata referral rewards",
-  payroll: "Payroll from a Tegata balance",
-  autopilot: "Autopilot: Tegata's contract on NEAR",
+  payroll: "Payroll · Tegata balance",
+  autopilot: "Autopilot on NEAR",
 } as const
 
-const FEE_WORD = { tegata: "Paid by Tegata", payer: "Paid by the payer's wallet" } as const
+const FEE_WORD = { tegata: "Paid by Tegata", payer: "Paid by the payer" } as const
+
+/** A dashed pill drawn for white paper, which stays light in both themes. */
+const PAPER_PILL = "border-paper-text-3 py-0.5 text-[12px] text-paper-text-2"
 
 export function ReceiptView({ receipt, token }: { receipt: Receipt; token: string }) {
   const [copied, setCopied] = useState(false)
@@ -50,8 +59,10 @@ export function ReceiptView({ receipt, token }: { receipt: Receipt; token: strin
         // The reader's own clock, so it says which one: "12 Nov 2026, 17:40 GMT+1".
         timeZoneName: "short",
       })
-    : "Settling"
+    : null
   const sandbox = receipt.network === "testnet"
+  const delivered = receipt.deliveredAs
+  const deliveredSymbol = delivered?.route.split(" on ")[0] ?? ""
 
   const share = async () => {
     const url = window.location.href
@@ -96,113 +107,17 @@ export function ReceiptView({ receipt, token }: { receipt: Receipt; token: strin
         </div>
 
         <StageObject className="w-full max-w-[440px]" from={{ y: 28, rotate: -2 }} drift={false}>
-          <article className="relative rounded-[20px] bg-white text-black shadow-receipt">
-            <div className="p-6 pb-4">
-              <span className="flex items-center gap-2 text-[13px] font-semibold text-[#666]">
-                <TegataSeal size={20} textured={false} />{" "}
-                {receipt.kind === "payslip" ? "Payslip" : `Receipt · ${number}`}
-              </span>
-              <Figure value={viewDollars(receipt.amount)} className="mt-3 flex text-[60px]" />
-              <span className="mt-1 flex items-center gap-1.5 text-[14px] font-medium text-[#666]">
+          <ReceiptSlip
+            label={receipt.kind === "payslip" ? "Payslip" : `Receipt · ${number}`}
+            amount={viewDollars(receipt.amount)}
+            sub={
+              <>
                 <Mark id="usdc" chain="near" size={18} /> USDC on NEAR
-                {sandbox ? " · Sandbox (testnet)" : ""}
-              </span>
-            </div>
-            <div className="relative h-4">
-              <span className="absolute top-1/2 -left-2 size-4 -translate-y-1/2 rounded-full bg-stage print:bg-white" />
-              <span className="absolute top-1/2 -right-2 size-4 -translate-y-1/2 rounded-full bg-stage print:bg-white" />
-              <span className="absolute inset-x-4 top-1/2 border-t-2 border-dashed border-[#E2E2E2]" />
-            </div>
-            <dl className="flex flex-col gap-3 p-6 pt-3 text-[14px]">
-              <Row label="Paid to">
-                <Party name={receipt.receiverName} account={receipt.receiverId} />
-              </Row>
-              <Row label="For">
-                {receipt.forUrl ? (
-                  <Link
-                    href={receipt.forUrl}
-                    className="underline decoration-current/30 decoration-dotted underline-offset-[3px] hover:decoration-solid"
-                  >
-                    {receipt.title}
-                  </Link>
-                ) : (
-                  receipt.title
-                )}
-              </Row>
-              {receipt.refunded ? (
-                <Row label="Refunded">
-                  <span className="text-down">−${viewDollars(receipt.refunded).toFixed(2)}</span>
-                </Row>
-              ) : null}
-              <Row label="From">
-                <Party name={receipt.payerName} account={receipt.payer ?? "A payer"} />
-              </Row>
-              <Row label="Paid with">
-                <span className="inline-flex items-center gap-1.5">
-                  <RailMark
-                    rail={
-                      receipt.method === "reward" ||
-                      receipt.method === "payroll" ||
-                      receipt.method === "autopilot"
-                        ? "tegata"
-                        : receipt.method
-                    }
-                    size={18}
-                  />{" "}
-                  {receipt.via ? `${receipt.via} → USDC on NEAR` : METHOD_WORD[receipt.method]}
-                </span>
-              </Row>
-              {receipt.deliveredAs ? (
-                <Row label="Delivered as">
-                  <span className="inline-flex items-center gap-1.5">
-                    <Mark
-                      id={receipt.deliveredAs.coin}
-                      chain={receipt.deliveredAs.chainMark}
-                      size={18}
-                    />
-                    {receipt.deliveredAs.amount
-                      ? `${receipt.deliveredAs.amount} ${receipt.deliveredAs.route}`
-                      : receipt.deliveredAs.route}
-                  </span>
-                </Row>
-              ) : null}
-              {receipt.deliveredAs ? (
-                <Row label="Converted by">
-                  <span className="inline-flex items-center gap-1.5">
-                    <Mark id="intents" size={18} /> NEAR Intents
-                  </span>
-                </Row>
-              ) : null}
-              <Row label="Settled">{settled}</Row>
-              {receipt.feeBy ? <Row label="Network fee">{FEE_WORD[receipt.feeBy]}</Row> : null}
-              {receipt.txHash ? (
-                <Row label="Transaction">
-                  <TxLink hash={receipt.txHash} network={receipt.network} className="text-[13px]" />
-                </Row>
-              ) : null}
-              {receipt.deliveredAs?.txUrl ? (
-                <Row label={`On ${receipt.deliveredAs.route.split(" on ")[1] ?? "their chain"}`}>
-                  <a
-                    href={receipt.deliveredAs.txUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="inline-flex items-center gap-1 text-[13px] text-[#B23700] hover:underline"
-                  >
-                    Delivery transaction <ExternalLink className="size-3.5" />
-                  </a>
-                </Row>
-              ) : null}
-            </dl>
-            <div className="flex items-center justify-between gap-3 border-t border-[#ECECEC] px-6 py-4 text-[12px] font-medium text-[#666]">
-              <span className="inline-flex items-center gap-1.5">
-                <Mark id="near" size={14} /> Settled on NEAR
-              </span>
-              <span className="inline-flex items-center gap-1.5">
-                <Mark id="circle" size={14} /> USDC by Circle
-              </span>
-            </div>
-            {receipt.settledAt ? (
-              <div className="absolute top-4 right-4">
+                {sandbox ? <SandboxPill className={PAPER_PILL}>Sandbox</SandboxPill> : null}
+              </>
+            }
+            seal={
+              receipt.settledAt ? (
                 <SealPress
                   delay={0.45}
                   onLanded={() => fire("filled", { cue: "stamp", identity: `receipt:${token}` })}
@@ -223,9 +138,80 @@ export function ReceiptView({ receipt, token }: { receipt: Receipt; token: strin
                     />
                   )}
                 </SealPress>
-              </div>
+              ) : null
+            }
+          >
+            <Row label="Paid to">
+              <Party name={receipt.receiverName} account={receipt.receiverId} />
+            </Row>
+            <Row label="For">
+              {receipt.forUrl ? (
+                <Link
+                  href={receipt.forUrl}
+                  className="underline decoration-current/30 decoration-dotted underline-offset-[3px] hover:decoration-solid"
+                >
+                  {receipt.title}
+                </Link>
+              ) : (
+                receipt.title
+              )}
+            </Row>
+            {receipt.refunded ? (
+              <Row label="Refunded">
+                <span className="tnum text-down">−{usdUnits(receipt.refunded)}</span>
+              </Row>
             ) : null}
-          </article>
+            <Row label="From">
+              <Party name={receipt.payerName} account={receipt.payer} />
+            </Row>
+            <Row label="Paid with">
+              <PaidWith receipt={receipt} />
+            </Row>
+            {delivered ? (
+              <Row label="Delivered as">
+                <span className="inline-flex items-center gap-1.5">
+                  <Mark id={delivered.coin} chain={delivered.chainMark} size={18} />
+                  {delivered.amount
+                    ? `${coinAmount(delivered.amount, deliveredSymbol)} on ${delivered.route.split(" on ")[1] ?? ""}`
+                    : delivered.route}
+                </span>
+              </Row>
+            ) : null}
+            {delivered || receipt.method === "oneclick" ? (
+              <Row label="Converted by">
+                <span className="inline-flex items-center gap-1.5">
+                  <Mark id="intents" size={18} /> NEAR Intents
+                </span>
+              </Row>
+            ) : null}
+            {settled ? (
+              <Row label="Settled">{settled}</Row>
+            ) : (
+              <Row label="Status">
+                <span className="inline-flex items-center gap-1.5">
+                  <span className="size-1.5 animate-pulse rounded-full bg-shu" /> Waiting for NEAR
+                </span>
+              </Row>
+            )}
+            {receipt.feeBy ? <Row label="Network fee">{FEE_WORD[receipt.feeBy]}</Row> : null}
+            {receipt.txHash ? (
+              <Row label="Transaction">
+                <TxLink hash={receipt.txHash} network={receipt.network} className="text-[13px]" />
+              </Row>
+            ) : null}
+            {delivered?.txUrl ? (
+              <Row label={`On ${delivered.route.split(" on ")[1] ?? "their chain"}`}>
+                <a
+                  href={delivered.txUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-1 text-[13px] text-paper-seal hover:underline"
+                >
+                  Delivery transaction <ExternalLink className="size-3.5" />
+                </a>
+              </Row>
+            ) : null}
+          </ReceiptSlip>
         </StageObject>
 
         <div className="flex flex-wrap justify-center gap-2 print:hidden">
@@ -261,30 +247,65 @@ export function ReceiptView({ receipt, token }: { receipt: Receipt; token: strin
   )
 }
 
-/** A name over its NEAR account, or the account alone when that is all there is. */
-function Party({ name, account }: { name: string | null; account: string }) {
-  // "A payer" (no account recorded) stays plain; a real NEAR account opens on the explorer.
-  const isAccount = account.includes(".") || /^[0-9a-f]{64}$/.test(account)
-  const shown = isAccount ? (
+/** How the money moved, with its real mark: the coin and chain it came from for NEAR Intents (audit S3). */
+function PaidWith({ receipt }: { receipt: Receipt }) {
+  if (receipt.method === "oneclick") {
+    const route = routeOfAsset(receipt.assetIn)
+    if (route)
+      return (
+        <RouteLine
+          coin={route.coin}
+          chainMark={route.chainMark}
+          from={`${route.symbol} on ${route.chain}`}
+        />
+      )
+  }
+  const mark =
+    receipt.method === "autopilot" ? (
+      <Mark id="near" size={18} />
+    ) : (
+      <PaidWithMark
+        rail={
+          receipt.method === "near_wallet" ||
+          receipt.method === "manual" ||
+          receipt.method === "oneclick"
+            ? receipt.method
+            : "tegata"
+        }
+        size={18}
+      />
+    )
+  return (
+    <span className="inline-flex items-center gap-1.5">
+      {mark}
+      {receipt.method === "oneclick" && receipt.via
+        ? `${receipt.via} → USDC on NEAR`
+        : METHOD_WORD[receipt.method]}
+    </span>
+  )
+}
+
+/** A name over its account. A NEAR account opens on the explorer; another chain's address is shortened; mono is
+ * only ever the account itself. */
+function Party({ name, account }: { name: string | null; account: string | null }) {
+  const isNear = account ? account.includes(".") || /^[0-9a-f]{64}$/.test(account) : false
+  const shown = !account ? (
+    <span>A payer</span>
+  ) : isNear ? (
     <AccountLink accountId={account} className="justify-end text-[13px]" />
+  ) : /\s/.test(account) || account.length < 20 ? (
+    <span>{account}</span>
   ) : (
-    <span className="font-mono text-[13px]">{account}</span>
+    <span className="font-mono text-[13px]" title={account}>
+      {account.slice(0, 6)}…{account.slice(-4)}
+    </span>
   )
   if (!name || name === account) return shown
   return (
     <span className="flex flex-col items-end">
       <span>{name}</span>
-      <span className="text-[12px] font-medium text-[#666]">{shown}</span>
+      <span className="text-[12px] font-medium text-paper-text-2">{shown}</span>
     </span>
-  )
-}
-
-function Row({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div className="flex items-start justify-between gap-4">
-      <dt className="text-[#666]">{label}</dt>
-      <dd className="min-w-0 text-right font-semibold [overflow-wrap:anywhere]">{children}</dd>
-    </div>
   )
 }
 

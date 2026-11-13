@@ -23,12 +23,13 @@ import { Segmented } from "@/components/kit/segmented"
 import { Stage } from "@/components/kit/stage"
 import { Switch } from "@/components/kit/switch"
 import { PayView } from "@/components/pay/pay-view"
-
 import type { Customer, DraftForm } from "@/lib/client/types"
 import { fire } from "@/lib/feedback"
+import { usdUnits } from "@/lib/fiat"
 import { cn } from "@/lib/utils"
 
 import { CustomerPicker, type NewCustomer } from "./customer-picker"
+import { DatePicker } from "./date-picker"
 import { InvoicePaper, type Party } from "./invoice-paper"
 
 const TERMS = [
@@ -114,6 +115,7 @@ export function InvoiceBuilder({
   const [form, setForm] = useState(initial)
   const [preview, setPreview] = useState<"invoice" | "pay" | "email">("invoice")
   const [phoneView, setPhoneView] = useState<"edit" | "preview">("edit")
+  const [pickDue, setPickDue] = useState(false)
   const totals = useMemo(() => draftTotals(form), [form])
   // biome-ignore lint/correctness/useExhaustiveDependencies: report edits only, not a new callback identity.
   useEffect(() => {
@@ -341,7 +343,7 @@ export function InvoiceBuilder({
                   />
                 </div>
                 <span className="tnum hidden truncate text-right text-[15px] font-semibold @xl:block">
-                  ${viewDollars(totals.lines[i] ?? 0n).toFixed(2)}
+                  {usdUnits(totals.lines[i] ?? 0n)}
                 </span>
                 <button
                   type="button"
@@ -435,49 +437,35 @@ export function InvoiceBuilder({
 
           <section className="flex flex-col gap-3">
             <div className="grid gap-4 sm:grid-cols-2">
-              <div className="flex flex-col gap-2">
-                <label
-                  htmlFor="issue-date"
-                  className="text-detail font-medium text-muted-foreground"
-                >
-                  Issued
-                </label>
-                <input
-                  id="issue-date"
-                  type="date"
-                  value={form.issueDate}
-                  onChange={(e) => {
-                    const issueDate = e.target.value
-                    if (!issueDate) return
-                    setForm((f) => ({
-                      ...f,
-                      issueDate,
-                      dueDate:
-                        termsValue === "date" ? f.dueDate : addDays(issueDate, Math.max(0, terms)),
-                    }))
-                  }}
-                  className="h-14 rounded-[14px] bg-input px-4 text-[16px] font-medium outline-none focus:bg-card focus:shadow-[0_0_0_2px_var(--shu)]"
-                />
-              </div>
-              <div className="flex flex-col gap-2">
-                <label htmlFor="due-date" className="text-detail font-medium text-muted-foreground">
-                  Due
-                </label>
-                <input
-                  id="due-date"
-                  type="date"
-                  min={form.issueDate}
-                  value={form.dueDate}
-                  onChange={(e) => e.target.value && set("dueDate", e.target.value)}
-                  className="h-14 rounded-[14px] bg-input px-4 text-[16px] font-medium outline-none focus:bg-card focus:shadow-[0_0_0_2px_var(--shu)]"
-                />
-              </div>
+              <DatePicker
+                id="issue-date"
+                label="Issued"
+                value={form.issueDate}
+                onChange={(issueDate) =>
+                  setForm((f) => ({
+                    ...f,
+                    issueDate,
+                    dueDate:
+                      termsValue === "date" ? f.dueDate : addDays(issueDate, Math.max(0, terms)),
+                  }))
+                }
+              />
+              <DatePicker
+                id="due-date"
+                label="Due"
+                value={form.dueDate}
+                min={form.issueDate}
+                onChange={(dueDate) => set("dueDate", dueDate)}
+                open={pickDue}
+                onOpenChange={setPickDue}
+              />
             </div>
             <Segmented
               label="Payment terms"
               value={termsValue}
               onValueChange={(v) => {
-                if (v !== "date") set("dueDate", addDays(form.issueDate, Number(v)))
+                if (v === "date") setPickDue(true)
+                else set("dueDate", addDays(form.issueDate, Number(v)))
               }}
               options={TERMS}
             />
@@ -507,23 +495,16 @@ export function InvoiceBuilder({
           <section className="flex flex-col divide-y divide-secondary rounded-[16px] bg-secondary/60 px-4">
             <Toggle
               title="Allow part-payments"
-              detail="The customer can pay some now, the rest later"
               checked={form.allowPartial}
               onChange={(v) => set("allowPartial", v)}
             />
             <Toggle
               title="Send reminders"
-              detail="3 days before it's due, on the day, then 3 and 7 days late"
               checked={form.reminders}
               onChange={(v) => set("reminders", v)}
             />
             <div className="flex flex-wrap items-center justify-between gap-3 py-3">
-              <span className="flex flex-col">
-                <span className="text-[15px] font-semibold">Repeat</span>
-                <span className="text-detail text-muted-foreground">
-                  Send a fresh copy on a schedule
-                </span>
-              </span>
+              <span className="text-[15px] font-semibold">Repeat</span>
               <Segmented
                 label="Repeat"
                 value={form.repeat ?? "off"}
@@ -594,21 +575,16 @@ export function InvoiceBuilder({
 
 function Toggle({
   title,
-  detail,
   checked,
   onChange,
 }: {
   title: string
-  detail: string
   checked: boolean
   onChange: (value: boolean) => void
 }) {
   return (
-    <div className="flex items-center justify-between gap-4 py-3">
-      <span className="flex flex-col">
-        <span className="text-[15px] font-semibold">{title}</span>
-        <span className="text-detail text-muted-foreground">{detail}</span>
-      </span>
+    <div className="flex min-h-14 items-center justify-between gap-4 py-3">
+      <span className="text-[15px] font-semibold">{title}</span>
       <Switch checked={checked} onCheckedChange={onChange} label={title} />
     </div>
   )
@@ -637,12 +613,12 @@ function EmailPreview({ data }: { data: InvoiceEmailData }) {
   }, [key])
   return (
     <div className="overflow-hidden rounded-[20px] bg-white shadow-object">
-      <div className="flex flex-col gap-0.5 border-b border-[#ECECEC] px-5 py-3 text-[13px] text-[#444]">
+      <div className="flex flex-col gap-0.5 border-b border-paper-rule px-5 py-3 text-[13px] text-black">
         <span>
-          <span className="text-[#999]">From</span> {data.business} via Tegata
+          <span className="text-paper-text-3">From</span> {data.business} via Tegata
         </span>
         <span>
-          <span className="text-[#999]">Subject</span> {data.number} from {data.business}
+          <span className="text-paper-text-3">Subject</span> {data.number} from {data.business}
         </span>
       </div>
       {html ? (
@@ -650,11 +626,11 @@ function EmailPreview({ data }: { data: InvoiceEmailData }) {
           title="Email preview"
           srcDoc={html}
           sandbox=""
-          className="h-[560px] w-full bg-[#F5F5F5]"
+          className="h-[560px] w-full bg-paper-sunk"
         />
       ) : (
         <div
-          className="h-[560px] animate-skeleton bg-[#F5F5F5]"
+          className="h-[560px] animate-skeleton bg-paper-sunk"
           role="status"
           aria-label="Rendering the email"
         />

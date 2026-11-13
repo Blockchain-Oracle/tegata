@@ -10,17 +10,22 @@ import { AnimatePresence, motion, useReducedMotion } from "motion/react"
 import Link from "next/link"
 import type { ReactNode } from "react"
 
+import { shortAccount } from "@/components/books/movement-mark"
 import { BusinessSeal, SealPress, TegataSeal } from "@/components/brand/seal"
+import { txUrl } from "@/components/kit/account-link"
 import { Button } from "@/components/kit/button"
 import { Field } from "@/components/kit/field"
 import { Figure } from "@/components/kit/figure"
 import { HoldButton } from "@/components/kit/hold-button"
+import { SandboxPill } from "@/components/kit/sandbox-pill"
 import { Paper, Stage } from "@/components/kit/stage"
 import { ErrorState, TextShimmer } from "@/components/kit/states"
 import { TaskSteps } from "@/components/kit/task-steps"
 import { Mark } from "@/components/marks/mark"
+import { ReceiptSlip, SlipRow } from "@/components/receipt/receipt-slip"
 import type { PayoutPreview, PayoutView } from "@/lib/client/types"
 import { fire } from "@/lib/feedback"
+import { coinAmount, usd } from "@/lib/fiat"
 import { ADDRESS_HINT, addressLooksRight, chainTxUrl, eta } from "@/lib/routes"
 import { cn } from "@/lib/utils"
 
@@ -56,6 +61,8 @@ export interface ChainSendViewProps {
   problem: string | null
   /** Shown under the title on the form: NEAR account / Another chain. */
   switcher?: ReactNode
+  /** The Sandbox: the same form, with the reason it runs in Live instead of a quote (R5). */
+  sandbox?: boolean
   /** Open the QR scanner for the address. */
   onScan?: () => void
   onReview: () => void
@@ -64,9 +71,6 @@ export interface ChainSendViewProps {
   onAgain: () => void
   onReceive: () => void
 }
-
-const short = (address: string) =>
-  address.length > 16 ? `${address.slice(0, 6)}…${address.slice(-4)}` : address
 
 export function ChainSendView(p: ChainSendViewProps) {
   const reduce = useReducedMotion()
@@ -143,7 +147,7 @@ export function ChainSendView(p: ChainSendViewProps) {
             className="flex flex-col gap-5"
             onSubmit={(e) => {
               e.preventDefault()
-              if (!empty) p.onReview()
+              if (!empty && !p.sandbox) p.onReview()
             }}
             {...slide}
           >
@@ -173,7 +177,8 @@ export function ChainSendView(p: ChainSendViewProps) {
                 <div className="flex items-center gap-2 rounded-full bg-white/18 py-1 pr-1 pl-2.5 text-[14px] text-white">
                   <Mark id="usdc" chain="near" size={18} />
                   <span className={cn(over && "font-semibold")}>
-                    {over ? "More than your " : "You have "}${p.balance.toFixed(2)}
+                    {over ? "More than your " : "You have "}
+                    {usd(p.balance)}
                   </span>
                   {!empty ? (
                     <button
@@ -254,10 +259,13 @@ export function ChainSendView(p: ChainSendViewProps) {
               <span className="flex items-center justify-between text-detail text-muted-foreground">
                 <span>They get</span>
                 <span className="inline-flex items-center gap-1.5">
-                  <Mark id="intents" size={14} /> Live quote from NEAR Intents
+                  <Mark id="intents" size={14} />{" "}
+                  {p.sandbox ? "NEAR Intents" : "Live quote from NEAR Intents"}
                 </span>
               </span>
-              {value <= 0 ? (
+              {p.sandbox ? (
+                <SandboxPill className="mt-1">Live only · NEAR Intents has no testnet</SandboxPill>
+              ) : value <= 0 ? (
                 <span className="text-[17px] font-semibold text-text-3">Enter an amount</span>
               ) : !addressOk ? (
                 <span className="text-[17px] font-semibold text-text-3">
@@ -267,7 +275,7 @@ export function ChainSendView(p: ChainSendViewProps) {
                 <span className="flex items-center justify-between gap-3">
                   <span className="tnum inline-flex items-center gap-2 text-[20px] font-semibold">
                     <Mark id={route.coin} chain={route.chainMark} size={22} />
-                    {p.preview.data.amountOutFormatted} {route.symbol}
+                    {coinAmount(p.preview.data.amountOutFormatted, route.symbol)}
                   </span>
                   {p.preview.data.timeEstimate ? (
                     <span className="inline-flex items-center gap-1 text-detail text-muted-foreground">
@@ -282,7 +290,11 @@ export function ChainSendView(p: ChainSendViewProps) {
               )}
             </div>
 
-            {empty ? (
+            {p.sandbox ? (
+              <Button type="button" disabled>
+                Runs in Live
+              </Button>
+            ) : empty ? (
               <Button type="button" variant="shu" cue="tap" onClick={p.onReceive}>
                 Add dollars first
               </Button>
@@ -292,7 +304,7 @@ export function ChainSendView(p: ChainSendViewProps) {
                 busy={p.busy}
                 disabled={value <= 0 || over || !addressOk || !p.preview.data}
               >
-                {value > 0 ? `Review $${value.toFixed(2)}` : "Enter an amount"}
+                {value > 0 ? `Review ${usd(value)}` : "Enter an amount"}
               </Button>
             )}
           </motion.form>
@@ -300,18 +312,18 @@ export function ChainSendView(p: ChainSendViewProps) {
           <motion.div key="review" className="flex flex-col gap-5" {...slide}>
             <Stage className="p-4 sm:p-6">
               <Paper className="flex flex-col gap-1 p-6">
-                <span className="text-detail font-medium text-[#666]">You send exactly</span>
+                <span className="text-detail font-medium text-paper-text-2">You send exactly</span>
                 <Figure value={value} className="text-[64px]" />
-                <div className="mt-4 flex flex-col divide-y divide-[#ECECEC] text-[15px]">
+                <div className="mt-4 flex flex-col divide-y divide-paper-rule text-[15px]">
                   <Row label="To">
                     <span className="inline-flex items-center gap-2 font-mono font-medium">
-                      <Mark id={route.chainMark} size={18} /> {short(p.payout.recipient)}
+                      <Mark id={route.chainMark} size={18} /> {shortAccount(p.payout.recipient)}
                     </span>
                   </Row>
                   <Row label="They receive">
                     <span className="tnum inline-flex items-center gap-1.5 font-semibold">
                       <Mark id={route.coin} chain={route.chainMark} size={18} /> about{" "}
-                      {p.payout.amountOutFormatted} {route.symbol}
+                      {coinAmount(p.payout.amountOutFormatted ?? Number.NaN, route.symbol)}
                     </span>
                   </Row>
                   <Row label="Arrives">
@@ -320,38 +332,40 @@ export function ChainSendView(p: ChainSendViewProps) {
                       {route.chain}
                     </span>
                   </Row>
+                  <Row label="Converted by">
+                    <span className="inline-flex items-center gap-1.5 font-semibold">
+                      <Mark id="intents" size={18} /> NEAR Intents
+                    </span>
+                  </Row>
                   <Row label="Network fee">
                     <span className="inline-flex items-center gap-1.5 font-semibold">
                       <TegataSeal size={18} textured={false} /> Paid by Tegata
                     </span>
                   </Row>
                 </div>
-                <p className="mt-3 flex items-start gap-2 text-[13px] text-[#666]">
-                  <Mark id="intents" size={16} className="mt-0.5" />
-                  Converted by NEAR Intents. If it can't be delivered, the USDC comes back to your
-                  balance.
-                </p>
               </Paper>
             </Stage>
             {p.problem ? <p className="text-[15px] font-medium text-down">{p.problem}</p> : null}
             <HoldButton
-              label={`Hold to send $${value.toFixed(2)}`}
+              label={`Hold to send ${usd(value)}`}
               busy={p.busy}
               onConfirm={p.onApprove}
             />
           </motion.div>
         ) : p.step === "sending" ? (
           <motion.div key="sending" className="flex flex-col gap-5" {...slide}>
-            <div className="flex flex-col items-center gap-1 rounded-[24px] bg-card p-6 text-center">
-              <span className="inline-flex items-center gap-1.5 text-detail font-medium text-muted-foreground">
-                Sending to <Mark id={route.chainMark} size={16} />{" "}
-                <span className="font-mono">{short(p.payout?.recipient ?? p.to)}</span>
-              </span>
-              <Figure value={value} className="text-[56px]" />
-            </div>
-            <div className="rounded-[20px] bg-secondary p-2">
-              <TaskSteps steps={steps} current={p.progress} />
-            </div>
+            <Stage className="p-4 sm:p-6">
+              <Paper className="flex flex-col gap-4 p-4 sm:p-5">
+                <div className="flex flex-col items-center gap-1 text-center">
+                  <span className="inline-flex items-center gap-1.5 text-detail font-medium text-paper-text-2">
+                    Sending to <Mark id={route.chainMark} size={16} />{" "}
+                    <span className="font-mono">{shortAccount(p.payout?.recipient ?? p.to)}</span>
+                  </span>
+                  <Figure value={value} className="text-[56px]" />
+                </div>
+                <TaskSteps steps={steps} current={p.progress} tone="paper" />
+              </Paper>
+            </Stage>
           </motion.div>
         ) : p.step === "delivered" && p.payout ? (
           <motion.div key="delivered" className="flex flex-col gap-5" {...slide}>
@@ -377,9 +391,8 @@ export function ChainSendView(p: ChainSendViewProps) {
                 <Undo2 className="size-5" />
               </span>
               <h2 className="text-[20px] font-semibold">Couldn't deliver it to {route.chain}</h2>
-              <p className="text-[15px] text-muted-foreground">
-                NEAR Intents couldn't complete the conversion in time, so the ${value.toFixed(2)}{" "}
-                came back to your balance on NEAR.
+              <p className="inline-flex items-center gap-1.5 text-[15px] text-muted-foreground">
+                <Mark id="usdc" chain="near" size={18} /> {usd(value)} is back in your balance.
               </p>
               <Button variant="secondary" onClick={p.onEdit}>
                 Try again
@@ -408,7 +421,7 @@ export function ChainSendView(p: ChainSendViewProps) {
 function Row({ label, children }: { label: string; children: ReactNode }) {
   return (
     <div className="flex items-center justify-between gap-4 py-3">
-      <span className="text-[#666]">{label}</span>
+      <span className="text-paper-text-2">{label}</span>
       {children}
     </div>
   )
@@ -436,31 +449,40 @@ function Delivered({
     ? chainTxUrl(route.chainMark, payout.destinationTx)
     : null
   return (
-    <div className="relative rounded-[20px] bg-white text-black shadow-receipt">
-      <div className="p-6 pb-4">
-        <span className="flex items-center gap-2 text-[13px] font-semibold text-[#666]">
-          <TegataSeal size={20} textured={false} /> Receipt · Delivered
-        </span>
-        <Figure value={value} className="mt-3 flex text-[56px]" />
-        <div className="mt-2 flex items-center gap-2 font-mono text-[15px] font-semibold">
-          <Mark id={route.chainMark} size={22} /> {short(payout.recipient)}
-        </div>
-      </div>
-      <div className="relative h-4">
-        <span className="absolute top-1/2 -left-2 size-4 -translate-y-1/2 rounded-full bg-background" />
-        <span className="absolute top-1/2 -right-2 size-4 -translate-y-1/2 rounded-full bg-background" />
-        <span className="absolute inset-x-4 top-1/2 border-t-2 border-dashed border-[#E2E2E2]" />
-      </div>
-      <div className="flex flex-col gap-2.5 p-6 pt-3 text-[14px]">
+    <Stage className="p-4 sm:p-6" inner="flex flex-col items-center gap-4">
+      <ReceiptSlip
+        className="w-full"
+        label="Receipt · Delivered"
+        amount={value}
+        sub={
+          <>
+            <Mark id={route.chainMark} size={18} />
+            <span className="font-mono">{shortAccount(payout.recipient)}</span>
+          </>
+        }
+        seal={
+          <SealPress
+            delay={0.2}
+            onLanded={() => fire("filled", { cue: "sent", identity: payout.id })}
+          >
+            <BusinessSeal name={businessName} band="Sent" size={96} />
+          </SealPress>
+        }
+      >
         <SlipRow label="Route">
-          <span className="inline-flex items-center gap-1.5">
-            <Mark id="usdc" chain="near" size={16} /> USDC on NEAR →{" "}
+          <span className="inline-flex flex-wrap items-center justify-end gap-1.5">
+            <Mark id="usdc" chain="near" size={16} /> USDC on NEAR
+            <span aria-hidden className="text-paper-text-3">
+              →
+            </span>
             <Mark id={route.coin} chain={route.chainMark} size={16} /> {route.symbol} on{" "}
             {route.chain}
           </span>
         </SlipRow>
         <SlipRow label="Quoted to arrive">
-          {payout.amountOutFormatted} {route.symbol}
+          <span className="tnum">
+            {coinAmount(payout.amountOutFormatted ?? Number.NaN, route.symbol)}
+          </span>
         </SlipRow>
         <SlipRow label="Converted by">
           <span className="inline-flex items-center gap-1.5">
@@ -470,46 +492,30 @@ function Delivered({
         <SlipRow label="From">{businessName}</SlipRow>
         <SlipRow label="Delivered">{when}</SlipRow>
         <SlipRow label="Network fee">Paid by Tegata</SlipRow>
-        <span className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-2">
+      </ReceiptSlip>
+      {payout.txHash || destination ? (
+        <div className="flex flex-wrap justify-center gap-2">
           {payout.txHash ? (
             <a
-              href={`https://nearblocks.io/txns/${payout.txHash}`}
+              href={txUrl(payout.txHash, "mainnet")}
               target="_blank"
               rel="noreferrer"
-              className="inline-flex items-center gap-1.5 font-semibold text-[#B23700] hover:underline"
+              className={SLIP_LINK}
             >
-              On NEAR <ExternalLink className="size-3.5" />
+              <Mark id="near" size={18} /> On NEAR <ExternalLink />
             </a>
           ) : null}
           {destination ? (
-            <a
-              href={destination}
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center gap-1.5 font-semibold text-[#B23700] hover:underline"
-            >
-              On {route.chain} <ExternalLink className="size-3.5" />
+            <a href={destination} target="_blank" rel="noreferrer" className={SLIP_LINK}>
+              <Mark id={route.chainMark} size={18} /> On {route.chain} <ExternalLink />
             </a>
           ) : null}
-        </span>
-      </div>
-      <div className="absolute top-4 right-4">
-        <SealPress
-          delay={0.2}
-          onLanded={() => fire("filled", { cue: "sent", identity: payout.id })}
-        >
-          <BusinessSeal name={businessName} band="Sent" size={96} />
-        </SealPress>
-      </div>
-    </div>
+        </div>
+      ) : null}
+    </Stage>
   )
 }
 
-function SlipRow({ label, children }: { label: string; children: ReactNode }) {
-  return (
-    <div className="flex items-center justify-between gap-4">
-      <span className="text-[#666]">{label}</span>
-      <span className="text-right font-semibold">{children}</span>
-    </div>
-  )
-}
+/** A white link pill under the slip, on the stage. */
+const SLIP_LINK =
+  "press inline-flex h-11 items-center gap-2 rounded-full bg-white px-4 text-[15px] font-semibold text-black shadow-object [&_svg]:size-4"

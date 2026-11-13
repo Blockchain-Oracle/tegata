@@ -49,6 +49,7 @@ export async function loadPublicInvoice(token: string): Promise<PublicInvoiceDat
       token: r.receiptToken,
       amount: r.amount.toString(),
       rail: r.rail,
+      assetIn: r.assetIn,
       settledAt: r.settledAt?.toISOString() ?? null,
     })),
   }

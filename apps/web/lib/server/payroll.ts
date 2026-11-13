@@ -17,6 +17,8 @@ import { z } from "zod"
 
 import type { PayRun, PayRunSummary, PersonPage, ReceiptView, TeamPerson } from "@/lib/client/types"
 
+import { chainTxUrl, routeOf } from "@/lib/routes"
+
 import { db } from "./context.ts"
 import { badRequest } from "./http.ts"
 
@@ -82,6 +84,7 @@ export async function runView(workspaceId: string, runId: string): Promise<PayRu
       role: row.role,
       destinationKind: row.destinationKind,
       accountId: row.accountId,
+      route: row.route,
       amount: row.amount.toString(),
       status: row.status,
       skipReason: row.skipReason,
@@ -142,6 +145,22 @@ export async function payslipView(rowId: string): Promise<ReceiptView | null> {
     feeBy: "tegata",
     txHash: row.txHash,
     explorerUrl: row.txHash ? explorerTx(run.network, row.txHash) : null,
+    // Paid to another chain: what NEAR Intents delivered, where, and that chain's transaction once it's there.
+    deliveredAs: slip.payout
+      ? (() => {
+          const route = routeOf(slip.payout.symbol, slip.payout.chain)
+          return {
+            route: `${slip.payout.symbol} on ${slip.payout.chain}`,
+            coin: route?.coin ?? "unknown",
+            chainMark: route?.chainMark ?? "unknown",
+            amount: slip.payout.amountOutFormatted,
+            txUrl:
+              slip.payout.destinationTx && route
+                ? chainTxUrl(route.chainMark, slip.payout.destinationTx)
+                : null,
+          }
+        })()
+      : null,
   }
 }
 

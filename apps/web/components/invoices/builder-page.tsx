@@ -5,7 +5,7 @@
 // and lands on its page with the seal pressed.
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { localToday, percentText, quantityText } from "@tegata/core/invoices"
-import { Link2, Mail } from "lucide-react"
+import { Check, Copy, Link2, Mail } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useState } from "react"
 
@@ -22,7 +22,8 @@ import { CustomerDisc, type NewCustomer } from "./customer-picker"
 import { type BuilderProblem, draftTotals, emptyDraft, InvoiceBuilder } from "./invoice-builder"
 import { longDate } from "./invoice-paper"
 
-const dollarsText = (units: string) => viewDollars(units).toFixed(2)
+/** A stored amount as the form's typed value ("1250.00"): an input, not a display, so no sign or separators. */
+const inputDollars = (units: string) => viewDollars(units).toFixed(2)
 
 /** The stored draft as the builder's form. */
 export function formOf(draft: NonNullable<InvoiceDetail["draft"]>): DraftForm {
@@ -36,7 +37,7 @@ export function formOf(draft: NonNullable<InvoiceDetail["draft"]>): DraftForm {
         ? null
         : draft.discount.kind === "percent"
           ? { kind: "percent", value: percentText(draft.discount.bp) }
-          : { kind: "fixed", value: dollarsText(draft.discount.amount) },
+          : { kind: "fixed", value: inputDollars(draft.discount.amount) },
     taxRate: draft.taxBp ? percentText(draft.taxBp) : "",
     allowPartial: draft.allowPartial,
     reminders: draft.reminders,
@@ -46,7 +47,7 @@ export function formOf(draft: NonNullable<InvoiceDetail["draft"]>): DraftForm {
         ? draft.lines.map((line) => ({
             description: line.description,
             quantity: quantityText(BigInt(line.quantityMilli)),
-            unitPrice: dollarsText(line.unitPrice),
+            unitPrice: inputDollars(line.unitPrice),
           }))
         : [{ description: "", quantity: "1", unitPrice: "" }],
   }
@@ -194,25 +195,28 @@ export function BuilderPage({ initial, invoiceId }: { initial?: DraftForm; invoi
               </span>
               <Figure value={viewDollars(draftTotals(review).total)} className="text-[28px]" />
             </div>
-            <ul className="flex flex-col gap-3 text-[15px]">
-              <li className="flex gap-3">
-                <Link2 className="mt-0.5 size-5 shrink-0 text-shu" />
-                <span>
-                  It gets its number and a pay link. {reviewCustomer?.name ?? "They"} pay in dollars
-                  from a Tegata account or a NEAR wallet
-                  {review.allowPartial ? ", in parts if they like" : ""}.
-                </span>
-              </li>
-              <li className="flex gap-3">
-                <Mail className="mt-0.5 size-5 shrink-0 text-shu" />
-                <span>
-                  {!reviewCustomer?.email
-                    ? "This customer has no email, so you'll copy the link and send it yourself."
-                    : profile?.emailEnabled
-                      ? `We email it to ${reviewCustomer.email} with a PDF${review.reminders ? ", and remind them around the due date" : ""}.`
-                      : `Email isn't set up on this server yet, so you'll copy the link and send it to ${reviewCustomer.email} yourself${review.reminders ? "; reminders won't go out either" : ""}.`}
-                </span>
-              </li>
+            <ul className="flex flex-col gap-2">
+              <CheckRow
+                icon={<Link2 />}
+                title="Pay link"
+                detail={review.allowPartial ? "Part-payments on" : undefined}
+              />
+              {reviewCustomer?.email && profile?.emailEnabled ? (
+                <CheckRow
+                  icon={<Mail />}
+                  title={`Email to ${reviewCustomer.email} + PDF`}
+                  detail={review.reminders ? "Reminders on" : undefined}
+                />
+              ) : (
+                <CheckRow
+                  icon={<Copy />}
+                  title={
+                    reviewCustomer?.email
+                      ? `You copy the link to ${reviewCustomer.email}`
+                      : "You copy the link to send"
+                  }
+                />
+              )}
             </ul>
             <Button
               busy={send.isPending}
@@ -223,12 +227,33 @@ export function BuilderPage({ initial, invoiceId }: { initial?: DraftForm; invoi
             >
               Send invoice
             </Button>
-            <p className="text-center text-detail text-muted-foreground">
-              Once sent, it can't be edited. You can void it and send a copy.
-            </p>
           </div>
         ) : null}
       </Sheet>
     </>
+  )
+}
+
+/** One thing sending does, ticked. */
+function CheckRow({
+  icon,
+  title,
+  detail,
+}: {
+  icon: React.ReactNode
+  title: string
+  detail?: string
+}) {
+  return (
+    <li className="flex items-center gap-3 rounded-[14px] bg-secondary px-4 py-3">
+      <span className="grid size-9 shrink-0 place-items-center rounded-full bg-shu-wash text-shu-ink [&_svg]:size-[18px]">
+        {icon}
+      </span>
+      <span className="flex min-w-0 flex-1 flex-col">
+        <span className="truncate text-[15px] font-semibold">{title}</span>
+        {detail ? <span className="text-detail text-muted-foreground">{detail}</span> : null}
+      </span>
+      <Check className="size-5 shrink-0 text-up" aria-hidden />
+    </li>
   )
 }

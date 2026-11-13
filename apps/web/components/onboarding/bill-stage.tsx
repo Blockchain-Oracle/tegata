@@ -41,12 +41,12 @@ export function BillStage({
         <StageObject from={{ y: 30, rotate: -3 }}>
           <Paper className="relative w-[320px] p-6 pb-8 sm:w-[380px]">
             <div className="flex items-center justify-between">
-              <span className="inline-flex items-center gap-2 text-[13px] font-semibold text-[#666]">
+              <span className="inline-flex items-center gap-2 text-[13px] font-semibold text-paper-text-2">
                 <TegataSeal size={20} textured={false} /> Tegata
               </span>
-              <span className="text-[12px] font-medium text-[#999]">{today}</span>
+              <span className="text-[12px] font-medium text-paper-text-3">{today}</span>
             </div>
-            <p className="mt-5 text-[12px] font-semibold text-[#999]">Pay to the order of</p>
+            <p className="mt-5 text-[12px] font-semibold text-paper-text-3">Pay to the order of</p>
             <motion.p
               key={shown}
               className="display mt-1 min-h-[44px] truncate pr-24 text-[40px] leading-[1.05]"
@@ -55,7 +55,7 @@ export function BillStage({
             >
               {shown}
             </motion.p>
-            <div className="mt-3 h-px w-full bg-[#ECECEC]" />
+            <div className="mt-3 h-px w-full bg-paper-rule" />
             <div className="mt-4 flex items-center gap-2 pr-24">
               <Mark id="near" size={22} />
               <span className="truncate font-mono text-[14px] font-medium">{accountId}</span>
@@ -63,7 +63,7 @@ export function BillStage({
             {stage === "open" ? (
               <div className="mt-4 flex items-end justify-between">
                 <div className="flex flex-col">
-                  <span className="text-[12px] font-semibold text-[#999]">Balance</span>
+                  <span className="text-[12px] font-semibold text-paper-text-3">Balance</span>
                   <Figure value={0} className="text-[36px]" />
                 </div>
               </div>
@@ -92,18 +92,18 @@ export function BillStage({
         {stage === "handle" ? (
           <StageObject delay={0.15} from={{ y: 24, rotate: 3 }} className="mt-10">
             <Paper className="flex w-[300px] items-center gap-4 p-4 sm:w-[360px]">
-              <div className="rounded-[12px] bg-white p-1.5 ring-1 ring-[#ECECEC]">
+              <div className="rounded-[12px] bg-white p-1.5 ring-1 ring-paper-rule">
                 <QRCodeSVG
                   value={`near:${accountId}`}
                   size={92}
                   level="M"
                   fgColor="#000000"
                   bgColor="#FFFFFF"
-                  imageSettings={{ src: "/marks/near.svg", height: 22, width: 22, excavate: true }}
+                  imageSettings={{ src: "/icon.svg", height: 22, width: 22, excavate: true }}
                 />
               </div>
               <div className="flex min-w-0 flex-col gap-1.5">
-                <span className="text-[13px] font-semibold text-[#666]">
+                <span className="text-[13px] font-semibold text-paper-text-2">
                   Anyone can pay you from
                 </span>
                 <MarkStack ids={["eth", "base", "sol", "btc", "tron", "near"]} size={24} />

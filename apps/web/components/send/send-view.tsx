@@ -1,5 +1,6 @@
 "use client"
 
+import type { NetworkId } from "@tegata/config"
 // Send (plan 6.8, Kawase's money lifecycle): one big amount and a NEAR name; a review card that says the fee is paid
 // by Tegata; hold to send (the Privy key signs underneath); live steps; a receipt slip that lands when NEAR settles,
 // or a failure card that says no money moved. Separate from its logic so /dev/flows can show every state.
@@ -14,6 +15,7 @@ import {
 } from "lucide-react"
 import { AnimatePresence, motion, useReducedMotion } from "motion/react"
 import Link from "next/link"
+import { shortAccount } from "@/components/books/movement-mark"
 import { BusinessSeal, SealPress, TegataSeal } from "@/components/brand/seal"
 import { CustomerDisc } from "@/components/invoices/customer-picker"
 import { AccountLink } from "@/components/kit/account-link"
@@ -25,7 +27,9 @@ import { Paper, Stage } from "@/components/kit/stage"
 import { ErrorState } from "@/components/kit/states"
 import { TaskSteps } from "@/components/kit/task-steps"
 import { Mark } from "@/components/marks/mark"
+import { ReceiptSlip, SlipRow } from "@/components/receipt/receipt-slip"
 import { fire } from "@/lib/feedback"
+import { usd } from "@/lib/fiat"
 import { cn } from "@/lib/utils"
 
 export type SendStep = "form" | "review" | "sending" | "sent" | "failed"
@@ -40,6 +44,8 @@ export interface SendViewProps {
   balance: number
   businessName: string
   suffix: string
+  /** The network sent on, for the explorer link of an implicit (64-hex) account. */
+  network?: NetworkId
   busy: boolean
   problem: string | null
   /** 0 signing, 1 relaying, 2 settling, 3 settled. */
@@ -151,9 +157,10 @@ export function SendView(p: SendViewProps) {
                   />
                 </div>
                 <div className="flex items-center gap-2 rounded-full bg-white/18 py-1 pr-1 pl-2.5 text-[14px] text-white">
-                  <Mark id="usdc" size={18} />
+                  <Mark id="usdc" chain="near" size={18} />
                   <span className={cn(over && "font-semibold")}>
-                    {over ? "More than your " : "You have "}${p.balance.toFixed(2)}
+                    {over ? "More than your " : "You have "}
+                    {usd(p.balance)}
                   </span>
                   {!empty ? (
                     <button
@@ -221,7 +228,7 @@ export function SendView(p: SendViewProps) {
               </Button>
             ) : (
               <Button type="submit" busy={p.busy} disabled={!p.to || value <= 0 || over}>
-                {value > 0 ? `Review $${value.toFixed(2)}` : "Enter an amount"}
+                {value > 0 ? `Review ${usd(value)}` : "Enter an amount"}
               </Button>
             )}
           </motion.form>
@@ -229,17 +236,18 @@ export function SendView(p: SendViewProps) {
           <motion.div key="review" className="flex flex-col gap-5" {...slide}>
             <Stage className="p-4 sm:p-6">
               <Paper className="flex flex-col gap-1 p-6">
-                <span className="text-detail font-medium text-[#666]">You send</span>
+                <span className="text-detail font-medium text-paper-text-2">You send</span>
                 <Figure value={value} className="text-[64px]" />
-                <div className="mt-4 flex flex-col divide-y divide-[#ECECEC] text-[15px]">
+                <div className="mt-4 flex flex-col divide-y divide-paper-rule text-[15px]">
                   <Row label="To">
                     <span className="inline-flex items-center gap-2 font-mono font-medium">
-                      <Mark id="near" size={18} /> <AccountLink accountId={p.to} />
+                      <Mark id="near" size={18} />{" "}
+                      <AccountLink accountId={p.to} network={p.network} />
                     </span>
                   </Row>
                   <Row label="They receive">
-                    <span className="inline-flex items-center gap-1.5 font-semibold">
-                      <Mark id="usdc" size={18} /> ${value.toFixed(2)} USDC
+                    <span className="tnum inline-flex items-center gap-1.5 font-semibold">
+                      <Mark id="usdc" chain="near" size={18} /> {usd(value)}
                     </span>
                   </Row>
                   <Row label="Network fee">
@@ -255,22 +263,25 @@ export function SendView(p: SendViewProps) {
             </Stage>
             {p.problem ? <p className="text-[15px] font-medium text-down">{p.problem}</p> : null}
             <HoldButton
-              label={`Hold to send $${value.toFixed(2)}`}
+              label={`Hold to send ${usd(value)}`}
               busy={p.busy}
               onConfirm={p.onApprove}
             />
           </motion.div>
         ) : p.step === "sending" ? (
           <motion.div key="sending" className="flex flex-col gap-5" {...slide}>
-            <div className="flex flex-col items-center gap-1 rounded-[24px] bg-card p-6 text-center">
-              <span className="text-detail font-medium text-muted-foreground">
-                Sending to {p.to}
-              </span>
-              <Figure value={value} className="text-[56px]" />
-            </div>
-            <div className="rounded-[20px] bg-secondary p-2">
-              <TaskSteps steps={STEPS} current={p.progress} />
-            </div>
+            <Stage className="p-4 sm:p-6">
+              <Paper className="flex flex-col gap-4 p-4 sm:p-5">
+                <div className="flex flex-col items-center gap-1 text-center">
+                  <span className="inline-flex items-center gap-1.5 text-detail font-medium text-paper-text-2">
+                    Sending to <Mark id="near" size={16} />
+                    <span className="font-mono">{shortAccount(p.to)}</span>
+                  </span>
+                  <Figure value={value} className="text-[56px]" />
+                </div>
+                <TaskSteps steps={STEPS} current={p.progress} tone="paper" />
+              </Paper>
+            </Stage>
           </motion.div>
         ) : p.step === "sent" ? (
           <motion.div key="sent" className="flex flex-col gap-5" {...slide}>
@@ -308,13 +319,13 @@ export function SendView(p: SendViewProps) {
 function Row({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="flex items-center justify-between gap-4 py-3">
-      <span className="text-[#666]">{label}</span>
+      <span className="text-paper-text-2">{label}</span>
       {children}
     </div>
   )
 }
 
-/** The receipt slip: paper, perforation, the business seal pressed once with the "sent" cue. */
+/** The receipt slip (the one slip, audit S4) on the stage: the business seal pressed once with the "sent" cue. */
 function Receipt({
   value,
   to,
@@ -335,63 +346,52 @@ function Receipt({
     minute: "2-digit",
   })
   return (
-    <div className="relative rounded-[20px] bg-white text-black shadow-receipt">
-      <div className="p-6 pb-4">
-        <span className="flex items-center gap-2 text-[13px] font-semibold text-[#666]">
-          <TegataSeal size={20} textured={false} /> Receipt · Sent
-        </span>
-        <Figure value={value} className="mt-3 flex text-[56px]" />
-        <div className="mt-2 flex items-center gap-2 text-[15px] font-semibold">
-          <Mark id="near" size={22} /> {to}
-        </div>
-      </div>
-      <div className="relative h-4">
-        <span className="absolute top-1/2 -left-2 size-4 -translate-y-1/2 rounded-full bg-background" />
-        <span className="absolute top-1/2 -right-2 size-4 -translate-y-1/2 rounded-full bg-background" />
-        <span className="absolute inset-x-4 top-1/2 border-t-2 border-dashed border-[#E2E2E2]" />
-      </div>
-      <div className="flex flex-col gap-2.5 p-6 pt-3 text-[14px]">
-        <div className="flex justify-between">
-          <span className="text-[#666]">From</span>
-          <span className="font-semibold">{businessName}</span>
-        </div>
-        <div className="flex justify-between">
-          <span className="text-[#666]">Settled</span>
-          <span className="font-semibold">{now}</span>
-        </div>
-        <div className="flex justify-between">
-          <span className="text-[#666]">Network fee</span>
-          <span className="font-semibold">Paid by Tegata</span>
-        </div>
-        <span className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-2">
+    <Stage className="p-4 sm:p-6" inner="flex flex-col items-center gap-4">
+      <ReceiptSlip
+        className="w-full"
+        label="Receipt · Sent"
+        amount={value}
+        sub={
+          <>
+            <Mark id="near" size={18} />
+            <span className="font-mono">{shortAccount(to)}</span>
+          </>
+        }
+        seal={
+          <SealPress
+            delay={0.2}
+            onLanded={() => fire("filled", { cue: "sent", identity: relayId ?? undefined })}
+          >
+            <BusinessSeal name={businessName} band="Sent" size={96} />
+          </SealPress>
+        }
+      >
+        <SlipRow label="From">{businessName}</SlipRow>
+        <SlipRow label="Settled">{now}</SlipRow>
+        <SlipRow label="Network fee">
+          <span className="inline-flex items-center gap-1.5">
+            <TegataSeal size={16} textured={false} /> Paid by Tegata
+          </span>
+        </SlipRow>
+      </ReceiptSlip>
+      {relayId || explorerUrl ? (
+        <div className="flex flex-wrap justify-center gap-2">
           {relayId ? (
-            <Link
-              href={`/r/send/${relayId}`}
-              className="inline-flex items-center gap-1.5 font-semibold text-[#B23700] hover:underline"
-            >
-              <ReceiptText className="size-3.5" /> Open receipt
+            <Link href={`/r/send/${relayId}`} className={SLIP_LINK}>
+              <ReceiptText /> Open receipt
             </Link>
           ) : null}
           {explorerUrl ? (
-            <a
-              href={explorerUrl}
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center gap-1.5 font-semibold text-[#B23700] hover:underline"
-            >
-              See it on NEAR <ExternalLink className="size-3.5" />
+            <a href={explorerUrl} target="_blank" rel="noreferrer" className={SLIP_LINK}>
+              <Mark id="near" size={18} /> On NEAR <ExternalLink />
             </a>
           ) : null}
-        </span>
-      </div>
-      <div className="absolute top-4 right-4">
-        <SealPress
-          delay={0.2}
-          onLanded={() => fire("filled", { cue: "sent", identity: relayId ?? undefined })}
-        >
-          <BusinessSeal name={businessName} band="Sent" size={96} />
-        </SealPress>
-      </div>
-    </div>
+        </div>
+      ) : null}
+    </Stage>
   )
 }
+
+/** A white link pill under the slip, on the stage. */
+const SLIP_LINK =
+  "press inline-flex h-11 items-center gap-2 rounded-full bg-white px-4 text-[15px] font-semibold text-black shadow-object [&_svg]:size-4"

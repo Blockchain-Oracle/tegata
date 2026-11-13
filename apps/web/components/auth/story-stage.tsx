@@ -12,6 +12,7 @@ import { Figure } from "@/components/kit/figure"
 import { Paper, StageObject } from "@/components/kit/stage"
 import { Mark, type MarkId } from "@/components/marks/mark"
 import { fire } from "@/lib/feedback"
+import { usd } from "@/lib/fiat"
 import { cn } from "@/lib/utils"
 
 const DWELL_MS = 5600
@@ -164,7 +165,7 @@ export function StoryStage({ sealed = false }: { sealed?: boolean }) {
 
 function ExampleTag() {
   return (
-    <span className="rounded-full bg-[#F5F5F5] px-2 py-0.5 text-[11px] font-semibold text-[#666]">
+    <span className="rounded-full bg-paper-sunk px-2 py-0.5 text-[11px] font-semibold text-paper-text-2">
       Example
     </span>
   )
@@ -209,14 +210,14 @@ function LinkScene() {
       <StageObject from={{ y: 28, rotate: -3 }}>
         <Paper className="relative w-[280px] p-5 sm:w-[300px]">
           <div className="flex items-center justify-between">
-            <span className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-[#666]">
+            <span className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-paper-text-2">
               <TegataSeal size={18} textured={false} /> Pay link
             </span>
             <ExampleTag />
           </div>
           <p className="mt-3 text-[15px] font-semibold">Design sprint · Week 2</p>
           <Figure value={1250} className="mt-1 flex text-[48px]" />
-          <div className="mt-3 flex h-9 items-center gap-2 rounded-[12px] bg-[#F5F5F5] px-3 text-[14px] font-semibold">
+          <div className="mt-3 flex h-9 items-center gap-2 rounded-[12px] bg-paper-sunk px-3 text-[14px] font-semibold">
             {paid ? (
               <>
                 <Mark id="usdc" chain="near" size={22} />
@@ -225,7 +226,7 @@ function LinkScene() {
             ) : (
               <>
                 <span className="size-2 animate-pulse rounded-full bg-shu" />
-                <span className="text-[#666]">Waiting for payment</span>
+                <span className="text-paper-text-2">Waiting for payment</span>
               </>
             )}
           </div>
@@ -258,7 +259,7 @@ export function PayrollScene() {
       {/* Four rows and the hold button are taller than the phone band leaves for an object: shrink it there. */}
       <Paper className="w-[300px] p-5 max-lg:scale-[0.8] sm:w-[340px]">
         <div className="flex items-center justify-between">
-          <span className="text-[13px] font-semibold text-[#666]">Payroll · November</span>
+          <span className="text-[13px] font-semibold text-paper-text-2">Payroll · November</span>
           <ExampleTag />
         </div>
         <div className="mt-3 flex flex-col gap-1">
@@ -274,8 +275,8 @@ export function PayrollScene() {
               </span>
               <span className="flex-1 text-[15px] font-semibold">{p.name}</span>
               <Mark id={p.to} chain={p.chain} size={22} />
-              <span className="tnum w-20 text-right text-[15px] font-semibold">
-                ${p.amount.toLocaleString("en-US")}
+              <span className="tnum w-[84px] text-right text-[15px] font-semibold">
+                {usd(p.amount)}
               </span>
               <span className="grid size-5 place-items-center">
                 {i < paidRows ? (
@@ -297,7 +298,7 @@ export function PayrollScene() {
               ? "Paid · one transaction on NEAR"
               : held
                 ? "Keep holding…"
-                : "Hold to pay 4 people · $9,600"}
+                : `Hold to pay 4 people · ${usd(9600)}`}
           </span>
           <motion.span
             className="absolute inset-0 grid place-items-center bg-shu text-black"
@@ -314,34 +315,34 @@ export function PayrollScene() {
 }
 
 function AddressScene() {
-  const chips = ["No seed phrase", "No wallet app", "No gas to buy"]
+  const chips = ["No seed phrase", "No wallet app", "No network fees"]
   return (
     <div className="relative">
       <StageObject from={{ y: 28, rotate: -2 }}>
         <Paper className="w-[300px] p-5 sm:w-[330px]">
           <div className="flex items-center justify-between">
-            <span className="text-[13px] font-semibold text-[#666]">Your pay address</span>
+            <span className="text-[13px] font-semibold text-paper-text-2">Your pay address</span>
             <ExampleTag />
           </div>
-          <div className="mt-3 flex items-center gap-3 rounded-[14px] bg-[#F5F5F5] p-3">
+          <div className="mt-3 flex items-center gap-3 rounded-[14px] bg-paper-sunk p-3">
             <Mark id="near" size={36} />
             <span className="font-mono text-[16px] font-medium">studio.tegata.near</span>
           </div>
-          <div className="mt-3 flex flex-col divide-y divide-[#ECECEC] text-[14px]">
+          <div className="mt-3 flex flex-col divide-y divide-paper-rule text-[14px]">
             <div className="flex items-center justify-between py-2.5">
-              <span className="text-[#666]">Sign in</span>
+              <span className="text-paper-text-2">Sign in</span>
               <span className="font-semibold">Email code</span>
             </div>
             <div className="flex items-center justify-between py-2.5">
-              <span className="text-[#666]">Network fee</span>
+              <span className="text-paper-text-2">Network fee</span>
               <span className="inline-flex items-center gap-1.5 font-semibold">
                 <TegataSeal size={16} textured={false} /> Paid by Tegata
               </span>
             </div>
             <div className="flex items-center justify-between py-2.5">
-              <span className="text-[#666]">Holds</span>
+              <span className="text-paper-text-2">Holds</span>
               <span className="inline-flex items-center gap-1.5 font-semibold">
-                <Mark id="usdc" size={18} /> Dollars (USDC)
+                <Mark id="usdc" chain="near" size={18} /> Dollars (USDC)
               </span>
             </div>
           </div>
@@ -369,7 +370,7 @@ function ReceiptScene() {
       <div className="relative w-[290px] rounded-[18px] bg-white text-black shadow-object sm:w-[310px]">
         <div className="p-5 pb-4">
           <div className="flex items-center justify-between">
-            <span className="inline-flex items-center gap-2 text-[13px] font-semibold text-[#666]">
+            <span className="inline-flex items-center gap-2 text-[13px] font-semibold text-paper-text-2">
               <TegataSeal size={20} textured={false} /> Receipt
             </span>
             <ExampleTag />
@@ -377,22 +378,22 @@ function ReceiptScene() {
           <Figure value={1250} className="mt-3 flex text-[46px]" />
           <div className="mt-3 flex items-center gap-2 text-[14px] font-semibold">
             <Mark id="usdc" chain="base" size={24} /> Base
-            <span className="text-[#999]">→</span>
+            <span className="text-paper-text-3">→</span>
             <Mark id="near" size={24} /> NEAR
           </div>
         </div>
         <div className="relative h-4">
           <span className="absolute top-1/2 -left-2 size-4 -translate-y-1/2 rounded-full bg-stage" />
           <span className="absolute top-1/2 -right-2 size-4 -translate-y-1/2 rounded-full bg-stage" />
-          <span className="absolute inset-x-4 top-1/2 border-t-2 border-dashed border-[#E2E2E2]" />
+          <span className="absolute inset-x-4 top-1/2 border-t-2 border-dashed border-paper-rule" />
         </div>
         <div className="flex flex-col gap-2 p-5 pt-3 text-[13px]">
           <div className="flex justify-between">
-            <span className="text-[#666]">Settled</span>
+            <span className="text-paper-text-2">Settled</span>
             <span className="font-semibold">12 Nov, 14:02</span>
           </div>
           <div className="flex justify-between">
-            <span className="text-[#666]">Transaction</span>
+            <span className="text-paper-text-2">Transaction</span>
             <span className="inline-flex items-center gap-1 font-mono font-medium">
               4a5U…qH6TX <ExternalLink className="size-3" />
             </span>

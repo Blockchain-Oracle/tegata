@@ -17,7 +17,7 @@ import { ErrorState, LoadingShape, StatusPill } from "@/components/kit/states"
 import { Switch } from "@/components/kit/switch"
 import { TaskSteps } from "@/components/kit/task-steps"
 import { MarkStack } from "@/components/marks/mark"
-import { DestinationMark } from "@/components/people/destination"
+import { DestinationMark, destinationWord, shortAddress } from "@/components/people/destination"
 import type { PayRun, PayRunRow } from "@/lib/client/types"
 import { fire } from "@/lib/feedback"
 import { cn } from "@/lib/utils"
@@ -286,8 +286,17 @@ function RowLine({
           <span className="truncate text-detail text-warn">{row.skipReason}</span>
         ) : row.accountId ? (
           <span className="flex min-w-0 items-center gap-1.5 text-detail text-muted-foreground">
-            {row.destinationKind ? <DestinationMark kind={row.destinationKind} size={14} /> : null}
-            <AccountLink accountId={row.accountId} className="text-[12px]" />
+            {row.destinationKind ? (
+              <DestinationMark kind={row.destinationKind} route={row.route} size={16} />
+            ) : null}
+            {row.destinationKind === "chain" ? (
+              <span className="truncate">
+                {destinationWord("chain", row.route)} ·{" "}
+                <span className="font-mono">{shortAddress(row.accountId)}</span>
+              </span>
+            ) : (
+              <AccountLink accountId={row.accountId} className="text-[12px]" />
+            )}
           </span>
         ) : null}
       </span>

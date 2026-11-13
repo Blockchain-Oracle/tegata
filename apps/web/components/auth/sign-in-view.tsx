@@ -120,9 +120,6 @@ export function SignInView({
                 </Button>
               }
             />
-            <p className="text-detail text-text-3">
-              We'll email you a 6-digit code. No password, no wallet to install.
-            </p>
             {onWallet ? (
               <div className="flex flex-col gap-4">
                 <div className="flex items-center gap-3 text-[14px] text-text-3">

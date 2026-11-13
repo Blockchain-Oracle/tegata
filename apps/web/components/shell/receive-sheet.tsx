@@ -8,6 +8,7 @@ import { useState } from "react"
 
 import { BusinessSeal } from "@/components/brand/seal"
 import { Button } from "@/components/kit/button"
+import { SandboxPill } from "@/components/kit/sandbox-pill"
 import { Mark } from "@/components/marks/mark"
 import { fire } from "@/lib/feedback"
 
@@ -51,19 +52,20 @@ export function ReceiveSheet({
             value={`near:${accountId}`}
             size={220}
             level="M"
-            imageSettings={{ src: "/marks/near.svg", height: 40, width: 40, excavate: true }}
+            imageSettings={{ src: "/icon.svg", height: 40, width: 40, excavate: true }}
           />
           <div className="absolute -right-6 -bottom-6">
             <BusinessSeal name={businessName} size={76} />
           </div>
         </div>
-        <div className="flex flex-col items-center gap-1 text-center">
+        <div className="flex flex-col items-center gap-2 text-center">
           <span className="inline-flex items-center gap-2 font-mono text-[17px] font-medium">
             <Mark id="near" size={22} /> {accountId}
           </span>
           <span className="inline-flex items-center gap-1.5 text-detail text-muted-foreground">
-            <Mark id="usdc" size={16} /> USDC on NEAR{sandbox ? " · Sandbox (testnet)" : ""}
+            <Mark id="usdc" chain="near" size={18} /> USDC on NEAR
           </span>
+          {sandbox ? <SandboxPill>Sandbox · test dollars</SandboxPill> : null}
         </div>
         <div className="grid w-full grid-cols-2 gap-2">
           <Button variant="secondary" onClick={copy}>

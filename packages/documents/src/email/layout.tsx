@@ -25,8 +25,18 @@ export interface EmailRow {
   value: string
   href?: string
   mono?: boolean
-  /** A mark id from public/email/marks (usdc, near, intents, tron…). */
+  /** A mark id from public/email/marks (usdc, near, intents, tron…), or "tegata" for the seal. */
   mark?: string
+  /** A round flag from public/email/flags (ng, gh, za, eu, us…), for money in a local currency. */
+  flag?: string
+}
+
+/** The picture beside a row's value: its flag, the Tegata seal, or a real mark. */
+function rowPicture(row: EmailRow, assets: string): string | null {
+  if (row.flag) return `${assets}/email/flags/${row.flag}.png`
+  if (row.mark === "tegata") return `${assets}/email/seal.png`
+  if (row.mark) return `${assets}/email/marks/${row.mark}.png`
+  return null
 }
 
 export interface EmailContent {
@@ -131,47 +141,55 @@ function Figure({ content }: { content: EmailContent }) {
 function Rows({ rows, assets }: { rows: EmailRow[]; assets: string }) {
   return (
     <Section>
-      {rows.map((row) => (
-        <Row key={`${row.label}:${row.value}`} style={{ margin: 0 }}>
-          <Column style={{ padding: "6px 0", verticalAlign: "top" }}>
-            <Text style={{ margin: 0, fontFamily: TEXT, fontSize: 14, color: GREY }}>
-              {row.label}
-            </Text>
-          </Column>
-          <Column align="right" style={{ padding: "6px 0", verticalAlign: "top" }}>
-            <Text
-              style={{
-                margin: 0,
-                fontFamily: row.mono ? MONO : TEXT,
-                fontSize: row.mono ? 13 : 14,
-                fontWeight: 600,
-                color: INK,
-                wordBreak: "break-all",
-              }}
-            >
-              {row.mark ? (
-                <Img
-                  src={`${assets}/email/marks/${row.mark}.png`}
-                  width="16"
-                  height="16"
-                  alt=""
-                  style={{ display: "inline-block", verticalAlign: "-3px", marginRight: 6 }}
-                />
-              ) : null}
-              {row.href ? (
-                <Link
-                  href={abs(assets, row.href)}
-                  style={{ color: SEAL_INK, textDecoration: "none" }}
-                >
-                  {row.value}
-                </Link>
-              ) : (
-                row.value
-              )}
-            </Text>
-          </Column>
-        </Row>
-      ))}
+      {rows.map((row) => {
+        const picture = rowPicture(row, assets)
+        return (
+          <Row key={`${row.label}:${row.value}`} style={{ margin: 0 }}>
+            <Column style={{ padding: "6px 0", verticalAlign: "top" }}>
+              <Text style={{ margin: 0, fontFamily: TEXT, fontSize: 14, color: GREY }}>
+                {row.label}
+              </Text>
+            </Column>
+            <Column align="right" style={{ padding: "6px 0", verticalAlign: "top" }}>
+              <Text
+                style={{
+                  margin: 0,
+                  fontFamily: row.mono ? MONO : TEXT,
+                  fontSize: row.mono ? 13 : 14,
+                  fontWeight: 600,
+                  color: INK,
+                  wordBreak: "break-all",
+                }}
+              >
+                {picture ? (
+                  <Img
+                    src={picture}
+                    width="16"
+                    height="16"
+                    alt=""
+                    style={{
+                      display: "inline-block",
+                      verticalAlign: "-3px",
+                      marginRight: 6,
+                      borderRadius: row.mark === "tegata" ? 4 : 8,
+                    }}
+                  />
+                ) : null}
+                {row.href ? (
+                  <Link
+                    href={abs(assets, row.href)}
+                    style={{ color: SEAL_INK, textDecoration: "none" }}
+                  >
+                    {row.value}
+                  </Link>
+                ) : (
+                  row.value
+                )}
+              </Text>
+            </Column>
+          </Row>
+        )
+      })}
     </Section>
   )
 }

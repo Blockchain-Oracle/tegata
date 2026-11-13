@@ -4,31 +4,31 @@
 // by day that each open their object, and the month's CSV and statement. A received payment can be refunded from its
 // row. Separate from its data so /dev/flows can show every state.
 import {
-  ArrowDownLeft,
   ArrowUpRight,
-  Banknote,
-  CalendarClock,
   ChevronLeft,
   ChevronRight,
   FileDown,
   FileSpreadsheet,
-  Gift,
-  Landmark,
-  Receipt,
+  Link2,
   RotateCcw,
   Search,
-  Sparkles,
-  Undo2,
 } from "lucide-react"
 import Link from "next/link"
 import { useMemo } from "react"
 
+import {
+  type MovementExtras,
+  MovementMark,
+  movementTitle,
+  shortAccount,
+  subjectOfMovement,
+} from "@/components/books/movement-mark"
 import { Button } from "@/components/kit/button"
 import { Figure, viewDollars } from "@/components/kit/figure"
 import { Stage } from "@/components/kit/stage"
-import { EmptyState, ErrorState, LoadingShape, StatusPill } from "@/components/kit/states"
-import { money } from "@/components/payroll/payroll-view"
-import type { BooksMonth, MovementKind, MovementView } from "@/lib/client/types"
+import { EmptyState, ErrorState, LoadingShape, Skeleton, StatusPill } from "@/components/kit/states"
+import type { BooksMonth, MovementView } from "@/lib/client/types"
+import { usdUnits } from "@/lib/fiat"
 import { cn } from "@/lib/utils"
 
 export type ActivityFilter = "all" | "in" | "out" | "payroll" | "rewards" | "refunds"
@@ -42,21 +42,6 @@ const FILTERS: { value: ActivityFilter; label: string }[] = [
   { value: "refunds", label: "Refunds" },
 ]
 
-const ICON: Record<MovementKind, { icon: React.ReactNode; field: string }> = {
-  payment_in: { icon: <ArrowDownLeft />, field: "bg-matcha" },
-  payment_out: { icon: <Receipt />, field: "bg-sora" },
-  send: { icon: <ArrowUpRight />, field: "bg-sora" },
-  refund: { icon: <Undo2 />, field: "bg-sakura" },
-  reward: { icon: <Gift />, field: "bg-kin" },
-  test_dollars: { icon: <Sparkles />, field: "bg-kin" },
-  payroll: { icon: <Banknote />, field: "bg-sakura" },
-  payslip: { icon: <Banknote />, field: "bg-matcha" },
-  autopilot_set_aside: { icon: <CalendarClock />, field: "bg-sora" },
-  autopilot_back: { icon: <CalendarClock />, field: "bg-sora" },
-  bank_out: { icon: <Landmark />, field: "bg-kin" },
-  bank_in: { icon: <Landmark />, field: "bg-matcha" },
-}
-
 export function matches(m: MovementView, filter: ActivityFilter, query: string): boolean {
   const ok =
     filter === "all" ||
@@ -66,10 +51,10 @@ export function matches(m: MovementView, filter: ActivityFilter, query: string):
     (filter === "rewards" && m.kind === "reward") ||
     (filter === "refunds" && (m.kind === "refund" || BigInt(m.refunded) > 0n))
   if (!ok) return false
-  const q = query.trim().toLowerCase().replace(/^\$/, "")
+  const q = query.trim().toLowerCase().replace(/^\$/, "").replaceAll(",", "")
   if (!q) return true
   return [
-    m.title,
+    movementTitle(m.title),
     m.counterparty ?? "",
     m.counterpartyAccount ?? "",
     viewDollars(m.amount).toFixed(2),
@@ -90,6 +75,7 @@ export function ActivityView({
   exporting,
   onExport,
   onRefund,
+  businessName,
 }: {
   data: BooksMonth | undefined
   error: boolean
@@ -104,6 +90,8 @@ export function ActivityView({
   exporting: "csv" | "pdf" | null
   onExport: (kind: "csv" | "pdf") => void
   onRefund: (movement: MovementView) => void
+  /** This business's name, for its payroll rows' seal. */
+  businessName?: string
 }) {
   const shown = useMemo(
     () => (data?.movements ?? []).filter((m) => matches(m, filter, query)),
@@ -136,8 +124,8 @@ export function ActivityView({
           >
             <ChevronLeft className="size-4" />
           </button>
-          <span className="min-w-[8.5rem] text-center text-[15px] font-semibold">
-            {data?.label ?? "…"}
+          <span className="grid min-w-[8.5rem] place-items-center text-center text-[15px] font-semibold">
+            {data ? data.label : <Skeleton className="h-4 w-24" />}
           </span>
           <button
             type="button"
@@ -187,7 +175,7 @@ export function ActivityView({
               <div className="flex flex-col items-start gap-2 sm:items-end">
                 <span className="text-[15px] font-medium text-white/85">
                   Net {BigInt(data.net) < 0n ? "−" : "+"}
-                  {money(BigInt(data.net) < 0n ? -BigInt(data.net) : BigInt(data.net))}
+                  {usdUnits(BigInt(data.net) < 0n ? -BigInt(data.net) : BigInt(data.net))}
                 </span>
                 <div className="flex gap-2">
                   <Button
@@ -245,10 +233,17 @@ export function ActivityView({
 
           {data.movements.length === 0 ? (
             <EmptyState
-              art={<Receipt />}
+              art={<Link2 />}
               field="sora"
               title={`Nothing moved in ${data.label.split(" ")[0]}`}
-              detail="Payments, payroll, sends and rewards show up here as they happen."
+              detail="Payments, payroll and sends land here."
+              action={
+                <Button variant="shu" size="md" asChild>
+                  <Link href="/app/links?new=1">
+                    <Link2 /> Create a pay link
+                  </Link>
+                </Button>
+              }
             />
           ) : shown.length === 0 ? (
             <p className="rounded-[20px] bg-card px-4 py-8 text-center text-[15px] text-muted-foreground">
@@ -264,6 +259,7 @@ export function ActivityView({
                       key={`${m.kind}:${m.id}`}
                       m={m}
                       timezone={data.timezone}
+                      business={businessName}
                       onRefund={onRefund}
                     />
                   ))}
@@ -280,10 +276,12 @@ export function ActivityView({
 function Row({
   m,
   timezone,
+  business,
   onRefund,
 }: {
-  m: MovementView
+  m: MovementView & MovementExtras
   timezone: string
+  business?: string
   onRefund: (m: MovementView) => void
 }) {
   const time = new Date(m.at).toLocaleTimeString("en-GB", {
@@ -292,21 +290,17 @@ function Row({
     timeZone: timezone,
   })
   const refunded = BigInt(m.refunded)
+  const account = m.counterpartyAccount ? shortAccount(m.counterpartyAccount) : null
   const body = (
     <>
-      <span
-        className={cn(
-          "grid size-10 shrink-0 place-items-center rounded-full text-black [&_svg]:size-[18px]",
-          ICON[m.kind].field,
-        )}
-      >
-        {ICON[m.kind].icon}
-      </span>
+      <MovementMark movement={subjectOfMovement(m)} business={business} size={40} />
       <span className="flex min-w-0 flex-1 flex-col">
-        <span className="truncate text-[15px] font-semibold">{m.title}</span>
+        <span className="truncate text-[15px] font-semibold">{movementTitle(m.title)}</span>
         <span className="truncate text-detail text-muted-foreground">
-          {[m.counterparty, m.counterpartyAccount, time].filter(Boolean).join(" · ")}
-          {refunded > 0n ? ` · refunded ${money(refunded)}` : ""}
+          {[m.counterparty, account !== m.counterparty ? account : null, time]
+            .filter(Boolean)
+            .join(" · ")}
+          {refunded > 0n ? ` · refunded ${usdUnits(refunded)}` : ""}
         </span>
       </span>
       {m.status !== "done" ? (
@@ -322,7 +316,7 @@ function Row({
         )}
       >
         {m.direction === "in" ? "+" : "−"}
-        {money(m.amount)}
+        {usdUnits(m.amount)}
       </span>
     </>
   )
@@ -349,7 +343,7 @@ function Row({
       {m.refundable ? (
         <button
           type="button"
-          aria-label={`Refund ${m.title}`}
+          aria-label={`Refund ${movementTitle(m.title)}`}
           onClick={() => onRefund(m)}
           className="press grid size-9 shrink-0 place-items-center rounded-full text-muted-foreground hover:bg-secondary hover:text-foreground"
         >

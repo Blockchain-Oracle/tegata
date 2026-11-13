@@ -8,8 +8,11 @@ export interface PayrollInvite {
   token: string
   business: string
   /** What the person picked before signing in, finished on their return. */
-  choice: "tegata" | "near"
+  choice: "tegata" | "near" | "chain"
+  /** The NEAR account, or the address on another chain. */
   accountId?: string
+  /** For another chain: the route ("usdt-tron"). */
+  route?: string
 }
 
 export function rememberPayrollInvite(invite: PayrollInvite): void {

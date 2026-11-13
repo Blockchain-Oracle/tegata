@@ -6,6 +6,7 @@ import { useState } from "react"
 import { HomeView } from "@/components/home/home-view"
 import { Segmented } from "@/components/kit/segmented"
 import { type ChainSendStep, ChainSendView } from "@/components/send/chain-send-view"
+import { SendToSwitch } from "@/components/send/send-to-switch"
 import { type SendStep, SendView } from "@/components/send/send-view"
 import type { ActivityItem, PayoutView } from "@/lib/client/types"
 import { PAYER_ROUTES } from "@/lib/routes"
@@ -27,7 +28,7 @@ const PAYOUT: PayoutView = {
   createdAt: "2026-11-13T12:01:00.000Z",
 }
 
-type ChainState = ChainSendStep | "quoting" | "no-route"
+type ChainState = ChainSendStep | "quoting" | "no-route" | "sandbox"
 
 const ACTIVITY: ActivityItem[] = [
   {
@@ -74,6 +75,50 @@ const ACTIVITY: ActivityItem[] = [
     status: "failed",
     at: new Date(Date.now() - 26 * 3_600_000).toISOString(),
   },
+  {
+    id: "4",
+    kind: "received",
+    network: "mainnet",
+    counterparty: "TQn9Y2khEsLJW1ChVWFMSMeRDow5KcbLSE",
+    title: "Brand workshop",
+    amount: "3400000000",
+    status: "succeeded",
+    receiptUrl: null,
+    at: new Date(Date.now() - 30 * 3_600_000).toISOString(),
+  },
+  {
+    id: "5",
+    kind: "payroll",
+    network: "testnet",
+    counterparty: "studio-kaze.tegata.testnet",
+    title: "1–15 Nov",
+    amount: "6200000000",
+    status: "succeeded",
+    receiptUrl: null,
+    at: new Date(Date.now() - 50 * 3_600_000).toISOString(),
+  },
+  {
+    id: "6",
+    kind: "reward",
+    network: "testnet",
+    counterparty: "Tegata",
+    title: "Referral reward: you invited a business",
+    amount: "1000000",
+    status: "succeeded",
+    receiptUrl: null,
+    at: new Date(Date.now() - 70 * 3_600_000).toISOString(),
+  },
+  {
+    id: "7",
+    kind: "paid",
+    network: "testnet",
+    counterparty: "Hikari Coffee",
+    title: "Beans, November",
+    amount: "86500000",
+    status: "succeeded",
+    receiptUrl: null,
+    at: new Date(Date.now() - 90 * 3_600_000).toISOString(),
+  },
 ]
 
 type HomeState = "fresh" | "busy" | "loading" | "error"
@@ -117,7 +162,6 @@ export default function HomeFlow() {
         businessName="Studio Kaze"
         accountId="studio-kaze.tegata.testnet"
         balance={home === "fresh" ? 0n : 12_480_000_000n}
-        explorerUrl="https://testnet.nearblocks.io"
         activity={
           home === "fresh" ? [] : home === "loading" || home === "error" ? undefined : ACTIVITY
         }
@@ -157,6 +201,7 @@ export default function HomeFlow() {
         balance={12480}
         businessName="Studio Kaze"
         suffix=".tegata.testnet"
+        switcher={<SendToSwitch value="near" onChange={() => undefined} />}
         busy={false}
         problem={send === "failed" ? "The relay expired before NEAR saw it." : null}
         progress={progress}
@@ -176,13 +221,14 @@ export default function HomeFlow() {
       />
 
       <div className="flex flex-wrap items-center gap-3 pt-8">
-        <span className="display text-[30px]">Send to another chain (Live)</span>
+        <span className="display text-[30px]">Send to another chain</span>
         <Segmented
           label="Send to another chain state"
           value={chain}
           onValueChange={(v) => (v === "sending" ? playChain() : setChain(v as ChainState))}
           options={[
             { value: "form", label: "Form" },
+            { value: "sandbox", label: "Sandbox" },
             { value: "quoting", label: "Quoting" },
             { value: "no-route", label: "No route" },
             { value: "review", label: "Review" },
@@ -194,7 +240,9 @@ export default function HomeFlow() {
         />
       </div>
       <ChainSendView
-        step={chain === "quoting" || chain === "no-route" ? "form" : chain}
+        step={chain === "quoting" || chain === "no-route" || chain === "sandbox" ? "form" : chain}
+        sandbox={chain === "sandbox"}
+        switcher={<SendToSwitch value="chain" onChange={() => undefined} />}
         routes={PAYER_ROUTES}
         routeId={chainRoute}
         onRoute={setChainRoute}

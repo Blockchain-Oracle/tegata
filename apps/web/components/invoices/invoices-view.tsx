@@ -13,6 +13,7 @@ import { Segmented } from "@/components/kit/segmented"
 import { Stage } from "@/components/kit/stage"
 import { EmptyState, ErrorState, LoadingShape } from "@/components/kit/states"
 import type { InvoiceRow } from "@/lib/client/types"
+import { usdUnits } from "@/lib/fiat"
 import { cn } from "@/lib/utils"
 
 import { CustomerDisc } from "./customer-picker"
@@ -92,7 +93,8 @@ export function InvoicesView({
         (!q ||
           (row.customer ?? "").toLowerCase().includes(q) ||
           invoiceLabel(row.number).toLowerCase().includes(q) ||
-          viewDollars(row.total).toFixed(2).includes(q)),
+          viewDollars(row.total).toFixed(2).includes(q) ||
+          usdUnits(row.total).includes(q)),
     )
   }, [invoices, tab, query])
 
@@ -188,16 +190,30 @@ export function InvoicesView({
           </div>
 
           {shown.length === 0 ? (
-            <div className="rounded-[20px] bg-card px-5 py-10 text-center text-[15px] text-muted-foreground">
-              {query
-                ? "Nothing matches that search."
-                : tab === "overdue"
-                  ? "No overdue invoices. Good."
-                  : tab === "drafts"
-                    ? "No drafts."
-                    : tab === "paid"
-                      ? "No paid invoices yet."
-                      : "No unpaid invoices."}
+            // Every empty view names its next action (R6).
+            <div className="flex flex-col items-center gap-4 rounded-[20px] bg-card px-5 py-10 text-center">
+              <span className="text-[15px] text-muted-foreground">
+                {query
+                  ? "Nothing matches that search."
+                  : tab === "overdue"
+                    ? "Nothing overdue."
+                    : tab === "drafts"
+                      ? "No drafts."
+                      : tab === "paid"
+                        ? "No paid invoices yet."
+                        : "No unpaid invoices."}
+              </span>
+              {query ? (
+                <Button variant="secondary" size="md" onClick={() => setQuery("")}>
+                  Clear search
+                </Button>
+              ) : (
+                <Button variant="secondary" size="md" asChild>
+                  <Link href="/app/invoices/new">
+                    <Plus /> New invoice
+                  </Link>
+                </Button>
+              )}
             </div>
           ) : (
             <div className="flex flex-col rounded-[20px] bg-card p-2">
@@ -234,13 +250,11 @@ export function InvoicesView({
                     </span>
                     <InvoiceStatusPill status={row.status} className="max-sm:hidden" />
                     <span className="flex flex-col items-end">
-                      <span className="tnum text-[16px] font-semibold">
-                        ${viewDollars(row.total).toFixed(2)}
-                      </span>
+                      <span className="tnum text-[16px] font-semibold">{usdUnits(row.total)}</span>
                       {row.status === "partly_paid" ||
                       (row.status === "overdue" && BigInt(row.paid) > 0n) ? (
                         <span className="tnum text-[12px] text-muted-foreground">
-                          ${viewDollars(row.remaining).toFixed(2)} left
+                          {usdUnits(row.remaining)} left
                         </span>
                       ) : null}
                     </span>

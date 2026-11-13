@@ -12,6 +12,7 @@ import { TextShimmer } from "@/components/kit/states"
 import { Mark } from "@/components/marks/mark"
 import { ApiError, api } from "@/lib/client/api"
 import { fire } from "@/lib/feedback"
+import { usd } from "@/lib/fiat"
 import { cn } from "@/lib/utils"
 
 export interface CalculatorRoute {
@@ -30,7 +31,8 @@ interface Quote {
 
 const DEBOUNCE_MS = 400
 const REFRESH_MS = 30_000
-const DECIMALS: Record<string, number> = { BTC: 6, ETH: 5, SOL: 3 }
+/** The same precision as `coinAmount` (lib/fiat.ts), kept here because the figure rolls digit by digit. */
+const DECIMALS: Record<string, number> = { BTC: 6, WBTC: 6, ETH: 5, SOL: 4, BNB: 4, NEAR: 3 }
 const TIMING = { duration: 260, easing: "cubic-bezier(0.22, 1, 0.36, 1)" } as const
 
 function useDebounced<T>(value: T, ms: number) {
@@ -69,13 +71,13 @@ export function Calculator({ routes }: { routes: readonly CalculatorRoute[] }) {
   return (
     <Paper className="w-full max-w-[440px] p-5 sm:p-6">
       <div className="flex items-center justify-between">
-        <span className="text-[13px] font-semibold text-[#666]">You get paid</span>
-        <span className="inline-flex items-center gap-1.5 rounded-full bg-[#F5F5F5] px-2.5 py-1 text-[12px] font-semibold text-[#666]">
+        <span className="text-[13px] font-semibold text-paper-text-2">You get paid</span>
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-paper-sunk px-2.5 py-1 text-[12px] font-semibold text-paper-text-2">
           <span className="size-1.5 animate-pulse rounded-full bg-[#2F7A00]" /> Live quote
         </span>
       </div>
       <label className="mt-1 flex items-baseline gap-1">
-        <span className={cn("figure text-[44px]", value > 0 ? "text-black" : "text-[#999]")}>
+        <span className={cn("figure text-[44px]", value > 0 ? "text-black" : "text-paper-text-3")}>
           $
         </span>
         <input
@@ -94,7 +96,7 @@ export function Calculator({ routes }: { routes: readonly CalculatorRoute[] }) {
         />
       </label>
 
-      <p className="mt-3 text-[13px] font-semibold text-[#666]">Your customer pays with</p>
+      <p className="mt-3 text-[13px] font-semibold text-paper-text-2">Your customer pays with</p>
       <div className="mt-2 grid grid-cols-5 gap-1.5">
         {routes.map((r) => (
           <button
@@ -109,8 +111,8 @@ export function Calculator({ routes }: { routes: readonly CalculatorRoute[] }) {
             className={cn(
               "press flex flex-col items-center gap-1 rounded-[12px] px-1 py-2 transition-colors",
               r.id === routeId
-                ? "bg-[#FFE9DF] shadow-[0_0_0_2px_#FF4F00]"
-                : "bg-[#F5F5F5] hover:bg-[#ECECEC]",
+                ? "bg-[#FFE9DF] shadow-[0_0_0_2px_var(--shu)]"
+                : "bg-paper-sunk hover:bg-paper-rule",
             )}
           >
             <Mark id={r.coin} chain={r.chainMark !== r.coin ? r.chainMark : undefined} size={28} />
@@ -119,10 +121,10 @@ export function Calculator({ routes }: { routes: readonly CalculatorRoute[] }) {
         ))}
       </div>
 
-      <div className="mt-4 flex flex-col gap-3 rounded-[16px] bg-[#F5F5F5] p-4">
+      <div className="mt-4 flex flex-col gap-3 rounded-[16px] bg-paper-sunk p-4">
         <div className="flex items-center justify-between gap-3">
           <span className="flex flex-col">
-            <span className="text-[12px] font-semibold text-[#666]">
+            <span className="text-[12px] font-semibold text-paper-text-2">
               They send on {route.chain}
             </span>
             {quote.isError ? (
@@ -153,27 +155,21 @@ export function Calculator({ routes }: { routes: readonly CalculatorRoute[] }) {
             size={36}
           />
         </div>
-        <div className="flex items-center gap-2 text-[#999]">
-          <span className="h-px flex-1 bg-[#E2E2E2]" />
+        <div className="flex items-center gap-2 text-paper-text-3">
+          <span className="h-px flex-1 bg-paper-rule" />
           <ArrowDown className="size-4" />
-          <span className="h-px flex-1 bg-[#E2E2E2]" />
+          <span className="h-px flex-1 bg-paper-rule" />
         </div>
         <div className="flex items-center justify-between gap-3">
           <span className="flex flex-col">
-            <span className="text-[12px] font-semibold text-[#666]">You receive exactly</span>
-            <span className="figure text-[30px] text-black">
-              $
-              {value.toLocaleString("en-US", {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2,
-              })}
-            </span>
+            <span className="text-[12px] font-semibold text-paper-text-2">You receive exactly</span>
+            <span className="figure text-[30px] text-black">{usd(value)}</span>
           </span>
           <Mark id="usdc" chain="near" size={36} />
         </div>
       </div>
 
-      <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-[12px] text-[#666]">
+      <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-[12px] text-paper-text-2">
         <span className="inline-flex items-center gap-1.5">
           <Mark id="intents" size={16} /> Quote from NEAR Intents
         </span>

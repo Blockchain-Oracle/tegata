@@ -12,6 +12,7 @@ import {
   type Operator,
   readUsdcTransfers,
 } from "@tegata/core/near"
+import { routeAsset } from "@tegata/core/oneclick"
 import {
   anchorDayFor,
   batches,
@@ -25,6 +26,13 @@ import { type Db, schema } from "@tegata/db"
 import { and, asc, count, desc, eq, gt, inArray, ne, sql } from "drizzle-orm"
 
 import { BUSINESS_HEADER, headerLogo, publicToken } from "./payments.ts"
+import {
+  failDraftedPayouts,
+  markPayoutSent,
+  PayoutError,
+  quotePayout,
+  registerDepositAddresses,
+} from "./payouts.ts"
 import { type Approval, approvalMatches, createRelayDraft, submitRelaySignature } from "./relays.ts"
 
 const {
@@ -37,7 +45,11 @@ const {
   workspaces,
   relays,
   users,
+  payouts,
 } = schema
+
+/** Where pay can land: a Tegata account, a NEAR account, or an address on another chain (Live). */
+export type DestinationKind = "tegata" | "near" | "chain"
 
 const PERSON_TOKEN_LENGTH = 14
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
@@ -221,8 +233,8 @@ export function currentDestination(rows: readonly Destination[], now = new Date(
 }
 
 export type Readiness =
-  | { state: "ready"; kind: "tegata" | "near"; accountId: string }
-  | { state: "opening"; kind: "tegata" | "near"; accountId: string | null }
+  | { state: "ready"; kind: DestinationKind; accountId: string; route?: string | null }
+  | { state: "opening"; kind: DestinationKind; accountId: string | null }
   | { state: "none" }
 
 /** Whether a destination can be paid right now, and the NEAR account it pays. */
@@ -231,6 +243,16 @@ function readiness(
   tegataAccount: { accountId: string; readyAt: Date | null } | undefined,
 ): Readiness {
   if (!destination) return { state: "none" }
+  // Another chain: ready as soon as it's chosen (the address was checked then); paid through NEAR Intents in a run.
+  if (destination.kind === "chain")
+    return destination.accountId && destination.route
+      ? {
+          state: "ready",
+          kind: "chain",
+          accountId: destination.accountId,
+          route: destination.route,
+        }
+      : { state: "none" }
   if (destination.kind === "near") {
     const accountId = destination.accountId ?? ""
     return destination.readyAt
@@ -284,8 +306,9 @@ async function setDestination(
   db: Db,
   input: {
     personId: string
-    kind: "tegata" | "near"
+    kind: DestinationKind
     accountId: string | null
+    route?: string | null
     setBy: "person" | "owner"
     readyAt: Date | null
   },
@@ -296,7 +319,12 @@ async function setDestination(
     .from(personDestinations)
     .where(eq(personDestinations.personId, input.personId))
   const { active } = currentDestination(rows, now)
-  if (active && active.kind === input.kind && active.accountId === input.accountId) {
+  if (
+    active &&
+    active.kind === input.kind &&
+    active.accountId === input.accountId &&
+    (active.route ?? null) === (input.route ?? null)
+  ) {
     await db
       .delete(personDestinations)
       .where(
@@ -346,6 +374,50 @@ export async function setDestinationByOwner(
   })
 }
 
+/**
+ * Pay to an address on another chain (Live only: NEAR Intents has no testnet). The route must be one 1Click lists; the
+ * address is checked for the chain's format by the route that calls this.
+ */
+async function setChainDestination(
+  db: Db,
+  input: {
+    personId: string
+    network: NetworkId
+    route: string
+    address: string
+    setBy: "person" | "owner"
+  },
+) {
+  if (input.network !== "mainnet")
+    throw new PayrollError(
+      "not_ready",
+      "Pay to another chain runs in Live: NEAR Intents has no testnet",
+    )
+  const address = input.address.trim()
+  if (!address) throw new PayrollError("bad_input", "Enter the address")
+  const asset = await routeAsset(input.route).catch(() => null)
+  if (!asset) throw new PayrollError("bad_input", "That coin and chain isn't offered")
+  return setDestination(db, {
+    personId: input.personId,
+    kind: "chain",
+    accountId: address,
+    route: input.route,
+    setBy: input.setBy,
+    readyAt: new Date(),
+  })
+}
+
+/** The owner points a person's pay at an address on another chain (Live). */
+export async function setChainDestinationByOwner(
+  db: Db,
+  workspaceId: string,
+  personId: string,
+  choice: { route: string; address: string },
+) {
+  const person = await ownPerson(db, workspaceId, personId)
+  return setChainDestination(db, { personId, network: person.network, ...choice, setBy: "owner" })
+}
+
 async function personByToken(db: Db, token: string) {
   const [row] = await db
     .select({ person: people, ...BUSINESS_HEADER, ownerId: workspaces.ownerId })
@@ -378,9 +450,19 @@ export async function chooseDestination(
   db: Db,
   token: string,
   user: { id: string; email: string | null },
-  choice: { kind: "tegata" } | { kind: "near"; accountId: string },
+  choice:
+    | { kind: "tegata" }
+    | { kind: "near"; accountId: string }
+    | { kind: "chain"; route: string; address: string },
 ) {
   const person = await claim(db, token, user)
+  if (choice.kind === "chain")
+    return setChainDestination(db, {
+      personId: person.id,
+      network: person.network,
+      ...choice,
+      setBy: "person",
+    })
   if (choice.kind === "tegata") {
     const [account] = await db
       .select()
@@ -457,7 +539,12 @@ export function destinationsToRegister(db: Db) {
 export interface TeamMember {
   person: typeof people.$inferSelect
   ready: Readiness
-  pending: { kind: "tegata" | "near"; accountId: string | null; activatesAt: Date } | null
+  pending: {
+    kind: DestinationKind
+    accountId: string | null
+    route?: string | null
+    activatesAt: Date
+  } | null
   setBy: "person" | "owner" | null
 }
 
@@ -495,6 +582,7 @@ export async function listPeople(
       pending: pending && {
         kind: pending.kind,
         accountId: pending.accountId ?? account?.accountId ?? null,
+        route: pending.route,
         activatesAt: pending.activatesAt,
       },
       setBy: active?.setBy ?? null,
@@ -638,6 +726,8 @@ export async function draftRun(
         amount: person.amount,
         destinationKind: ready.state === "none" ? null : ready.kind,
         accountId: ready.state === "ready" ? ready.accountId : null,
+        route: ready.state === "ready" && ready.kind === "chain" ? (ready.route ?? null) : null,
+        payoutId: null,
         status:
           ready.state !== "ready"
             ? "skipped"
@@ -735,7 +825,14 @@ export async function setRowIncluded(
  */
 export async function prepareRun(
   db: Db,
-  input: { workspaceId: string; userId: string; publicKey: string; runId: string },
+  input: {
+    workspaceId: string
+    userId: string
+    publicKey: string
+    runId: string
+    /** NEAR Intents' key, for rows paid to another chain. */
+    oneClickKey?: string
+  },
 ) {
   const run = await ownRun(db, input.workspaceId, input.runId)
   if (run.status !== "draft")
@@ -747,10 +844,79 @@ export async function prepareRun(
     .orderBy(asc(payRows.name), asc(payRows.id))
   if (!rows.length) throw new PayrollError("bad_input", "Nobody in this run is ready to be paid")
   const usdc = NETWORKS[run.network].usdc
+
+  // Where each row's USDC goes. A NEAR account takes it with the row's memo; a row for another chain gets its own
+  // signed NEAR Intents quote, and the batch sends its USDC to that quote's deposit address (which takes no memo).
+  const targets = new Map<
+    string,
+    {
+      to: string
+      memo: string | null
+      via: { route: string; recipient: string; amountOut: string | null } | null
+    }
+  >()
+  const payoutOf = new Map<string, string>()
+  for (const row of rows) {
+    if (row.destinationKind !== "chain") {
+      targets.set(row.id, { to: row.accountId ?? "", memo: payrollMemo(row.id), via: null })
+      continue
+    }
+    if (run.network !== "mainnet" || !row.route || !row.accountId)
+      throw new PayrollError(
+        "bad_input",
+        `${row.name} is paid on another chain, which runs in Live`,
+      )
+    const asset = await routeAsset(row.route).catch(() => null)
+    if (!asset)
+      throw new PayrollError("bad_input", `${row.name}'s coin and chain isn't offered right now`)
+    let quoted: Awaited<ReturnType<typeof quotePayout>>
+    try {
+      quoted = await quotePayout(
+        db,
+        {
+          workspaceId: input.workspaceId,
+          userId: input.userId,
+          senderId: run.senderId,
+          kind: "payroll",
+          amount: row.amount,
+          destinationAsset: asset.assetId,
+          symbol: asset.symbol,
+          chain: asset.chain,
+          recipient: row.accountId,
+          stable: asset.stable,
+          reference: row.id,
+        },
+        input.oneClickKey,
+      )
+    } catch (error) {
+      throw new PayrollError(
+        "bad_input",
+        `${row.name}: ${error instanceof PayoutError ? error.message : "NEAR Intents can't price this right now"}`,
+      )
+    }
+    await db.update(payRows).set({ payoutId: quoted.payout.id }).where(eq(payRows.id, row.id))
+    payoutOf.set(row.id, quoted.payout.id)
+    targets.set(row.id, {
+      to: quoted.deposit,
+      memo: null,
+      via: {
+        route: row.route,
+        recipient: row.accountId,
+        amountOut: quoted.payout.amountOutFormatted,
+      },
+    })
+  }
+
   const out: {
     relayId: string
     draft: DelegateDraft
-    rows: { id: string; accountId: string; amount: string }[]
+    rows: {
+      id: string
+      accountId: string
+      amount: string
+      memo: string | null
+      via: { route: string; recipient: string; amountOut: string | null } | null
+    }[]
   }[] = []
   for (const [index, group] of batches(rows).entries()) {
     const batch = index + 1
@@ -761,7 +927,10 @@ export async function prepareRun(
       senderId: run.senderId,
       receiverId: usdc,
       publicKey: input.publicKey,
-      calls: group.map((row) => ftTransfer(row.accountId ?? "", row.amount, payrollMemo(row.id))),
+      calls: group.map((row) => {
+        const target = targets.get(row.id)
+        return ftTransfer(target?.to ?? "", row.amount, target?.memo ?? undefined)
+      }),
       nonceOffset: index + 1,
     })
     await db
@@ -773,17 +942,43 @@ export async function prepareRun(
           group.map((row) => row.id),
         ),
       )
+    const payoutIds = group.flatMap((row) => {
+      const id = payoutOf.get(row.id)
+      return id ? [id] : []
+    })
+    if (payoutIds.length)
+      await db.update(payouts).set({ relayId }).where(inArray(payouts.id, payoutIds))
     out.push({
       relayId,
       draft,
-      rows: group.map((row) => ({
-        id: row.id,
-        accountId: row.accountId ?? "",
-        amount: row.amount.toString(),
-      })),
+      rows: group.map((row) => {
+        const target = targets.get(row.id)
+        return {
+          id: row.id,
+          accountId: target?.to ?? "",
+          amount: row.amount.toString(),
+          memo: target?.memo ?? null,
+          via: target?.via ?? null,
+        }
+      }),
     })
   }
   return { runId: run.id, total: run.total, batches: out }
+}
+
+/** Worker, before relaying a payroll batch: rows to another chain need their deposit addresses registered on USDC. */
+export async function registerRunAddresses(db: Db, operator: Operator, relayId: string) {
+  const [relay] = await db.select().from(relays).where(eq(relays.id, relayId))
+  if (!relay?.purpose.startsWith("run:")) return
+  const rows = await db
+    .select({ payoutId: payRows.payoutId })
+    .from(payRows)
+    .where(and(eq(payRows.relayId, relayId), eq(payRows.status, "included")))
+  await registerDepositAddresses(
+    db,
+    operator,
+    rows.flatMap((row) => (row.payoutId ? [row.payoutId] : [])),
+  )
 }
 
 /** Store every batch's signature (all checked before any is stored), then the run is on its way. */
@@ -845,6 +1040,7 @@ export async function settleRunRelay(
   db: Db,
   relayId: string,
   operatorId: string,
+  oneClickKey?: string,
 ): Promise<RunSettle> {
   const [relay] = await db.select().from(relays).where(eq(relays.id, relayId))
   if (!relay?.purpose.startsWith("run:")) return "ignored"
@@ -859,6 +1055,11 @@ export async function settleRunRelay(
         .update(payRows)
         .set({ status: "failed" })
         .where(and(eq(payRows.relayId, relayId), eq(payRows.status, "included")))
+      await failDraftedPayouts(
+        db,
+        rows.flatMap((row) => (row.payoutId ? [row.payoutId] : [])),
+        "The payroll batch didn't land. Nothing moved.",
+      )
       await db
         .update(payRuns)
         .set({ error: relay.error ?? "NEAR didn't accept the batch. Nothing in it moved." })
@@ -867,14 +1068,38 @@ export async function settleRunRelay(
       // A relayed transaction is signed by the operator, so NEAR looks it up under the operator's account.
       const read = await readUsdcTransfers(relay.network, relay.txHash, operatorId)
       if (read.state === "pending") return "pending"
+      const deposits = new Map(
+        (
+          await db
+            .select({ id: payouts.id, depositAddress: payouts.depositAddress })
+            .from(payouts)
+            .where(
+              inArray(
+                payouts.id,
+                rows
+                  .flatMap((row) => (row.payoutId ? [row.payoutId] : []))
+                  .concat(["00000000-0000-0000-0000-000000000000"]),
+              ),
+            )
+        ).map((p) => [p.id, p.depositAddress]),
+      )
       for (const row of rows) {
-        const hit =
-          row.accountId &&
-          matchingTransfer(read.transfers, {
-            to: row.accountId,
-            amount: row.amount,
-            memo: payrollMemo(row.id),
-          })
+        // A row for another chain went to its NEAR Intents deposit address (no memo); the rest to their own account.
+        const deposit = row.payoutId ? deposits.get(row.payoutId) : null
+        const hit = row.payoutId
+          ? deposit && read.transfers.find((t) => t.to === deposit && t.amount >= row.amount)
+          : row.accountId &&
+            matchingTransfer(read.transfers, {
+              to: row.accountId,
+              amount: row.amount,
+              memo: payrollMemo(row.id),
+            })
+        if (hit && row.payoutId)
+          await markPayoutSent(
+            db,
+            { payoutId: row.payoutId, txHash: relay.txHash, relayerId: operatorId },
+            oneClickKey,
+          )
         await db
           .update(payRows)
           .set(
@@ -1024,6 +1249,7 @@ export async function personPage(db: Db, token: string) {
     pending: pending && {
       kind: pending.kind,
       accountId: pending.accountId ?? account?.accountId ?? null,
+      route: pending.route,
       activatesAt: pending.activatesAt,
     },
     slips: slips.map((slip) => ({ ...slip, label: periodLabel({ from: slip.from, to: slip.to }) })),
@@ -1075,9 +1301,14 @@ export async function payslip(db: Db, rowId: string) {
     .innerJoin(workspaces, eq(workspaces.id, payRuns.workspaceId))
     .where(and(eq(payRows.id, rowId), eq(payRows.status, "paid")))
   if (!row) return undefined
+  // Paid to another chain: the NEAR Intents payout that carried it, for what arrived and where.
+  const [payout] = row.row.payoutId
+    ? await db.select().from(payouts).where(eq(payouts.id, row.row.payoutId))
+    : []
   return {
     row: row.row,
     run: row.run,
+    payout: payout ?? null,
     business: row.business,
     logo: headerLogo(row),
     label: periodLabel({ from: row.run.periodFrom, to: row.run.periodTo }),

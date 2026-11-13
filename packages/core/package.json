@@ -13,7 +13,8 @@
     "./oneclick": "./src/oneclick/index.ts",
     "./noah": "./src/noah/index.ts",
     "./solana": "./src/solana/index.ts",
-    "./gnosis": "./src/gnosis/index.ts"
+    "./gnosis": "./src/gnosis/index.ts",
+    "./bitnob": "./src/bitnob/index.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",

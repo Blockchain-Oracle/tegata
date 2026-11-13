@@ -78,8 +78,9 @@ export async function autopilotPreview(
     day = nextPayday(next.schedule.cadence, day, next.schedule.anchorDay)
   }
   const team = await listPeople(db, input.workspaceId, input.network)
+  // The contract pays NEAR accounts only: someone paid on another chain is paid when the owner approves a run.
   const rows = team.flatMap((m) =>
-    m.ready.state === "ready"
+    m.ready.state === "ready" && m.ready.kind !== "chain"
       ? [
           {
             personId: m.person.id,
@@ -93,13 +94,15 @@ export async function autopilotPreview(
       : [],
   )
   const left = team
-    .filter((m) => m.ready.state !== "ready")
+    .filter((m) => m.ready.state !== "ready" || m.ready.kind === "chain")
     .map((m) => ({
       name: m.person.name,
       reason:
         m.ready.state === "none"
           ? "Hasn't chosen where pay lands"
-          : "Their account is still getting ready",
+          : m.ready.kind === "chain"
+            ? "Paid on another chain, when you approve a run"
+            : "Their account is still getting ready",
     }))
   const total = rows.reduce((sum, r) => sum + BigInt(r.amount), 0n)
   return { cadence: next.schedule.cadence, paydays, dueMs, rows, left, total }

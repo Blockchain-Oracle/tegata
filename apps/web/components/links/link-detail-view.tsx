@@ -8,15 +8,18 @@ import Link from "next/link"
 import { QRCodeSVG } from "qrcode.react"
 import { useState } from "react"
 
-import { BusinessSeal, SealPress, TegataSeal } from "@/components/brand/seal"
+import { BusinessSeal, SealPress } from "@/components/brand/seal"
 import { Button } from "@/components/kit/button"
 import { Figure, viewDollars } from "@/components/kit/figure"
+import { SandboxPill } from "@/components/kit/sandbox-pill"
 import { Paper, Stage, StageAction, StageObject } from "@/components/kit/stage"
 import { EmptyState, ErrorState, LoadingShape, Skeleton, StatusPill } from "@/components/kit/states"
 import { Switch } from "@/components/kit/switch"
-import { Mark, MarkStack } from "@/components/marks/mark"
+import { MarkStack } from "@/components/marks/mark"
+import { PaidWithMark, paidVia } from "@/components/marks/paid-with"
 import type { LinkDetail, LinkPayment } from "@/lib/client/types"
 import { fire } from "@/lib/feedback"
+import { usdUnits } from "@/lib/fiat"
 import { cn } from "@/lib/utils"
 
 const COPIED_MS = 1500
@@ -91,7 +94,7 @@ export function LinkDetailView(p: LinkDetailViewProps) {
               <div className="flex flex-col gap-6">
                 <StageObject from={{ y: 16, rotate: -2 }} drift={false}>
                   <Paper className="relative p-5 sm:p-6">
-                    <span className="text-[13px] font-semibold text-[#666]">
+                    <span className="text-[13px] font-semibold text-paper-text-2">
                       Pay {p.businessName}
                     </span>
                     <span className="mt-1 block truncate pr-16 text-[18px] font-semibold">
@@ -105,11 +108,15 @@ export function LinkDetailView(p: LinkDetailViewProps) {
                       </span>
                     )}
                     {link.note ? (
-                      <p className="mt-2 line-clamp-2 text-[14px] text-[#666]">{link.note}</p>
+                      <p className="mt-2 line-clamp-2 text-[14px] text-paper-text-2">{link.note}</p>
                     ) : null}
-                    <span className="mt-4 flex items-center gap-2 text-[13px] font-medium text-[#666]">
+                    <span className="mt-4 flex flex-wrap items-center gap-2 text-[13px] font-medium text-paper-text-2">
                       <MarkStack ids={["usdc", "near"]} size={18} /> USDC on NEAR
-                      {link.network === "testnet" ? " · Sandbox" : ""}
+                      {link.network === "testnet" ? (
+                        <SandboxPill className="border-paper-text-3 py-0.5 text-[12px] text-paper-text-2">
+                          Sandbox
+                        </SandboxPill>
+                      ) : null}
                     </span>
                     <div className="absolute -top-6 -right-5">
                       <SealPress
@@ -230,45 +237,46 @@ function Fact({ label, children }: { label: string; children: React.ReactNode })
   )
 }
 
-const RAIL: Record<LinkPayment["rail"], string> = {
-  tegata: "Tegata balance",
-  near_wallet: "NEAR wallet",
-  oneclick: "Another chain",
-  manual: "Paid by hand",
+/** How it was paid, in words: the coin and chain for a payment through NEAR Intents. */
+export function railWord(rail: LinkPayment["rail"], assetIn?: string | null): string {
+  if (rail === "oneclick") return paidVia(assetIn) ?? "Another chain"
+  return { tegata: "Tegata balance", near_wallet: "NEAR wallet", manual: "Paid by hand" }[rail]
 }
 
+/** One word per state, the same as Activity's (audit pattern 7). */
 const PAYMENT_WORD: Record<LinkPayment["status"], string> = {
   awaiting: "Waiting",
-  detected: "Checking NEAR",
-  settling: "Settling",
+  detected: "On its way",
+  settling: "On its way",
   succeeded: "Paid",
   refunded: "Refunded",
-  failed: "Failed",
+  failed: "Didn't go through",
   expired: "Expired",
 }
 
-export function RailMark({ rail, size = 40 }: { rail: LinkPayment["rail"]; size?: number }) {
-  if (rail === "tegata")
+/** Who paid: a NEAR account (mono, it is an account), else their email or "A payer" in the interface face. */
+export function PayerName({
+  payer,
+  email,
+  rail,
+  className,
+}: {
+  payer: string | null
+  email?: string | null
+  rail: LinkPayment["rail"]
+  className?: string
+}) {
+  if (payer && !/\s/.test(payer) && !payer.includes("@"))
     return (
-      <span
-        className="grid shrink-0 place-items-center rounded-full bg-white shadow-object"
-        style={{ width: size, height: size }}
-      >
-        <TegataSeal size={Math.round(size * 0.62)} textured={false} tilt={0} />
+      <span className={cn("truncate font-mono text-[14px] font-medium", className)} title={payer}>
+        {payer.length > 28 ? `${payer.slice(0, 8)}…${payer.slice(-6)}` : payer}
       </span>
     )
-  if (rail === "manual")
-    return (
-      <span
-        className="grid shrink-0 place-items-center rounded-full bg-secondary text-[11px] font-bold text-muted-foreground"
-        style={{ width: size, height: size }}
-        role="img"
-        aria-label="Paid by hand"
-      >
-        $
-      </span>
-    )
-  return <Mark id={rail === "near_wallet" ? "near" : "intents"} size={size} />
+  return (
+    <span className={cn("truncate text-[15px] font-semibold", className)}>
+      {payer ?? email ?? (rail === "manual" ? "Paid by hand" : "A payer")}
+    </span>
+  )
 }
 
 function PaymentRow({ payment, index }: { payment: LinkPayment; index: number }) {
@@ -284,20 +292,19 @@ function PaymentRow({ payment, index }: { payment: LinkPayment; index: number })
   })
   const body = (
     <>
-      <RailMark rail={payment.rail} />
+      <PaidWithMark rail={payment.rail} assetIn={payment.assetIn} />
       <span className="flex min-w-0 flex-1 flex-col">
-        <span className="truncate font-mono text-[15px] font-medium">
-          {payment.payer ?? payment.payerEmail ?? "Payer"}
-        </span>
+        <PayerName payer={payment.payer} email={payment.payerEmail} rail={payment.rail} />
         <span className="truncate text-detail text-muted-foreground">
-          {RAIL[payment.rail]} · {when}
+          {railWord(payment.rail, payment.assetIn)} · {when}
         </span>
       </span>
       {paid ? null : (
         <StatusPill tone={bad ? "down" : "wait"}>{PAYMENT_WORD[payment.status]}</StatusPill>
       )}
       <span className={cn("tnum text-[16px] font-semibold", paid ? "text-up" : "text-text-3")}>
-        {paid ? "+" : ""}${viewDollars(payment.amount).toFixed(2)}
+        {paid ? "+" : ""}
+        {usdUnits(payment.amount)}
       </span>
       {payment.receiptToken ? <ReceiptText className="size-4 text-text-3" /> : null}
     </>

@@ -3,7 +3,8 @@
 // Send to another chain, the logic behind ChainSendView (plan 6.8 AB). A live dry quote while the form is filled;
 // Review commits a signed 1Click quote with its own deposit address and drafts one gas-free USDC transfer to it;
 // before signing, the page rebuilds that transfer and checks it is exactly the amount to exactly that address; then
-// it follows the payout to delivery on the other chain (the worker reads NEAR Intents).
+// it follows the payout to delivery on the other chain (the worker reads NEAR Intents). In the Sandbox the same form
+// shows, with the reason it runs in Live (R5): NEAR Intents has no testnet, so nothing is quoted or sent.
 import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { NETWORKS } from "@tegata/config"
 import { toUnits } from "@tegata/core/money"
@@ -13,6 +14,7 @@ import { viewDollars } from "@/components/kit/figure"
 import { type ChainSendStep, ChainSendView } from "@/components/send/chain-send-view"
 import { useShell } from "@/components/shell/shell-context"
 import { useDebounced } from "@/hooks/use-debounced"
+import { useNetwork } from "@/hooks/use-network"
 import { useProfile } from "@/hooks/use-profile"
 import { useSigner } from "@/hooks/use-signer"
 import { ApiError, api } from "@/lib/client/api"
@@ -44,6 +46,7 @@ export function ChainSend({
   initial?: { routeId?: string; to?: string; amount?: string }
 }) {
   const { profile } = useProfile()
+  const sandbox = useNetwork() !== "mainnet"
   const { openReceive, openScan } = useShell()
   const signer = useSigner()
   const queryClient = useQueryClient()
@@ -59,13 +62,16 @@ export function ChainSend({
   const [busy, setBusy] = useState(false)
   const [committed, setCommitted] = useState<PayoutDraft | null>(null)
 
-  const account = profile?.accounts.find((entry) => entry.network === "mainnet")
+  const account = profile?.accounts.find(
+    (entry) => entry.network === (sandbox ? "testnet" : "mainnet"),
+  )
   const balance = viewDollars(account?.balance ?? "0")
   const route = PAYER_ROUTES.find((r) => r.id === routeId) ?? PAYER_ROUTES[0]
 
   // One quote per pause in typing, only once the address could be right.
   const quoteInput = useDebounced({ routeId, to: to.trim(), amount: amount.trim() }, 450)
   const quotable =
+    !sandbox &&
     step === "form" &&
     Number.parseFloat(quoteInput.amount || "0") > 0 &&
     addressLooksRight(route.chainMark, quoteInput.to) &&
@@ -109,6 +115,7 @@ export function ChainSend({
   }, [status, step, queryClient, tracked.data?.payout.error])
 
   async function review() {
+    if (sandbox) return
     setProblem(null)
     setBusy(true)
     try {
@@ -126,7 +133,7 @@ export function ChainSend({
   }
 
   async function approve() {
-    if (!committed || !account) return
+    if (sandbox || !committed || !account) return
     setBusy(true)
     setProblem(null)
     try {
@@ -193,6 +200,7 @@ export function ChainSend({
       busy={busy || !signer.ready}
       problem={problem}
       switcher={switcher}
+      sandbox={sandbox}
       onScan={openScan}
       onReview={review}
       onApprove={approve}

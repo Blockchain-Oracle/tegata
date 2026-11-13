@@ -1,3 +1,4 @@
+import { BitnobError } from "@tegata/core/bitnob"
 import {
   BankError,
   BusinessError,
@@ -98,6 +99,13 @@ function toResponse(error: unknown): Response {
     return Response.json(
       { error: { code: error.code, message: error.message } },
       { status: error.code === "not_found" ? STATUS.notFound : STATUS.badRequest },
+    )
+  }
+  if (error instanceof BitnobError) {
+    // The card issuer's own reason, said plainly: a refusal is the request's fault, anything else is theirs.
+    return Response.json(
+      { error: { code: "issuer", message: error.message } },
+      { status: error.httpStatus >= 400 && error.httpStatus < 500 ? STATUS.badRequest : 502 },
     )
   }
   if (error instanceof BankError) {

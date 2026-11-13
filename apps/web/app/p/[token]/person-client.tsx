@@ -46,14 +46,16 @@ export function PersonClient({ initial }: { initial: PersonPage }) {
   const onboarded = Boolean(profile?.user.handle)
 
   const submit = useCallback(
-    async (choice: Pick<PayrollInvite, "choice" | "accountId">) => {
+    async (choice: Pick<PayrollInvite, "choice" | "accountId" | "route">) => {
       setBusy(true)
       setProblem(null)
       try {
         const body =
           choice.choice === "near"
             ? { kind: "near", accountId: choice.accountId }
-            : { kind: "tegata" }
+            : choice.choice === "chain"
+              ? { kind: "chain", route: choice.route, address: choice.accountId }
+              : { kind: "tegata" }
         const res = await api<{ page: PersonPage }>(`/api/p/${initial.token}/destination`, { body })
         clearPayrollInvite()
         queryClient.setQueryData(["person-page", initial.token], res)
@@ -69,7 +71,7 @@ export function PersonClient({ initial }: { initial: PersonPage }) {
     [initial.token, queryClient],
   )
 
-  const start = (choice: Pick<PayrollInvite, "choice" | "accountId">) => {
+  const start = (choice: Pick<PayrollInvite, "choice" | "accountId" | "route">) => {
     const invite = { token: initial.token, business: page.business, ...choice }
     if (!authenticated) {
       rememberPayrollInvite(invite)
@@ -108,6 +110,7 @@ export function PersonClient({ initial }: { initial: PersonPage }) {
       problem={problem}
       onTegata={() => start({ choice: "tegata" })}
       onNear={(accountId) => start({ choice: "near", accountId })}
+      onChain={({ route, address }) => start({ choice: "chain", route, accountId: address })}
     />
   )
 }

@@ -95,6 +95,69 @@ export async function previewPayout(
   }
 }
 
+export interface PayoutInput {
+  workspaceId: string
+  userId: string
+  senderId: string
+  kind: "send" | "payroll" | "refund" | "move_out"
+  amount: bigint
+  destinationAsset: string
+  symbol: string
+  chain: string
+  recipient: string
+  stable: boolean
+  reference?: string
+}
+
+/**
+ * A signed EXACT_INPUT quote with its own deposit address on NEAR, checked and saved as a drafted payout. The caller
+ * drafts the transfer to that address (alone, or inside a payroll batch).
+ */
+export async function quotePayout(db: Db, input: PayoutInput, apiKey?: string) {
+  let response: QuoteResponse
+  try {
+    response = await requestQuote(payoutRequest({ ...input, dry: false }), apiKey)
+  } catch (error) {
+    throw new PayoutError(
+      "no_route",
+      error instanceof OneClickError ? friendly(error) : friendly(null),
+    )
+  }
+  const echo = response.quoteRequest
+  const deposit = response.quote.depositAddress ?? ""
+  const honest =
+    verifyQuote(response) &&
+    echo.originAsset === `nep141:${NETWORKS.mainnet.usdc}` &&
+    echo.amount === input.amount.toString() &&
+    echo.recipient === input.recipient &&
+    echo.swapType === "EXACT_INPUT" &&
+    response.quote.amountIn === input.amount.toString() &&
+    IMPLICIT.test(deposit)
+  if (!honest) throw new PayoutError("no_route", "NEAR Intents' quote didn't check out. Try again.")
+  const [payout] = await db
+    .insert(payouts)
+    .values({
+      workspaceId: input.workspaceId,
+      userId: input.userId,
+      network: "mainnet",
+      kind: input.kind,
+      senderId: input.senderId,
+      amount: input.amount,
+      destinationAsset: input.destinationAsset,
+      symbol: input.symbol,
+      chain: input.chain,
+      recipient: input.recipient,
+      amountOutFormatted: response.quote.amountOutFormatted,
+      quote: response,
+      depositAddress: deposit,
+      deadline: new Date(echo.deadline),
+      reference: input.reference ?? null,
+    })
+    .returning()
+  if (!payout) throw new Error("Could not save the payout")
+  return { payout, deposit }
+}
+
 /**
  * Commit to a payout: a signed quote with its own deposit address, and the gas-free transfer for the business to
  * approve. Nothing moves until that approval is relayed.
@@ -117,48 +180,7 @@ export async function createPayout(
   },
   apiKey?: string,
 ) {
-  let response: QuoteResponse
-  try {
-    response = await requestQuote(payoutRequest({ ...input, dry: false }), apiKey)
-  } catch (error) {
-    throw new PayoutError(
-      "no_route",
-      error instanceof OneClickError ? friendly(error) : friendly(null),
-    )
-  }
-  const echo = response.quoteRequest
-  const deposit = response.quote.depositAddress ?? ""
-  const honest =
-    verifyQuote(response) &&
-    echo.originAsset === `nep141:${NETWORKS.mainnet.usdc}` &&
-    echo.amount === input.amount.toString() &&
-    echo.recipient === input.recipient &&
-    echo.swapType === "EXACT_INPUT" &&
-    response.quote.amountIn === input.amount.toString() &&
-    IMPLICIT.test(deposit)
-  if (!honest) throw new PayoutError("no_route", "NEAR Intents' quote didn't check out. Try again.")
-
-  const [payout] = await db
-    .insert(payouts)
-    .values({
-      workspaceId: input.workspaceId,
-      userId: input.userId,
-      network: "mainnet",
-      kind: input.kind,
-      senderId: input.senderId,
-      amount: input.amount,
-      destinationAsset: input.destinationAsset,
-      symbol: input.symbol,
-      chain: input.chain,
-      recipient: input.recipient,
-      amountOutFormatted: response.quote.amountOutFormatted,
-      quote: response,
-      depositAddress: deposit,
-      deadline: new Date(echo.deadline),
-      reference: input.reference ?? null,
-    })
-    .returning()
-  if (!payout) throw new Error("Could not save the payout")
+  const { payout, deposit } = await quotePayout(db, input, apiKey)
   // No memo: 1Click's NEAR deposit addresses take none. The address alone ties the transfer to this payout.
   const { relayId, draft } = await createRelayDraft(db, {
     userId: input.userId,
@@ -232,6 +254,54 @@ export async function settlePayoutRelay(
       .where(and(eq(payouts.id, id), eq(payouts.status, "drafted")))
   }
   return null
+}
+
+/** A payout carried by another relay (a payroll batch) landed on NEAR: tell 1Click and start following it. */
+export async function markPayoutSent(
+  db: Db,
+  input: { payoutId: string; txHash: string; relayerId: string },
+  apiKey?: string,
+) {
+  const [payout] = await db
+    .update(payouts)
+    .set({ status: "sending", txHash: input.txHash })
+    .where(and(eq(payouts.id, input.payoutId), eq(payouts.status, "drafted")))
+    .returning()
+  if (payout?.depositAddress)
+    await submitDeposit(
+      {
+        txHash: input.txHash,
+        depositAddress: payout.depositAddress,
+        nearSenderAccount: input.relayerId,
+      },
+      apiKey,
+    ).catch(() => {
+      // 1Click finds the deposit on its own too; telling it only makes it faster.
+    })
+  return payout ?? null
+}
+
+/** Payouts drafted for a batch that never landed: nothing moved, so they end here. */
+export async function failDraftedPayouts(db: Db, payoutIds: string[], error: string) {
+  if (!payoutIds.length) return
+  await db
+    .update(payouts)
+    .set({ status: "failed", error })
+    .where(and(inArray(payouts.id, payoutIds), eq(payouts.status, "drafted")))
+}
+
+/** Register 1Click deposit addresses on USDC (operator-paid) so transfers to them can land. Safe to repeat. */
+export async function registerDepositAddresses(db: Db, operator: Operator, payoutIds: string[]) {
+  if (!payoutIds.length) return
+  const rows = await db.select().from(payouts).where(inArray(payouts.id, payoutIds))
+  for (const payout of rows) {
+    if (!payout.depositAddress || payout.status !== "drafted") continue
+    const usdc = NETWORKS[payout.network].usdc
+    if (await isRegistered(payout.network, usdc, payout.depositAddress)) continue
+    const result = await operator.registerOnUsdc(payout.depositAddress)
+    if (result.status !== "success")
+      throw new Error(`Registering the deposit address failed: ${result.error ?? result.status}`)
+  }
 }
 
 export function payoutsToPoll(db: Db) {

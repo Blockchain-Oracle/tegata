@@ -9,12 +9,13 @@ import { useEffect } from "react"
 
 import { BusinessSeal, TegataSeal } from "@/components/brand/seal"
 import { Button } from "@/components/kit/button"
-import { viewDollars } from "@/components/kit/figure"
 import { Stage } from "@/components/kit/stage"
-import { RailMark } from "@/components/links/link-detail-view"
+import { railWord } from "@/components/links/link-detail-view"
 import { Mark } from "@/components/marks/mark"
+import { PaidWithMark } from "@/components/marks/paid-with"
 import { api } from "@/lib/client/api"
 import type { InvoiceStatus, PaymentRail } from "@/lib/client/types"
+import { usdUnits } from "@/lib/fiat"
 
 import { InvoicePaper, type PaperLine, type Party } from "./invoice-paper"
 import { dueText, InvoiceStatusPill } from "./status"
@@ -42,7 +43,14 @@ export interface PublicInvoiceData {
   receiverId: string
   sandbox: boolean
   today: string
-  receipts: { token: string; amount: string; rail: PaymentRail; settledAt: string | null }[]
+  receipts: {
+    token: string
+    amount: string
+    rail: PaymentRail
+    /** Paid through NEAR Intents: the coin and chain it came from (a 1Click asset id). */
+    assetIn?: string | null
+    settledAt: string | null
+  }[]
 }
 
 export function PublicInvoice({
@@ -123,9 +131,11 @@ export function PublicInvoice({
                   href={`/r/${receipt.token}`}
                   className="press flex items-center gap-3 rounded-[14px] px-3 py-3 hover:bg-secondary"
                 >
-                  <RailMark rail={receipt.rail} size={36} />
-                  <span className="flex flex-1 flex-col">
-                    <span className="text-[15px] font-semibold">Receipt</span>
+                  <PaidWithMark rail={receipt.rail} assetIn={receipt.assetIn} size={36} />
+                  <span className="flex min-w-0 flex-1 flex-col">
+                    <span className="truncate text-[15px] font-semibold">
+                      {railWord(receipt.rail, receipt.assetIn)}
+                    </span>
                     <span className="text-detail text-muted-foreground">
                       {receipt.settledAt
                         ? new Date(receipt.settledAt).toLocaleDateString("en-GB", {
@@ -136,8 +146,8 @@ export function PublicInvoice({
                         : ""}
                     </span>
                   </span>
-                  <span className="tnum text-[15px] font-semibold">
-                    ${viewDollars(receipt.amount).toFixed(2)}
+                  <span className="tnum text-[15px] font-semibold text-up">
+                    +{usdUnits(receipt.amount)}
                   </span>
                   <ReceiptText className="size-4 text-text-3" />
                 </Link>
@@ -172,9 +182,7 @@ export function PublicInvoice({
               <span className="text-detail text-muted-foreground">
                 {dueText(data.status, data.dueDate, data.today)}
               </span>
-              <span className="tnum text-[20px] font-semibold">
-                ${viewDollars(remaining).toFixed(2)}
-              </span>
+              <span className="tnum text-[20px] font-semibold">{usdUnits(remaining)}</span>
             </span>
             <Button variant="ghost" size="icon" asChild aria-label="Download PDF">
               <a href={`/i/${data.token}/pdf`}>
@@ -183,7 +191,7 @@ export function PublicInvoice({
             </Button>
             <Button variant="shu" asChild>
               <Link href={`/pay/${data.token}`}>
-                Pay ${viewDollars(remaining).toFixed(2)} <ArrowRight />
+                Pay {usdUnits(remaining)} <ArrowRight />
               </Link>
             </Button>
           </div>

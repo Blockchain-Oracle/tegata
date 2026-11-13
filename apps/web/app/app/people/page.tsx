@@ -7,6 +7,8 @@ import { Suspense, useState } from "react"
 import { ImportSheet } from "@/components/people/import-sheet"
 import { PeopleView } from "@/components/people/people-view"
 import { AddPersonSheet, type PersonForm, PersonSheet } from "@/components/people/person-sheet"
+import { useNetwork } from "@/hooks/use-network"
+import { useProfile } from "@/hooks/use-profile"
 import { ApiError, api } from "@/lib/client/api"
 import type { PaySlipRow, TeamPerson } from "@/lib/client/types"
 import { fire } from "@/lib/feedback"
@@ -27,6 +29,8 @@ function People() {
   const queryClient = useQueryClient()
   const params = useSearchParams()
   const router = useRouter()
+  const network = useNetwork()
+  const { profile } = useProfile()
   const [adding, setAdding] = useState(params.get("new") === "1")
   const [importing, setImporting] = useState(false)
   const [openId, setOpenIdState] = useState<string | null>(params.get("id"))
@@ -74,6 +78,15 @@ function People() {
   const setAccount = useMutation({
     mutationFn: (accountId: string) =>
       api(`/api/people/${openId}/destination`, { method: "PUT", body: { accountId } }),
+    onSuccess: () => {
+      fire("tick", { cue: "confirmed" })
+      refresh()
+    },
+    onError: () => fire("fail", { cue: "error" }),
+  })
+  const setChain = useMutation({
+    mutationFn: (choice: { route: string; address: string }) =>
+      api(`/api/people/${openId}/destination`, { method: "PUT", body: choice }),
     onSuccess: () => {
       fire("tick", { cue: "confirmed" })
       refresh()
@@ -154,6 +167,10 @@ function People() {
         onResendInvite={() => resend.mutate()}
         resending={resend.isPending}
         resent={resend.data?.to ?? null}
+        onSetChain={network === "mainnet" ? (choice) => setChain.mutate(choice) : undefined}
+        settingChain={setChain.isPending}
+        business={profile?.workspace?.name}
+        network={network}
       />
     </>
   )

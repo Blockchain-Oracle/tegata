@@ -66,19 +66,24 @@ export default function RunPage({ params }: { params: Promise<{ id: string }> })
         if (!draftMatchesHash(batch.draft) || batch.draft.calls.length !== batch.rows.length)
           throw new Error("The run to approve doesn't match what you reviewed")
         batch.draft.calls.forEach((call, i) => {
-          const row = expected.get(batch.rows[i]?.id ?? "")
+          const planned = batch.rows[i]
+          const row = expected.get(planned?.id ?? "")
           const args = JSON.parse(call.argsJson) as {
             receiver_id?: string
             amount?: string
             memo?: string
           }
-          if (
-            !row ||
-            call.method !== "ft_transfer" ||
-            args.receiver_id !== row.accountId ||
-            args.amount !== row.amount ||
-            args.memo !== `tegata:payroll:${row.id}`
-          )
+          // A row on NEAR goes to the account reviewed, with its memo. A row for another chain goes to its NEAR
+          // Intents deposit address, and the quote behind it must deliver to the address and coin reviewed.
+          const chain = row?.destinationKind === "chain"
+          const right = chain
+            ? planned?.via?.recipient === row.accountId &&
+              planned?.via?.route === row.route &&
+              args.receiver_id === planned?.accountId &&
+              /^[0-9a-f]{64}$/.test(args.receiver_id ?? "") &&
+              args.memo === undefined
+            : args.receiver_id === row?.accountId && args.memo === `tegata:payroll:${row?.id}`
+          if (!row || call.method !== "ft_transfer" || args.amount !== row.amount || !right)
             throw new Error("The run to approve doesn't match what you reviewed")
           covered++
         })

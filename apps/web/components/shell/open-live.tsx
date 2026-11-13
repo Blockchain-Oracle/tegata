@@ -59,8 +59,7 @@ export function OpenLive({
             {account ? "Opening your Live account." : "Open your Live account."}
           </h1>
           <p className="text-[17px] text-white/90">
-            Real dollars on NEAR mainnet. Customers pay from any chain through NEAR Intents, and you
-            pay people out to any chain. Tegata pays the network fees.
+            Real dollars from any chain, with no fees to pay.
           </p>
           <span className="inline-flex items-center gap-2 self-start rounded-full bg-white/15 px-3 py-1.5 font-mono text-[14px] text-white">
             <Mark id="near" size={18} /> {accountId}

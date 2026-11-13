@@ -1,304 +1,427 @@
 "use client"
 
-// Cards (plan 6.8 AD): a Gnosis Pay card the business already has, on the stage as a card with its live balance on the
-// Gnosis chain, topped up from the NEAR balance through NEAR Intents; and issuing Tegata cards, which opens when Gnosis
-// Pay approves Tegata's sandbox. Separate from its logic so /dev/flows can show every state.
-import {
-  Check,
-  Copy,
-  CreditCard,
-  ExternalLink,
-  Lock,
-  Plus,
-  Snowflake,
-  Trash2,
-  Wallet,
-} from "lucide-react"
-import Link from "next/link"
-import { useState } from "react"
+// Cards home (plan 6.8 AD; cards-ux-brief §4.1): the business's cards fanned on the stage with "On cards" as the one
+// figure, then the cards grouped "Yours" and "Your team", the latest purchases, and a quiet way to top up a crypto card
+// the business already has. Picking a card opens its panel. Separate from its logic so /dev/flows can show every state.
+import { ChevronRight, CreditCard, Plus, Snowflake } from "lucide-react"
+import { motion, useReducedMotion } from "motion/react"
 
-import { TegataSeal } from "@/components/brand/seal"
 import { Button } from "@/components/kit/button"
-import { Field } from "@/components/kit/field"
 import { Figure, viewDollars } from "@/components/kit/figure"
+import { SandboxPill } from "@/components/kit/sandbox-pill"
 import { Stage } from "@/components/kit/stage"
-import { StatusPill } from "@/components/kit/states"
-import { Mark } from "@/components/marks/mark"
-import type { PayoutView } from "@/lib/client/types"
-import { fire } from "@/lib/feedback"
+import { ErrorState, Skeleton, StatusPill } from "@/components/kit/states"
+import { MarkStack } from "@/components/marks/mark"
+import type { CardPurchaseView, IssuedCardView } from "@/lib/client/types"
+import { usdUnits } from "@/lib/fiat"
+import { cn } from "@/lib/utils"
 
-export interface CardView {
-  id: string
-  label: string
-  account: string
-  provider: string
-  balances: { usdc: string; eure: string } | null
-  topUps: PayoutView[]
-}
+import { CardFace } from "./card-face"
 
 export interface CardsViewProps {
-  live: boolean
-  cards: CardView[] | undefined
-  linking: boolean
-  problem: string | null
-  onLink: (input: { account: string; label: string }) => void
-  onUnlink: (id: string) => void
+  business: string
+  sandbox: boolean
+  /** The card issuer, or null while cards aren't switched on for this server. */
+  issuer: string | null
+  cards: IssuedCardView[] | undefined
+  purchases: CardPurchaseView[]
+  error?: string | null
+  onRetry?: () => void
+  selectedId: string | null
+  onSelect: (id: string) => void
+  onNewCard: () => void
+  onLinked: () => void
 }
 
-const short = (a: string) => `${a.slice(0, 6)}…${a.slice(-4)}`
-
-/** The card object: a Tegata-styled face for the Gnosis Pay card the business linked. */
-function CardFace({ card }: { card: CardView }) {
-  return (
-    <div className="relative aspect-[1.586] w-full max-w-[360px] overflow-hidden rounded-[22px] bg-[radial-gradient(120%_90%_at_10%_0%,#2b2b2b_0%,#0b0b0b_60%)] p-5 text-white shadow-[0_18px_40px_rgba(80,20,0,0.35)]">
-      <span className="absolute -top-16 -right-16 size-48 rounded-full bg-shu/35 blur-2xl" />
-      <div className="relative flex h-full flex-col justify-between">
-        <div className="flex items-start justify-between">
-          <span className="flex items-center gap-2 text-[15px] font-semibold">
-            <TegataSeal size={26} textured={false} /> {card.label}
-          </span>
-          <Mark id="gnosis" size={26} />
-        </div>
-        <div className="flex flex-col gap-1">
-          <span className="font-mono text-[18px] tracking-[0.18em]">
-            •••• •••• {card.account.slice(-4).toUpperCase()}
-          </span>
-          <span className="flex items-center justify-between text-[12px] font-semibold text-white/75">
-            <span>Gnosis Pay</span>
-            <span className="text-[16px] font-black italic text-white">VISA</span>
-          </span>
-        </div>
-      </div>
-    </div>
-  )
+/** "$X left this month", "No limit", or the frozen chip. */
+export function cardSubline(card: IssuedCardView) {
+  if (card.status === "frozen") return null
+  if (!card.monthlyLimit) return "No limit"
+  const left = BigInt(card.monthlyLimit) - BigInt(card.spentThisMonth)
+  return `${usdUnits(left > 0n ? left : 0n)} left this month`
 }
 
-function CopyAddress({ account }: { account: string }) {
-  const [copied, setCopied] = useState(false)
+export function CardRow({
+  card,
+  business,
+  selected,
+  onClick,
+}: {
+  card: IssuedCardView
+  business: string
+  selected: boolean
+  onClick: () => void
+}) {
+  const sub = cardSubline(card)
   return (
     <button
       type="button"
-      onClick={async () => {
-        await navigator.clipboard.writeText(account)
-        fire("tick", { cue: "confirmed" })
-        setCopied(true)
-        setTimeout(() => setCopied(false), 1400)
-      }}
-      className="press inline-flex items-center gap-1.5 rounded-full bg-white/18 px-3 py-1.5 text-[13px] font-semibold text-white"
+      onClick={onClick}
+      aria-pressed={selected}
+      className={cn(
+        "press flex w-full items-center gap-3 rounded-[16px] px-3 py-3 text-left hover:bg-secondary",
+        selected && "bg-shu-wash hover:bg-shu-wash",
+      )}
     >
-      {copied ? <Check className="size-3.5" /> : <Copy className="size-3.5" />} {short(account)}
+      <CardFace
+        tone={card.tone}
+        business={business}
+        nickname={card.nickname}
+        holder={card.holderName}
+        last4={card.last4}
+        state={card.status === "frozen" ? "frozen" : card.status === "making" ? "making" : "active"}
+        size="thumb"
+      />
+      <span className="flex min-w-0 flex-1 flex-col">
+        <span className="truncate text-[17px] font-semibold">{card.nickname}</span>
+        <span className="truncate text-[14px] text-muted-foreground">
+          {card.holderName}
+          {card.last4 ? (
+            <>
+              {" · "}
+              <span className="font-mono">•• {card.last4}</span>
+            </>
+          ) : card.status === "making" ? (
+            " · Making the card"
+          ) : null}
+        </span>
+      </span>
+      <span className="flex flex-col items-end gap-1">
+        <span className="tnum text-[16px] font-semibold">{usdUnits(card.onCard)}</span>
+        {sub ? (
+          <span className="text-[12px] text-text-3">{sub}</span>
+        ) : (
+          <StatusPill tone="quiet" className="gap-1">
+            <Snowflake className="size-3" /> Frozen
+          </StatusPill>
+        )}
+      </span>
     </button>
   )
 }
 
-export function CardsView(p: CardsViewProps) {
-  const [adding, setAdding] = useState(false)
-  const [account, setAccount] = useState("")
-  const [label, setLabel] = useState("")
-  const showForm = adding || p.cards?.length === 0
+/** Up to three faces fanned on the stage (−8°, 0°, +8°), the owner's on top. */
+function Fan({ cards, business }: { cards: IssuedCardView[]; business: string }) {
+  const reduce = useReducedMotion()
+  const shown = cards.slice(0, 3)
+  const angles = shown.length === 1 ? [3] : shown.length === 2 ? [-6, 6] : [-8, 0, 8]
   return (
-    <div className="mx-auto flex w-full max-w-[720px] flex-col gap-6">
-      <h1 className="display text-page-title">Cards</h1>
-
-      {p.cards?.map((card) => {
-        const topUp = `/app/send?mode=chain&route=usdc-gnosis&to=${card.account}`
-        return (
-          <section key={card.id} className="flex flex-col gap-4">
-            <Stage className="p-5 sm:p-7">
-              <div className="flex flex-col gap-6 sm:flex-row sm:items-center">
-                <CardFace card={card} />
-                <div className="flex flex-col gap-2">
-                  <span className="text-[15px] font-medium text-white/85">On the card</span>
-                  {card.balances ? (
-                    <>
-                      <Figure
-                        value={Number(card.balances.usdc)}
-                        className="text-[52px] text-white"
-                      />
-                      {Number(card.balances.eure) > 0 ? (
-                        <span className="text-[15px] font-semibold text-white">
-                          + €{Number(card.balances.eure).toFixed(2)} EURe
-                        </span>
-                      ) : null}
-                      <span className="text-detail text-white/80">
-                        USDC on Gnosis, read from the chain
-                      </span>
-                    </>
-                  ) : (
-                    <span className="text-[15px] text-white/85">
-                      The Gnosis chain didn't answer. Try again.
-                    </span>
-                  )}
-                  <div className="mt-2 flex flex-wrap gap-2">
-                    {p.live ? (
-                      <Link
-                        href={topUp}
-                        className="press inline-flex h-11 items-center gap-2 rounded-full bg-white px-4 text-[15px] font-semibold text-black [&_svg]:size-4"
-                      >
-                        <Plus /> Top up from NEAR
-                      </Link>
-                    ) : null}
-                    <CopyAddress account={card.account} />
-                  </div>
-                </div>
-              </div>
-            </Stage>
-            {!p.live ? (
-              <p className="text-detail text-muted-foreground">
-                Top-ups run in Live: NEAR Intents has no testnet. Switch to Live at the top to top
-                this card up from your NEAR balance.
-              </p>
-            ) : (
-              <p className="flex items-start gap-2 text-detail text-muted-foreground">
-                <Mark id="intents" size={16} className="mt-0.5" />A top-up leaves your NEAR balance
-                in one gas-free approval and NEAR Intents delivers it as USDC on Gnosis, ready to
-                spend wherever Visa works.
-              </p>
-            )}
-            {card.topUps.length ? (
-              <ul className="flex flex-col divide-y divide-secondary rounded-[16px] bg-card px-4">
-                {card.topUps.map((t) => (
-                  <li key={t.id} className="flex items-center justify-between gap-3 py-3">
-                    <span className="flex flex-col">
-                      <span className="text-[15px] font-semibold">
-                        Top-up ${viewDollars(t.amount).toFixed(2)}
-                      </span>
-                      <span className="text-detail text-muted-foreground">
-                        {new Date(t.createdAt).toLocaleString(undefined, {
-                          day: "numeric",
-                          month: "short",
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })}
-                        {t.amountOutFormatted ? ` · ${t.amountOutFormatted} USDC arrived` : ""}
-                      </span>
-                    </span>
-                    <StatusPill
-                      tone={
-                        t.status === "delivered"
-                          ? "up"
-                          : t.status === "refunded" || t.status === "failed"
-                            ? "down"
-                            : "wait"
-                      }
-                    >
-                      {t.status === "delivered"
-                        ? "On the card"
-                        : t.status === "refunded"
-                          ? "Came back"
-                          : t.status === "failed"
-                            ? "Failed"
-                            : "On its way"}
-                    </StatusPill>
-                  </li>
-                ))}
-              </ul>
-            ) : null}
-            <div className="flex flex-wrap gap-2">
-              <Button variant="secondary" size="sm" asChild>
-                <a
-                  href={`https://gnosisscan.io/address/${card.account}`}
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  <ExternalLink /> The card account on Gnosis
-                </a>
-              </Button>
-              <Button variant="secondary" size="sm" onClick={() => p.onUnlink(card.id)}>
-                <Trash2 /> Unlink
-              </Button>
-            </div>
-          </section>
-        )
-      })}
-
-      {showForm ? (
-        <section className="flex flex-col gap-4 rounded-[24px] bg-card p-5 sm:p-6">
-          <div className="flex items-center gap-2">
-            <CreditCard className="size-5" />
-            <h2 className="text-[17px] font-semibold">Link your Gnosis Pay card</h2>
-          </div>
-          <p className="text-[15px] text-muted-foreground">
-            A Gnosis Pay card spends the USDC in its own account on the Gnosis chain, anywhere Visa
-            works. Paste that account's address (it starts 0x) and top it up straight from your NEAR
-            balance.
-          </p>
-          <form
-            className="flex flex-col gap-3"
-            onSubmit={(e) => {
-              e.preventDefault()
-              p.onLink({ account, label })
+    <div className="relative mx-auto h-[190px] w-full max-w-[360px] sm:h-[220px]">
+      {shown
+        .map((card, i) => ({ card, i }))
+        .reverse()
+        .map(({ card, i }) => (
+          <motion.div
+            key={card.id}
+            className="absolute inset-x-0 top-2 mx-auto w-[82%] sm:w-[88%]"
+            style={{ zIndex: 10 - i }}
+            initial={reduce ? { opacity: 0 } : { opacity: 0, y: 10, rotate: 0 }}
+            animate={{
+              opacity: 1,
+              y: i * 14,
+              rotate: angles[i] ?? 0,
+              x: (i - (shown.length - 1) / 2) * 26,
             }}
+            transition={{ duration: 0.32, delay: i * 0.04, ease: [0.22, 1, 0.36, 1] }}
           >
-            <Field
-              id="card-label"
-              label="Name (optional)"
-              placeholder="Team card"
-              value={label}
-              onChange={(e) => setLabel(e.target.value)}
+            <CardFace
+              tone={card.tone}
+              business={business}
+              nickname={card.nickname}
+              holder={card.holderName}
+              last4={card.last4}
+              state={
+                card.status === "frozen" ? "frozen" : card.status === "making" ? "making" : "active"
+              }
+              size="hero"
+              className="shadow-object"
             />
-            <Field
-              id="card-account"
-              label="Card account address on Gnosis"
-              placeholder="0x…"
-              value={account}
-              onChange={(e) => setAccount(e.target.value.trim())}
-              className="font-mono"
-              spellCheck={false}
-              autoCapitalize="none"
-              leading={<Mark id="gnosis" size={22} />}
-              status={p.problem ? { kind: "bad", text: p.problem } : { kind: "none" }}
-            />
-            <Button type="submit" busy={p.linking} disabled={!/^0x[0-9a-fA-F]{40}$/.test(account)}>
-              <Wallet /> Link the card
-            </Button>
-          </form>
-        </section>
-      ) : (
-        <Button variant="secondary" onClick={() => setAdding(true)}>
-          <Plus /> Link another card
-        </Button>
-      )}
+          </motion.div>
+        ))}
+      {cards.length > 3 ? (
+        <span className="absolute top-0 right-0 z-20 rounded-full bg-white px-2.5 py-1 text-[13px] font-semibold text-black shadow-object">
+          +{cards.length - 3}
+        </span>
+      ) : null}
+    </div>
+  )
+}
 
-      <section className="flex flex-col gap-4 rounded-[24px] bg-secondary p-5 sm:p-6">
-        <div className="flex items-center justify-between gap-3">
-          <span className="flex items-center gap-2 text-[17px] font-semibold">
-            <TegataSeal size={22} textured={false} /> Tegata cards
-          </span>
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-card px-3 py-1 text-[13px] font-semibold">
-            <Lock className="size-3.5" /> Waiting on Gnosis Pay
-          </span>
+/** Blank faces in three story colours, with only the business's seal: what cards will look like. */
+function BlankFan({ business }: { business: string }) {
+  const tones = ["matcha", "sora", "sakura"] as const
+  return (
+    <div className="relative mx-auto h-[190px] w-full max-w-[360px] sm:h-[220px]">
+      {tones.map((tone, i) => (
+        <div
+          key={tone}
+          className="absolute inset-x-0 top-2 mx-auto w-[82%] sm:w-[88%]"
+          style={{
+            zIndex: 10 - i,
+            transform: `translate(${(i - 1) * 26}px, ${i * 14}px) rotate(${[-8, 0, 8][i]}deg)`,
+          }}
+        >
+          {/* The tilt sits on the outer box, the drift on the inner one, so the animation can't undo the tilt. */}
+          <div className="animate-drift" style={{ animationDelay: `${i * 0.6}s` }}>
+            <CardFace
+              tone={tone}
+              business={business}
+              nickname=" "
+              holder=" "
+              last4="    "
+              size="hero"
+              className="shadow-object"
+            />
+          </div>
         </div>
-        <p className="text-[15px] text-muted-foreground">
-          Issue cards to your business and your people, spending straight from USDC. Opens when
-          Gnosis Pay approves Tegata's sandbox (requested 13 Nov; they review every company first).
-        </p>
-        <ul className="grid gap-2 sm:grid-cols-2">
-          {[
-            {
-              icon: <CreditCard />,
-              text: "A virtual card for you and each person, ready in seconds",
-            },
-            {
-              icon: <Lock />,
-              text: "The number shown only to the cardholder, by Gnosis Pay, never by Tegata",
-            },
-            { icon: <Snowflake />, text: "Freeze and set a monthly limit per card" },
-            {
-              icon: <Wallet />,
-              text: "Every card purchase as a row in Activity, with its receipt",
-            },
-          ].map((item) => (
-            <li
-              key={item.text}
-              className="flex items-start gap-3 rounded-[14px] bg-card px-4 py-3 text-[14px] [&_svg]:mt-0.5 [&_svg]:size-4 [&_svg]:shrink-0"
-            >
-              {item.icon}
-              {item.text}
-            </li>
-          ))}
-        </ul>
-      </section>
+      ))}
+    </div>
+  )
+}
+
+export function CardsView(p: CardsViewProps) {
+  const cards = p.cards ?? []
+  const live = cards.filter((c) => c.status !== "removed")
+  const yours = live.filter((c) => !c.personId)
+  const team = live.filter((c) => c.personId)
+  const removed = cards.filter((c) => c.status === "removed")
+  const onCards = live.reduce((sum, c) => sum + BigInt(c.onCard), 0n)
+  const spent = live.reduce((sum, c) => sum + BigInt(c.spentThisMonth), 0n)
+  const byId = new Map(cards.map((c) => [c.id, c]))
+
+  return (
+    <div className="mx-auto flex w-full max-w-[760px] flex-col gap-6">
+      <div className="flex items-center gap-3">
+        <h1 className="display text-page-title">Cards</h1>
+        {p.sandbox ? (
+          <SandboxPill className="hidden sm:inline-flex">Sandbox · test cards</SandboxPill>
+        ) : null}
+        {p.issuer && p.cards !== undefined ? (
+          <Button
+            size="sm"
+            className="ml-auto bg-black text-white hover:bg-black/85"
+            onClick={p.onNewCard}
+          >
+            <Plus /> New card
+          </Button>
+        ) : null}
+      </div>
+
+      {p.cards === undefined && !p.error ? (
+        <div className="flex flex-col gap-4" role="status" aria-label="Loading cards">
+          <Skeleton className="h-[280px] rounded-[24px]" />
+          <Skeleton className="h-16 rounded-[16px]" />
+          <Skeleton className="h-16 rounded-[16px]" />
+        </div>
+      ) : p.error && p.cards === undefined ? (
+        <ErrorState
+          title="Cards didn't load"
+          detail={p.error}
+          stillWorks="Cards still work at shops."
+          onRetry={p.onRetry}
+        />
+      ) : (
+        <>
+          <Stage
+            className="px-5 py-7 sm:px-8"
+            inner="grid items-center gap-6 sm:grid-cols-[1.2fr_1fr]"
+          >
+            {live.length ? (
+              <Fan cards={[...yours, ...team]} business={p.business} />
+            ) : (
+              <BlankFan business={p.business} />
+            )}
+            <div className="flex flex-col gap-2 text-white">
+              {live.length ? (
+                <>
+                  <span className="text-[15px] font-medium text-white/85">On cards</span>
+                  <Figure value={viewDollars(onCards)} className="text-[52px] text-white" />
+                  <span className="text-[15px] text-white/85">
+                    {usdUnits(spent)} spent this month across {live.length}{" "}
+                    {live.length === 1 ? "card" : "cards"}
+                  </span>
+                </>
+              ) : p.issuer ? (
+                <>
+                  <span className="display text-[34px] leading-[1.05]">
+                    Cards for you and your team
+                  </span>
+                  <span className="text-[15px] text-white/85">
+                    Each card spends only what you put on it.
+                  </span>
+                  <Button
+                    className="mt-2 self-start bg-black text-white hover:bg-black/85"
+                    onClick={p.onNewCard}
+                  >
+                    <Plus /> New card
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <span className="display text-[34px] leading-[1.05]">
+                    Cards for you and your team
+                  </span>
+                  <span className="inline-flex w-fit items-center gap-1.5 rounded-full bg-white/18 px-3 py-1 text-[14px] font-medium">
+                    <CreditCard className="size-4" /> Opening soon
+                  </span>
+                </>
+              )}
+            </div>
+          </Stage>
+
+          {yours.length ? (
+            <section className="flex flex-col gap-1">
+              <h2 className="px-1 text-[17px] font-semibold">Yours</h2>
+              {yours.map((card) => (
+                <CardRow
+                  key={card.id}
+                  card={card}
+                  business={p.business}
+                  selected={p.selectedId === card.id}
+                  onClick={() => p.onSelect(card.id)}
+                />
+              ))}
+            </section>
+          ) : null}
+          {live.length ? (
+            <section className="flex flex-col gap-1">
+              <h2 className="px-1 text-[17px] font-semibold">Your team</h2>
+              {team.map((card) => (
+                <CardRow
+                  key={card.id}
+                  card={card}
+                  business={p.business}
+                  selected={p.selectedId === card.id}
+                  onClick={() => p.onSelect(card.id)}
+                />
+              ))}
+              {team.length === 0 && p.issuer ? (
+                <button
+                  type="button"
+                  onClick={p.onNewCard}
+                  className="press flex items-center gap-3 rounded-[16px] border-2 border-dashed border-border px-3 py-3 text-left"
+                >
+                  <span className="grid h-[35px] w-[56px] place-items-center rounded-[8px] bg-matcha text-black">
+                    <Plus className="size-4" />
+                  </span>
+                  <span className="flex-1 text-[15px] font-semibold">
+                    Give someone on your team a card
+                  </span>
+                </button>
+              ) : null}
+            </section>
+          ) : null}
+
+          {p.purchases.length ? (
+            <section className="flex flex-col gap-1">
+              <h2 className="px-1 text-[17px] font-semibold">Latest purchases</h2>
+              <ul className="flex flex-col">
+                {p.purchases.slice(0, 5).map((purchase) => {
+                  const card = byId.get(purchase.cardId)
+                  return (
+                    <li key={purchase.id}>
+                      <PurchaseRow purchase={purchase} card={card} business={p.business} />
+                    </li>
+                  )
+                })}
+              </ul>
+            </section>
+          ) : null}
+
+          <button
+            type="button"
+            onClick={p.onLinked}
+            className="press flex items-center gap-3 rounded-[16px] bg-card px-3 py-3 text-left shadow-[0_0_0_1px_var(--border)]"
+          >
+            <MarkStack ids={["gnosis", "usdc"]} size={28} />
+            <span className="flex-1 text-[15px] font-semibold">
+              Already have a crypto card? Top it up
+            </span>
+            <ChevronRight className="size-5 text-muted-foreground" />
+          </button>
+
+          {removed.length ? (
+            <details className="group rounded-[16px] px-1">
+              <summary className="cursor-pointer list-none py-2 text-[15px] font-semibold text-muted-foreground">
+                Removed cards ({removed.length})
+              </summary>
+              {removed.map((card) => (
+                <div key={card.id} className="flex items-center gap-3 px-2 py-2">
+                  <CardFace
+                    tone={card.tone}
+                    business={p.business}
+                    nickname={card.nickname}
+                    holder={card.holderName}
+                    last4={card.last4}
+                    state="removed"
+                    size="thumb"
+                  />
+                  <span className="text-[14px] text-muted-foreground">
+                    {card.nickname} · {card.holderName}
+                  </span>
+                </div>
+              ))}
+            </details>
+          ) : null}
+        </>
+      )}
+    </div>
+  )
+}
+
+const PURCHASE_WORD: Record<CardPurchaseView["kind"], string> = {
+  authorization: "Pending",
+  settlement: "Paid",
+  reversal: "Reversed",
+  declined: "Declined",
+}
+
+export function PurchaseRow({
+  purchase,
+  card,
+  business,
+}: {
+  purchase: CardPurchaseView
+  card: IssuedCardView | undefined
+  business: string
+}) {
+  const declined = purchase.kind === "declined"
+  return (
+    <div className="flex items-center gap-3 rounded-[14px] px-3 py-2.5">
+      {card ? (
+        <CardFace
+          tone={card.tone}
+          business={business}
+          nickname={card.nickname}
+          holder={card.holderName}
+          last4={card.last4}
+          size="thumb"
+        />
+      ) : (
+        <span className="h-[35px] w-[56px] rounded-[8px] bg-secondary" />
+      )}
+      <span className="flex min-w-0 flex-1 flex-col">
+        <span className="truncate text-[15px] font-semibold">
+          {purchase.merchant ?? "Card purchase"}
+        </span>
+        <span className="truncate text-[13px] text-muted-foreground">
+          {card ? `${card.nickname} · ` : ""}
+          {declined && purchase.reason
+            ? `Declined: ${purchase.reason}`
+            : PURCHASE_WORD[purchase.kind]}
+        </span>
+      </span>
+      <span
+        className={cn(
+          "tnum text-[15px] font-semibold",
+          declined && "text-muted-foreground line-through",
+          purchase.kind === "reversal" && "text-up",
+        )}
+      >
+        {purchase.amount
+          ? `${purchase.kind === "reversal" ? "+" : "−"}${usdUnits(purchase.amount)}`
+          : "—"}
+      </span>
     </div>
   )
 }

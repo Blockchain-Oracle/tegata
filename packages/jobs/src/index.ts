@@ -87,6 +87,24 @@ export const QUEUES = {
     payload: z.object({}),
     options: { retryLimit: 0, expireInSeconds: 120 },
   },
+  /** A card's money reached Tegata's card reserve on NEAR: issue the card, or raise it, at Bitnob. */
+  cardFund: {
+    name: "card-fund",
+    payload: z.object({ moveId: z.uuid() }),
+    options: { retryLimit: 2, retryDelay: 15, expireInSeconds: 120 },
+  },
+  /** End a card for good: move what's left on it back, then the issuer ends it. */
+  cardRemove: {
+    name: "card-remove",
+    payload: z.object({ cardId: z.uuid(), network: z.enum(["testnet", "mainnet"]) }),
+    options: { retryLimit: 2, retryDelay: 15, expireInSeconds: 180 },
+  },
+  /** Every minute: card fills that landed on NEAR but weren't passed to the issuer yet. */
+  cardSweep: {
+    name: "card-sweep",
+    payload: z.object({}),
+    options: { retryLimit: 0, expireInSeconds: 120 },
+  },
   /** Every morning: ask owners whose payday has come to approve the run (one email per payday). */
   payrollDue: {
     name: "payroll-due",

@@ -1,4 +1,5 @@
 import { usdcBalance } from "@tegata/core/near"
+import { serverEnv } from "@tegata/env"
 import { getRun, prepareRun } from "@tegata/services"
 import { z } from "zod"
 
@@ -23,5 +24,6 @@ export const POST = route(async (request, context: { params: Promise<{ id: strin
     userId: user.id,
     publicKey: user.publicKey,
     runId,
+    oneClickKey: serverEnv().ONECLICK_API_KEY,
   })
 })
