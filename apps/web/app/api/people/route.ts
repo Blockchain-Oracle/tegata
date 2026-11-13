@@ -5,22 +5,25 @@ import { addPerson, listPeople } from "@tegata/services"
 import { requireOwner } from "@/lib/server/auth.ts"
 import { boss, db } from "@/lib/server/context.ts"
 import { route } from "@/lib/server/http.ts"
-import { PAYROLL_NETWORK, personBody, personInput, teamPersonView } from "@/lib/server/payroll.ts"
+import { requestNetwork } from "@/lib/server/mode.ts"
+import { personBody, personInput, teamPersonView } from "@/lib/server/payroll.ts"
 
 /** The team on this network, with where each person's pay lands. */
 export const GET = route(async (request) => {
+  const network = requestNetwork(request)
   const { workspace } = await requireOwner(request)
-  const team = await listPeople(db(), workspace.id, PAYROLL_NETWORK)
+  const team = await listPeople(db(), workspace.id, network)
   return { people: team.map(teamPersonView), emailEnabled: emailConfigured() }
 })
 
 /** Add a person. With email on, they get the invite; otherwise the owner shares their page. */
 export const POST = route(async (request) => {
+  const network = requestNetwork(request)
   const { workspace } = await requireOwner(request)
   const person = await addPerson(
     db(),
     workspace.id,
-    PAYROLL_NETWORK,
+    network,
     personInput(personBody.parse(await request.json())),
   )
   const emailed = emailConfigured() && Boolean(person.email)

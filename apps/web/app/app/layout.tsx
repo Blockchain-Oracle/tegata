@@ -7,6 +7,7 @@ import { useEffect } from "react"
 import { TegataSeal } from "@/components/brand/seal"
 import { LoadingShape, Skeleton } from "@/components/kit/states"
 import { AppShell } from "@/components/shell/app-shell"
+import { useNetwork } from "@/hooks/use-network"
 import { useProfile } from "@/hooks/use-profile"
 import { signOutNearWallet } from "@/lib/client/near-account"
 
@@ -24,7 +25,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     else if (needsWelcome) router.replace("/welcome")
   }, [ready, authenticated, needsWelcome, router])
 
-  const account = profile?.accounts.find((entry) => entry.network === "testnet")
+  const network = useNetwork()
+  const account = profile?.accounts.find((entry) => entry.network === network)
   if (!profile || needsWelcome || !account) return <ShellSkeleton />
 
   return (
@@ -32,7 +34,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       businessName={profile.workspace?.name ?? "Your business"}
       handle={account.accountId}
       accountId={account.accountId}
-      live={false}
+      live={network === "mainnet"}
       liveAvailable={profile.networks.includes("mainnet")}
       onSignOut={() =>
         (viaWallet ? signOutNearWallet(profile.user.walletNetwork ?? "testnet") : logout()).then(

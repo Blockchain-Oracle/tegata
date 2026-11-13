@@ -10,6 +10,7 @@ import {
   type BusinessFieldName,
   BusinessView,
 } from "@/components/settings/business-view"
+import { useNetwork } from "@/hooks/use-network"
 import { useProfile } from "@/hooks/use-profile"
 import { ApiError, api } from "@/lib/client/api"
 import type { Profile } from "@/lib/client/types"
@@ -42,7 +43,8 @@ export default function SettingsPage() {
   })
 
   const workspace = profile?.workspace
-  const account = profile?.accounts.find((entry) => entry.network === "testnet")
+  const network = useNetwork()
+  const account = profile?.accounts.find((entry) => entry.network === network)
   if (!profile || !workspace || !account)
     return (
       <div className="flex flex-col gap-6" role="status" aria-label="Loading your business">

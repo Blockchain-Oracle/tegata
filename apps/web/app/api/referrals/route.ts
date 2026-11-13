@@ -4,20 +4,20 @@ import { listReferrals, referredBy } from "@tegata/services"
 import { requireUser } from "@/lib/server/auth.ts"
 import { db } from "@/lib/server/context.ts"
 import { route } from "@/lib/server/http.ts"
-
-const NETWORK = "testnet" as const
+import { requestNetwork } from "@/lib/server/mode.ts"
 
 /** The Refer page: your link, the rule on this network, the businesses you invited, and who invited you. */
 export const GET = route(async (request) => {
+  const network = requestNetwork(request)
   const user = await requireUser(request)
-  const rules = REFERRALS[NETWORK]
+  const rules = REFERRALS[network]
   const [invited, by] = await Promise.all([
-    listReferrals(db(), user.id, NETWORK),
-    referredBy(db(), user.id, NETWORK),
+    listReferrals(db(), user.id, network),
+    referredBy(db(), user.id, network),
   ])
   return {
     handle: user.handle,
-    network: NETWORK,
+    network: network,
     rules: {
       threshold: rules.threshold,
       reward: rules.reward,

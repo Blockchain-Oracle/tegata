@@ -1,5 +1,6 @@
 // Payroll as the screens see it: the service rows shaped into the client types, with dates as ISO strings and money
 // as base-unit strings.
+import type { NetworkId } from "@tegata/config"
 import { parseDollars } from "@tegata/core/invoices"
 import { explorerTx } from "@tegata/core/near"
 import { PAYROLL_LIMITS, periodLabel } from "@tegata/core/payroll"
@@ -19,9 +20,6 @@ import type { PayRun, PayRunSummary, PersonPage, ReceiptView, TeamPerson } from 
 import { db } from "./context.ts"
 import { badRequest } from "./http.ts"
 
-/** Sandbox until Live is built (plan S09). */
-export const PAYROLL_NETWORK = "testnet" as const
-
 const iso = (date: Date | null | undefined) => date?.toISOString() ?? null
 
 export function teamPersonView({ person, ready, pending, setBy }: TeamMember): TeamPerson {
@@ -40,15 +38,15 @@ export function teamPersonView({ person, ready, pending, setBy }: TeamMember): T
   }
 }
 
-export async function scheduleView(workspaceId: string) {
-  const next = await nextPaydayFor(db(), workspaceId, PAYROLL_NETWORK)
+export async function scheduleView(workspaceId: string, network: NetworkId) {
+  const next = await nextPaydayFor(db(), workspaceId, network)
   return next
     ? { cadence: next.schedule.cadence, nextPayday: next.payday, label: periodLabel(next.period) }
     : null
 }
 
-export async function runsView(workspaceId: string): Promise<PayRunSummary[]> {
-  const runs = await listRuns(db(), workspaceId, PAYROLL_NETWORK)
+export async function runsView(workspaceId: string, network: NetworkId): Promise<PayRunSummary[]> {
+  const runs = await listRuns(db(), workspaceId, network)
   return runs.map(({ run, people, label }) => ({
     id: run.id,
     source: run.source,

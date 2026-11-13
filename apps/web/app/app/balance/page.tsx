@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query"
 
 import { BalanceView } from "@/components/books/balance-view"
 import { useShell } from "@/components/shell/shell-context"
+import { useNetwork } from "@/hooks/use-network"
 import { useProfile } from "@/hooks/use-profile"
 import { useTestDollars } from "@/hooks/use-test-dollars"
 import { ApiError, api } from "@/lib/client/api"
@@ -13,7 +14,8 @@ export default function BalancePage() {
   const { profile } = useProfile()
   const { openReceive } = useShell()
   const testDollars = useTestDollars()
-  const account = profile?.accounts.find((entry) => entry.network === "testnet")
+  const network = useNetwork()
+  const account = profile?.accounts.find((entry) => entry.network === network)
   const autopilot = useQuery({
     queryKey: ["autopilot"],
     queryFn: () => api<{ autopilot: AutopilotView }>("/api/autopilot"),

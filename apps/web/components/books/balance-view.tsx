@@ -117,11 +117,11 @@ export function BalanceView({
               matched to anything automatically.
             </p>
             <div className="flex flex-col rounded-[16px] bg-secondary p-1.5">
-              {reconciliation.outside.map((t) => {
+              {withKeys(reconciliation.outside).map(({ item: t, key }) => {
                 const delta = BigInt(t.delta)
                 return (
                   <a
-                    key={`${t.txHash}:${t.delta}`}
+                    key={key}
                     href={t.explorerUrl}
                     target="_blank"
                     rel="noreferrer"
@@ -160,4 +160,15 @@ export function BalanceView({
       </section>
     </div>
   )
+}
+
+/** One transaction can move the same amount twice (a payroll run paying two people the same): number the repeats. */
+function withKeys<T extends { txHash: string; delta: string }>(items: readonly T[]) {
+  const seen = new Map<string, number>()
+  return items.map((item) => {
+    const base = `${item.txHash}:${item.delta}`
+    const n = seen.get(base) ?? 0
+    seen.set(base, n + 1)
+    return { item, key: n ? `${base}:${n}` : base }
+  })
 }

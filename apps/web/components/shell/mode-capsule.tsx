@@ -9,6 +9,7 @@ import { motion } from "motion/react"
 import { useId, useState } from "react"
 
 import { Mark } from "@/components/marks/mark"
+import { switchMode } from "@/lib/client/mode"
 import { fire } from "@/lib/feedback"
 import { cn } from "@/lib/utils"
 
@@ -40,8 +41,9 @@ export function ModeCapsule({
   const pick = (next: Mode) => {
     if (next === current) return
     fire("tick", { cue: "toggle" })
-    // Switching itself arrives with Live; until then the locked side explains what it waits for.
-    setOpen(true)
+    // Live switches only when the server has it on; until then the locked side explains what it waits for.
+    if (next === "sandbox" || liveAvailable) switchMode(next)
+    else setOpen(true)
   }
 
   return (

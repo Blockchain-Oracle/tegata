@@ -5,6 +5,7 @@ import { z } from "zod"
 import { requireOwner } from "@/lib/server/auth.ts"
 import { db } from "@/lib/server/context.ts"
 import { badRequest, route } from "@/lib/server/http.ts"
+import { requestNetwork } from "@/lib/server/mode.ts"
 
 const body = z.object({
   title: z.string().trim().min(1, "Give the link a name").max(LINK_LIMITS.title),
@@ -21,6 +22,7 @@ export const GET = route(async (request) => {
 
 /** Create a pay link (Sandbox today; Live joins when the operator is funded). */
 export const POST = route(async (request) => {
+  const network = requestNetwork(request)
   const { user, workspace } = await requireOwner(request)
   const input = body.parse(await request.json())
   let amount: bigint | undefined
@@ -34,7 +36,7 @@ export const POST = route(async (request) => {
   const link = await createLink(db(), {
     workspaceId: workspace.id,
     ownerId: user.id,
-    network: "testnet",
+    network,
     title: input.title,
     note: input.note,
     amount,

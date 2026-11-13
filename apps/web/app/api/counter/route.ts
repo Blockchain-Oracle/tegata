@@ -8,7 +8,7 @@ import { z } from "zod"
 import { requireOwner } from "@/lib/server/auth.ts"
 import { db } from "@/lib/server/context.ts"
 import { badRequest, route } from "@/lib/server/http.ts"
-import { PAYROLL_NETWORK } from "@/lib/server/payroll.ts"
+import { requestNetwork } from "@/lib/server/mode.ts"
 
 const SALES_SHOWN = 20
 
@@ -48,6 +48,7 @@ const body = z.object({
 
 /** A counter sale: a one-time request the customer pays by scanning its QR. */
 export const POST = route(async (request) => {
+  const network = requestNetwork(request)
   const { user, workspace } = await requireOwner(request)
   const input = body.parse(await request.json())
   const amount = parseDollars(input.amount)
@@ -56,7 +57,7 @@ export const POST = route(async (request) => {
     apiKeyId: null,
     workspaceId: workspace.id,
     ownerId: user.id,
-    network: PAYROLL_NETWORK,
+    network: network,
     amount,
     description: input.note || "Counter sale",
     successUrl: null,

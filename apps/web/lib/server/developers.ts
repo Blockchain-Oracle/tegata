@@ -1,6 +1,7 @@
 // The Developers page's data, shaped for the screen: keys (never the secret), endpoints (secret hidden), deliveries,
 // and what the test inbox received.
 
+import type { NetworkId } from "@tegata/config"
 import { serverEnv } from "@tegata/env"
 import { enqueue } from "@tegata/jobs"
 import { developerState, getSession, sessionObject } from "@tegata/services"
@@ -8,14 +9,12 @@ import { developerState, getSession, sessionObject } from "@tegata/services"
 import type { DevelopersView } from "@/lib/client/types"
 
 import { boss, db } from "./context.ts"
-import { PAYROLL_NETWORK } from "./payroll.ts"
 
-export async function developersView(workspaceId: string): Promise<DevelopersView> {
-  const { keys, endpoints, deliveries, inbox } = await developerState(
-    db(),
-    workspaceId,
-    PAYROLL_NETWORK,
-  )
+export async function developersView(
+  workspaceId: string,
+  network: NetworkId,
+): Promise<DevelopersView> {
+  const { keys, endpoints, deliveries, inbox } = await developerState(db(), workspaceId, network)
   return {
     appUrl: serverEnv().APP_URL,
     keys: keys.map((k) => ({

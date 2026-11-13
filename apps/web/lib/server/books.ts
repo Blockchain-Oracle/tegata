@@ -1,5 +1,5 @@
 // Books on the server: a month of movements shaped for the screen, the CSV an accountant opens, and the statement.
-import { NETWORKS } from "@tegata/config"
+import { NETWORKS, type NetworkId } from "@tegata/config"
 import { localToday } from "@tegata/core/invoices"
 import { explorerTx, usdcBalance } from "@tegata/core/near"
 import type { StatementDocument } from "@tegata/documents"
@@ -16,7 +16,6 @@ import type { BooksMonth, MovementView } from "@/lib/client/types"
 
 import { db } from "./context.ts"
 import { badRequest } from "./http.ts"
-import { PAYROLL_NETWORK } from "./payroll.ts"
 
 const MONTH = /^\d{4}-(0[1-9]|1[0-2])$/
 
@@ -55,12 +54,13 @@ export async function monthOf(
   user: { id: string },
   workspace: { id: string; timezone: string },
   month: string,
+  network: NetworkId,
 ) {
   const { from, to } = monthRange(month, workspace.timezone)
   const list = await movements(db(), {
     userId: user.id,
     workspaceId: workspace.id,
-    network: PAYROLL_NETWORK,
+    network: network,
     from,
     to,
   })
@@ -71,8 +71,9 @@ export async function booksView(
   user: { id: string },
   workspace: { id: string; timezone: string },
   month: string,
+  network: NetworkId,
 ): Promise<BooksMonth> {
-  const { list, totals: t } = await monthOf(user, workspace, month)
+  const { list, totals: t } = await monthOf(user, workspace, month, network)
   return {
     month,
     label: monthName(month),
@@ -164,10 +165,11 @@ export async function statementDocument(
     taxId: string | null
   },
   month: string,
+  network: NetworkId,
 ): Promise<StatementDocument> {
-  const { list, totals: t } = await monthOf(user, workspace, month)
-  const account = await accountFor(db(), user.id, PAYROLL_NETWORK)
-  const balance = account ? await usdcBalance(PAYROLL_NETWORK, account.accountId) : 0n
+  const { list, totals: t } = await monthOf(user, workspace, month, network)
+  const account = await accountFor(db(), user.id, network)
+  const balance = account ? await usdcBalance(network, account.accountId) : 0n
   const logo = await businessLogo(db(), workspace.id)
   const now = new Date()
   const stamp = (at: Date) => {
@@ -185,8 +187,8 @@ export async function statementDocument(
     month: monthName(month),
     timezone: workspace.timezone,
     accountId: account?.accountId ?? "",
-    usdc: NETWORKS[PAYROLL_NETWORK].usdc,
-    network: PAYROLL_NETWORK,
+    usdc: NETWORKS[network].usdc,
+    network: network,
     moneyIn: t.moneyIn.toString(),
     moneyOut: t.moneyOut.toString(),
     net: t.net.toString(),

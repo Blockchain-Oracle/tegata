@@ -1,15 +1,18 @@
 // The autopilot as the Payroll page sees it: our row, plus the contract's own numbers read from NEAR.
-import { NETWORKS } from "@tegata/config"
+import { NETWORKS, type NetworkId } from "@tegata/config"
 import { autopilotState } from "@tegata/services"
 
 import type { AutopilotView } from "@/lib/client/types"
 
 import { db } from "./context.ts"
-import { PAYROLL_NETWORK } from "./payroll.ts"
 
-export async function autopilotView(workspaceId: string, timezone: string): Promise<AutopilotView> {
-  const { row, business, plan, lastId } = await autopilotState(db(), workspaceId, PAYROLL_NETWORK)
-  const net = NETWORKS[PAYROLL_NETWORK]
+export async function autopilotView(
+  workspaceId: string,
+  timezone: string,
+  network: NetworkId,
+): Promise<AutopilotView> {
+  const { row, business, plan, lastId } = await autopilotState(db(), workspaceId, network)
+  const net = NETWORKS[network]
   return {
     contract: net.autopilot,
     contractUrl: `${net.explorer}/address/${net.autopilot}`,

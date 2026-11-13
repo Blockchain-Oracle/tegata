@@ -5,15 +5,17 @@ import { z } from "zod"
 import { requireOwner } from "@/lib/server/auth.ts"
 import { db } from "@/lib/server/context.ts"
 import { route } from "@/lib/server/http.ts"
-import { PAYROLL_NETWORK, runsView, scheduleView } from "@/lib/server/payroll.ts"
+import { requestNetwork } from "@/lib/server/mode.ts"
+import { runsView, scheduleView } from "@/lib/server/payroll.ts"
 
 /** The schedule, the next payday and the runs so far. */
 export const GET = route(async (request) => {
+  const network = requestNetwork(request)
   const { workspace } = await requireOwner(request)
   return {
     timezone: workspace.timezone,
-    schedule: await scheduleView(workspace.id),
-    runs: await runsView(workspace.id),
+    schedule: await scheduleView(workspace.id, network),
+    runs: await runsView(workspace.id, network),
     emailEnabled: emailConfigured(),
   }
 })
@@ -25,13 +27,14 @@ const body = z.object({
 
 /** Set how often the team is paid and the next payday, in the business's time zone. */
 export const PUT = route(async (request) => {
+  const network = requestNetwork(request)
   const { workspace } = await requireOwner(request)
   const input = body.parse(await request.json())
   await setSchedule(db(), {
     workspaceId: workspace.id,
-    network: PAYROLL_NETWORK,
+    network: network,
     timezone: workspace.timezone,
     ...input,
   })
-  return { schedule: await scheduleView(workspace.id) }
+  return { schedule: await scheduleView(workspace.id, network) }
 })

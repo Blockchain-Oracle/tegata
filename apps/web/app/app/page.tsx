@@ -5,6 +5,7 @@ import { NETWORKS } from "@tegata/config"
 
 import { HomeView } from "@/components/home/home-view"
 import { useShell } from "@/components/shell/shell-context"
+import { useNetwork } from "@/hooks/use-network"
 import { useProfile } from "@/hooks/use-profile"
 import { useTestDollars } from "@/hooks/use-test-dollars"
 import { api } from "@/lib/client/api"
@@ -39,7 +40,8 @@ export default function HomePage() {
     staleTime: 60_000,
   }).data?.due
   const by = referrals.data?.referredBy
-  const account = profile?.accounts.find((entry) => entry.network === "testnet")
+  const network = useNetwork()
+  const account = profile?.accounts.find((entry) => entry.network === network)
   if (!profile || !account) return null
 
   return (

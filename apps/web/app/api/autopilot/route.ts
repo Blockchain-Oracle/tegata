@@ -7,18 +7,20 @@ import { requireOwner } from "@/lib/server/auth.ts"
 import { autopilotView } from "@/lib/server/autopilot.ts"
 import { boss, db } from "@/lib/server/context.ts"
 import { badRequest, route } from "@/lib/server/http.ts"
-import { PAYROLL_NETWORK } from "@/lib/server/payroll.ts"
+import { requestNetwork } from "@/lib/server/mode.ts"
 
 /** The autopilot: our record and the contract's numbers (set aside, the plan's next payday). */
 export const GET = route(async (request) => {
+  const network = requestNetwork(request)
   const { workspace } = await requireOwner(request)
-  return { autopilot: await autopilotView(workspace.id, workspace.timezone) }
+  return { autopilot: await autopilotView(workspace.id, workspace.timezone, network) }
 })
 
 const body = z.object({ count: z.number().int(), setAside: z.string().trim() })
 
 /** Start turning it on: snapshot the team and paydays; the worker registers the business (Tegata pays). */
 export const POST = route(async (request) => {
+  const network = requestNetwork(request)
   const { user, workspace } = await requireOwner(request)
   const input = body.parse(await request.json())
   const setAside = parseDollars(input.setAside)
@@ -26,7 +28,7 @@ export const POST = route(async (request) => {
   const row = await prepareAutopilot(db(), {
     workspaceId: workspace.id,
     ownerId: user.id,
-    network: PAYROLL_NETWORK,
+    network: network,
     timezone: workspace.timezone,
     count: input.count,
     setAside,

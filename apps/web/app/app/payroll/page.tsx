@@ -16,6 +16,7 @@ import {
   AutopilotSheet,
 } from "@/components/payroll/autopilot-card"
 import { PayrollView } from "@/components/payroll/payroll-view"
+import { useNetwork } from "@/hooks/use-network"
 import { useProfile } from "@/hooks/use-profile"
 import { useSigner } from "@/hooks/use-signer"
 import { ApiError, api } from "@/lib/client/api"
@@ -29,7 +30,6 @@ import type {
 } from "@/lib/client/types"
 import { fire } from "@/lib/feedback"
 
-const NETWORK = "testnet" as const
 const POLL_MS = 2_000
 const SETUP_POLLS = 90
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
@@ -87,9 +87,10 @@ export default function PayrollPage() {
   })
 
   const timezone = overview.data?.timezone ?? "UTC"
-  const account = profile?.accounts.find((entry) => entry.network === NETWORK)
+  const network = useNetwork()
+  const account = profile?.accounts.find((entry) => entry.network === network)
   const view = autopilot.data
-  const net = NETWORKS[NETWORK]
+  const net = NETWORKS[network]
   const refresh = () => {
     void queryClient.invalidateQueries({ queryKey: ["autopilot"] })
     void queryClient.invalidateQueries({ queryKey: ["payroll"] })

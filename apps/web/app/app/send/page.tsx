@@ -10,6 +10,7 @@ import { useEffect, useState } from "react"
 import { viewDollars } from "@/components/kit/figure"
 import { type SendStep, SendView } from "@/components/send/send-view"
 import { useShell } from "@/components/shell/shell-context"
+import { useNetwork } from "@/hooks/use-network"
 import { useProfile } from "@/hooks/use-profile"
 import { useSigner } from "@/hooks/use-signer"
 import { ApiError, api } from "@/lib/client/api"
@@ -31,7 +32,8 @@ export default function SendPage() {
   const [busy, setBusy] = useState(false)
   const [send, setSend] = useState<SendDraft | null>(null)
 
-  const account = profile?.accounts.find((entry) => entry.network === "testnet")
+  const network = useNetwork()
+  const account = profile?.accounts.find((entry) => entry.network === network)
   const balance = viewDollars(account?.balance ?? "0")
 
   // Ready people on your team, so a one-off payment to one of them is a tap.
@@ -73,7 +75,7 @@ export default function SendPage() {
     setBusy(true)
     try {
       const draft = await api<SendDraft>("/api/sends", {
-        body: { network: "testnet", to: to.trim(), amount: amount.trim() },
+        body: { network, to: to.trim(), amount: amount.trim() },
       })
       setSend(draft)
       setStep("review")

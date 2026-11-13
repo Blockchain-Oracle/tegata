@@ -7,6 +7,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { use, useState } from "react"
 
 import { RunView } from "@/components/payroll/run-view"
+import { useNetwork } from "@/hooks/use-network"
 import { useProfile } from "@/hooks/use-profile"
 import { useSigner } from "@/hooks/use-signer"
 import { ApiError, api } from "@/lib/client/api"
@@ -29,7 +30,8 @@ export default function RunPage({ params }: { params: Promise<{ id: string }> })
     select: (data) => data.run,
     refetchInterval: (query) => (query.state.data?.run.status === "approved" ? POLL_MS : false),
   })
-  const account = profile?.accounts.find((entry) => entry.network === "testnet")
+  const network = useNetwork()
+  const account = profile?.accounts.find((entry) => entry.network === network)
   const refresh = () => {
     void queryClient.invalidateQueries({ queryKey: ["run", id] })
     void queryClient.invalidateQueries({ queryKey: ["payroll"] })

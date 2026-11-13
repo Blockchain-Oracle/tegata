@@ -4,15 +4,16 @@ import { reconcile } from "@tegata/services"
 import { requireOwner } from "@/lib/server/auth.ts"
 import { db } from "@/lib/server/context.ts"
 import { route } from "@/lib/server/http.ts"
-import { PAYROLL_NETWORK } from "@/lib/server/payroll.ts"
+import { requestNetwork } from "@/lib/server/mode.ts"
 
 /** The books against NEAR: the balance, and every USDC transfer Tegata didn't make or record. */
 export const GET = route(async (request) => {
+  const network = requestNetwork(request)
   const { user, workspace } = await requireOwner(request)
   const result = await reconcile(db(), {
     userId: user.id,
     workspaceId: workspace.id,
-    network: PAYROLL_NETWORK,
+    network: network,
   })
   return {
     accountId: result.accountId,
@@ -23,7 +24,7 @@ export const GET = route(async (request) => {
       at: t.at.toISOString(),
       delta: t.delta.toString(),
       other: t.other,
-      explorerUrl: explorerTx(PAYROLL_NETWORK, t.txHash),
+      explorerUrl: explorerTx(network, t.txHash),
     })),
   }
 })

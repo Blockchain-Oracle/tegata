@@ -12,6 +12,7 @@ import { useState } from "react"
 import { Button } from "@/components/kit/button"
 import { Figure, viewDollars } from "@/components/kit/figure"
 import { Sheet } from "@/components/shell/sheet"
+import { useNetwork } from "@/hooks/use-network"
 import { useProfile } from "@/hooks/use-profile"
 import { ApiError, api } from "@/lib/client/api"
 import type { Customer, DraftForm, InvoiceDetail } from "@/lib/client/types"
@@ -105,7 +106,8 @@ export function BuilderPage({ initial, invoiceId }: { initial?: DraftForm; invoi
   })
 
   const workspace = profile?.workspace
-  const account = profile?.accounts.find((entry) => entry.network === "testnet")
+  const network = useNetwork()
+  const account = profile?.accounts.find((entry) => entry.network === network)
   if (!workspace || !account) return null
   const today = localToday(workspace.timezone)
   const reviewCustomer = customers.data?.find((c) => c.id === review?.customerId)
