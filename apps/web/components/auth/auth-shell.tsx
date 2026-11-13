@@ -39,7 +39,7 @@ export function AuthShell({
         </footer>
       </div>
       <div className="relative order-1 p-3 pb-0 lg:order-2 lg:flex-1 lg:p-0">
-        <Stage className="h-[460px] sm:h-[500px] lg:h-full lg:min-h-[640px]">
+        <Stage tone="lacquer" className="h-[460px] sm:h-[500px] lg:h-full lg:min-h-[640px]">
           <div className="absolute top-5 left-5 lg:hidden">
             <Lockup size={30} tone="paper" />
           </div>

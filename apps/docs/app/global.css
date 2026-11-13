@@ -2,8 +2,8 @@
 @import "fumadocs-ui/css/neutral.css";
 @import "fumadocs-ui/css/preset.css";
 
-/* Tegata's design lock (DESIGN.md, plan section 6): quiet paper plates for the work, colour in a lit vermilion stage,
-   the seal and real marks; Archivo for everything, its condensed cut (width 62, weight 900) for titles and money;
+/* Tegata's design lock (DESIGN.md): washi by day and sumi at night (13 Nov 2026, the same palette as the app),
+   colour in a lit stage, the seal and real marks; Archivo for everything, its condensed cut (width 62, weight 900) for titles and money;
    DM Mono for accounts and hashes. The same tokens as apps/web/app/globals.css. */
 
 @source "../components/**/*.tsx";
@@ -32,29 +32,29 @@
 }
 
 :root {
-  --page: #f5f5f5;
-  --card: #ffffff;
-  --plate: #ececec;
-  --pressed: #e2e2e2;
-  --ink: #000000;
-  --text-2: #666666;
-  --text-3: #6e6e6e;
-  --line: #e2e2e2;
+  --page: #f3efe6;
+  --card: #fffcf6;
+  --plate: #e9e3d6;
+  --pressed: #dfd8c9;
+  --ink: #16130f;
+  --text-2: #5b544a;
+  --text-3: #6b6357;
+  --line: #dcd4c4;
   --shu-ink: #b23700;
-  --shu-wash: #ffe9df;
+  --shu-wash: #ffe6d6;
   --up: #2f7a00;
   --fd-layout-width: 1400px;
 }
 
 .dark {
-  --page: #111111;
-  --card: #1c1c1c;
-  --plate: #292929;
-  --pressed: #363636;
-  --ink: #f5f5f5;
-  --text-2: #b8b8b8;
-  --text-3: #a0a0a0;
-  --line: #2f2f2f;
+  --page: #0e0c0a;
+  --card: #1b1814;
+  --plate: #262119;
+  --pressed: #2e2820;
+  --ink: #f2ede4;
+  --text-2: #b8afa2;
+  --text-3: #968c7f;
+  --line: #2c2620;
   --shu-ink: #ff8a52;
   --shu-wash: #3a2015;
   --up: #b5f543;
@@ -96,7 +96,23 @@ html {
 
 ::selection {
   background: #ff4f00;
-  color: #000000;
+  color: #16130f;
+}
+
+/* The desk: the landing's faint dot grid behind every page, fading out below the title. */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-image: radial-gradient(
+    color-mix(in oklab, var(--ink) 16%, transparent) 1px,
+    transparent 1.2px
+  );
+  background-size: 22px 22px;
+  mask-image: radial-gradient(90% 60% at 60% 0%, #000 0%, transparent 75%);
+  opacity: 0.55;
 }
 
 /* Titles and money: the condensed cut, heavy, never shouting in capitals. */
@@ -170,6 +186,15 @@ html {
     radial-gradient(60% 55% at 16% 10%, #ff7a2e 0%, transparent 70%),
     radial-gradient(70% 60% at 55% 105%, #ffb38a 0%, transparent 65%),
     radial-gradient(40% 40% at 92% 30%, #ff3a00 0%, transparent 70%);
+}
+
+/* Lacquer: sumi lit by a vermilion glow rising from below, the app's second stage tone. */
+.lacquer {
+  background-color: #120d0a;
+  background-image:
+    radial-gradient(60% 70% at 50% 120%, #ff4f00 0%, rgba(255, 106, 26, 0.55) 35%, transparent 70%),
+    radial-gradient(40% 50% at 10% 0%, rgba(255, 122, 46, 0.25), transparent 70%);
+  color: #ffffff;
 }
 
 /* The logo row's endless drift (components/marks.tsx). */

@@ -1,4 +1,5 @@
-// The share card: the seal and the promise on the lit stage, in Archivo's condensed cut.
+// The share card: the seal and the promise on the lacquer stage (sumi lit by a vermilion glow from below), with
+// "exact" set on a block of seal ink as in the landing hero, in Archivo's condensed cut.
 import { ImageResponse } from "next/og"
 
 import { SEAL_FACES } from "@/lib/brand/glyphs"
@@ -39,9 +40,10 @@ function Seal({ px }: { px: number }) {
       height={px}
       viewBox={`0 0 ${VIEW} ${VIEW}`}
       style={{ transform: "rotate(-4deg)" }}
+      role="img"
+      aria-label="Tegata seal"
     >
-      <title>Tegata seal</title>
-      <rect x="6" y="6" width="188" height="188" rx="30" fill="#FFFFFF" />
+      <rect x="6" y="6" width="188" height="188" rx="30" fill="#FF4F00" />
       <rect
         x="18"
         y="18"
@@ -49,17 +51,17 @@ function Seal({ px }: { px: number }) {
         height="164"
         rx="20"
         fill="none"
-        stroke="#FF4F00"
+        stroke="#FFFFFF"
         strokeWidth="5"
       />
       <path
         d={g.手.d}
-        fill="#FF4F00"
+        fill="#FFFFFF"
         transform={fit(g.手.box, pad, pad - 2, VIEW - pad * 2, cellH)}
       />
       <path
         d={g.形.d}
-        fill="#FF4F00"
+        fill="#FFFFFF"
         transform={fit(g.形.box, pad, pad + cellH + 8, VIEW - pad * 2, cellH)}
       />
     </svg>
@@ -77,10 +79,10 @@ export default async function OpengraphImage() {
         flexDirection: "column",
         justifyContent: "space-between",
         padding: 72,
-        color: "#FFFFFF",
-        backgroundColor: "#FF4F00",
+        color: "#F2EDE4",
+        backgroundColor: "#120D0A",
         backgroundImage:
-          "radial-gradient(60% 55% at 16% 10%, #FF7A2E 0%, rgba(255,122,46,0) 70%), radial-gradient(70% 60% at 55% 105%, #FFB38A 0%, rgba(255,179,138,0) 65%)",
+          "radial-gradient(70% 95% at 85% 125%, #FF4F00 0%, #FF6A1A 28%, rgba(255,122,46,0.45) 52%, rgba(18,13,10,0) 78%), radial-gradient(40% 55% at 0% 0%, rgba(255,122,46,0.32) 0%, rgba(18,13,10,0) 72%)",
         fontFamily: "Archivo",
       }}
     >
@@ -91,9 +93,22 @@ export default async function OpengraphImage() {
       <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
         <div style={{ display: "flex", flexDirection: "column", fontSize: 96, lineHeight: 0.95 }}>
           <span>{HEADLINE[0]}</span>
-          <span style={{ opacity: 0.8 }}>{HEADLINE[1]}</span>
+          <span style={{ display: "flex", alignItems: "baseline", gap: 22 }}>
+            <span style={{ color: "#968C7F" }}>In</span>
+            <span
+              style={{
+                backgroundColor: "#FF4F00",
+                color: "#16130F",
+                padding: "0 12px",
+                borderRadius: 8,
+              }}
+            >
+              exact
+            </span>
+            <span>dollars.</span>
+          </span>
         </div>
-        <span style={{ fontSize: 44, opacity: 0.85 }}>{SUB}</span>
+        <span style={{ fontSize: 44, color: "#B8AFA2" }}>{SUB}</span>
       </div>
     </div>,
     { ...size, fonts: [{ name: "Archivo", data: font, weight: 900, style: "normal" }] },

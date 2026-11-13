@@ -33,7 +33,7 @@ export function ReceiptSlip({
 }) {
   return (
     <article
-      className={cn("relative rounded-[20px] bg-white text-black shadow-receipt", className)}
+      className={cn("relative rounded-[20px] bg-paper text-[#16130F] shadow-receipt", className)}
     >
       <div className="p-6 pb-4">
         <span className="flex items-center gap-2 pr-24 text-[13px] font-semibold text-paper-text-2">

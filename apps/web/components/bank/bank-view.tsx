@@ -216,7 +216,7 @@ function RecipientRow({
 function Row({ label, children }: { label: string; children: ReactNode }) {
   return (
     <div className="flex items-center justify-between gap-4 py-2.5 text-[15px]">
-      <span className="text-[#6E6E6E]">{label}</span>
+      <span className="text-[#6B6357]">{label}</span>
       <span className="text-right font-semibold text-black">{children}</span>
     </div>
   )
@@ -292,7 +292,7 @@ export function BankView(p: BankViewProps) {
       </div>
 
       {!p.available ? (
-        <div className="flex items-center gap-3 rounded-[16px] bg-kin px-4 py-3 text-black">
+        <div className="flex items-center gap-3 rounded-[16px] bg-kin px-4 py-3 text-field-ink">
           <Lock className="size-5 shrink-0" />
           <p className="text-[15px] font-medium">
             Live bank payouts open after Noah's business review. Try it in the Sandbox.
@@ -324,10 +324,10 @@ export function BankView(p: BankViewProps) {
             {...slide}
           >
             {/* The converter: what leaves your balance, what reaches their bank. */}
-            <Stage className="p-3 sm:p-6">
+            <Stage tone="lacquer" className="p-3 sm:p-6">
               <Paper className="overflow-hidden">
                 <div className="flex flex-col gap-1 px-5 pt-5 pb-4">
-                  <label htmlFor="bank-amount" className="text-[14px] font-medium text-[#6E6E6E]">
+                  <label htmlFor="bank-amount" className="text-[14px] font-medium text-[#6B6357]">
                     You send
                   </label>
                   <div className="flex items-center gap-3">
@@ -335,7 +335,7 @@ export function BankView(p: BankViewProps) {
                       <span
                         className={cn(
                           "figure text-[48px] leading-none",
-                          value > 0 ? "text-black" : "text-[#B8B8B8]",
+                          value > 0 ? "text-black" : "text-[#B5AD9F]",
                         )}
                       >
                         $
@@ -351,14 +351,14 @@ export function BankView(p: BankViewProps) {
                             e.target.value.replace(/[^0-9.]/g, "").replace(/(\..*)\./g, "$1"),
                           )
                         }
-                        className="figure w-full min-w-0 bg-transparent text-[48px] leading-none text-black caret-shu outline-none placeholder:text-[#B8B8B8]"
+                        className="figure w-full min-w-0 bg-transparent text-[48px] leading-none text-black caret-shu outline-none placeholder:text-[#B5AD9F]"
                       />
                     </span>
-                    <span className="inline-flex shrink-0 items-center gap-2 rounded-full bg-[#F1F1F1] py-1.5 pr-3.5 pl-1.5 text-[15px] font-semibold text-black">
+                    <span className="inline-flex shrink-0 items-center gap-2 rounded-full bg-[#F3EFE6] py-1.5 pr-3.5 pl-1.5 text-[15px] font-semibold text-black">
                       <Mark id="usdc" size={26} /> USDC
                     </span>
                   </div>
-                  <span className="text-[13px] text-[#6E6E6E]">
+                  <span className="text-[13px] text-[#6B6357]">
                     {over ? (
                       <span className="font-semibold text-[#C8283F]">
                         More than your ${p.balance.toFixed(2)}
@@ -378,7 +378,7 @@ export function BankView(p: BankViewProps) {
                   </span>
                 </div>
 
-                <ul className="relative mx-5 flex flex-col gap-2 border-l-2 border-dotted border-[#D9D9D9] py-1 pl-5 text-[14px] text-[#444]">
+                <ul className="relative mx-5 flex flex-col gap-2 border-l-2 border-dotted border-[#D9D1C1] py-1 pl-5 text-[14px] text-[#3D3730]">
                   {q ? (
                     <>
                       <li className="tnum">
@@ -405,13 +405,13 @@ export function BankView(p: BankViewProps) {
                   )}
                 </ul>
 
-                <div className="mt-4 flex flex-col gap-1 bg-[#F6F6F6] px-5 pt-4 pb-5">
-                  <span className="text-[14px] font-medium text-[#6E6E6E]">They get</span>
+                <div className="mt-4 flex flex-col gap-1 bg-[#F3EFE6] px-5 pt-4 pb-5">
+                  <span className="text-[14px] font-medium text-[#6B6357]">They get</span>
                   <div className="flex items-center gap-3">
                     <span
                       className={cn(
                         "figure min-w-0 flex-1 truncate text-[48px] leading-none tnum",
-                        q && value > 0 ? "text-black" : "text-[#B8B8B8]",
+                        q && value > 0 ? "text-black" : "text-[#B5AD9F]",
                       )}
                       aria-live="polite"
                     >
@@ -422,12 +422,12 @@ export function BankView(p: BankViewProps) {
                     <button
                       type="button"
                       onClick={() => setPicking(true)}
-                      className="press inline-flex shrink-0 items-center gap-2 rounded-full bg-white py-1.5 pr-2.5 pl-1.5 text-[15px] font-semibold text-black shadow-[0_0_0_1px_#E2E2E2]"
+                      className="press inline-flex shrink-0 items-center gap-2 rounded-full bg-white py-1.5 pr-2.5 pl-1.5 text-[15px] font-semibold text-black shadow-[0_0_0_1px_#E2DBCD]"
                       aria-label={`Currency: ${FIAT_NAME[country.fiat] ?? country.fiat}. Change country`}
                     >
                       <Flag code={country.code} size={26} />
                       {country.fiat}
-                      <ChevronDown className="size-4 text-[#6E6E6E]" />
+                      <ChevronDown className="size-4 text-[#6B6357]" />
                     </button>
                   </div>
                 </div>
@@ -557,25 +557,25 @@ export function BankView(p: BankViewProps) {
           </motion.div>
         ) : p.step === "review" && p.payout ? (
           <motion.div key="review" className="flex flex-col gap-5" {...slide}>
-            <Stage className="p-3 sm:p-6">
+            <Stage tone="lacquer" className="p-3 sm:p-6">
               <Paper className="flex flex-col gap-4 p-5">
                 <span className="flex flex-col gap-1">
-                  <span className="text-[14px] font-medium text-[#6E6E6E]">You withdraw</span>
+                  <span className="text-[14px] font-medium text-[#6B6357]">You withdraw</span>
                   <Figure value={viewDollars(p.payout.amount)} className="text-[56px] text-black" />
                 </span>
-                <div className="flex items-center gap-3 rounded-[16px] bg-[#F6F6F6] p-3">
+                <div className="flex items-center gap-3 rounded-[16px] bg-[#F3EFE6] p-3">
                   <BankDisc name={toBank} size={44} />
                   <span className="flex min-w-0 flex-col">
                     <span className="truncate text-[17px] font-semibold text-black">
                       {toName ?? toBank}
                     </span>
-                    <span className="truncate text-[13px] text-[#6E6E6E]">
+                    <span className="truncate text-[13px] text-[#6B6357]">
                       {toBank} · <span className="font-mono">•• {lastFour(toLabel)}</span>
                     </span>
                   </span>
                   <Flag code={p.payout.fiat} size={24} className="ml-auto" />
                 </div>
-                <div className="flex flex-col divide-y divide-[#ECECEC] rounded-[16px] bg-[#F6F6F6] px-4">
+                <div className="flex flex-col divide-y divide-[#E9E3D6] rounded-[16px] bg-[#F3EFE6] px-4">
                   <Row label="They get">
                     <span className="tnum text-[17px]">
                       {fiatMoney(p.payout.fiat, p.payout.fiatAmount)}
@@ -631,27 +631,27 @@ export function BankView(p: BankViewProps) {
           <motion.div key="paid" className="flex flex-col gap-5" {...slide}>
             <div className="relative rounded-[20px] bg-white text-black shadow-receipt">
               <div className="flex flex-col gap-1 p-6 pb-4">
-                <span className="flex items-center gap-2 text-[13px] font-semibold text-[#6E6E6E]">
+                <span className="flex items-center gap-2 text-[13px] font-semibold text-[#6B6357]">
                   <TegataSeal size={20} textured={false} /> Paid to a bank
                 </span>
                 <span className="figure tnum mt-2 text-[52px] leading-none">
                   {fiatMoney(p.payout.fiat, p.payout.fiatAmount)}
                 </span>
-                <span className="text-[14px] text-[#6E6E6E]">
+                <span className="text-[14px] text-[#6B6357]">
                   ${viewDollars(p.payout.amount).toFixed(2)} from {p.businessName}
                 </span>
               </div>
               <div className="relative h-4">
                 <span className="absolute top-1/2 -left-2 size-4 -translate-y-1/2 rounded-full bg-background" />
                 <span className="absolute top-1/2 -right-2 size-4 -translate-y-1/2 rounded-full bg-background" />
-                <span className="absolute inset-x-4 top-1/2 border-t-2 border-dashed border-[#E2E2E2]" />
+                <span className="absolute inset-x-4 top-1/2 border-t-2 border-dashed border-[#E2DBCD]" />
               </div>
               <div className="flex flex-col gap-3 p-6 pt-3">
                 <span className="flex items-center gap-3">
                   <BankDisc name={toBank} size={40} />
                   <span className="flex min-w-0 flex-col">
                     <span className="truncate text-[16px] font-semibold">{toName ?? toBank}</span>
-                    <span className="truncate text-[13px] text-[#6E6E6E]">
+                    <span className="truncate text-[13px] text-[#6B6357]">
                       {toBank} · <span className="font-mono">•• {lastFour(toLabel)}</span>
                     </span>
                   </span>
@@ -777,7 +777,7 @@ function Receive(p: BankViewProps) {
     : ""
   return (
     <>
-      <Stage className="p-3 sm:p-6">
+      <Stage tone="lacquer" className="p-3 sm:p-6">
         <Paper className="flex flex-col p-5">
           <div className="flex items-center gap-3 pb-2">
             <Flag code={d?.fiat ?? "EUR"} size={40} />
@@ -785,19 +785,19 @@ function Receive(p: BankViewProps) {
               <span className="text-[17px] font-bold text-black">
                 {FIAT_NAME[d?.fiat ?? "EUR"] ?? "Euro"} account
               </span>
-              <span className="text-[13px] text-[#6E6E6E]">
+              <span className="text-[13px] text-[#6B6357]">
                 {d?.rail === "BankSepa" || !d ? "IBAN · SEPA transfers" : d.rail}
               </span>
             </span>
             {d ? (
-              <span className="ml-auto rounded-full bg-[#E9F7D4] px-2.5 py-1 text-[12px] font-semibold text-[#2F7A00]">
+              <span className="ml-auto rounded-full bg-[#ECF5D8] px-2.5 py-1 text-[12px] font-semibold text-[#2F7A00]">
                 Active
               </span>
             ) : null}
           </div>
           {d ? (
             <>
-              <div className="flex flex-col divide-y divide-[#ECECEC]">
+              <div className="flex flex-col divide-y divide-[#E9E3D6]">
                 <CopyLine label="Account holder" value={d.holder} mono={false} />
                 <CopyLine
                   label={d.rail === "BankSepa" ? "IBAN" : "Account number"}
@@ -810,7 +810,7 @@ function Receive(p: BankViewProps) {
               <div className="mt-3 grid grid-cols-2 gap-2">
                 <Button
                   variant="secondary"
-                  className="bg-[#F1F1F1] text-black hover:bg-[#E6E6E6]"
+                  className="bg-[#F3EFE6] text-black hover:bg-[#E2DBCD]"
                   onClick={async () => {
                     await navigator.clipboard.writeText(all)
                     fire("tick", { cue: "confirmed" })
@@ -845,9 +845,9 @@ function Receive(p: BankViewProps) {
           ) : (
             <div className="flex flex-col gap-3 pt-2">
               {["Account holder", "IBAN", "BIC"].map((label) => (
-                <span key={label} className="flex flex-col gap-1.5 border-t border-[#ECECEC] pt-3">
-                  <span className="text-[13px] font-medium text-[#6E6E6E]">{label}</span>
-                  <span className="h-4 w-3/5 rounded-full bg-[#F1F1F1]" />
+                <span key={label} className="flex flex-col gap-1.5 border-t border-[#E9E3D6] pt-3">
+                  <span className="text-[13px] font-medium text-[#6B6357]">{label}</span>
+                  <span className="h-4 w-3/5 rounded-full bg-[#F3EFE6]" />
                 </span>
               ))}
               <Button
@@ -879,7 +879,7 @@ function Receive(p: BankViewProps) {
       </div>
 
       {d && p.available ? (
-        <div className="flex flex-col gap-3 rounded-[20px] bg-sora p-4 text-black">
+        <div className="flex flex-col gap-3 rounded-[20px] bg-sora p-4 text-field-ink">
           <span className="text-[15px] font-semibold">Send a test transfer</span>
           <div className="flex flex-wrap items-center gap-2">
             {["2", "5", "10"].map((v) => (

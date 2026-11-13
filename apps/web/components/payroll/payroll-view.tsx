@@ -127,7 +127,7 @@ export function PayrollView({
         />
       ) : (
         <>
-          <Stage className="p-6 sm:p-8">
+          <Stage tone="lacquer" className="p-6 sm:p-8">
             <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
               <div className="flex flex-col gap-1">
                 <span className="inline-flex items-center gap-2 text-[15px] font-medium text-white/85">
@@ -171,7 +171,7 @@ export function PayrollView({
             onClick={() => setEditing(true)}
             className="press flex items-center gap-3 rounded-[20px] bg-card px-4 py-4 text-left hover:bg-secondary"
           >
-            <span className="grid size-11 shrink-0 place-items-center rounded-[14px] bg-kin text-black [&_svg]:size-5">
+            <span className="grid size-11 shrink-0 place-items-center rounded-[14px] bg-kin text-field-ink [&_svg]:size-5">
               <CalendarDays />
             </span>
             <span className="flex min-w-0 flex-1 flex-col">
@@ -297,7 +297,7 @@ function ScheduleCard({
         onSave(cadence, payday)
       }}
     >
-      <span className="grid size-12 place-items-center rounded-[16px] bg-kin text-black [&_svg]:size-6">
+      <span className="grid size-12 place-items-center rounded-[16px] bg-kin text-field-ink [&_svg]:size-6">
         <CalendarDays />
       </span>
       <h2 className="display text-[32px] leading-none">When do you pay your team?</h2>

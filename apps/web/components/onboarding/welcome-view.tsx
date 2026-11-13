@@ -24,7 +24,8 @@ import { Field, type FieldStatus } from "@/components/kit/field"
 import { ErrorState, WaitingText } from "@/components/kit/states"
 import type { TaskStep } from "@/components/kit/task-steps"
 import { Mark } from "@/components/marks/mark"
-import { BillStage, type WelcomeStage } from "@/components/onboarding/bill-stage"
+import type { WelcomeStage } from "@/components/onboarding/bill-stage"
+import { DeskStage } from "@/components/onboarding/desk-stage"
 import { useTestDollars } from "@/hooks/use-test-dollars"
 import { cn } from "@/lib/utils"
 import { zoneLabel } from "@/lib/zone"
@@ -75,7 +76,7 @@ export function WelcomeView(p: WelcomeViewProps) {
   return (
     <AuthShell
       stage={
-        <BillStage
+        <DeskStage
           stage={p.stage}
           name={p.name}
           accountId={p.walletAccount ?? `${p.handle || "your-name"}${p.suffix}`}
@@ -127,7 +128,7 @@ export function WelcomeView(p: WelcomeViewProps) {
             {...slide}
           >
             {p.invite ? (
-              <span className="inline-flex items-center gap-2 self-start rounded-full bg-kin py-1 pr-1 pl-3 text-[14px] font-semibold text-black">
+              <span className="inline-flex items-center gap-2 self-start rounded-full bg-kin py-1 pr-1 pl-3 text-[14px] font-semibold text-field-ink">
                 <Gift className="size-4" /> Invited by {p.invite.business}
                 <button
                   type="button"
@@ -140,7 +141,7 @@ export function WelcomeView(p: WelcomeViewProps) {
               </span>
             ) : null}
             {p.joining ? (
-              <span className="inline-flex items-center gap-2 self-start rounded-full bg-matcha px-3 py-1 text-[14px] font-semibold text-black">
+              <span className="inline-flex items-center gap-2 self-start rounded-full bg-matcha px-3 py-1 text-[14px] font-semibold text-field-ink">
                 <Users className="size-4" /> Joining {p.joining.business}'s payroll
               </span>
             ) : null}
@@ -272,7 +273,7 @@ export function WelcomeView(p: WelcomeViewProps) {
 function FirstSteps({ sandbox }: { sandbox: boolean }) {
   const dollars = useTestDollars()
   const tile =
-    "press-lift flex min-h-32 flex-col justify-between gap-4 rounded-[20px] p-5 text-left text-black"
+    "press-lift flex min-h-32 flex-col justify-between gap-4 rounded-[20px] p-5 text-left text-field-ink"
   return (
     <div className={cn("grid gap-3", sandbox && "sm:grid-cols-2")}>
       {sandbox ? (
@@ -282,7 +283,7 @@ function FirstSteps({ sandbox }: { sandbox: boolean }) {
           disabled={dollars.state === "sending" || dollars.state === "sent"}
           className={cn(tile, "bg-kin disabled:cursor-default")}
         >
-          <span className="grid size-11 place-items-center rounded-full bg-black/10 [&_svg]:size-5">
+          <span className="grid size-11 place-items-center rounded-full bg-field-ink/10 [&_svg]:size-5">
             {dollars.state === "sending" ? (
               <Spinner />
             ) : dollars.state === "sent" ? (
@@ -295,7 +296,7 @@ function FirstSteps({ sandbox }: { sandbox: boolean }) {
             <span className="display text-[24px] leading-none">
               {dollars.state === "sent" ? "Test dollars added" : "Add test dollars"}
             </span>
-            <span className="inline-flex items-center gap-1.5 text-[14px] text-black/70">
+            <span className="inline-flex items-center gap-1.5 text-[14px] text-field-ink/70">
               <Mark id="usdc" size={16} />
               {dollars.state === "sending"
                 ? "Sending $5.00…"
@@ -309,12 +310,12 @@ function FirstSteps({ sandbox }: { sandbox: boolean }) {
         </button>
       ) : null}
       <Link href="/app/links?new=1" className={cn(tile, "bg-sora")}>
-        <span className="grid size-11 place-items-center rounded-full bg-black/10 [&_svg]:size-5">
+        <span className="grid size-11 place-items-center rounded-full bg-field-ink/10 [&_svg]:size-5">
           <Link2 />
         </span>
         <span className="flex flex-col gap-1">
           <span className="display text-[24px] leading-none">Create a pay link</span>
-          <span className="inline-flex items-center gap-1.5 text-[14px] text-black/70">
+          <span className="inline-flex items-center gap-1.5 text-[14px] text-field-ink/70">
             <span className="inline-flex -space-x-1">
               {(["usdc", "eth", "sol", "btc"] as const).map((id) => (
                 <Mark key={id} id={id} size={16} />

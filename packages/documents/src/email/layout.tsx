@@ -72,10 +72,10 @@ export interface EmailContent {
 /** Data keeps app paths ("/r/…"); the email needs absolute links. */
 const abs = (assets: string, href: string) => (href.startsWith("/") ? `${assets}${href}` : href)
 
-const INK = "#000000"
-const GREY = "#666666"
-const PAPER = "#F5F5F5"
-const RULE = "#ECECEC"
+const INK = "#16130F"
+const GREY = "#5B544A"
+const PAPER = "#F3EFE6"
+const RULE = "#E9E3D6"
 const UP = "#2F7A00"
 const SHU = "#FF4F00"
 const SEAL_INK = "#B23700"
@@ -203,7 +203,7 @@ function Perforation() {
         />
       </Column>
       <Column>
-        <div style={{ borderTop: "2px dashed #E2E2E2", height: 0, margin: "0 6px" }} />
+        <div style={{ borderTop: "2px dashed #E2DBCD", height: 0, margin: "0 6px" }} />
       </Column>
       <Column style={{ width: 10 }}>
         <div
@@ -338,7 +338,7 @@ export function TegataEmail({ content }: { content: EmailContent }) {
             </Row>
             <Section
               style={{
-                backgroundColor: "#FFFFFF",
+                backgroundColor: "#FFFCF6",
                 borderRadius: 20,
                 boxShadow: "0 10px 28px rgba(80,20,0,0.22)",
                 overflow: "hidden",

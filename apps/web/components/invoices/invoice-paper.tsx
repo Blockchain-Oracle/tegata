@@ -66,7 +66,7 @@ export function InvoicePaper(p: InvoicePaperProps) {
   return (
     <article
       className={cn(
-        "relative w-full overflow-hidden rounded-[20px] bg-white text-black shadow-receipt",
+        "relative w-full overflow-hidden rounded-[20px] bg-paper text-[#16130F] shadow-receipt",
         p.className,
       )}
     >

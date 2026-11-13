@@ -47,7 +47,7 @@ export default function EmailsGallery() {
             <iframe
               title={email.subject}
               srcDoc={email.html}
-              className="h-[760px] w-full rounded-[20px] bg-[#F5F5F5] shadow-object"
+              className="h-[760px] w-full rounded-[20px] bg-[#F3EFE6] shadow-object"
             />
           </figure>
         ))}

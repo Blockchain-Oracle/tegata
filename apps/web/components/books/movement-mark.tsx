@@ -186,7 +186,7 @@ export function MovementMark({
       return fiat ? (
         <Flag code={fiat} size={size} label={`${fiat} bank`} />
       ) : (
-        <Disc size={size} label="Bank" className="bg-kin text-black">
+        <Disc size={size} label="Bank" className="bg-kin text-field-ink">
           <Landmark style={{ width: size * 0.45, height: size * 0.45 }} />
         </Disc>
       )

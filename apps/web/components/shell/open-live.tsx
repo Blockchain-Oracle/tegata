@@ -50,7 +50,7 @@ export function OpenLive({
 
   return (
     <div className="flex flex-col gap-6 pt-2">
-      <Stage className="p-6 sm:p-8">
+      <Stage tone="lacquer" className="p-6 sm:p-8">
         <div className="flex max-w-[560px] flex-col gap-4">
           <span className="inline-flex items-center gap-2 text-[15px] font-semibold text-white/90">
             <Radio className="size-4" /> Live

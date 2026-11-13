@@ -31,10 +31,10 @@ export function initials(name: string): string {
 
 /** Story fields for name discs; the same name always lands on the same one (as `BankDisc` does). */
 const DISC = [
-  "bg-sora text-black",
-  "bg-matcha text-black",
-  "bg-sakura text-black",
-  "bg-kin text-black",
+  "bg-sora text-field-ink",
+  "bg-matcha text-field-ink",
+  "bg-sakura text-field-ink",
+  "bg-kin text-field-ink",
   "bg-ai text-white",
 ] as const
 

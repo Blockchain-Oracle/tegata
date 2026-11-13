@@ -168,7 +168,7 @@ export function EmptyState({
     >
       <div
         className={cn(
-          "grid size-20 place-items-center rounded-[22px] text-black [&_svg]:size-9",
+          "grid size-20 place-items-center rounded-[22px] text-field-ink [&_svg]:size-9",
           FIELD_TONE[field],
         )}
       >

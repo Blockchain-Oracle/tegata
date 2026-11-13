@@ -219,6 +219,7 @@ export function CardsView(p: CardsViewProps) {
       ) : (
         <>
           <Stage
+            tone="lacquer"
             className="px-5 py-7 sm:px-8"
             inner="grid items-center gap-6 sm:grid-cols-[1.2fr_1fr]"
           >
@@ -297,7 +298,7 @@ export function CardsView(p: CardsViewProps) {
                   onClick={p.onNewCard}
                   className="press flex items-center gap-3 rounded-[16px] border-2 border-dashed border-border px-3 py-3 text-left"
                 >
-                  <span className="grid h-[35px] w-[56px] place-items-center rounded-[8px] bg-matcha text-black">
+                  <span className="grid h-[35px] w-[56px] place-items-center rounded-[8px] bg-matcha text-field-ink">
                     <Plus className="size-4" />
                   </span>
                   <span className="flex-1 text-[15px] font-semibold">

@@ -61,7 +61,7 @@ export function TaskSteps({
             aria-current={status === "active" ? "step" : undefined}
             className={cn(
               "flex min-h-14 items-center gap-3 rounded-[14px] px-3 py-2.5 transition-colors duration-200",
-              status === "active" && (tone === "paper" ? "bg-[#F5F5F5]" : "bg-card"),
+              status === "active" && (tone === "paper" ? "bg-paper-sunk" : "bg-card"),
             )}
           >
             <span className="relative grid size-9 shrink-0 place-items-center">
@@ -75,7 +75,7 @@ export function TaskSteps({
                 <span
                   className={cn(
                     "grid size-8 place-items-center rounded-full bg-secondary text-foreground [&_svg]:size-4",
-                    tone === "paper" && "bg-[#ECECEC] text-black",
+                    tone === "paper" && "bg-paper-rule text-[#16130F]",
                     status === "pending" && "opacity-40",
                   )}
                 >
@@ -161,7 +161,10 @@ export function TaskSteps({
                   className="truncate bg-[linear-gradient(90deg,var(--muted-foreground)_38%,var(--foreground)_50%,var(--muted-foreground)_62%)] bg-size-[220%_100%] bg-clip-text text-[16px] font-semibold text-transparent"
                   style={
                     tone === "paper"
-                      ? { backgroundImage: "linear-gradient(90deg,#666 38%,#000 50%,#666 62%)" }
+                      ? {
+                          backgroundImage:
+                            "linear-gradient(90deg,#5B544A 38%,#16130F 50%,#5B544A 62%)",
+                        }
                       : undefined
                   }
                   animate={{ backgroundPosition: ["120% 0", "-120% 0"] }}

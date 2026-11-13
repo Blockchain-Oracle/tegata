@@ -15,6 +15,8 @@ const CHROME = [
   ["muted-foreground", "Text 2"],
   ["text-3", "Text 3"],
   ["primary", "Main action"],
+  ["rule", "Print rule"],
+  ["paper", "Paper"],
 ] as const
 
 const BRAND = [
@@ -93,14 +95,22 @@ export default function ColorPage() {
     <div className="flex flex-col">
       <Section
         title="The stage"
-        note="A lit vermilion field where real product objects float. It carries the moments that matter: sign-in, onboarding, the landing hero, the balance, the pay page header. It stays lit in dark mode."
+        note="A lit field where real product objects float, in two tones. Shu, the vermilion field, carries money moments: the balance, the pay page header, a send, a receipt. Lacquer, sumi lit by a vermilion glow from below, carries the big surfaces: sign-in, onboarding, cards, bank, payroll. Both stay lit in dark mode."
       >
-        <Stage className="min-h-64 p-10" inner="grid min-h-44 place-items-center">
-          <div className="flex flex-col items-center gap-2 text-center">
-            <span className="text-[15px] font-medium text-white/85">Balance · USDC on NEAR</span>
-            <Figure value={12480} className="text-[72px] text-white" />
-          </div>
-        </Stage>
+        <div className="grid gap-3 lg:grid-cols-2">
+          <Stage className="min-h-64 p-10" inner="grid min-h-44 place-items-center">
+            <div className="flex flex-col items-center gap-2 text-center">
+              <span className="text-[15px] font-medium text-white/85">Shu · Balance</span>
+              <Figure value={12480} className="text-[72px] text-white" />
+            </div>
+          </Stage>
+          <Stage tone="lacquer" className="min-h-64 p-10" inner="grid min-h-44 place-items-center">
+            <div className="flex flex-col items-center gap-2 text-center">
+              <span className="text-[15px] font-medium text-white/85">Lacquer · Payroll</span>
+              <Figure value={5500} className="text-[72px] text-white" />
+            </div>
+          </Stage>
+        </div>
       </Section>
 
       <Section

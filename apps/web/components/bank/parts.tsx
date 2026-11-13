@@ -37,10 +37,10 @@ export function Flag({
 }
 
 const DISC = [
-  "bg-matcha text-black",
-  "bg-sora text-black",
-  "bg-sakura text-black",
-  "bg-kin text-black",
+  "bg-matcha text-field-ink",
+  "bg-sora text-field-ink",
+  "bg-sakura text-field-ink",
+  "bg-kin text-field-ink",
   "bg-ai text-white",
   "bg-shu text-white",
 ] as const
@@ -133,7 +133,7 @@ export function CopyLine({
       aria-label={`Copy ${label}`}
     >
       <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-        <span className="text-[13px] font-medium text-[#6E6E6E]">{label}</span>
+        <span className="text-[13px] font-medium text-[#6B6357]">{label}</span>
         <span
           className={cn(
             "break-words text-[17px] font-semibold text-black",
@@ -145,7 +145,7 @@ export function CopyLine({
       </span>
       <span
         className={cn(
-          "grid size-9 shrink-0 place-items-center rounded-full bg-[#F1F1F1] text-black transition-colors group-hover:bg-[#E6E6E6] [&_svg]:size-4",
+          "grid size-9 shrink-0 place-items-center rounded-full bg-[#F3EFE6] text-black transition-colors group-hover:bg-[#E2DBCD] [&_svg]:size-4",
           copied && "bg-matcha",
         )}
       >

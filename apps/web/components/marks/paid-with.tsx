@@ -48,7 +48,7 @@ export function PaidWithMark({
   if (rail === "manual")
     return (
       <span
-        className="grid shrink-0 place-items-center rounded-full bg-kin text-black"
+        className="grid shrink-0 place-items-center rounded-full bg-kin text-field-ink"
         style={{ width: size, height: size }}
         role="img"
         aria-label="Paid by hand"

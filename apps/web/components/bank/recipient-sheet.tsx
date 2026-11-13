@@ -307,7 +307,7 @@ export function RecipientSheet({
             }
           />
           {check.state === "found" ? (
-            <div className="flex items-center gap-3 rounded-[16px] bg-matcha px-4 py-3 text-black">
+            <div className="flex items-center gap-3 rounded-[16px] bg-matcha px-4 py-3 text-field-ink">
               <BadgeCheck className="size-5 shrink-0" />
               <span className="flex-1 text-[16px] font-bold uppercase tracking-[0.02em]">
                 {check.name}

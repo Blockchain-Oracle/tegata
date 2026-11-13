@@ -101,7 +101,7 @@ export function LinksView({
                 >
                   <span
                     className={cn(
-                      "grid size-11 shrink-0 place-items-center rounded-[14px] text-black [&_svg]:size-5",
+                      "grid size-11 shrink-0 place-items-center rounded-[14px] text-field-ink [&_svg]:size-5",
                       fieldOf(link.id),
                     )}
                   >

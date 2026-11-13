@@ -282,7 +282,7 @@ export function ReferView(p: ReferViewProps) {
             >
               <span
                 className={cn(
-                  "grid size-8 shrink-0 place-items-center rounded-full text-black [&_svg]:size-4",
+                  "grid size-8 shrink-0 place-items-center rounded-full text-field-ink [&_svg]:size-4",
                   term.field,
                 )}
               >

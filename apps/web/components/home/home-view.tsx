@@ -243,14 +243,14 @@ export function HomeView({
       {payrollDue ? (
         <Link
           href="/app/payroll"
-          className="press-lift flex items-center gap-4 rounded-[20px] bg-kin p-5 text-black"
+          className="press-lift flex items-center gap-4 rounded-[20px] bg-kin p-5 text-field-ink"
         >
           <span className="grid size-12 shrink-0 place-items-center rounded-full bg-white [&_svg]:size-6">
             <Banknote />
           </span>
           <span className="flex min-w-0 flex-1 flex-col">
             <span className="text-[17px] font-semibold">Payroll due</span>
-            <span className="text-[14px] text-black/70">
+            <span className="text-[14px] text-field-ink/70">
               {paydayWord(payrollDue.payday)} · {usdUnits(payrollDue.total)} to {payrollDue.people}{" "}
               {payrollDue.people === 1 ? "person" : "people"}
             </span>
@@ -264,20 +264,20 @@ export function HomeView({
       {invite ? (
         <Link
           href="/app/refer"
-          className="press-lift flex flex-col gap-3 rounded-[20px] bg-sakura p-5 text-black sm:flex-row sm:items-center"
+          className="press-lift flex flex-col gap-3 rounded-[20px] bg-sakura p-5 text-field-ink sm:flex-row sm:items-center"
         >
           <span className="grid size-12 shrink-0 place-items-center rounded-full bg-white">
             <BusinessSeal name={invite.business} size={40} tilt={0} />
           </span>
           <span className="flex min-w-0 flex-1 flex-col gap-1.5">
-            <span className="text-[13px] font-medium text-black/70">
+            <span className="text-[13px] font-medium text-field-ink/70">
               Invited by {invite.business}
             </span>
             <span className="display text-[24px] leading-none">
               You both get {usdUnits(invite.reward)}
               {invite.qualified ? " soon" : ""}
             </span>
-            <span className="h-1.5 overflow-hidden rounded-full bg-black/10" aria-hidden>
+            <span className="h-1.5 overflow-hidden rounded-full bg-field-ink/10" aria-hidden>
               <span
                 className="block h-full rounded-full bg-black"
                 style={{
@@ -285,7 +285,7 @@ export function HomeView({
                 }}
               />
             </span>
-            <span className="tnum text-[13px] text-black/70">
+            <span className="tnum text-[13px] text-field-ink/70">
               {usdUnits(invite.received)} of {usdUnits(invite.threshold)} from customers
             </span>
           </span>
@@ -497,17 +497,17 @@ function Tile({
 }) {
   const body = (
     <>
-      <span className="grid size-11 place-items-center rounded-full bg-black/10 [&_svg]:size-5">
+      <span className="grid size-11 place-items-center rounded-full bg-field-ink/10 [&_svg]:size-5">
         {busy ? <Spinner /> : icon}
       </span>
       <span className="flex flex-col gap-1">
         <span className="display text-[24px] leading-none">{title}</span>
-        <span className="text-[14px] text-black/70">{detail}</span>
+        <span className="text-[14px] text-field-ink/70">{detail}</span>
       </span>
     </>
   )
   const cls = cn(
-    "press-lift flex min-h-36 flex-col justify-between gap-4 rounded-[20px] p-5 text-left text-black",
+    "press-lift flex min-h-36 flex-col justify-between gap-4 rounded-[20px] p-5 text-left text-field-ink",
     field,
   )
   if (href)

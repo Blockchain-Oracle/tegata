@@ -450,7 +450,7 @@ export function AppShell({
                       <Link
                         href={item.href}
                         className={cn(
-                          "flex h-24 flex-col justify-between rounded-[18px] p-3 text-[15px] font-semibold text-black outline-none data-[highlighted]:brightness-95 [&_svg]:size-5",
+                          "flex h-24 flex-col justify-between rounded-[18px] p-3 text-[15px] font-semibold text-field-ink outline-none data-[highlighted]:brightness-95 [&_svg]:size-5",
                           item.field,
                         )}
                       >
@@ -468,7 +468,7 @@ export function AppShell({
                   </DropdownMenu.Item>
                   <DropdownMenu.Item
                     onSelect={() => setReceive(true)}
-                    className="flex h-24 cursor-pointer flex-col justify-between rounded-[18px] bg-sakura p-3 text-[15px] font-semibold text-black outline-none data-[highlighted]:brightness-95 [&_svg]:size-5"
+                    className="flex h-24 cursor-pointer flex-col justify-between rounded-[18px] bg-sakura p-3 text-[15px] font-semibold text-field-ink outline-none data-[highlighted]:brightness-95 [&_svg]:size-5"
                   >
                     <ArrowDownLeft />
                     Get paid (QR)

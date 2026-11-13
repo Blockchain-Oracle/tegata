@@ -136,9 +136,9 @@ export default function BrandPage() {
             </div>
             <div className="grid min-h-64 place-items-center rounded-[20px] bg-white">
               <div className="relative w-56 rounded-[12px] bg-white p-4 text-black shadow-receipt">
-                <p className="text-meta font-semibold text-[#666]">Invoice 0042</p>
+                <p className="text-meta font-semibold text-[#5B544A]">Invoice 0042</p>
                 <p className="figure mt-1 text-[40px]">$1,250.00</p>
-                <p className="text-[13px] text-[#666]">{name || "Your business"}</p>
+                <p className="text-[13px] text-[#5B544A]">{name || "Your business"}</p>
                 <div className="absolute -right-6 -bottom-6">
                   <SealPress key={`inv-${pressKey}`} delay={0.15}>
                     <BusinessSeal name={name} size={104} band="Paid" />

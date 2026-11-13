@@ -32,7 +32,7 @@ export function JoinView(p: JoinViewProps) {
   return (
     <div className="min-h-dvh bg-background">
       <div className="mx-auto flex w-full max-w-[520px] flex-col gap-5 px-4 pt-6 pb-10 sm:pt-12">
-        <Stage className="px-5 pt-8 pb-6 sm:px-6">
+        <Stage tone="lacquer" className="px-5 pt-8 pb-6 sm:px-6">
           <div className="flex flex-col items-center gap-4 text-center">
             <span className="grid size-24 place-items-center rounded-full bg-white shadow-object">
               <BusinessSeal name={p.business} size={84} tilt={-6} />
