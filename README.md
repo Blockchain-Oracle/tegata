@@ -218,7 +218,8 @@ originality and sustainability."
 
 ## Proof on NEAR
 
-Recorded on NEAR testnet. Every one opens on the explorer.
+Recorded on NEAR testnet. Every one opens on the explorer. The explorer's pages refuse scripts (403); a script or
+an agent can read any of them from its API instead: `curl https://api-testnet.nearblocks.io/v1/txns/<hash>`.
 
 | What happened                                                                                                                                                                                                                                                            | Transaction                                                                                                                                                                            |
 | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
