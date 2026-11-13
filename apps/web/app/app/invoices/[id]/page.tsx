@@ -65,14 +65,21 @@ function Invoice() {
     void queryClient.invalidateQueries({ queryKey: ["invoice", id] })
     void queryClient.invalidateQueries({ queryKey: ["invoices"] })
   }
+  const [remindedTo, setRemindedTo] = useState<string | null>(null)
   const act = useMutation({
     mutationFn: async (
       action:
         | { kind: "void" }
         | { kind: "duplicate" }
-        | { kind: "paid"; amount: string; note: string },
+        | { kind: "paid"; amount: string; note: string }
+        | { kind: "remind" }
+        | { kind: "reminders"; on: boolean },
     ) => {
       if (action.kind === "void") return api(`/api/invoices/${id}/void`, { method: "POST" })
+      if (action.kind === "remind")
+        return api<{ to: string | null }>(`/api/invoices/${id}/remind`, { method: "POST" })
+      if (action.kind === "reminders")
+        return api(`/api/invoices/${id}/reminders`, { method: "PATCH", body: { on: action.on } })
       if (action.kind === "duplicate")
         return api<{ invoice: { id: string } }>(`/api/invoices/${id}/duplicate`, { method: "POST" })
       return api(`/api/invoices/${id}/paid`, {
@@ -84,6 +91,10 @@ function Invoice() {
       if (action.kind === "duplicate") {
         fire("tick", { cue: "confirmed" })
         router.push(`/app/invoices/${(result as { invoice: { id: string } }).invoice.id}/edit`)
+      } else if (action.kind === "reminders") fire("tick", { cue: "toggle" })
+      else if (action.kind === "remind") {
+        fire("tick", { cue: "confirmed" })
+        setRemindedTo((result as { to: string | null }).to)
       } else fire("tick", { cue: action.kind === "paid" ? "received" : "confirmed" })
     },
     onError: () => fire("fail", { cue: "error" }),
@@ -111,6 +122,9 @@ function Invoice() {
       onVoid={() => act.mutate({ kind: "void" })}
       onMarkPaid={(amount, note) => act.mutate({ kind: "paid", amount, note })}
       onDuplicate={() => act.mutate({ kind: "duplicate" })}
+      remindedTo={remindedTo}
+      onRemind={() => act.mutate({ kind: "remind" })}
+      onReminders={(on) => act.mutate({ kind: "reminders", on })}
     />
   )
 }

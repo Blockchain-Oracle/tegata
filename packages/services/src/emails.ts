@@ -635,6 +635,8 @@ export async function queueInvoiceEmail(
     note?: string | null
     /** The payment marked by hand, for its receipt link. */
     paymentId?: string
+    /** A reminder the owner sent with "Remind now": their local date, so it goes at most once that day. */
+    manualDay?: string
   } = {},
 ) {
   const [row] = await db
@@ -646,12 +648,20 @@ export async function queueInvoiceEmail(
   const docs = await invoiceDocuments(db, row.token, "")
   const workspace = await workspaceOf(db, row.workspaceId)
   if (!docs || !workspace) return
-  const data = { ...docs.email, logo: logoPath(workspace), invoiceId, offset: options.offset }
+  const data = {
+    ...docs.email,
+    logo: logoPath(workspace),
+    invoiceId,
+    offset: options.offset,
+    ...(options.manualDay ? { manual: true } : {}),
+  }
   const dedupe =
     kind === "invoice.sent"
       ? `invoice.sent:${invoiceId}`
       : kind === "invoice.reminder"
-        ? `invoice.reminder:${invoiceId}:${options.offset ?? 0}`
+        ? options.manualDay
+          ? `invoice.reminder:${invoiceId}:now:${options.manualDay}`
+          : `invoice.reminder:${invoiceId}:${options.offset ?? 0}`
         : kind === "invoice.void"
           ? `invoice.void:${invoiceId}`
           : `invoice.paid_by_hand:${invoiceId}:${options.paymentId ?? Date.now()}`
@@ -678,7 +688,7 @@ export async function queueInvoiceEmail(
     })
   else
     await queueEmail(db, { event: { kind, data }, to: docs.to, dedupe, workspaceId: workspace.id })
-  if (kind === "invoice.reminder" && (options.offset ?? 0) > 0)
+  if (kind === "invoice.reminder" && !options.manualDay && (options.offset ?? 0) > 0)
     await queueEmail(db, {
       event: {
         kind: "invoice.overdue",

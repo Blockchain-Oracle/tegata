@@ -373,6 +373,19 @@ export const SAMPLE_INVOICE: InvoiceDetail = {
   remaining: "943990000",
   status: "partly_paid",
   draft: null,
+  reminders: {
+    on: true,
+    next: {
+      at: "2026-11-30T08:00:00.000Z",
+      offset: 0,
+      label: "Mon 30 Nov, 09:00 · on the due date",
+    },
+    left: 3,
+    canSend: true,
+    why: null,
+    email: "accounts@northwind.example",
+    remindedToday: false,
+  },
 }
 
 // --- pay people -------------------------------------------------------------------------------------------------

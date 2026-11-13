@@ -108,8 +108,10 @@ export interface InvoiceData {
   url: string
   notes: string | null
   sandbox: boolean
-  /** Reminders: days from the due date (−3, 0, 3, 7). */
+  /** Reminders: days from the due date (−3, 0, 3, 7, or any day for one the owner sends by hand). */
   offset?: number
+  /** Sent by the owner with "Remind now", not on the schedule. */
+  manual?: boolean
   /** The invoice, so the worker can attach its PDF and log the email on its timeline. */
   invoiceId?: string
 }
@@ -426,7 +428,8 @@ export function compose(event: EmailEvent, assets: string): EmailContent {
       const reminder = event.kind === "invoice.reminder"
       const offset = d.offset ?? 0
       // The last step (+7 days) is the final reminder; nothing is sent after it.
-      const final = reminder && offset >= 7
+      const final = reminder && offset >= 7 && !d.manual
+      const days = (n: number) => `${n} day${n === 1 ? "" : "s"}`
       const late = reminder && offset > 0
       const lead = !reminder
         ? `Here is invoice ${d.number} from ${d.business}.`
@@ -445,7 +448,7 @@ export function compose(event: EmailEvent, assets: string): EmailContent {
             ? `${d.number} from ${d.business} is due today: ${usd(d.remaining)}`
             : final
               ? `Final reminder: ${d.number} from ${d.business}, ${usd(d.remaining)}`
-              : `${d.number} from ${d.business} is ${offset} days overdue: ${usd(d.remaining)}`
+              : `${d.number} from ${d.business} is ${days(offset)} overdue: ${usd(d.remaining)}`
       return {
         ...base,
         shape: "card",

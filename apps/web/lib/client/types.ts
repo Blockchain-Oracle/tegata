@@ -393,6 +393,18 @@ export interface InvoiceEvent {
   createdAt: string
 }
 
+/** An invoice's reminders after it was sent. */
+export interface ReminderState {
+  on: boolean
+  /** The next scheduled one, with its label in the business's time zone ("Fri 20 Nov, 09:00 · on the due date"). */
+  next: { at: string; offset: number; label: string } | null
+  left: number
+  canSend: boolean
+  why: string | null
+  email: string | null
+  remindedToday: boolean
+}
+
 export interface InvoiceDetail {
   invoice: {
     id: string
@@ -456,6 +468,8 @@ export interface InvoiceDetail {
     repeat: "weekly" | "monthly" | null
     lines: { description: string; quantityMilli: string; unitPrice: string }[]
   } | null
+  /** Where its reminders stand; null on a draft, a paid or a voided invoice. */
+  reminders: ReminderState | null
 }
 
 export interface ReferralRow {

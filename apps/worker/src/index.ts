@@ -70,6 +70,7 @@ import {
   registerForAutopilot,
   registerPayoutAddress,
   registerRunAddresses,
+  remindersDue,
   reminderTarget,
   reminderTimes,
   removeCard,
@@ -252,13 +253,31 @@ await boss.work(QUEUES.testDollars.name, async ([job]) => {
 /** Invoice emails: queued in the outbox at their time; the drain attaches the PDF and logs them on the timeline. */
 await boss.work(QUEUES.invoiceEmail.name, async ([job]) => {
   if (!job) return
-  const { invoiceId, kind, offset } = QUEUES.invoiceEmail.payload.parse(job.data)
+  const { invoiceId, kind, offset, manualDay } = QUEUES.invoiceEmail.payload.parse(job.data)
   const sent = await invoiceToken(db, invoiceId)
   if (!sent) return
-  if (kind === "reminder" && !(await reminderTarget(db, invoiceId))) return
+  if (kind === "reminder" && !(await reminderTarget(db, invoiceId, { manual: Boolean(manualDay) })))
+    return
   await queueInvoiceEmail(db, invoiceId, kind === "invoice" ? "invoice.sent" : "invoice.reminder", {
     offset: offset ?? 0,
+    manualDay,
   })
+})
+
+/** Hourly: queue every reminder step due in the next hour, so invoices sent while email was off still get them. */
+await boss.schedule(QUEUES.invoiceReminderSweep.name, "5 * * * *", {})
+await boss.work(QUEUES.invoiceReminderSweep.name, async () => {
+  if (!mailer) return
+  const due = await remindersDue(db)
+  for (const step of due)
+    await enqueue(
+      boss,
+      "invoiceEmail",
+      { invoiceId: step.invoiceId, kind: "reminder", offset: step.offset },
+      `${step.invoiceId}:remind:${step.offset}`,
+      { startAfter: step.at },
+    )
+  if (due.length) console.log(`[reminders] ${due.length} queued for the next hour`)
 })
 
 await boss.work(QUEUES.autopilotRegister.name, async ([job]) => {
@@ -586,7 +605,7 @@ async function drainEmails() {
       if (
         event.kind === "invoice.reminder" &&
         invoiceId &&
-        !(await reminderTarget(db, invoiceId))
+        !(await reminderTarget(db, invoiceId, { manual: Boolean(event.data.manual) }))
       ) {
         await markEmail(db, email.id, {
           status: "skipped",
@@ -617,6 +636,9 @@ async function drainEmails() {
             {
               to: email.to,
               ...(event.kind === "invoice.reminder" ? { offset: event.data.offset ?? 0 } : {}),
+              ...(event.kind === "invoice.reminder" && event.data.manual
+                ? { source: "manual" }
+                : {}),
             },
           )
         console.log(`[email] ${email.kind} sent`)
