@@ -583,7 +583,7 @@ export interface PayRunRow {
   /** For a row paid to another chain: its route ("usdt-tron"). */
   route?: string | null
   amount: string
-  status: "included" | "excluded" | "skipped" | "paid" | "failed"
+  status: "included" | "excluded" | "skipped" | "paid" | "failed" | "sending"
   skipReason: string | null
   batch: number | null
   relayStatus: RelayStatus["status"] | null

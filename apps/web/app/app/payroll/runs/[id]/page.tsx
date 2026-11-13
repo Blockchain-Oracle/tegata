@@ -58,6 +58,7 @@ export default function RunPage({ params }: { params: Promise<{ id: string }> })
         },
       )
       const { draftMatchesHash } = await import("@tegata/core/near")
+      const { maxConversionExtra } = await import("@tegata/config")
       const expected = new Map(
         shown.rows.filter((r) => r.status === "included").map((r) => [r.id, r] as const),
       )
@@ -83,7 +84,16 @@ export default function RunPage({ params }: { params: Promise<{ id: string }> })
               /^[0-9a-f]{64}$/.test(args.receiver_id ?? "") &&
               args.memo === undefined
             : args.receiver_id === row?.accountId && args.memo === `tegata:payroll:${row?.id}`
-          if (!row || call.method !== "ft_transfer" || args.amount !== row.amount || !right)
+          // A stablecoin on another chain arrives as exactly the pay, so its transfer may carry NEAR Intents'
+          // conversion on top, within the cap; every other row sends exactly the pay reviewed.
+          const sent = BigInt(args.amount ?? "0")
+          const pay = BigInt(row?.amount ?? "0")
+          const amountRight = chain
+            ? args.amount === planned?.amount &&
+              sent >= pay &&
+              sent - pay <= maxConversionExtra(pay)
+            : args.amount === row?.amount
+          if (!row || call.method !== "ft_transfer" || !amountRight || !right)
             throw new Error("The run to approve doesn't match what you reviewed")
           covered++
         })

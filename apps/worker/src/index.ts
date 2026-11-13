@@ -87,6 +87,7 @@ import {
   settleCardRelay,
   settlePayment,
   settlePayoutRelay,
+  settlePayrollPayout,
   settleRefund,
   settleRelayedPayment,
   settleRunRelay,
@@ -344,6 +345,10 @@ await boss.work(QUEUES.payoutPoll.name, async ([job]) => {
   }
   console.log(`[payout] ${payoutId} ${result}`)
   await queuePayoutEmail(db, payoutId)
+  // A payroll row to another chain is paid only now that NEAR Intents delivered it (or failed, if it came back).
+  const payroll = await settlePayrollPayout(db, payoutId)
+  if (payroll && (payroll.settled === "paid" || payroll.settled === "failed"))
+    await queueRunEmails(db, payroll.runId)
 })
 await boss.schedule(QUEUES.payoutSweep.name, "* * * * *", {})
 await boss.work(QUEUES.payoutSweep.name, async () => {

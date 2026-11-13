@@ -221,6 +221,8 @@ export const payRowStatus = pgEnum("pay_row_status", [
   "skipped",
   "paid",
   "failed",
+  // Left NEAR for another chain through NEAR Intents and not delivered yet: paid only once it arrives.
+  "sending",
 ])
 
 /** One person in one run. Its id is the payslip's address (`/r/slip/<id>`) and the transfer's memo. */

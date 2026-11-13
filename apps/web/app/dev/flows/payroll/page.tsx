@@ -19,7 +19,7 @@ import {
 } from "@/lib/dev/sample"
 
 type PageState = "scheduled" | "unscheduled" | "no-team" | "loading" | "error"
-type RunState = "review" | "paying" | "paid" | "failed"
+type RunState = "review" | "paying" | "delivering" | "paid" | "failed"
 type AutopilotState = keyof typeof SAMPLE_AUTOPILOT
 
 const TX = "7hEg9DgZdEaq7e4AHtY9FZ4ReB3sveq5XwewiEanCKFr"
@@ -31,20 +31,40 @@ function runIn(state: RunState): PayRun {
       ? row
       : state === "paying"
         ? { ...row, batch: 1, relayStatus: "sent" as const }
-        : state === "paid"
-          ? {
-              ...row,
-              batch: 1,
-              status: "paid" as const,
-              relayStatus: "success" as const,
-              txHash: TX,
-            }
-          : { ...row, batch: 1, status: "failed" as const, relayStatus: "failed" as const },
+        : state === "delivering"
+          ? // Mei's row on NEAR is paid; Kofi's, in USDT on Tron, left NEAR and is on its way.
+            row.destinationKind === "near"
+            ? {
+                ...row,
+                batch: 1,
+                destinationKind: "chain" as const,
+                route: "usdt-tron",
+                accountId: "TQn9Y2khEsLJW1ChVWFMSMeRDow5KcbLSE",
+                status: "sending" as const,
+                relayStatus: "success" as const,
+                txHash: TX,
+              }
+            : {
+                ...row,
+                batch: 1,
+                status: "paid" as const,
+                relayStatus: "success" as const,
+                txHash: TX,
+              }
+          : state === "paid"
+            ? {
+                ...row,
+                batch: 1,
+                status: "paid" as const,
+                relayStatus: "success" as const,
+                txHash: TX,
+              }
+            : { ...row, batch: 1, status: "failed" as const, relayStatus: "failed" as const },
   )
   return {
     ...SAMPLE_RUN,
     rows,
-    status: state === "paying" ? "approved" : state,
+    status: state === "paying" || state === "delivering" ? "approved" : state,
     error: state === "failed" ? "Delegate action expired before it was sent" : null,
     transactions:
       state === "paid" ? [{ hash: TX, url: `https://testnet.nearblocks.io/txns/${TX}` }] : [],
@@ -150,6 +170,7 @@ export default function PayrollFlow() {
             options={[
               { value: "review", label: "Review" },
               { value: "paying", label: "Paying" },
+              { value: "delivering", label: "On its way" },
               { value: "paid", label: "Paid" },
               { value: "failed", label: "Failed" },
             ]}

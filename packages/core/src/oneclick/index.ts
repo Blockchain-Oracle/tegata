@@ -243,6 +243,17 @@ export const CHAIN_NAMES: Record<string, string> = {
   bera: "Berachain",
 }
 
+/**
+ * Dollars in USDC's 6 decimals as the same dollars in a stablecoin with `decimals` (USDT on BNB Chain has 18): what
+ * an exact delivery asks NEAR Intents for. Rounds down below 6 decimals, so it never asks for more than the pay.
+ */
+export function usdcToTokenUnits(usdcUnits: bigint, decimals: number): bigint {
+  const USDC = 6
+  return decimals >= USDC
+    ? usdcUnits * 10n ** BigInt(decimals - USDC)
+    : usdcUnits / 10n ** BigInt(USDC - decimals)
+}
+
 /** Explorers for the chains NEAR Intents delivers to, by the chain's display name (as payouts store it). */
 const DELIVERY_EXPLORERS: Record<string, string> = {
   Ethereum: "https://etherscan.io/tx/",
@@ -265,7 +276,7 @@ export function deliveryTxUrl(chain: string, hash: string): string | null {
 const TOKENS_TTL_MS = 10 * 60_000
 let tokenCache: {
   at: number
-  list: { assetId: string; symbol: string; blockchain: string }[]
+  list: { assetId: string; symbol: string; blockchain: string; decimals?: number }[]
 } | null = null
 
 /** 1Click's token list, cached ten minutes. */
@@ -306,6 +317,7 @@ export async function routeAsset(routeId: string) {
         blockchain,
         chain: CHAIN_NAMES[blockchain] ?? blockchain,
         stable: symbol === "USDC" || symbol === "USDT",
+        decimals: token.decimals ?? null,
       }
     : null
 }
