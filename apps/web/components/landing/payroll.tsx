@@ -182,7 +182,8 @@ function Run() {
   )
 }
 
-const FACTS = [
+/** `pill` marks a fact that is Sandbox-only (none today: autopilot and team treasuries both run on Live). */
+const FACTS: { icon: React.ReactNode; title: string; detail: string; pill?: string }[] = [
   {
     icon: <Mail />,
     title: "Add people by email or CSV",
@@ -200,13 +201,11 @@ const FACTS = [
     title: "Team approvals",
     detail:
       "Need two of three to sign off? Pay waits in a team treasury on NEAR and goes out only when enough approvers say yes, each with their own key.",
-    pill: "Sandbox",
   },
   {
     icon: <Timer />,
     title: "Autopilot",
     detail: "Set money aside and Tegata's contract pays on payday with nobody online.",
-    pill: "Sandbox",
   },
   {
     icon: <FileSpreadsheet />,

@@ -158,16 +158,16 @@ The payslip page lists the same lines. With a bonus, a reimbursement and a deduc
 
 Turn on [Autopilot](/docs/how-money-moves/autopilot) on the Payroll page and the paydays you choose are paid by
 Tegata's own contract on NEAR at 09:00 in your time zone, with nobody online. Those paydays show **Autopilot pays this
-one** instead of **Run payroll**, so a payday is never paid twice. Autopilot runs in the Sandbox; in Live the card says
-"Live opens when its contract is on NEAR mainnet · runs in the Sandbox now". It never pays people on another chain:
-they're paid when you approve a run.
+one** instead of **Run payroll**, so a payday is never paid twice. Autopilot runs in both modes: the contract is
+`pay.tegata.near` in Live and `pay.tegata.testnet` in the Sandbox. It never pays people on another chain: they're paid
+when you approve a run.
 
 ## Or need more than one yes
 
 If payday should need two of three people, not just you, turn on [Team approvals](/docs/guide/team-approvals) under
 **Business → Team**. The pay then waits in a team treasury on NEAR, and a run goes out only when enough approvers vote
-yes, each with their own key; the vote that reaches the count pays every row in one batch. Team treasuries open in the
-Sandbox now; on Live, opening one says "Team treasuries open on Live soon".
+yes, each with their own key; the vote that reaches the count pays every row in one batch. In Live the treasury is
+`<name>.sputnik-dao.near`, so it opens in Trezu too; in the Sandbox it runs the same contract on testnet.
 
 ## A real one
 
