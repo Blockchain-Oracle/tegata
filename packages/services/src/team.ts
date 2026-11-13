@@ -450,15 +450,6 @@ export async function topUpTreasury(operator: Operator, treasuryAccount: string)
   return operator.sendNear(treasuryAccount, TREASURY.topUpYocto)
 }
 
-/** Worker: every ready treasury keeps enough NEAR for its next proposals. */
-export async function topUpTreasuries(db: Db, operator: Operator) {
-  const ready = await db
-    .select()
-    .from(treasuries)
-    .where(and(eq(treasuries.network, operator.network), eq(treasuries.status, "ready")))
-  for (const t of ready) await topUpTreasury(operator, t.accountId)
-}
-
 // --- runs ------------------------------------------------------------------------------------------------------
 
 async function runRows(db: Db, runId: string) {

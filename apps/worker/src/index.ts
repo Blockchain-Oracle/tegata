@@ -96,7 +96,6 @@ import {
   setupAccount,
   sweepReferrals,
   syncTreasuryRuns,
-  topUpTreasuries,
   topUpTreasury,
   treasuriesToCreate,
   USDC_DECIMALS,
@@ -323,7 +322,12 @@ await boss.work(QUEUES.treasuryOpen.name, async ([job]) => {
   console.log(`[treasury] ${row.accountId} ${made?.status ?? "gone"} ${made?.error ?? ""}`)
 })
 
-/** Every minute: treasury payrolls follow their proposals on NEAR, and every ready treasury keeps NEAR for storage. */
+/**
+ * Every minute: treasury payrolls follow their proposals on NEAR. No standing top-up here: a treasury pays the
+ * storage of every proposal from its own NEAR, and its members can file large ones on NEAR directly, so refilling it
+ * every minute would let one team drain the operator. NEAR goes in only right before Tegata relays its own proposal
+ * or vote (relays are rate-limited per person).
+ */
 await boss.schedule(QUEUES.treasuryKeeper.name, "* * * * *", {})
 await boss.work(QUEUES.treasuryKeeper.name, async () => {
   for (const operator of operators.values()) {
@@ -332,7 +336,6 @@ await boss.work(QUEUES.treasuryKeeper.name, async () => {
       if (run.state !== "pending") console.log(`[treasury] run ${run.id} ${run.state}`)
       if (run.state === "paid" || run.state === "failed") await queueRunEmails(db, run.id)
     }
-    await topUpTreasuries(db, operator)
   }
 })
 
