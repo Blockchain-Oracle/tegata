@@ -21,6 +21,7 @@
       "!apps/web/public/marks",
       "!apps/web/public/flags",
       "!apps/web/lib/brand/glyphs.ts",
+      "!apps/web/lib/brand/pay-button-assets.ts",
       "!**/.next-build",
       "!apps/web/app/icon.svg",
       "!apps/docs/public/marks",
