@@ -5,9 +5,9 @@ icon: Banknote
 ---
 
 <Phones>
-  <Phone src="/shots/phone/person-choose.webp" alt="A person's page: Proof Payroll Studio added you to payroll, Sara Okafor, Writer, $20.00 in dollars a month, and where should your pay land: Tegata account (recommended), NEAR account, another chain (Live, locked), bank account (coming, locked)" caption="What a person opens: their pay, and where it should land." eager />
-  <Phone src="/shots/phone/person-set.webp" alt="Mei Tanaka's page after choosing: You're set, your pay lands in your Tegata account mei-eae1422a.tegata.testnet, and one payslip of $0.50" caption="Once chosen: where it lands, and every payslip." eager />
-  <Phone src="/shots/phone/payslip.webp" alt="A payslip from Proof Payroll Studio stamped PAID: $0.50 to Mei Tanaka for Pay 13 Oct to 12 Nov 2026, paid with payroll from a Tegata balance, fee paid by Tegata" caption="A payslip, stamped by the business." />
+  <Phone src="/shots/phone/ex-person-choose.webp" alt="Example: Studio Kaze added you to payroll, Mei Tanaka, Designer, $2,400.00 in dollars a month, Sandbox; where should your pay land: Tegata account (Recommended), NEAR account, Another chain (Live), Bank account (Coming)" caption="Example: what a person opens, their pay and where it should land." eager />
+  <Phone src="/shots/phone/person-set.webp" alt="Mei Tanaka's real page from Studio Kaze: $0.10 in dollars a month, Sandbox; You're set, Your NEAR account mei-b4d4f3bf.tegata.testnet, and one payslip, Pay 14 Oct to 13 Nov, +$0.10" caption="Real: once chosen, where it lands and every payslip." eager />
+  <Phone src="/shots/phone/payslip.webp" alt="A real payslip from Studio Kaze stamped PAID: $0.10 to Kofi Mensah for Pay 14 Oct to 13 Nov 2026, paid with Payroll from a Tegata balance, network fee paid by Tegata" caption="A payslip, stamped by the business." />
 </Phones>
 
 ## Add your team
@@ -26,8 +26,8 @@ Kofi Mensah,kofi@studio.example,Engineer,"3,100.50"
 Every row is shown before anything is saved. A row with a mistake says which line and what to fix ("Line 3:
 "leo@example" isn't an email"), and only the good rows are imported. A team holds up to 200 people.
 
-Each person gets their own page at `/p/<token>`. Copy or share it from their sheet. Once email is switched on, they
-get it in an email that says they've been added to payroll.
+Each person gets their own page at `/p/<token>`. Copy or share it from their sheet. A person with an email also gets
+it by email ("Studio Kaze added you to payroll"), and a reminder if a run skips them because they haven't chosen.
 
 ## Where their pay lands
 
@@ -35,19 +35,28 @@ The person opens their page and chooses:
 
 | Choice | What happens |
 | --- | --- |
-| **Tegata account** (recommended) | They sign in with the email they were invited with, name themselves, and their own `name.tegata.testnet` opens. No wallet, no fees |
-| **NEAR account** | One they already have. Tegata checks it exists and, if it can't hold USDC yet, registers it and pays for that |
-| **Another chain** | Shown locked: it needs Live, because NEAR Intents has no testnet |
-| **Bank account** | Shown locked: cash-out to a bank needs a licensed payout partner |
+| **Tegata account** (Recommended) | "Your own dollar account. No wallet, no fees." They sign in with the email they were invited with, name themselves, and their own Tegata account opens (`name.tegata.testnet`, or `name.tegata.near` in Live) |
+| **NEAR account** | "One you already have" (`name.testnet` or `name.near`). Tegata checks it exists and, if it can't hold USDC yet, registers it and pays for that |
+| **Another chain** | "USDT, USDC, BTC… through NEAR Intents". In Live: a coin and chain from the eleven, their address there, and **Get paid in USDT on Tron** (or whichever). In the Sandbox it's locked with a **Live** badge, because NEAR Intents has no testnet |
+| **Bank account** | "Cash out to your own bank", shown with the flags of Nigeria, Ghana and South Africa and marked **Coming**: a person can't choose a bank yet. The business can already [withdraw to a bank](/docs/guide/bank) itself |
+
+<Phones>
+  <Phone src="/shots/phone/ex-person-chain.webp" alt="Example: Mei Tanaka's page in Live with Another chain open: a grid of coins, USDT on Tron, USDC on Base chosen, USDT on Ethereum, and more" caption="Example: in Live, a coin and a chain." />
+  <Phone src="/shots/phone/ex-person-chain-set.webp" alt="Example: You're set, Paid in USDT on Tron to TQn9Y2…bLSE, Change where it lands, and two payslips of $2,400.00" caption="Example: set to another chain." />
+</Phones>
+
+You can also set it for them from their sheet: a NEAR account, or in Live **Pay them on another chain**.
 
 Only someone signed in with the invited email can choose, and the first person to choose is bound to that invite.
 **A change waits 24 hours** once they already have a destination. The business sees "Changes Fri 17:21" on their
-row, and pay keeps landing in the old place until then. Their first choice, and a NEAR account you set for them
-from their sheet, apply at once.
+row, and pay keeps landing in the old place until then. Their first choice, and anything you set for them from their
+sheet, apply at once.
 
 ## Run payroll
 
 <Shot src="/shots/wide/app-run.webp" alt="A payroll run, Pay 14 Oct to 13 Nov 2026, Paid: $0.20 to 2 people in one transaction on NEAR, stamped PAID; Kofi Mensah and Mei Tanaka each $0.10 to their own NEAR accounts with a Payslip link, and See it on NEAR" caption="A real run: two people paid in one transaction on NEAR, each with a payslip." address="tegata.xyz/app/payroll/runs/…" />
+
+<Shot src="/shots/wide/app-payroll.webp" alt="Payroll for Studio Kaze: next payday Sun 13 Dec, $0.20 to 2 people, Run payroll; Monthly, next Sun 13 Dec, Europe/London; the Autopilot card with Set up autopilot and pay.tegata.testnet; the team, Kofi Mensah and Mei Tanaka, both ready at $0.10; past runs" caption="Payroll: the next payday, autopilot, the team and past runs." address="tegata.xyz/app/payroll" />
 
 <Steps>
 <Step>
@@ -69,24 +78,52 @@ chosen where pay lands", "Their Tegata account is still opening"). The total is 
 Your key signs one gas-free action that carries one USDC transfer per person, each with the memo
 `tegata:payroll:<row>`. Before signing, the page re-encodes it and checks every transfer against the rows on
 screen. Tegata relays it and pays the network fee.
+
+In Live, a person paid on another chain gets a fresh, signed NEAR Intents quote when you approve; their transfer in
+the same action goes to that quote's deposit address instead. Paid in USDT or USDC, they receive exactly their pay:
+"Rows on another chain arrive in full. NEAR Intents' conversion, at most 2% or $1 each, is added to what you send."
+See [Any chain](/docs/how-money-moves/any-chain#your-team-paid-on-another-chain).
 </Step>
 <Step>
 ### Everyone, or nobody
 
 On NEAR, every transfer in one action list lands together or none do. Rows turn **Paid** only when the USDC
 contract's own event shows the transfer to that account, for that amount, with that memo. Then each gets a payslip
-at `/r/slip/<row>`. More than 50 people go in batches of 50, and each batch is all or nothing.
+at `/r/slip/<row>`. More than 50 people go in batches of 50, one hold signs them all, and each batch is all or
+nothing. A row on another chain reads **On its way** until NEAR Intents delivers it, and only then is **Paid**, with
+its payslip; if it comes back, it reads **Not paid**, the USDC is back in your balance, and paying the run again sends
+it.
 </Step>
 </Steps>
 
 If a batch fails, nothing in it moved. The run says so, and **Try again** drafts it fresh. People already paid stay
 paid and are never paid twice.
 
+## Payslips
+
+Every paid row gets a payslip at `/r/slip/<row>`, stamped with the business's seal, with **Download PDF** and **Save as
+PDF**. The person's own page and your sheet for them list every payslip with a download button, and the "You've been
+paid" email carries the PDF.
+
+<div style={{ maxWidth: 560, marginInline: "auto" }}>
+<Shot src="/shots/wide/payslip-pdf.webp" alt="A real payslip PDF from Studio Kaze for Kofi Mensah, Developer: pay period 14 Oct to 13 Nov 2026, gross pay $0.10, deductions $0.00, net pay $0.10, stamped PAID; earnings with year to date 2026; deductions: income tax and pension and social contributions $0.00 not withheld, Tegata and network fees paid by Tegata; how it was paid: USDC on NEAR, his NEAR account, the NEAR transaction and the reference" caption="A real payslip PDF: gross to net, year to date, and how it was paid." address="tegata.xyz/r/slip/…/pdf" />
+</div>
+
+| Part | What it shows |
+| --- | --- |
+| Header | The business, the person and their role, the pay period, pay date, when it was paid and how often |
+| Gross, deductions, net | Gross pay, deductions $0.00, net pay, and the PAID seal |
+| Earnings | This period, and the year to date |
+| Deductions | Income tax and pension and social contributions, each "Not withheld"; Tegata and network fees "Paid by Tegata". Tegata doesn't calculate or withhold tax, and the payslip says so |
+| How it was paid | USDC on NEAR, the account and the NEAR transaction; for another chain, what NEAR Intents delivered and the delivery transaction |
+
 ## Or let autopilot pay
 
 Turn on [Autopilot](/docs/how-money-moves/autopilot) on the Payroll page and the paydays you choose are paid by
 Tegata's own contract on NEAR at 09:00 in your time zone, with nobody online. Those paydays show **Autopilot pays this
-one** instead of **Run payroll**, so a payday is never paid twice.
+one** instead of **Run payroll**, so a payday is never paid twice. Autopilot runs in the Sandbox; in Live the card says
+"Live opens when its contract is on NEAR mainnet · runs in the Sandbox now". It never pays people on another chain:
+they're paid when you approve a run.
 
 ## A real one
 
@@ -97,6 +134,7 @@ $0.30 in a single transaction (<Tx hash="7hEg9DgZdEaq7e4AHtY9FZ4ReB3sveq5XwewiEa
 chosen, was skipped. Run it yourself with `pnpm --filter @tegata/services exec tsx src/proofs/payroll.ts`.
 
 <Callout title="Where it shows up" type="info">
-Home shows **Payroll due** on or after payday when no run has paid it. Activity lists each run for the business and
-each payslip for the person. **Send** offers your ready people as one-tap recipients.
+Home shows **Payroll due** on or after payday when no run has paid it, and an email says "Payroll is ready" from 08:00
+your time. Activity lists each run for the business and each payslip for the person. **Send** offers your ready
+people as one-tap recipients. People get their invite and their payslips by [email](/docs/guide/emails).
 </Callout>

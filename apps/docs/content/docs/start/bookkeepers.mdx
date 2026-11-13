@@ -9,24 +9,25 @@ icon: Calculator
   cut.
 - **Numbers in order.** Invoices are numbered INV-0001, INV-0002… when they are sent; a voided invoice keeps its
   number. Receipts for customer payments are numbered No. 0001, No. 0002… per business.
-- **A receipt for every movement**: customer payments, sends and referral rewards.
+- **A receipt for every movement**: customer payments, sends, payments to other chains, payslips and referral
+  rewards.
 
 ## What a receipt says
 
 | Line | For example |
 | --- | --- |
-| Paid to | Abu Studio, `abu-studio.tegata.testnet` |
+| Paid to | Studio Kaze, `studio-kaze-5601a94a.testnet` |
 | For | Invoice INV-0001 |
-| From | `tegata.testnet` |
-| Paid with | NEAR wallet, Tegata balance, or Marked paid by hand (not on NEAR) |
-| Settled | 12 Nov 2026, 17:40 GMT+1, in the reader's own time zone |
-| Network fee | Paid by Tegata, or Paid by the payer's wallet |
-| Transaction | `4DaV5L…FQCquE`, opening on the NEAR explorer |
+| From | `northwind-04010c29.tegata.testnet` |
+| Paid with | NEAR wallet, Tegata balance, a coin on another chain ("USDT on Tron → USDC on NEAR"), Card, or Marked paid by hand (not on NEAR) |
+| Settled | 13 Nov 2026, 09:30 GMT+1, in the reader's own time zone |
+| Network fee | Paid by Tegata, or Paid by the payer |
+| Transaction | <Tx hash="8DnH71smTLAJbqdKxwGJis9SqqWrAf8i6d89XpMB4TDR" />, opening on the NEAR explorer |
 
 Money received another way (cash, a bank transfer) can be **marked paid by hand** on the invoice. Its receipt
 says so, and it has no transaction.
 
-<Phone src="/shots/phone/receipt.webp" alt="Receipt No. 0003 from Abu Studio: $0.30 for invoice INV-0001, paid on the NEAR-wallet rail by tegata.testnet, settled 12 Nov 2026, 17:40 GMT+1, stamped PAID" caption="A real receipt: No. 0003, the second part of INV-0001." />
+<Phone src="/shots/phone/receipt.webp" alt="Receipt No. 0002 from Studio Kaze: $0.15 for invoice INV-0001, paid with a NEAR wallet by northwind-04010c29.tegata.testnet, settled 13 Nov 2026, 09:30 GMT+1, stamped PAID" caption="A real receipt: No. 0002, part of INV-0001." />
 
 ## The month, for your books
 
@@ -40,13 +41,16 @@ says so, and it has no transaction.
 | **Statement (PDF)** | The business header, money in, money out and net, every movement in order, and the balance on NEAR when it was made |
 
 An autopilot payroll is listed but not added to the month's money out: its dollars left when they were set aside,
-which is its own line.
+which is its own line. Each payment carries a mark for how it came in (a Tegata balance, a NEAR wallet, the coin it
+was sent in, a card, or by hand), payments to other chains read like "USDT on Tron", and bank rows carry the
+country's flag and the local money ("To Access Bank ••0031 · ₦…", "Bank transfer · €…").
 
-<Shot src="/shots/wide/app-balance.webp" alt="Balance: you hold $1.25 in the account's balance; Books against NEAR: 1 of 7 USDC transfers wasn't made through Tegata, listed as Arrived outside Tegata from tegata.testnet, +$1.00" caption="Balance: what you hold, and every transfer checked against NEAR. The $1.00 that arrived outside Tegata is the demo's starting test dollars." address="tegata.xyz/app/balance" />
+<Shot src="/shots/wide/app-balance.webp" alt="Balance: you hold $1.25 in your balance, with Add money, Move out and To a bank; Books against NEAR: 1 transfer outside Tegata of 7, Arrived outside Tegata from tegata.testnet, +$1.00" caption="Balance: what you hold, and every transfer checked against NEAR. The $1.00 that arrived outside Tegata is the demo's starting test dollars." address="tegata.xyz/app/balance" />
 
 **Balance** checks the books against NEAR: every USDC transfer on the account, read from NearBlocks, matched by its
 transaction to what Tegata recorded. A transfer that came or went another way (a faucet, a wallet outside Tegata) is
 listed as "outside Tegata" and never matched automatically.
 
 A received payment can be **refunded**, all or part, back to the account that paid, in one gas-free transfer with its
-own receipt. A real one: <Tx hash="BvQCXLWPsDegHGEtrpv2khqboY4rgtvb7jjuSVcr8e2n" /> paid $0.20, <Tx hash="BmQ3kF5UjvA1EkCvSwNYoUwW6gYfdbLfuDo1w3YRzu1Y" /> refunded $0.05.
+own receipt; a payment from another chain is refunded in the payer's own coin to their refund address, in Live
+([Any chain](/docs/how-money-moves/any-chain#you-refund-a-payment-from-another-chain)). A real one: <Tx hash="BvQCXLWPsDegHGEtrpv2khqboY4rgtvb7jjuSVcr8e2n" /> paid $0.20, <Tx hash="BmQ3kF5UjvA1EkCvSwNYoUwW6gYfdbLfuDo1w3YRzu1Y" /> refunded $0.05.

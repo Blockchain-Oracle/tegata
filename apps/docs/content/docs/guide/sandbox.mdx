@@ -1,26 +1,60 @@
 ---
 title: Sandbox and Live
-description: The Sandbox is the whole app on NEAR testnet with test dollars, free; Live, the same app on NEAR mainnet, is planned.
+description: The Sandbox is the whole app on NEAR testnet with test dollars, free; Live is the same app on NEAR mainnet with real dollars, paid in from any chain. One switch at the top moves between them.
 icon: FlaskConical
 ---
 
-<Phone src="/shots/phone/mode.webp" alt="The Sandbox and Live sheet: Sandbox on, test dollars on NEAR testnet; Live not open yet, still being built" caption="The switch, and what each side means." eager />
+<Phones>
+  <Phone src="/shots/phone/app-home.webp" alt="Home on a phone in the Sandbox: the switch at the top reads Sandbox in a dashed rim, beside the Live side; Studio Kaze's $1.25 balance with Get paid, Send, Add money and Scan" caption="The switch sits at the top: Sandbox, then Live." eager />
+  <Phone src="/shots/phone/pay-chain-sandbox.webp" alt="A pay page in the Sandbox with Another chain open: eleven coins, and NEAR Intents' live answer, Temporary swap limits: minimum swap amount is $100, marked Live only · real price" caption="In the Sandbox, other chains show the real price and stop there." eager />
+</Phones>
 
-The switch at the top of the app shows which you're in. **Sandbox** is said in words and a dashed rim, never a
-colour. **Live** carries a lock: it isn't built yet, and tapping it says so.
+The switch at the top of the rail (and of the phone bar) says which you're in. **Sandbox** is said in words and a
+dashed rim, never a colour. Tap **Live** and the app reloads in Live; tap **Sandbox** to come back. Your choice is
+kept for a year on that browser.
+
+## The two side by side
+
+| | Sandbox | Live |
+| --- | --- | --- |
+| Network | NEAR testnet | NEAR mainnet |
+| Your account | `name.tegata.testnet` | `name.tegata.near` |
+| Money | Circle's test USDC | Circle's USDC |
+| Tegata's operator, paying every fee | `tegata.testnet` | `tegata.near` |
+| Paying in from another chain | The pay page shows NEAR Intents' real price, then "Live only" | Works, through [NEAR Intents](/docs/how-money-moves/any-chain) |
+| Sending to another chain, refunds to the payer's chain, payroll on another chain, adding money from another chain | Locked, marked "Live only" | Works, through NEAR Intents |
+| [Bank](/docs/guide/bank) | On Noah's sandbox | Opens after Noah's business review |
+| [Autopilot](/docs/how-money-moves/autopilot) | Tegata's contract `pay.tegata.testnet` | Opens when its contract is on mainnet |
+| [Pay by card](/docs/guide/cards#customers-who-pay-by-card) | Transak's test checkout; Tegata sends the test USDC | Transak delivers the USDC |
+| Add test dollars | $5.00 of test USDC, once a day | None |
+| [Referral](/docs/guide/refer) rewards | $1 each after $5 | $10 each after $50 |
+| [API keys](/docs/build/developers) | `tk_test_…` | `tk_live_…` |
+| Transactions open on | testnet.nearblocks.io | nearblocks.io |
+
+Cards and pay by card both wait on their partners' keys in either mode: see [Cards](/docs/guide/cards).
+
+## Opening your Live account
+
+The first time you switch to Live, Tegata says **Open your Live account.** ("Real dollars from any chain, with no
+fees to pay.") and shows the account it will open. Press **Open name.tegata.near**: the steps create it on NEAR
+mainnet with your own key, register it for USDC and cut your seal, as on your first day. Tegata pays for all of it.
+**Back to the Sandbox** is always there. When it's ready you get an email: "Live is on: Studio Kaze can take real
+dollars".
+
+It's a second NEAR account under the same sign-in. Each mode keeps its own invoices, pay links, people, payroll,
+books, cards and API keys; your business profile and your customers are shared.
+
+<Callout title="Signed in with a NEAR wallet?" type="warn">
+Wallet sign-in uses NEAR testnet today, so a wallet account can use the Sandbox but can't open Live: Live asks for a
+mainnet NEAR wallet ("Your wallet account is on testnet. Sign in with a mainnet NEAR wallet to use Live."), and the
+sign-in page doesn't offer one yet. Sign in with email to use Live.
+</Callout>
 
 ## Sandbox
 
-- Accounts are `name.tegata.testnet`; money is Circle's test USDC on NEAR testnet.
 - Nothing costs real money.
-- **Add test dollars** sends you $5.00 of test USDC from Tegata's stash, once a day. It's on Home while your
-  balance is under $1, and on the pay page whenever your balance is short.
-- If the stash runs dry, [Circle's faucet](https://faucet.circle.com) gives 20 test USDC to any NEAR testnet
-  address (choose NEAR Testnet).
+- **Add test dollars** sends you $5.00 of test USDC from Tegata's stash, once a day. It's on Home while your balance
+  is under $1, under **Add money**, and on the pay page whenever your balance is short.
+- If the stash runs dry, [Circle's faucet](https://faucet.circle.com) gives 20 test USDC to any NEAR testnet address
+  (choose NEAR Testnet).
 - Paying from another chain shows its live NEAR Intents price and stops there: NEAR Intents has no testnet.
-
-## Live
-
-Live (real dollars on NEAR mainnet, accounts as `name.tegata.near`, and paying in from other chains through NEAR
-Intents) is planned and not built yet. It needs Tegata's mainnet operator account, `tegata.near`, and the mainnet
-side of the app.

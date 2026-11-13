@@ -1,18 +1,19 @@
 ---
 title: What Tegata is
-description: Invoices, pay links and payroll for small businesses, settled in exact dollars on NEAR, with no wallet and no fees to think about.
+description: The money account for a small business, settled in USDC on NEAR. Invoices, pay links and payroll, paid from any chain, with bank payouts and cards at the edge, no wallet and no fees to think about.
 icon: Flag
 ---
 
-**Get paid. Pay your team. In exact dollars.** Tegata gives a small business invoices, pay links and payroll that
-settle in USDC on NEAR. The owner signs in with an email; Tegata opens a NEAR account named after the business and pays
-every network fee, so nobody buys NEAR or keeps a wallet. Every payment gets a sealed, numbered receipt that links
-to its transaction on NEAR.
+**Get paid. Pay your team. In exact dollars.** Tegata is the money account for a small business, settled in USDC on
+NEAR. The owner signs in with an email; Tegata opens a NEAR account named after the business and pays every network
+fee, so nobody buys NEAR or keeps a wallet. Customers pay from a Tegata balance, any NEAR wallet or, in Live, a coin
+on another chain (a card is next), and the business always receives exactly what it billed. Every payment gets a sealed, numbered
+receipt that links to its transaction on NEAR.
 
 <Phones>
-  <Phone src="/shots/phone/home.webp" alt="Tegata Home: Abu Studio's $5.75 balance in USDC on NEAR and its latest payments" caption="Home: the balance, and every movement opening its receipt." eager />
-  <Phone src="/shots/phone/guest-invoice-preview.webp" alt="An invoice from Studio Kaze to Northwind Ltd in the builder's preview" caption="An invoice, built without an account." eager />
-  <Phone src="/shots/phone/receipt.webp" alt="Receipt No. 0003 from Abu Studio for $0.30, stamped PAID" caption="A receipt, stamped with the business's seal." eager />
+  <Phone src="/shots/phone/app-home.webp" alt="Tegata Home for Studio Kaze: a $1.25 balance in USDC on NEAR with Get paid, Send, Add money and Scan, and its latest payments" caption="Home: the balance, and every movement opening its receipt." eager />
+  <Phone src="/shots/phone/ex-pay-live.webp" alt="Example: a Live pay page: send exactly 1,251.387 USDT on Tron to a deposit address, with its QR code, for Studio Kaze to receive exactly $1,250.00" caption="Example: paying from Tron, in Live." eager />
+  <Phone src="/shots/phone/receipt.webp" alt="Receipt No. 0002 from Studio Kaze for $0.15, invoice INV-0001, stamped PAID" caption="A receipt, stamped with the business's seal." eager />
 </Phones>
 
 ## The problem
@@ -27,28 +28,40 @@ A small design studio finishes a job for a client abroad and sends an invoice fo
   that chain, match each incoming transfer to an invoice by its amount, and buy that chain's own token before
   the money can move again.
 
+Paying the studio's own people is the same problem backwards: each one wants their pay somewhere different, and many
+want it in their local bank.
+
 ## The idea
 
-The studio signs in with its email, and Tegata opens `studio.tegata.testnet` on NEAR for it. It
-sends the invoice. The client opens the link and pays in USDC on NEAR, from a Tegata balance or any
-NEAR wallet. The studio receives exactly $1,250.00. The invoice turns **Paid** when NEAR itself shows the
-transfer, the studio's seal is stamped on it, and both sides can open the receipt.
+The studio signs in with its email, and Tegata opens `studio.tegata.near` on NEAR (`studio.tegata.testnet` in the
+Sandbox). It sends the invoice. The client opens the link and pays the way they can: from a Tegata balance, any NEAR
+wallet, or in Live USDT on Tron or another of eleven coins on nine chains (NEAR Intents converts it). The studio
+receives exactly $1,250.00. The invoice turns **Paid** when NEAR itself shows the transfer, the studio's seal is
+stamped on it, and both sides can open the receipt. One approval then pays the whole team, each person where they
+chose.
 
-<Diagram name="system" alt="Tegata's parts: the web app, Postgres, and the worker that alone holds the operator keys, relays signed actions to NEAR and reads USDC events; live quotes come from NEAR Intents" caption="The web app, the worker (the only holder of Tegata's NEAR keys) and Postgres." />
+<Diagram name="system" alt="Tegata's parts: the owner and the customer use the web app; the worker, the only holder of operator keys, relays signed actions to NEAR and reads USDC events; at the edge, NEAR Intents for other chains, Noah for banks, Bitnob for spend cards and Transak for card payments" caption="NEAR in the middle; other chains, banks and cards at the edge." />
 
 ## What works today
 
 | Part | What it does | Page |
 | --- | --- | --- |
-| Invoices | Customers, items, discount, tax, part-payments, repeat invoices, a PDF and a timeline | [Invoices](/docs/guide/invoices) |
-| Pay links | A link for a fixed or any amount, with a QR code | [Pay links](/docs/guide/pay-links) |
-| The pay page | Pay from a Tegata balance or a NEAR wallet; other chains show a live NEAR Intents price | [The pay page](/docs/guide/pay-page) |
-| Receipts | One for every movement: customer payments, sends and referral rewards | [Receipts](/docs/guide/receipts) |
-| Send | Dollars to any NEAR account that can hold USDC, in one hold; Tegata pays the fee | [Send](/docs/guide/send) |
-| Referrals | Invite a business; both get a reward once real customers pay it | [Referrals](/docs/guide/refer) |
-| Sandbox | The whole app on NEAR testnet with test USDC, free | [Sandbox and Live](/docs/guide/sandbox) |
+| Invoices | Customers, items, discount, tax, part-payments, repeat invoices, reminders, a PDF and a timeline | [Invoices](/docs/guide/invoices) |
+| Pay links and the counter | A link for a fixed or any amount, with a QR code; a keypad for taking payments in person | [Pay links](/docs/guide/pay-links), [Counter](/docs/guide/counter) |
+| The pay page | Pay from a Tegata balance or a NEAR wallet; in Live, from any of 11 coins on 9 chains | [The pay page](/docs/guide/pay-page) |
+| Payroll | Your team by email or CSV; each person chooses where pay lands (in Live, another chain too); one approval pays everyone; autopilot in the Sandbox | [Pay people](/docs/guide/pay-people) |
+| Send | Dollars to any NEAR account, or in Live to an address on another chain; Tegata pays the fee | [Send](/docs/guide/send) |
+| Bank | In the Sandbox, on Noah: a euro IBAN whose transfers arrive as USDC, and withdrawals to banks in Nigeria, Ghana and South Africa with Noah's live rates and account names (the last step waits on Noah switching payouts on) | [Bank](/docs/guide/bank) |
+| Cards | A Gnosis Pay card topped up from NEAR in Live. Built and waiting on partner keys: virtual Visa cards for the team (Bitnob) and customers paying by card (Transak) | [Cards](/docs/guide/cards) |
+| Scan to pay | Any Tegata QR code, NEAR account or address on another chain | [Scan to pay](/docs/guide/scan) |
+| Receipts and emails | A receipt for every payment, send, payslip and reward, and an email each time money moves | [Receipts](/docs/guide/receipts), [Emails](/docs/guide/emails) |
+| Books | Activity by month, a CSV, a statement, refunds, and the books checked against NEAR | [If you keep the books](/docs/start/bookkeepers) |
+| Developers | API keys, checkout sessions and signed webhooks | [For developers](/docs/build/developers) |
+| Sandbox and Live | The whole app on NEAR testnet with test dollars, free; Live with real dollars on mainnet | [Sandbox and Live](/docs/guide/sandbox) |
+
+What isn't done yet is on [Honest limits](/docs/build/limits).
 
 <Cards>
   <Card icon={<Icon name="Play" />} title="Try it in five minutes" href="/docs/start/try-it" description="Eight steps on the live Sandbox, from email sign-in to a sealed receipt." />
-  <Card icon={<Icon name="ArrowLeftRight" />} title="How money moves" href="/docs/how-money-moves" description="Accounts without gas, and what makes a payment paid." />
+  <Card icon={<Icon name="ArrowLeftRight" />} title="How money moves" href="/docs/how-money-moves" description="Accounts without gas, what makes a payment paid, any chain, banks and cards." />
 </Cards>

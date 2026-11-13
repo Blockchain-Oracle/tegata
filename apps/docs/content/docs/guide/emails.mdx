@@ -1,0 +1,57 @@
+---
+title: Emails
+description: An email for every time money moves, 33 kinds in one layout, sent to you, your customers and your team; four of them you can switch off in Business → Emails.
+icon: Mail
+---
+
+<Phones>
+  <Phone src="/shots/phone/settings-emails.webp" alt="The Emails card in Business: Add a billing email above to get them, four switches (You got paid, Payroll is ready to approve, An invoice is overdue, Monthly statement), then Money leaving your balance, Payroll and Security notices marked Always" caption="Business → Emails: four switches, the rest always go." eager />
+  <Phone src="/shots/phone/ex-email-paid.webp" alt="Example email: You got paid $1,250.00 for invoice INV-0007 from Studio Kaze's customer, as a slip on the vermilion stage" caption="Example: You got paid." eager />
+  <Phone src="/shots/phone/ex-email-payslip.webp" alt="Example email: You've been paid $2,400.00 by Studio Kaze, a payslip slip with its rows" caption="Example: a payslip in the inbox." eager />
+</Phones>
+
+Each email is queued in an outbox with its own key, so the same event never sends two. The worker sends the outbox
+every 3 seconds through Resend, tries each email up to 6 times with growing waits, and drops anything more than 24
+hours old.
+
+Emails to you come from Tegata. Emails to your customers and your people come from **"Studio Kaze via Tegata"**
+(your business's name), and replies reach you: your billing email, or else the email you sign in with.
+
+## Business → Emails
+
+Open **Business** and scroll to **Emails**. It shows where your emails go ("Sent to …": your billing email, or else the
+email you sign in with), the switches, and **Recently**: the last 12 emails with **Sent**, **Failed**, **Off** or **Sending**.
+
+| Switch | What it sends |
+| --- | --- |
+| **You got paid** | Each payment you receive |
+| **Payroll is ready to approve** | Once per payday, from 08:00 in your time zone, while no run has paid it: what the run will pay. Never for a payday autopilot pays |
+| **An invoice is overdue** | When a reminder goes out after the due date |
+| **Monthly statement** | On the 1st (08:00 UTC): last month in and out, with the statement PDF |
+
+**Money leaving your balance**, **Payroll** and **Security notices** are marked **Always**: they can't be switched
+off.
+
+## Every email
+
+| Who gets it | The emails |
+| --- | --- |
+| Your customer | Your receipt · an invoice (with its PDF) · a reminder · an invoice cancelled · an invoice marked paid by hand · a refund |
+| Your people | Added to payroll (and a reminder to choose where pay lands) · You've been paid (with the payslip PDF) · Your pay will go to… from (a change waiting 24 hours) · Your pay was set by the business |
+| You, money in | You got paid · arrived by bank transfer · a payment from another chain that was refunded to the payer · a referral reward |
+| You, money out | Sent · Delivered to another chain · didn't arrive, back in your balance · refund sent · paid to a bank · a withdrawal that didn't go through · payroll paid, or a batch that didn't go through |
+| You, the business | Welcome · Live is on · payroll is ready · an invoice is overdue · autopilot is on, or short · someone joined with your link, or qualified · a new API key · a webhook that keeps failing · the monthly statement |
+
+Payments land as a **slip** on Tegata's vermilion stage (the amount, who paid whom, the rows of the receipt, and a
+link to it); everything else is a short **card**. A NEAR send to another Tegata account also emails that account's
+owner.
+
+<Phone src="/shots/phone/ex-email-invoice.webp" alt="Example email: INV-0007 from Studio Kaze, $1,250.00 due 30 November 2026, with a Pay button" caption="Example: an invoice email, sent with its PDF." />
+
+<Callout title="Where to see them all" type="info">
+`/dev/emails` on the app renders sample emails in the real layout and words. The three examples on this page come
+from there. Bank, welcome and a few other kinds have no sample yet.
+</Callout>
+
+Code: `packages/documents/src/email/catalog.ts` (every kind, its subject and its rows), `packages/services/src/emails.ts`
+(when each is queued) and the outbox drain in `apps/worker`.

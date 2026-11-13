@@ -1,36 +1,38 @@
 ---
 title: Prices from other chains
-description: NEAR Intents' 1Click API prices what a payer on another chain sends for the business to receive exactly the amount owed.
+description: NEAR Intents' 1Click API prices what a payer on another chain sends for the business to receive exactly the amount owed, live, on the landing page, the pay page and every send.
 icon: Globe
 ---
 
-<Shot src="/shots/wide/landing.webp" alt="Tegata's landing page: Get paid. Pay your team. In exact dollars, beside the calculator: a payer on Tron sends 1,263.93 USDT for you to receive exactly $1,250.00" caption="The landing page's calculator, on live quotes." address="tegata.xyz" />
+<Shot src="/shots/wide/landing.webp" alt="Tegata's landing page: Get paid. Pay your team. In exact dollars., beside the calculator: you get paid $1250, your customer pays with one of eleven coins; they send on Tron 1,263.94 USDT, you receive exactly $1,250.00, quote from NEAR Intents, about 80 s" caption="The landing page's calculator, on a live quote." address="tegata.xyz" />
 
-A business is always paid an exact amount. So every price is an **exact-output** quote: the business receives
-exactly $1,250.00 in USDC on NEAR, and the payer's side carries the cost of the route.
+A business is always paid an exact amount. So every price for paying in is an **exact-output** quote: the business
+receives exactly $1,250.00 in USDC on NEAR, and the payer's side carries the cost of the route.
 
-| Route | Coin |
+| Coin | Chains |
 | --- | --- |
-| Tron | USDT |
-| Base | USDC |
-| Ethereum | USDT, ETH |
-| Solana | USDC, SOL |
-| Arbitrum | USDC |
-| Bitcoin | BTC |
-| BNB Chain | USDT |
-| Polygon | USDC |
+| USDT | Tron, Ethereum, BNB Chain |
+| USDC | Base, Solana, Arbitrum, Polygon, Gnosis |
+| BTC | Bitcoin |
+| ETH | Ethereum |
+| SOL | Solana |
 
-- The ten routes are fixed in code; each one's asset is looked up in 1Click's `/v0/tokens` (cached for 5
-  minutes).
-- Each price is a **dry** `EXACT_OUTPUT` quote, cached for 30 seconds. A dry quote never creates a deposit address.
-- You see them on the landing page's calculator and on the pay page under **Another chain**. When 1Click won't
-  route an amount, the box shows its reason, such as a $100 minimum.
+- The eleven routes are fixed in code (`apps/web/lib/routes.ts`); each one's asset is looked up in 1Click's
+  `/v0/tokens` (cached for 5 minutes).
+- A price shown before anyone commits is a **dry** quote, cached for 30 seconds. A dry quote never creates a deposit
+  address. The landing page's calculator and the pay page's **Another chain** show one everywhere; Send's
+  **Another chain** shows one in Live.
+- When 1Click won't route an amount, the box shows its reason. On 13 Nov 2026 its live answer for small amounts was
+  "Temporary swap limits: minimum swap amount is $100".
+- In Live, **Get the deposit address** asks for a real, signed quote with a deposit address and a 20-minute window,
+  and Tegata checks it before the payer sees it: [Any chain, in and out](/docs/how-money-moves/any-chain).
 
-<Phone src="/shots/phone/pay-other-chain.webp" alt="The pay page with Another chain open on a $0.25 link: the coin grid, and the live quote box showing 1Click's $100 minimum" caption="On a $0.25 link, 1Click's live answer is its $100 minimum." />
+<Phone src="/shots/phone/pay-chain-sandbox.webp" alt="The pay page in the Sandbox with Another chain open: the eleven coins and NEAR Intents' live answer, Temporary swap limits: minimum swap amount is $100, marked Live only · real price" caption="On a $0.25 link, NEAR Intents' live answer is its minimum." />
 
-<Callout title="Where this stops today" type="warn">
-NEAR Intents has no testnet. In the Sandbox, paying from another chain stops at the price; the deposit address that
-turns a payer's coin into USDC on NEAR is part of Live, and isn't built yet.
+<Callout title="In the Sandbox" type="info">
+NEAR Intents has no testnet. In the Sandbox the price is real and marked "Live only · real price"; the deposit
+address, the conversion and the delivery happen in Live.
 </Callout>
 
-Code: `apps/web/lib/server/oneclick.ts` and `GET /api/quote`.
+Code: `apps/web/lib/server/oneclick.ts` and `GET /api/quote` for prices; `packages/services/src/oneclick-payments.ts`
+for paying in.

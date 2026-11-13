@@ -1,41 +1,53 @@
 ---
 title: How money moves
-description: Every dollar is USDC on NEAR, every action is signed by its owner and relayed by Tegata, and every payment is checked on NEAR before it counts.
+description: Every dollar is USDC on NEAR, every action is signed by its owner and relayed by Tegata, every payment is checked on NEAR before it counts, and other chains, banks and cards meet it at the edge.
 icon: ArrowLeftRight
 ---
 
-<Diagram name="system" alt="Tegata's parts: the owner and the customer use the web app; the web app stores requests, payments and receipts in Postgres and hands jobs to the worker; the worker, the only holder of operator keys, relays signed actions to NEAR and pays the fee, and reads the USDC event to mark a payment paid; live quotes come from NEAR Intents" caption="Who talks to whom. The worker is the only process holding Tegata's NEAR keys." />
+<Diagram name="system" alt="Tegata's parts: the owner and the customer use the web app; the web app keeps the books in Postgres and hands jobs to the worker, the only holder of operator keys, which relays signed actions to NEAR, pays the fee and reads USDC events; at the edge, NEAR Intents (11 coins on 9 chains, in and out, Live), Noah (Sandbox), Bitnob and Transak (opening soon)" caption="Who talks to whom. The worker is the only process holding Tegata's NEAR keys." />
 
-Three rules hold everything up:
+Four rules hold everything up:
 
-1. **Money is USDC on NEAR.** Circle's native USDC (NEP-141) holds every balance and settles every payment, send and
-   reward.
-2. **The owner signs; Tegata relays and pays.** Each action is a NEP-366 delegate action signed by the key from the
-   owner's email login; Tegata's worker sends it and pays the network fee. See
-   [Accounts without gas](/docs/how-money-moves/gas-free).
-3. **NEAR decides "paid".** A payment on NEAR counts only when the USDC contract's own transfer event, read from the
-   final transaction, matches it. Money received another way can be marked paid by hand, and its receipt says so.
-   See [When is it paid?](/docs/how-money-moves/paid)
+1. **Money is USDC on NEAR.** Circle's native USDC (NEP-141) holds every balance and settles every payment, send,
+   payslip and reward, on NEAR testnet in the Sandbox and NEAR mainnet in Live.
+2. **The owner signs; Tegata relays and pays.** Each action is a NEP-366 delegate action signed by the owner's own
+   key; Tegata's worker sends it and pays the network fee. See [Accounts without gas](/docs/how-money-moves/gas-free).
+3. **NEAR decides "paid".** A payment counts only when the USDC contract's own transfer event, read from the final
+   transaction, matches it. Money received another way can be marked paid by hand, and its receipt says so. See
+   [When is it paid?](/docs/how-money-moves/paid)
+4. **Everything else meets NEAR at the edge.** Other chains through NEAR Intents, banks through Noah, spend cards
+   through Bitnob and card payments through Transak, each converting to or from USDC on NEAR. See
+   [Any chain](/docs/how-money-moves/any-chain) and [Bank and cards](/docs/how-money-moves/bank-and-cards).
 
 ## Every movement carries a memo
 
 | Movement | Memo on the USDC transfer | Receipt |
 | --- | --- | --- |
 | A customer pays a link or an invoice | `tegata:pay:<payment id>` | Numbered, `/r/<token>` |
+| A customer pays from another chain (Live) | None: NEAR Intents delivers it; Tegata matches its delivery transaction | Numbered, `/r/<token>` |
 | Tegata pays a referral reward | `tegata:referral:<referral id>` | `/r/reward/<id>` |
 | Tegata sends Sandbox test dollars | `tegata:test-dollars` | none (test money) |
 | You send dollars | `tegata:send` (or `tegata:<your note>`) | `/r/send/<id>` |
+| A payroll run pays a person | `tegata:payroll:<row>` | `/r/slip/<row>` |
+| You refund a payment on NEAR | `tegata:refund:<payment id>` | `/r/send/<id>` |
+| You withdraw to a bank | `tegata:bank:<id>` (to Tegata's operator); `tegata:bankback:<id>` if it comes back | The slip on Bank |
+| A bank deposit is credited | `tegata:bankin:<id>` (from Tegata's operator) | The row on Bank |
+| You fill a spend card | `tegata:card:<move>` (to Tegata's card reserve); `tegata:cardback:<id>` if Bitnob refuses | The card's page |
 | Money marked paid by hand | nothing on NEAR | Numbered, says "not on NEAR" |
 
 ## A payment's life
 
 From a NEAR wallet: `awaiting` → `detected` → `succeeded` or `failed`. From a Tegata balance: `awaiting` →
-`succeeded` or `failed`. Only succeeded payments count toward a link or an invoice; a request is paid when they add
-up to its total.
+`succeeded` or `failed`. From another chain: `awaiting` → `detected` (seen, then converting) → `succeeded`, or
+`refunded`, `failed` or `expired`. By card: `awaiting` → `settling` (charged, the USDC on its way) → `succeeded`
+or `failed`. Only succeeded payments count toward a link or an invoice; a request is paid when
+they add up to its total.
 
 <Cards>
   <Card icon={<Icon name="ShieldCheck" />} title="When is it paid?" href="/docs/how-money-moves/paid" description="The check that turns a transfer into a sealed receipt." />
   <Card icon={<Icon name="KeyRound" />} title="Accounts without gas" href="/docs/how-money-moves/gas-free" description="Email sign-in, a NEAR account, and a relayer that pays the fee." />
+  <Card icon={<Icon name="Waypoints" />} title="Any chain, in and out" href="/docs/how-money-moves/any-chain" description="Pay-ins, sends, refunds and payroll across 11 coins on 9 chains." />
+  <Card icon={<Icon name="Landmark" />} title="Bank and cards" href="/docs/how-money-moves/bank-and-cards" description="Noah, Bitnob and Transak, and who holds the money at each step." />
   <Card icon={<Icon name="Globe" />} title="Prices from other chains" href="/docs/how-money-moves/quotes" description="Live NEAR Intents quotes for exactly the amount owed." />
   <Card icon={<Icon name="BadgeCheck" />} title="Proof on NEAR" href="/docs/how-money-moves/proof" description="Every claim here, as a transaction you can open." />
 </Cards>

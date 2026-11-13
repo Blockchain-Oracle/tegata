@@ -4,6 +4,14 @@ description: Every claim in these docs, as a transaction on NEAR testnet you can
 icon: BadgeCheck
 ---
 
+Recorded on NEAR testnet. Every one opens on the explorer. The explorer's pages refuse scripts; a script or an agent
+can read any of them from its API instead: `curl https://api-testnet.nearblocks.io/v1/txns/<hash>`.
+
+<Callout title="Live has no recorded payment yet" type="info">
+Live is on (`tegata.near`, mainnet USDC, NEAR Intents), and every proof below is on testnet. NEAR Intents has no
+testnet, so pay-ins and payouts across chains have no row here yet.
+</Callout>
+
 | What happened | Transaction |
 | --- | --- |
 | An account holding 0 NEAR moved a token (0.001 wNEAR on `wrap.testnet`); Tegata's operator paid 0.00029 NEAR in fees | <Tx hash="8oDoAfrPgHFRKW7jKKGzHmURxmErFTHYLVhByrzp9Bxk" /> |
@@ -22,6 +30,9 @@ icon: BadgeCheck
 | Autopilot: once the payday passed, with nobody online, the keeper's one `run` paid all three 0.10 each, three `payout_paid` events | <Tx hash="DrvyRxFLWQjYRr9xMgbPXZ2qSW2hwrZNMLrShYUTvvUb" /> |
 | Autopilot: the business turned it off; the plan's storage went back to Tegata's operator | <Tx hash="HDWhmuhLR9JFvuDo3cueyed9LEFPDRjigFwtiPSn8tSn" /> |
 | Books: a customer's own NEAR account paid a link 0.20; the business refunded 0.05 to it, gas-free | <Tx hash="BvQCXLWPsDegHGEtrpv2khqboY4rgtvb7jjuSVcr8e2n" />, <Tx hash="BmQ3kF5UjvA1EkCvSwNYoUwW6gYfdbLfuDo1w3YRzu1Y" /> |
+| Developers: a `curl` created a 0.25 checkout session; a customer's own NEAR account paid it; `payment.succeeded` and `checkout.session.completed` arrived at Tegata's test inbox, signed and verified | <Tx hash="6tmnGKULQVyUUeGdpWNQYLNWCrCCmiv4iqQtsimSnBnF" /> |
+| A NEAR wallet: `tegata-wallet-dacd0228.testnet` signed in with its own key, opened a business on that account, and sent 0.05 with a delegate action it signed itself, relayed by Tegata | <Tx hash="8PWgsYjeTMFY7WVkgWNBqcSnRwfQqPoAazsNeaFnXRo7" /> |
+| Bank: a simulated €2.00 transfer to a business's Noah euro account arrived as 1.16 USDC in its NEAR balance, from Tegata's operator with the memo `tegata:bankin:…` | <Tx hash="CGQr6SEf3P5spDqohfH91PGCMABGjA1RGDpiYyczHe6F" /> |
 
 ## Run them yourself
 
@@ -38,3 +49,5 @@ After [running Tegata yourself](/docs/build/self-host):
 | Autopilot: a plan set minutes ahead pays three people with nobody online, then is turned off | `…/proofs/autopilot.ts` |
 | The autopilot contract's twelve tests on a local sandbox | `cd contracts && cargo test -p tegata-autopilot-harness` |
 | Books: a wallet payment, a partial refund, the month, the statement and reconciliation | `…/proofs/books.ts statement.pdf` (with the app running) |
+| Developers: an API key, a checkout session made by `curl`, paid from a NEAR account, two signed webhooks verified | `…/proofs/developers.ts` (with the app and the worker running) |
+| A NEAR wallet: sign in (a replayed signature refused), open a business on the wallet's own account, approve a send with a wallet-signed delegate | `…/proofs/wallet.ts` (with the app and the worker running) |

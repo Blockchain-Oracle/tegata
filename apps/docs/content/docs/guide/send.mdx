@@ -1,20 +1,43 @@
 ---
 title: Send
-description: Send dollars to any NEAR account that can hold USDC, in one hold; Tegata pays the network fee and you get a sealed receipt.
+description: Send dollars to any NEAR account in one hold, or in Live to an address on another chain through NEAR Intents; Tegata pays the network fee and you get a sealed receipt.
 icon: Send
 ---
 
 <Phones>
-  <Phone src="/shots/phone/send.webp" alt="The Send screen: you send $0, you have $5.75 with All, to a name.tegata.testnet account" caption="The amount on the stage, then who it goes to." eager />
-  <Phone src="/shots/phone/receipt-send.webp" alt="A receipt from Abu Studio stamped SENT: $15.00 to tegata.testnet, fee paid by Tegata" caption="Its receipt, stamped SENT." eager />
+  <Phone src="/shots/phone/receipt-send.webp" alt="A real receipt from Studio Kaze stamped SENT: $0.05 to tegata.testnet, One-off payment, paid with a Tegata balance, network fee paid by Tegata" caption="A send's receipt, stamped SENT." eager />
+  <Phone src="/shots/phone/send-chain.webp" alt="Send with Another chain chosen, in the Sandbox: you send $1, you have $1.25, the eleven coins with USDC on Base chosen, Their address on Base, Live only · NEAR Intents has no testnet, Runs in Live" caption="Another chain, in the Sandbox: Live only." eager />
+  <Phone src="/shots/phone/ex-send-chain-delivered.webp" alt="Example: Receipt · Delivered, $240.00, route USDC on NEAR to USDT on Tron, quoted to arrive 239.71 USDT, converted by NEAR Intents, with On NEAR and On Tron" caption="Example: delivered on Tron." eager />
 </Phones>
 
+**Send** has two sides: **A NEAR account** and **Another chain**.
+
+## To a NEAR account
+
 1. Type the amount, or press **All**.
-2. Type the NEAR account it goes to (`name.tegata.testnet`, or any NEAR account registered for USDC).
-3. Review, then press and hold to send. Your email sign-in's key signs it; Tegata relays it and pays the fee.
+2. Type the NEAR account it goes to (`name.tegata.testnet`, or any NEAR account registered for USDC), or pick one of
+   your ready people.
+3. Review, then press and hold to send. Your key signs it; Tegata relays it and pays the fee.
 4. Live steps follow it to NEAR, then a receipt slip lands with your seal.
 
-The send's receipt is at `/r/send/<id>`: share it with the person you paid. Your account never holds NEAR.
+The send's receipt is at `/r/send/<id>`: share it with the person you paid. If they have a Tegata account, they get an
+email too. Your account never holds NEAR.
+
+## To another chain
+
+In Live, choose a coin and chain from the eleven (USDC on Base to start), paste **Their address on Base**, and the
+**Live quote from NEAR Intents** shows what **They get**. The review says **You send exactly**, **They receive**
+about, **Arrives**, **Converted by** NEAR Intents and **Network fee: Paid by Tegata**. Press and hold **Hold to send**.
+
+The steps read **Approved with your key**, **Sent from your balance**, **Picked up by NEAR Intents** and
+**Delivered on Tron** (or wherever it went), and the receipt, titled "Payment to another chain", links both
+transactions. If NEAR Intents can't deliver, the dollars come back to your balance and you get an email. How it works:
+[Any chain, in and out](/docs/how-money-moves/any-chain#you-send-to-another-chain).
+
+In the Sandbox you see the coins, marked "Live only · NEAR Intents has no testnet", and the button reads **Runs in
+Live**. A send is always exact input: you send exactly what you approve and see what arrives.
+
+A [scanned](/docs/guide/scan) NEAR account or wallet address opens Send with it already filled in.
 
 <Callout title="Limits" type="info">
 Tegata sponsors up to 30 actions an hour and 200 a day for each person.

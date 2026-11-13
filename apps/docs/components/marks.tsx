@@ -13,7 +13,7 @@ export const BUILT_ON = [
   { id: "circle", name: "Circle" },
 ] as const
 
-/** The chains the live NEAR Intents quotes price (apps/web/lib/server/oneclick.ts PAYER_ROUTES), and no others. */
+/** The chains NEAR Intents routes in and out of (apps/web/lib/routes.ts PAYER_ROUTES), and no others. */
 export const PRICED = [
   { id: "eth", name: "Ethereum" },
   { id: "base", name: "Base" },
@@ -23,6 +23,7 @@ export const PRICED = [
   { id: "arb", name: "Arbitrum" },
   { id: "bnb", name: "BNB Chain" },
   { id: "pol", name: "Polygon" },
+  { id: "gnosis", name: "Gnosis" },
   { id: "usdt", name: "USDT" },
 ] as const
 

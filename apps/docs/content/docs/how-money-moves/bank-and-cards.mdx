@@ -1,0 +1,93 @@
+---
+title: Bank and cards
+description: Noah, Bitnob and Transak sit at the edge of Tegata, with NEAR in the middle; what each one really does today, what Tegata delivers itself in the Sandbox, and who holds the money at every step.
+icon: Landmark
+---
+
+<Diagram name="system" alt="Tegata's parts: the owner and the customer use the web app; the web app keeps the books in Postgres and hands jobs to the worker, the only holder of operator keys, which relays signed actions to NEAR and reads USDC events; at the edge, NEAR Intents (11 coins on 9 chains, in and out, Live), Noah (Sandbox: banks in Nigeria, Ghana and South Africa, a euro IBAN), Bitnob (opening soon: virtual Visa cards) and Transak (opening soon: pay by card)" caption="NEAR in the middle; banks and cards at the edge, each through one licensed partner." />
+
+A business's money stays USDC on NEAR, in the business's own account. Banks and card networks need a licensed
+partner, so Tegata uses one for each, at the edge, and keeps every step that can be on NEAR on NEAR.
+
+| Partner | What it does here | Today |
+| --- | --- | --- |
+| **Noah** | Pays out to banks in Nigeria, Ghana and South Africa; opens euro accounts whose deposits arrive as USDC | Sandbox. Rates, fees, bank lists, account names, euro accounts and deposits are Noah's real Sandbox answers. Payouts to a bank aren't switched on for Tegata's sandbox account yet |
+| **Bitnob** | Issues virtual Visa cards and reports every purchase | Built; waits on Bitnob's sandbox keys. **Cards** says "Opening soon" |
+| **Transak** | Sells a card holder USDC on NEAR, delivered to the business | Built; waits on Transak's keys. The Card way to pay stays hidden until then |
+| **NEAR Intents** | Swaps between USDC on NEAR and coins on other chains | Live. See [Any chain](/docs/how-money-moves/any-chain) |
+
+## A withdrawal to a bank
+
+| Step | What happens | Who holds the money |
+| --- | --- | --- |
+| Review | Noah prepares the sale and names the account holder; Tegata sets Noah's payout rule for the exact amount, from Tegata's Solana wallet (it expires after 6 days) | The business |
+| Hold to withdraw | One gas-free USDC transfer from the business to Tegata's operator, memo `tegata:bank:<id>` | Tegata's operator |
+| The hop | Once the transfer is read on NEAR, Tegata's own Solana devnet wallet sends the same amount of Noah's test USDC to Noah's deposit address | Noah |
+| The bank | Noah sells it and pays the bank in local money; Tegata's worker checks Noah every 8 seconds until it's paid or has failed | The recipient's bank |
+| If it fails | Tegata's operator sends the USDC back, memo `tegata:bankback:<id>` | The business |
+
+Why Solana: Noah takes USDC on Solana, and in Live the hop from NEAR to Solana is NEAR Intents. NEAR Intents has no
+testnet, so in the Sandbox Tegata's own wallet makes that hop with Noah's test USDC (a Token-2022 mint on Solana
+devnet). The NEAR leg and the Noah leg are both real.
+
+## A deposit into a euro account
+
+| Step | What happens | Who holds the money |
+| --- | --- | --- |
+| Bank details | Noah opens a euro virtual account for the business that delivers to Tegata's Solana wallet | |
+| A transfer arrives | Noah buys USDC with it and sends it to Tegata's Solana wallet | Tegata's Solana wallet |
+| Credit | Every minute the worker credits each settled Noah deposit once: Tegata's operator sends the same dollars in USDC on NEAR to the business, memo `tegata:bankin:<id>` | The business |
+
+In the Sandbox those dollars come from Tegata's own test-USDC stash; if it's short, the deposit is marked failed: "Tegata's
+Sandbox stash can't cover this deposit". A real one: <Tx hash="CGQr6SEf3P5spDqohfH91PGCMABGjA1RGDpiYyczHe6F" />,
+€2.00 credited as 1.16 USDC.
+
+## A spend card
+
+| Step | What happens | Who holds the money |
+| --- | --- | --- |
+| Fill | One gas-free USDC transfer from the business to Tegata's card reserve (the operator account), memo `tegata:card:<move>`, at least $2.00 | The card reserve |
+| Card | Once the transfer is read on NEAR, the worker asks Bitnob to issue the card with that first fill, or to raise it. If Bitnob refuses, the USDC goes back (`tegata:cardback:`) | The USDC stays in the reserve; Bitnob holds the card's balance |
+| Purchases | Bitnob calls `POST /api/webhooks/bitnob`; each call must carry an HMAC-SHA512 signature of its body under Tegata's webhook secret, and each event is kept once | |
+| Move back | Bitnob lowers the card, then the operator sends the USDC back to the business | The business |
+
+The card number never touches Tegata.
+
+## A card payment
+
+| | Sandbox | Live |
+| --- | --- | --- |
+| Checkout | Transak's staging checkout, test card 4242 4242 4242 4242 | Transak's checkout, a real card |
+| Who sends the USDC | Transak's staging orders deliver nothing on NEAR, so once the order is complete, Tegata's operator sends the test USDC with the payment's memo | Transak, from its own wallet, straight to the business |
+| How Tegata decides "paid" | The same check as any payment on NEAR: the transfer, the amount and the memo | Tegata reads the transaction Transak reports and finds a USDC transfer to the business for at least the amount |
+| Custody | Tegata's operator (test money) | None: Transak to the business |
+
+Transak sends no webhook here: Tegata follows each order every 5 seconds (and sweeps open ones every minute), and an
+order whose reference names another payment is refused.
+
+## Where Tegata holds money
+
+| Flow | The money's path |
+| --- | --- |
+| A payment from a Tegata balance or a NEAR wallet | Payer → business |
+| A payment from another chain | Payer → NEAR Intents → business |
+| A card payment, Live | Transak → business |
+| A send, a refund, payroll | Business → recipient (through NEAR Intents for another chain) |
+| Autopilot | Business → Tegata's contract, `pay.tegata.testnet` → people |
+| A bank withdrawal | Business → **Tegata's operator** → Tegata's Solana wallet → Noah → bank |
+| A euro deposit | Noah → **Tegata's Solana wallet**; Tegata's operator credits the business |
+| A spend card | Business → **Tegata's card reserve** → Bitnob card |
+
+Money on its way to a bank or a card passes through an account Tegata controls for the minutes it takes; everywhere
+else it moves from the business's own account.
+
+| Needs | Variables (server) |
+| --- | --- |
+| Noah | `NOAH_API_KEY`; the Solana hop: `SOLANA_DEVNET_ADDRESS`, and `SOLANA_DEVNET_SECRET` on the worker |
+| Bitnob | `BITNOB_CLIENT_ID`, `BITNOB_CLIENT_SECRET`, `BITNOB_WEBHOOK_SECRET` |
+| Transak | `TRANSAK_API_KEY`, `TRANSAK_API_SECRET`, `TRANSAK_ENV` (staging by default) |
+
+Each is optional: without its keys, that part of the app says so and the rest works.
+
+Code: `packages/services/src/bank.ts`, `issued-cards.ts`, `card-payments.ts`; the clients in `packages/core/src/noah`,
+`bitnob`, `transak`, `solana` and `gnosis`.
