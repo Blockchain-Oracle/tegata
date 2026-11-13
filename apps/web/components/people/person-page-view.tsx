@@ -4,7 +4,7 @@
 // stage, then where their pay should land as rows with real marks. A Tegata account (their own, opened with the
 // invited email), a NEAR account, or (in Live) an address on another chain paid through NEAR Intents; a bank account
 // is coming, so it's shown locked. Once chosen: "You're set", any change waiting out its 24 hours, and their payslips.
-import { ChevronRight, Lock } from "lucide-react"
+import { ChevronRight, Download, Lock } from "lucide-react"
 import Link from "next/link"
 import { useState } from "react"
 import { Flag } from "@/components/bank/parts"
@@ -266,20 +266,29 @@ export function PersonPageView({
           ) : (
             <div className="flex flex-col rounded-[20px] bg-card p-2">
               {page.slips.map((slip) => (
-                <Link
-                  key={slip.id}
-                  href={`/r/slip/${slip.id}`}
-                  className="press flex items-center gap-3 rounded-[14px] px-3 py-3 hover:bg-secondary"
-                >
-                  <BusinessSeal name={page.business} band="Paid" size={40} tilt={0} />
-                  <span className="min-w-0 flex-1 truncate text-[15px] font-semibold">
-                    {slip.label}
-                  </span>
-                  <span className="tnum text-[16px] font-semibold text-up">
-                    +{usdUnits(slip.amount)}
-                  </span>
-                  <ChevronRight className="size-4 text-text-3" />
-                </Link>
+                <div key={slip.id} className="flex items-center rounded-[14px] hover:bg-secondary">
+                  <Link
+                    href={`/r/slip/${slip.id}`}
+                    className="press flex min-w-0 flex-1 items-center gap-3 px-3 py-3"
+                  >
+                    <BusinessSeal name={page.business} band="Paid" size={40} tilt={0} />
+                    <span className="min-w-0 flex-1 truncate text-[15px] font-semibold">
+                      {slip.label}
+                    </span>
+                    <span className="tnum text-[16px] font-semibold text-up">
+                      +{usdUnits(slip.amount)}
+                    </span>
+                  </Link>
+                  <a
+                    href={`/r/slip/${slip.id}/pdf`}
+                    target="_blank"
+                    rel="noreferrer"
+                    aria-label={`Download ${slip.label} as a PDF`}
+                    className="press mr-1 grid size-10 shrink-0 place-items-center rounded-full text-text-2 hover:bg-plate-pressed [&_svg]:size-4"
+                  >
+                    <Download />
+                  </a>
+                </div>
               ))}
             </div>
           )}

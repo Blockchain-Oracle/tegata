@@ -421,15 +421,16 @@ export function PayClient({
   }, [])
 
   /** Live: ask NEAR Intents for a deposit address on the chosen coin and chain, then follow it. */
-  async function payChain() {
+  async function payChain(walletAddress?: string) {
     if (!due) return
+    if (walletAddress) setRefundTo(walletAddress)
     setBusy(true)
     setProblem(null)
     try {
       const res = await api<{ paymentId: string }>(`/api/pay/${request.token}/oneclick`, {
         body: {
           route: routeId,
-          refundTo: refundTo.trim(),
+          refundTo: (walletAddress ?? refundTo).trim(),
           amount: typed ? amount : undefined,
           email: receiptEmail.trim(),
         },
@@ -523,7 +524,7 @@ export function PayClient({
         setRefundTo(value)
         setProblem(null)
       }}
-      onPayChain={() => void payChain()}
+      onPayChain={(walletAddress) => void payChain(walletAddress)}
       // A payer sees Card only where it's open: no "not set up yet" on someone's pay page.
       card={
         card.data?.open

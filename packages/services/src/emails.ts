@@ -445,6 +445,7 @@ export async function queueRunEmails(db: Db, runId: string) {
           period: periodLabel(run.periodFrom, run.periodTo),
           account: row.accountId ?? "",
           url: `/r/slip/${row.id}`,
+          rowId: row.id,
           autopilot,
         },
       },

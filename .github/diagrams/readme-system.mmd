@@ -1,15 +1,22 @@
 flowchart LR
-  owner["Business owner<br/>email sign-in (Privy)"] --> web
-  payer["Customer<br/>Tegata balance or NEAR wallet"] --> web
+  owner["Business owner<br/>email (Privy)<br/>or a NEAR wallet"] --> web
+  payer["Customer<br/>Tegata balance,<br/>NEAR wallet, any chain<br/>or a card"] --> web
   subgraph tegata["Tegata"]
-    web["Web app (Next.js)<br/>invoices, pay links, pay page,<br/>receipts, API"]
-    db[("Postgres<br/>requests, payments,<br/>receipts, invoices")]
+    web["Web app (Next.js)<br/>invoices, pay links, payroll,<br/>bank, cards, receipts, API"]
+    db[("Postgres<br/>the books")]
     worker["Worker (pg-boss)<br/>the only holder of<br/>operator keys"]
     web --> db
     web -- "jobs" --> worker
     worker --> db
   end
-  web -- "live quotes" --> intents["NEAR Intents<br/>1Click API"]
-  worker -- "relays signed actions<br/>(NEP-366, pays the fee)" --> near["NEAR<br/>USDC (NEP-141)<br/>name.tegata.testnet"]
-  payer -- "ft_transfer with memo" --> near
-  worker -- "reads the USDC event<br/>to mark it paid" --> near
+  worker -- "relays signed actions<br/>(NEP-366, pays the fee),<br/>reads USDC events" --> near["NEAR · USDC (NEP-141)<br/>Live: name.tegata.near<br/>Sandbox: name.tegata.testnet"]
+  subgraph edge["Partners at the edge"]
+    intents["NEAR Intents · 1Click<br/>11 coins on 9 chains"]
+    noah["Noah · Sandbox<br/>banks in Nigeria, Ghana,<br/>South Africa · a euro IBAN"]
+    bitnob["Bitnob · opening soon<br/>virtual Visa cards"]
+    transak["Transak · opening soon<br/>pay by card"]
+  end
+  near <-- "any coin, any chain,<br/>in and out (Live)" --> intents
+  near <-- "bank withdrawals out,<br/>euro deposits in" --> noah
+  near <-- "card fills from the<br/>reserve, move-backs" --> bitnob
+  near -- "card payments<br/>arrive as USDC" --- transak

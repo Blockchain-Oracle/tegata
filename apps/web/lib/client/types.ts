@@ -219,6 +219,8 @@ export interface AttemptView {
     /** Mark ids for the coin sent and its chain ("usdt", "tron"). */
     coin?: string | null
     chainMark?: string | null
+    /** The coin's contract on its chain, for paying from the payer's own wallet (null for a chain's own coin). */
+    tokenContract?: string | null
     payUri: string | null
   } | null
   /** Paying by card: Transak's order and its status. */
@@ -583,7 +585,7 @@ export interface PayRunRow {
   /** For a row paid to another chain: its route ("usdt-tron"). */
   route?: string | null
   amount: string
-  status: "included" | "excluded" | "skipped" | "paid" | "failed"
+  status: "included" | "excluded" | "skipped" | "paid" | "failed" | "sending"
   skipReason: string | null
   batch: number | null
   relayStatus: RelayStatus["status"] | null

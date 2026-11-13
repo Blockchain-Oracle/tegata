@@ -6,8 +6,9 @@ import { ImageZoom } from "fumadocs-ui/components/image-zoom"
  */
 
 const SIZE = {
-  system: { width: 1568, height: 486 },
+  system: { width: 1568, height: 642 },
   payment: { width: 1568, height: 796 },
+  anychain: { width: 1568, height: 544 },
 } as const
 
 export function Diagram({

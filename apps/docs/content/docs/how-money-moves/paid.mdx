@@ -18,6 +18,16 @@ carries that memo whichever way it's paid. Then the worker:
 
 Nothing the payer's browser says is believed: a NEAR wallet's transaction hash is only a hint of where to look.
 
+## The other ways in
+
+| Paid with | What Tegata reads before it counts |
+| --- | --- |
+| Tegata balance, NEAR wallet | The check above: receiver, amount and this attempt's memo |
+| Another chain (Live) | NEAR Intents reports the swap succeeded **and** its delivery transaction on NEAR holds a USDC transfer to the business for at least the amount due. See [Any chain](/docs/how-money-moves/any-chain) |
+| Card, Sandbox | Transak's order is complete; Tegata's operator sends the test USDC with the payment's memo, and that transfer goes through the check above |
+| Card, Live | Transak's order is complete, and the delivery transaction Transak reports holds a USDC transfer to the business for at least the amount |
+| By hand | Nothing: the receipt says it isn't on NEAR |
+
 ## What follows
 
 - **Part-payments.** An invoice that allows them takes any amount up to what's left; a payment above that is refused
@@ -34,6 +44,7 @@ Nothing the payer's browser says is believed: a NEAR wallet's transaction hash i
 | --- | --- |
 | Reading USDC transfers from a final transaction | `packages/core/src/near/transfers.ts` (`readUsdcTransfers`, `matchingTransfer`) |
 | Settling a payment | `packages/services/src/payments.ts` (`settlePayment`, `applyPayment`) |
+| From another chain; by card | `packages/services/src/oneclick-payments.ts`; `card-payments.ts` |
 | The worker | `apps/worker/src/index.ts`: `payment-verify` for NEAR-wallet payments, `relay-send` for Tegata-balance ones |
 
 <Callout title="Proof" type="success">

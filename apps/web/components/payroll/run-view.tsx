@@ -146,8 +146,9 @@ export function RunView({
           </Stage>
           {run.error ? (
             <p className="rounded-[14px] bg-down-surface px-4 py-3 text-[15px] font-medium text-down">
-              The last try didn't go through, and nothing in that batch moved. Check the rows and
-              pay again.
+              {run.error.includes("couldn't be delivered")
+                ? `${run.error} Pay again to send it.`
+                : "The last try didn't go through, and nothing in that batch moved. Check the rows and pay again."}
             </p>
           ) : null}
           <div className="flex flex-col rounded-[20px] bg-card p-2">
@@ -159,6 +160,12 @@ export function RunView({
             <p className="text-detail text-muted-foreground">
               Skipped people aren't paid in this run. Once they're ready, open the run again and
               they'll be in it.
+            </p>
+          ) : null}
+          {included.some((r) => r.destinationKind === "chain") ? (
+            <p className="text-detail text-muted-foreground">
+              Rows on another chain arrive in full. NEAR Intents' conversion, at most 2% or $1 each,
+              is added to what you send.
             </p>
           ) : null}
           {short ? (
@@ -192,6 +199,21 @@ export function RunView({
           <div className="rounded-[20px] bg-secondary p-2">
             <TaskSteps steps={STEPS} current={progress} />
           </div>
+          {run.rows.some((r) => r.status === "sending") ? (
+            <>
+              <p className="text-detail text-muted-foreground">
+                Paid on NEAR. Rows on another chain are being delivered through NEAR Intents; each
+                is paid when it arrives.
+              </p>
+              <div className="flex flex-col rounded-[20px] bg-card p-2">
+                {run.rows
+                  .filter((r) => r.batch)
+                  .map((row) => (
+                    <RowLine key={row.id} row={row} />
+                  ))}
+              </div>
+            </>
+          ) : null}
         </motion.div>
       ) : run.status === "paid" ? (
         <motion.div key="paid" className="flex flex-col gap-5" {...slide}>
@@ -314,6 +336,8 @@ function RowLine({
         >
           <FileText /> Payslip
         </Link>
+      ) : row.status === "sending" ? (
+        <StatusPill tone="quiet">On its way</StatusPill>
       ) : row.status === "failed" ? (
         <StatusPill tone="down">Not paid</StatusPill>
       ) : onToggle && (row.status === "included" || row.status === "excluded") ? (

@@ -6,13 +6,14 @@ import { localToday } from "@tegata/core/invoices"
 import {
   accountExists,
   type DelegateDraft,
+  explorerTx,
   ftTransfer,
   isRegistered,
   matchingTransfer,
   type Operator,
   readUsdcTransfers,
 } from "@tegata/core/near"
-import { routeAsset } from "@tegata/core/oneclick"
+import { deliveryTxUrl, routeAsset } from "@tegata/core/oneclick"
 import {
   anchorDayFor,
   batches,
@@ -23,8 +24,9 @@ import {
   periodLabel,
 } from "@tegata/core/payroll"
 import { type Db, schema } from "@tegata/db"
-import { and, asc, count, desc, eq, gt, inArray, ne, sql } from "drizzle-orm"
+import { and, asc, count, desc, eq, gt, inArray, lte, ne, sql } from "drizzle-orm"
 
+import { businessLogo } from "./business.ts"
 import { BUSINESS_HEADER, headerLogo, publicToken } from "./payments.ts"
 import {
   failDraftedPayouts,
@@ -717,7 +719,8 @@ export async function draftRun(
     for (const { person, ready } of team) {
       keep.add(person.id)
       const before = byPerson.get(person.id)
-      if (before?.status === "paid") continue
+      // Paid, or on its way to another chain: never drafted again.
+      if (before?.status === "paid" || before?.status === "sending") continue
       const row: RunRow = {
         runId: run.id,
         personId: person.id,
@@ -753,7 +756,9 @@ export async function draftRun(
         .values(row)
         .onConflictDoUpdate({ target: [payRows.runId, payRows.personId], set: row })
     }
-    const gone = existing.filter((row) => !keep.has(row.personId) && row.status !== "paid")
+    const gone = existing.filter(
+      (row) => !keep.has(row.personId) && row.status !== "paid" && row.status !== "sending",
+    )
     if (gone.length)
       await tx.delete(payRows).where(
         inArray(
@@ -851,6 +856,8 @@ export async function prepareRun(
     string,
     {
       to: string
+      /** What the transfer sends: the pay, or for a stablecoin on another chain what its exact delivery costs. */
+      amount: bigint
       memo: string | null
       via: { route: string; recipient: string; amountOut: string | null } | null
     }
@@ -858,7 +865,12 @@ export async function prepareRun(
   const payoutOf = new Map<string, string>()
   for (const row of rows) {
     if (row.destinationKind !== "chain") {
-      targets.set(row.id, { to: row.accountId ?? "", memo: payrollMemo(row.id), via: null })
+      targets.set(row.id, {
+        to: row.accountId ?? "",
+        amount: row.amount,
+        memo: payrollMemo(row.id),
+        via: null,
+      })
       continue
     }
     if (run.network !== "mainnet" || !row.route || !row.accountId)
@@ -885,6 +897,10 @@ export async function prepareRun(
           recipient: row.accountId,
           stable: asset.stable,
           reference: row.id,
+          // A stablecoin arrives as exactly the pay; another coin arrives as the pay's worth at the quoted rate.
+          ...(asset.stable && asset.decimals !== null
+            ? { exactOut: { decimals: asset.decimals } }
+            : {}),
         },
         input.oneClickKey,
       )
@@ -898,6 +914,7 @@ export async function prepareRun(
     payoutOf.set(row.id, quoted.payout.id)
     targets.set(row.id, {
       to: quoted.deposit,
+      amount: quoted.payout.amount,
       memo: null,
       via: {
         route: row.route,
@@ -929,7 +946,7 @@ export async function prepareRun(
       publicKey: input.publicKey,
       calls: group.map((row) => {
         const target = targets.get(row.id)
-        return ftTransfer(target?.to ?? "", row.amount, target?.memo ?? undefined)
+        return ftTransfer(target?.to ?? "", target?.amount ?? row.amount, target?.memo ?? undefined)
       }),
       nonceOffset: index + 1,
     })
@@ -956,7 +973,7 @@ export async function prepareRun(
         return {
           id: row.id,
           accountId: target?.to ?? "",
-          amount: row.amount.toString(),
+          amount: (target?.amount ?? row.amount).toString(),
           memo: target?.memo ?? null,
           via: target?.via ?? null,
         }
@@ -1100,12 +1117,15 @@ export async function settleRunRelay(
             { payoutId: row.payoutId, txHash: relay.txHash, relayerId: operatorId },
             oneClickKey,
           )
+        // A row for another chain is on its way, not paid: it's paid when NEAR Intents delivers it.
         await db
           .update(payRows)
           .set(
-            hit
-              ? { status: "paid", txHash: relay.txHash, paidAt: new Date() }
-              : { status: "failed" },
+            !hit
+              ? { status: "failed" }
+              : row.payoutId
+                ? { status: "sending", txHash: relay.txHash }
+                : { status: "paid", txHash: relay.txHash, paidAt: new Date() },
           )
           .where(eq(payRows.id, row.id))
       }
@@ -1122,7 +1142,7 @@ async function closeRun(db: Db, runId: string): Promise<RunSettle> {
     const [run] = await tx.select().from(payRuns).where(eq(payRuns.id, runId)).for("update")
     if (run?.status !== "approved") return "ignored"
     const rows = await tx.select().from(payRows).where(eq(payRows.runId, runId))
-    if (rows.some((row) => row.status === "included")) return "pending"
+    if (rows.some((row) => row.status === "included" || row.status === "sending")) return "pending"
     const hashes = [...new Set(rows.flatMap((row) => (row.txHash ? [row.txHash] : [])))]
     const failed = rows.some((row) => row.status === "failed")
     await tx
@@ -1135,6 +1155,38 @@ async function closeRun(db: Db, runId: string): Promise<RunSettle> {
       .where(eq(payRuns.id, runId))
     return failed ? "failed" : "paid"
   })
+}
+
+/**
+ * A payroll row's NEAR Intents payout reached the end: delivered, the row is paid (its payslip opens); refunded or
+ * failed, the row failed (the USDC came back to the business) and the run can be retried for it. Then the run closes
+ * if nothing else is on its way. Returns the run and how it stands, or null for a payout that isn't payroll.
+ */
+export async function settlePayrollPayout(db: Db, payoutId: string) {
+  const [payout] = await db.select().from(payouts).where(eq(payouts.id, payoutId))
+  if (payout?.kind !== "payroll" || !payout.reference) return null
+  const [row] = await db.select().from(payRows).where(eq(payRows.id, payout.reference))
+  if (!row) return null
+  if (payout.status === "delivered")
+    await db
+      .update(payRows)
+      .set({ status: "paid", paidAt: payout.deliveredAt ?? new Date() })
+      .where(and(eq(payRows.id, row.id), eq(payRows.status, "sending")))
+  else if (payout.status === "refunded" || payout.status === "failed") {
+    const [failed] = await db
+      .update(payRows)
+      .set({ status: "failed" })
+      .where(and(eq(payRows.id, row.id), eq(payRows.status, "sending")))
+      .returning()
+    if (failed)
+      await db
+        .update(payRuns)
+        .set({
+          error: `${row.name}'s pay couldn't be delivered on ${payout.chain}; the USDC came back to your balance.`,
+        })
+        .where(eq(payRuns.id, row.runId))
+  } else return null
+  return { runId: row.runId, settled: await closeRun(db, row.runId) }
 }
 
 /** Approved runs whose relays may have finished while no worker was watching (swept at start). */
@@ -1312,6 +1364,112 @@ export async function payslip(db: Db, rowId: string) {
     business: row.business,
     logo: headerLogo(row),
     label: periodLabel({ from: row.run.periodFrom, to: row.run.periodTo }),
+  }
+}
+
+const CADENCE_WORD = { weekly: "Weekly", fortnightly: "Fortnightly", monthly: "Monthly" } as const
+
+/**
+ * Everything the payslip PDF shows, from a paid row: the business's header, the person (masked email), the period
+ * and pay date, gross to net with this year's pay to date, and how the money moved (the NEAR transaction, and what
+ * NEAR Intents delivered on another chain). Built on demand from the paid row, so every paid row has one.
+ */
+export async function payslipDocument(db: Db, rowId: string, appUrl: string) {
+  const slip = await payslip(db, rowId)
+  if (!slip?.row.paidAt) return undefined
+  const { row, run, payout } = slip
+  const paidAt = slip.row.paidAt
+  const [[business], [person], [schedule], logo] = await Promise.all([
+    db.select().from(workspaces).where(eq(workspaces.id, run.workspaceId)),
+    db.select().from(people).where(eq(people.id, row.personId)),
+    db
+      .select({ cadence: payrolls.cadence })
+      .from(payrolls)
+      .where(and(eq(payrolls.workspaceId, run.workspaceId), eq(payrolls.network, run.network))),
+    businessLogo(db, run.workspaceId),
+  ])
+  if (!business) return undefined
+  const timezone = business.timezone
+  const year = Number(
+    new Intl.DateTimeFormat("en-GB", { year: "numeric", timeZone: timezone }).format(paidAt),
+  )
+  const [ytd] = await db
+    .select({ total: sql<string>`coalesce(sum(${payRows.amount}), 0)` })
+    .from(payRows)
+    .where(
+      and(
+        eq(payRows.personId, row.personId),
+        eq(payRows.status, "paid"),
+        sql`extract(year from ${payRows.paidAt} at time zone ${timezone}) = ${year}`,
+        lte(payRows.paidAt, paidAt),
+      ),
+    )
+  const when = (date: Date) =>
+    new Intl.DateTimeFormat("en-GB", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      timeZone: timezone,
+    }).format(date)
+  const chain = payout ? `${payout.symbol} on ${payout.chain}` : null
+  return {
+    kind: "payslip" as const,
+    reference: `PS-${row.id.slice(0, 8).toUpperCase()}`,
+    business: {
+      name: business.name,
+      address: business.address,
+      taxId: business.taxId,
+      email: business.email,
+      logo:
+        logo && (logo.type === "image/png" || logo.type === "image/jpeg")
+          ? `data:${logo.type};base64,${logo.bytes.toString("base64")}`
+          : null,
+      accountId: run.senderId,
+    },
+    person: {
+      name: row.name,
+      role: row.role,
+      reference: `P-${row.personId.slice(0, 6).toUpperCase()}`,
+      email: person?.email ? maskEmail(person.email) : null,
+    },
+    periodLabel: slip.label,
+    periodFrom: run.periodFrom,
+    periodTo: run.periodTo,
+    payDate: run.payday,
+    paidAt: when(paidAt),
+    timezone,
+    frequency: schedule ? CADENCE_WORD[schedule.cadence] : null,
+    gross: row.amount.toString(),
+    net: row.amount.toString(),
+    yearToDate: BigInt(ytd?.total ?? row.amount).toString(),
+    year,
+    how: {
+      paidIn: chain ? `${chain}, converted by NEAR Intents` : "USDC on NEAR, issued by Circle",
+      to: payout ? payout.recipient : (row.accountId ?? ""),
+      toKind: payout
+        ? `Address on ${payout.chain}`
+        : row.destinationKind === "near"
+          ? "NEAR account"
+          : "Tegata account",
+      delivered:
+        payout?.amountOutFormatted && payout.symbol
+          ? `${Number(payout.amountOutFormatted).toLocaleString("en-US", { maximumFractionDigits: 6 })} ${payout.symbol}`
+          : null,
+      deliveryTx: payout?.destinationTx ?? null,
+      deliveryTxUrl:
+        payout?.destinationTx && payout.chain
+          ? deliveryTxUrl(payout.chain, payout.destinationTx)
+          : null,
+      nearTx: row.txHash,
+      nearTxUrl: row.txHash ? explorerTx(run.network, row.txHash) : null,
+      memo: payrollMemo(row.id),
+      autopilot: run.source === "autopilot",
+    },
+    checkUrl: `${appUrl.replace(/\/$/, "")}/r/slip/${row.id}`,
+    sandbox: run.network === "testnet",
+    madeAt: when(new Date()),
   }
 }
 

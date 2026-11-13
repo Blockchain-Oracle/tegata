@@ -102,6 +102,12 @@ const noahError = (error: unknown) => {
       "noah",
       "Noah's sandbox hasn't switched on bank payouts for Tegata yet (they turn it on by request, and it's asked for). Bank details and deposits work now.",
     )
+  // Noah opens bank details per customer; one it hasn't cleared for euros gets "no allowed channels".
+  if (error instanceof NoahError && /no allowed channels/i.test(error.message))
+    return new BankError(
+      "no_channel",
+      "Noah hasn't opened euro bank details for this account yet.",
+    )
   return new BankError(
     "noah",
     error instanceof NoahError

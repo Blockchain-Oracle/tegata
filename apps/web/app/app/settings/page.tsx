@@ -50,7 +50,7 @@ export default function SettingsPage() {
     return (
       <div className="flex flex-col gap-6" role="status" aria-label="Loading your business">
         <Skeleton className="h-10 w-48" />
-        <div className="grid gap-6 lg:grid-cols-[1fr_1.1fr]">
+        <div className="grid grid-cols-[minmax(0,1fr)] gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]">
           <Skeleton className="h-[340px] rounded-[24px]" />
           <Skeleton className="h-[560px] rounded-[24px]" />
         </div>

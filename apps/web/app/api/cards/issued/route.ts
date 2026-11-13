@@ -16,7 +16,7 @@ export const GET = route(async (request) => {
   const { cards, purchases } = Array.isArray(listed) ? { cards: [], purchases: [] } : listed
   return {
     network,
-    issuer: issuerReady() ? "bitnob" : null,
+    issuer: issuerReady(network) ? "bitnob" : null,
     cards: cards.map(({ card, spentThisMonth }) => issuedCardView(card, spentThisMonth)),
     purchases: purchases.map(purchaseView),
   }
@@ -46,7 +46,12 @@ const body = z.object({
 export const POST = route(async (request) => {
   const network = requestNetwork(request)
   const { user, workspace } = await requireOwner(request)
-  if (!issuerReady()) throw badRequest("Cards aren't set up on this server yet")
+  if (!issuerReady(network))
+    throw badRequest(
+      network === "mainnet"
+        ? "Cards run in the Sandbox for now"
+        : "Cards aren't set up on this server yet",
+    )
   if (!user.publicKey) throw badRequest("Your signing key is not ready yet")
   const input = body.parse(await request.json())
   const account = await accountFor(db(), user.id, network)

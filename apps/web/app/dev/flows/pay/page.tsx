@@ -25,6 +25,7 @@ type Payer =
   | "chain"
   | "live"
   | "live_short"
+  | "live_base"
   | "any"
   | "card"
   | "card_off"
@@ -39,6 +40,7 @@ const TEGATA: Record<Payer, TegataState> = {
   chain: { kind: "signed_out" },
   live: { kind: "signed_out" },
   live_short: { kind: "signed_out" },
+  live_base: { kind: "signed_out" },
   any: { kind: "ready", accountId: "northwind.tegata.testnet", balance: 4210 },
   card: { kind: "signed_out" },
   card_off: { kind: "signed_out" },
@@ -53,7 +55,7 @@ export default function PayFlow() {
   const [progress, setProgress] = useState(1)
   const [startedAt, setStartedAt] = useState(() => Date.now())
   const [replay, setReplay] = useState(0)
-  const live = payer === "live" || payer === "live_short"
+  const live = payer === "live" || payer === "live_short" || payer === "live_base"
   const cardPayer = payer === "card" || payer === "card_off"
   const usedRail: PaymentRail =
     payer === "wallet" ? "near_wallet" : live ? "oneclick" : cardPayer ? "card" : "tegata"
@@ -89,7 +91,8 @@ export default function PayFlow() {
   const playLive = () => {
     setStep("paying")
     setSwap(payer === "live_short" ? "INCOMPLETE_DEPOSIT" : "PENDING_DEPOSIT")
-    if (payer === "live_short") return
+    // Held at the deposit, so the wallet's send button can be reviewed.
+    if (payer === "live_short" || payer === "live_base") return
     setTimeout(() => setSwap("KNOWN_DEPOSIT_TX"), 2600)
     setTimeout(() => setSwap("PROCESSING"), 4200)
     setTimeout(() => setSwap("SUCCESS"), 5800)
@@ -125,6 +128,7 @@ export default function PayFlow() {
             { value: "chain", label: "Other chain" },
             { value: "live", label: "Live: other chain" },
             { value: "live_short", label: "Live: sent too little" },
+            { value: "live_base", label: "Live: wallet" },
             { value: "any", label: "Any amount" },
             { value: "card", label: "Card" },
             { value: "card_off", label: "Card: not open" },
@@ -209,22 +213,45 @@ export default function PayFlow() {
             receiptToken: "sampleReceipt01",
             explorerUrl: SAMPLE_RECEIPT.explorerUrl,
             oneclick: live
-              ? {
-                  depositAddress: "TQn9Y2khEsLJW1ChVWFMSMeRDow5KcbLSE",
-                  depositMemo: null,
-                  amountIn: "1251387000",
-                  amountInFormatted: "1251.387",
-                  minAmountIn: "1250125000",
-                  assetIn: "nep141:tron-d28a265909efecdcee7c5028585214ea0b96f015.omft.near",
-                  refundTo: refundTo || "TFxa1pyCnnjrK2hc6UzHhK1Da3WXu53yH8",
-                  deadline: new Date(Date.now() + 18 * 60_000).toISOString(),
-                  swapStatus: swap,
-                  originTx: null,
-                  timeEstimate: 80,
-                  symbol: "USDT",
-                  chain: "Tron",
-                  payUri: null,
-                }
+              ? payer === "live_base"
+                ? {
+                    // USDC on Base, sent from the payer's own wallet (EIP-6963) to the deposit address.
+                    depositAddress: "0x6f2C1C0d7E4a9b3D2e8F5A1B7c4D9E0f3A2b6C81",
+                    depositMemo: null,
+                    amountIn: "1250125000",
+                    amountInFormatted: "1250.125",
+                    minAmountIn: "1250125000",
+                    assetIn: "nep141:base-0x833589fcd6edb6e08f4c7c32d4f71b54bda02913.omft.near",
+                    refundTo: refundTo || "0x9A1b2C3d4E5f60718293A4b5C6d7E8f901234567",
+                    deadline: new Date(Date.now() + 18 * 60_000).toISOString(),
+                    swapStatus: swap,
+                    originTx: null,
+                    timeEstimate: 30,
+                    symbol: "USDC",
+                    chain: "Base",
+                    coin: "usdc",
+                    chainMark: "base",
+                    tokenContract: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+                    payUri:
+                      "ethereum:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913@8453/transfer?address=0x6f2C1C0d7E4a9b3D2e8F5A1B7c4D9E0f3A2b6C81&uint256=1250125000",
+                  }
+                : {
+                    depositAddress: "TQn9Y2khEsLJW1ChVWFMSMeRDow5KcbLSE",
+                    depositMemo: null,
+                    amountIn: "1251387000",
+                    amountInFormatted: "1251.387",
+                    minAmountIn: "1250125000",
+                    assetIn: "nep141:tron-d28a265909efecdcee7c5028585214ea0b96f015.omft.near",
+                    refundTo: refundTo || "TFxa1pyCnnjrK2hc6UzHhK1Da3WXu53yH8",
+                    deadline: new Date(Date.now() + 18 * 60_000).toISOString(),
+                    swapStatus: swap,
+                    originTx: null,
+                    timeEstimate: 80,
+                    symbol: "USDT",
+                    chain: "Tron",
+                    tokenContract: "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+                    payUri: null,
+                  }
               : null,
           }}
           onTryAgain={() => setStep("choose")}

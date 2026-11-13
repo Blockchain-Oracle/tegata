@@ -106,7 +106,7 @@ export function InvoiceDetailView(p: InvoiceDetailViewProps) {
     return (
       <div className="flex flex-col gap-6" role="status" aria-label="Loading the invoice">
         <Skeleton className="h-10 w-56" />
-        <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
+        <div className="grid grid-cols-[minmax(0,1fr)] gap-6 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)]">
           <Skeleton className="h-[620px] rounded-[24px]" />
           <Skeleton className="h-[420px] rounded-[24px]" />
         </div>
@@ -157,7 +157,7 @@ export function InvoiceDetailView(p: InvoiceDetailViewProps) {
         </div>
       ) : null}
 
-      <div className="grid items-start gap-6 lg:grid-cols-[1.2fr_0.8fr]">
+      <div className="grid grid-cols-[minmax(0,1fr)] items-start gap-6 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)]">
         <Stage className="p-3 sm:p-6" grid={false}>
           <InvoicePaper
             from={inv.billFrom ?? { name: "", email: null, address: null, taxId: null }}

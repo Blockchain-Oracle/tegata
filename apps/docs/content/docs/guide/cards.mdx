@@ -1,0 +1,93 @@
+---
+title: Cards
+description: Virtual Visa cards for you and your team, filled from your dollars on NEAR, with a monthly limit and a freeze; a crypto card you already have, topped up from NEAR; and customers who pay by card.
+icon: CreditCard
+---
+
+Three things carry a card in Tegata: **spend cards** your team pays with, **a crypto card you already have**, and
+**customers paying you by card**. All three settle in USDC on NEAR.
+
+## Spend cards for you and your team
+
+<Phones>
+  <Phone src="/shots/phone/cards-soon.webp" alt="The Cards page on the live app: a stack of virtual cards on the vermilion stage, Cards for you and your team, Opening soon, and Already have a crypto card? Top it up" caption="Today on the live app: Opening soon." eager />
+  <Phone src="/shots/phone/ex-cards-team.webp" alt="Example: Cards with three virtual Visa cards: $271.40 on cards, $370.85 spent this month across 3 cards; yours, Ads, $182.40; your team, Mei Tanaka's Travel card, $64.00, and Kofi Mensah's Supplies card, $25.00, frozen" caption="Example: the cards of a business and its team." eager />
+  <Phone src="/shots/phone/ex-card-panel.webp" alt="Example: Mei Tanaka's Travel card, $64.00 on the card, with Add money, Move back, Freeze and Test buy, then this month's spending against its limit" caption="Example: one card, with its four actions." eager />
+</Phones>
+
+<Callout title="Opening soon" type="warn">
+Cards are issued by Bitnob, and issuing waits on Bitnob's sandbox keys. Until they're set, **Cards** shows "Cards for
+you and your team" with **Opening soon** and no **New card** button. The screens marked Example show the finished
+design on sample data.
+</Callout>
+
+| | |
+| --- | --- |
+| Who gets one | You (the card carries your business's name), or anyone in [People](/docs/guide/pay-people) who has an email |
+| The card | A virtual Visa by Bitnob. Each card spends only what you put on it |
+| Filling it | From your balance, at least $2.00 a time, in one gas-free transfer |
+| **Add money** / **Move back** | Put more on the card, or bring what's left back to your balance |
+| **Freeze** | Stops the card at once, until you unfreeze it |
+| Monthly limit | A cap on what the card spends each month, or **No limit** |
+| Purchases | Each purchase arrives from Bitnob as it happens: **Paid**, **Pending**, **Reversed**, or **Declined** with the reason ("card frozen") |
+| **Test buy** | Sandbox only: a test purchase on the card, so you can see one arrive |
+
+<Shot src="/shots/wide/ex-cards-team.webp" alt="Example: Cards on a laptop: three virtual Visa cards, $271.40 on cards, $370.85 spent this month across 3 cards; yours, Ads, $182.40; your team, Travel for Mei Tanaka $64.00 and Supplies for Kofi Mensah $25.00, frozen; latest purchases from Meta Ads, Uber, Figma, and Staples declined because the card is frozen" caption="Example: every card, and every purchase, on one page." address="tegata.xyz/app/cards" />
+
+Only the owner makes and manages cards.
+
+<Phone src="/shots/phone/ex-card-new.webp" alt="Example: the New card sheet: a black Studio Kaze Visa, For: You, Mei Tanaka, Kofi Mensah, Sara Lind; Card name; Start with $20; Monthly limit, No limit; Hold to create and add $20.00" caption="Example: a new card, for you or someone on your team." />
+
+**New card** asks who it's for, a name ("Ads, Travel, Supplies…"), how much to start with and a monthly limit. Press
+and hold **Hold to create and add $20.00**: your key signs one transfer to Tegata's card reserve, then the steps
+read **Approved**, **$20.00 to the card** and **Making the card · Visa, by Bitnob**, and **Your card is ready**.
+
+How the money moves, and who holds it at each step:
+[Bank and cards](/docs/how-money-moves/bank-and-cards).
+
+## A crypto card you already have
+
+<Phone src="/shots/phone/cards-gnosis.webp" alt="The Your crypto card sheet on the live app: Link your Gnosis Pay card, a Gnosis Pay card spends the USDC in its own account on the Gnosis chain; Name (optional); Card account address on Gnosis, 0x…; Link the card" caption="Link a Gnosis Pay card by its account address." />
+
+A Gnosis Pay card spends the dollars in its own account on the Gnosis chain. Press **Already have a crypto card? Top
+it up**, paste the card account's address (it starts `0x`) and press **Link the card**. Tegata reads its balance
+from Gnosis (USDC.e and EURe).
+
+**Top up from NEAR** opens [Send to another chain](/docs/guide/send#to-another-chain) with USDC on Gnosis and the
+card's address already filled in: NEAR Intents turns your USDC on NEAR into the USDC.e the card spends. Topping up
+runs in Live; in the Sandbox the sheet says "Top-ups run in Live: NEAR Intents has no testnet."
+
+## Customers who pay by card
+
+<Phones>
+  <Phone src="/shots/phone/ex-pay-card.webp" alt="Example: the pay page for Studio Kaze's $1,250.00 Logo design with Card open: Studio Kaze gets $1,250.00, card fee set by Transak about €46.20, you pay about €1,196.40, Sandbox test card 4242 4242 4242 4242, Pay about €1,196.40 by card" caption="Example: paying by card, with the fee shown first." />
+  <Phone src="/shots/phone/add-money.webp" alt="The Add money sheet on the live app: To your pay address, With a card (Opening soon), From another chain (Live only), Test dollars" caption="Add money: With a card opens with Transak's keys." />
+</Phones>
+
+Transak sells the customer USDC on NEAR, delivered straight to your account. On the [pay page](/docs/guide/pay-page)
+the **Card** row reads "Visa, Mastercard · about 2 minutes". Open it and the customer sees, before anything starts:
+
+| Line | |
+| --- | --- |
+| **Studio Kaze gets** | Exactly the amount due |
+| **Card fee, set by Transak** | Transak's own quote, in euros |
+| **You pay** | What the card is charged |
+
+**Pay about €1,196.40 by card** opens Transak's checkout in the page, locked to USDC on NEAR, your account and the
+exact amount. "Your card goes to Transak, not to Studio Kaze or Tegata." Then **Card charged**, **Sending as USDC on
+NEAR** and **Checked on NEAR**, and your seal stamps PAID.
+
+| | Sandbox | Live |
+| --- | --- | --- |
+| The card | Transak's test card, 4242 4242 4242 4242 · 10/33 · CVV 100 | A real card |
+| Who delivers the USDC | Transak's staging checkout delivers nothing, so when the order completes, Tegata's operator sends the test USDC | Transak, on NEAR |
+| Paid when | Tegata's own transfer lands, with the payment's memo | Tegata reads Transak's delivery transaction and finds a USDC transfer to you for at least the amount |
+| The receipt says | **Card through:** Transak test checkout · test USDC sent by Tegata | **Card through:** Transak |
+
+The same checkout adds money to your own balance: **Balance → Add money → With a card**, $100, $250 or $500, then
+**Continue to Transak**.
+
+<Callout title="Hidden until Transak's keys are set" type="info">
+Customers never see the Card row until the server has Transak's keys. Your own **Add money → With a card** stays in
+the list, greyed, with "Opening soon" (or, in Live, "Opens after Transak's business review").
+</Callout>

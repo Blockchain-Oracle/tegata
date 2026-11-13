@@ -1,7 +1,7 @@
 ---
 title: Developers
 description: An API key, one curl and a signed webhook. Take payments on your own site and hear the moment NEAR settles them.
-icon: Code2
+icon: CodeXml
 ---
 
 <Phones>
@@ -16,7 +16,8 @@ A shop's server asks Tegata for a **checkout session**, sends the customer to it
 <Step>
 
 **Make a key.** In the app, open **Developers** and press **New key**. The key is shown once; Tegata keeps only its
-SHA-256 hash and shows its first characters after that. Sandbox keys start `tk_test_` and work on NEAR testnet.
+SHA-256 hash and shows its first characters after that. A key belongs to the mode you made it in: Sandbox keys
+start `tk_test_` and work on NEAR testnet; Live keys start `tk_live_` and work on NEAR mainnet.
 
 </Step>
 <Step>
@@ -206,8 +207,8 @@ running:
 
 The session was created at 07:23:30 and paid at 07:23:50.
 
-<Callout title="Sandbox only, for now">
-  API keys are made on the network you're on, and Live is not open yet, so every key today is a `tk_test_` key on
-  NEAR testnet. Payers pay with a Tegata balance or a NEAR wallet; paying a session from another chain arrives with
-  Live.
+<Callout title="Sandbox and Live">
+  API keys are made on the network you're on. A `tk_test_` key makes sessions on NEAR testnet; switch to Live and a
+  `tk_live_` key makes them on NEAR mainnet, where a customer can also pay a session from another chain through NEAR
+  Intents (or by card, once Transak's keys are set). The proof above is on testnet; Live has no recorded payment yet.
 </Callout>

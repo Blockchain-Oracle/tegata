@@ -23,6 +23,7 @@ export const GET = route(async (_request, context: { params: Promise<{ id: strin
       chain: found?.route.chain ?? null,
       coin: found?.route.coin ?? null,
       chainMark: found?.route.chainMark ?? null,
+      tokenContract: found?.token.contractAddress ?? null,
       payUri:
         found && view.depositAddress && view.amountIn && view.amountInFormatted
           ? payUri(found.token, view.depositAddress, view.amountIn, view.amountInFormatted)

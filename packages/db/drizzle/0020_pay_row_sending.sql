@@ -1,0 +1,1 @@
+ALTER TYPE "public"."pay_row_status" ADD VALUE 'sending';

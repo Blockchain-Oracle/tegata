@@ -34,6 +34,7 @@ import { TaskSteps } from "@/components/kit/task-steps"
 import { Mark, MarkStack } from "@/components/marks/mark"
 import { CardNetworksMark, PaidWithMark, paidVia } from "@/components/marks/paid-with"
 import { DepositPanel } from "@/components/pay/deposit-panel"
+import { WalletRows } from "@/components/pay/wallet-rows"
 import { ReceiptSlip, SlipRow } from "@/components/receipt/receipt-slip"
 import type { TestDollars } from "@/hooks/use-test-dollars"
 import type { AttemptView, PaymentRail, PublicRequest } from "@/lib/client/types"
@@ -93,7 +94,8 @@ export interface PayViewProps {
   /** Optional: where a wallet or other-chain payer wants their receipt (a Tegata payer gets it at their sign-in). */
   receiptEmail?: string
   onReceiptEmail?: (value: string) => void
-  onPayChain: () => void
+  /** Start the deposit; from a connected wallet, its address is the refund address. */
+  onPayChain: (walletAddress?: string) => void
   /** Which rail the payment in flight uses. */
   usedRail: PaymentRail | null
   /** Index of the active step (TaskSteps). */
@@ -424,7 +426,11 @@ export function PayView(p: PayViewProps) {
             </motion.div>
           ) : p.step === "paying" && p.usedRail === "oneclick" && p.attempt?.oneclick ? (
             <motion.div key="deposit" className="flex flex-col gap-4" {...slide}>
-              <DepositPanel oneclick={p.attempt.oneclick} business={p.request.business} />
+              <DepositPanel
+                oneclick={p.attempt.oneclick}
+                business={p.request.business}
+                attemptId={p.attempt.id}
+              />
             </motion.div>
           ) : p.step === "paying" ? (
             <motion.div key="paying" className="flex flex-col gap-4" {...slide}>
@@ -835,6 +841,11 @@ function ChainPanel(p: PanelProps) {
             p.onPayChain()
           }}
         >
+          <WalletRows
+            chainMark={route.chainMark}
+            disabled={p.busy || p.dollars <= 0 || !p.quote.data}
+            onConnected={(address) => p.onPayChain(address)}
+          />
           <Field
             id="refund-to"
             label={`Refund address on ${route.chain}`}
@@ -912,7 +923,9 @@ function PaidSlip(p: PanelProps) {
         ? (paidVia(assetIn) ?? "Another chain")
         : rail === "manual"
           ? "By hand"
-          : "Tegata balance"
+          : rail === "card"
+            ? "Card · through Transak"
+            : "Tegata balance"
   return (
     <Stage className="p-3 sm:p-4" grid={false}>
       <ReceiptSlip

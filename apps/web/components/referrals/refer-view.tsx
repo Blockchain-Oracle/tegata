@@ -135,7 +135,7 @@ export function ReferView(p: ReferViewProps) {
       <h1 className="display text-page-title">Refer</h1>
 
       <Stage className="p-5 sm:p-8">
-        <div className="grid items-center gap-8 md:grid-cols-[1fr_auto]">
+        <div className="grid grid-cols-[minmax(0,1fr)] items-center gap-8 md:grid-cols-[minmax(0,1fr)_auto]">
           <div className="flex flex-col gap-5">
             <div className="flex flex-col gap-1">
               <span className="text-[15px] font-medium text-white/85">

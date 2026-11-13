@@ -117,6 +117,8 @@ export interface InvoiceData {
 }
 
 export interface PayslipData extends Settled {
+  /** The paid row, so the worker can attach its payslip PDF. */
+  rowId?: string
   person: string
   amount: Units
   period: string
