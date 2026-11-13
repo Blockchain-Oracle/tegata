@@ -14,6 +14,7 @@ import {
 } from "lucide-react"
 import Link from "next/link"
 
+import { AccountLink } from "@/components/kit/account-link"
 import { Button } from "@/components/kit/button"
 import { Figure, viewDollars } from "@/components/kit/figure"
 import { Stage, StageAction } from "@/components/kit/stage"
@@ -62,7 +63,10 @@ export function BalanceView({
               {balance === null ? "Reading NEAR…" : `${money(balance)} in your balance`}
               {BigInt(setAside) > 0n ? ` · ${money(setAside)} set aside in autopilot` : ""}
             </span>
-            <span className="font-mono text-[13px] text-white/75">{accountId}</span>
+            <AccountLink
+              accountId={accountId}
+              className="text-[13px] text-white/80 hover:text-white"
+            />
           </div>
           <div className="flex gap-6">
             <StageAction label="Add" icon={<ArrowDownLeft />} onClick={onReceive} />
@@ -100,8 +104,10 @@ export function BalanceView({
           <LoadingShape shape="list" />
         ) : reconciliation.outside.length === 0 ? (
           <p className="inline-flex items-center gap-2 rounded-[14px] bg-up-surface px-4 py-3 text-[15px] font-semibold text-up">
-            <CheckCircle2 className="size-5" /> Books match NEAR: {reconciliation.checked} transfers
-            checked, every one recorded by Tegata.
+            <CheckCircle2 className="size-5" />
+            {reconciliation.checked === 0
+              ? "No USDC transfers on this account yet."
+              : `Books match NEAR: ${reconciliation.checked} transfers checked, every one recorded by Tegata.`}
           </p>
         ) : (
           <div className="flex flex-col gap-2">

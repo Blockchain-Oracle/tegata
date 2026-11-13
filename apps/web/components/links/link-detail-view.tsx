@@ -185,11 +185,17 @@ export function LinkDetailView(p: LinkDetailViewProps) {
 
           <section className="flex flex-col gap-3">
             <h2 className="text-section-title font-semibold">Payments</h2>
-            {p.detail && p.detail.payments.length > 0 ? (
+            {/* What reached NEAR, plus anything on its way; tries a payer abandoned are counted, not listed. */}
+            {p.detail?.payments.some(
+              (pay) => pay.status !== "expired" && pay.status !== "failed",
+            ) ? (
               <div className="flex flex-col rounded-[20px] bg-card p-2">
-                {p.detail.payments.map((payment, i) => (
-                  <PaymentRow key={payment.id} payment={payment} index={i} />
-                ))}
+                {p.detail.payments
+                  .filter((pay) => pay.status !== "expired" && pay.status !== "failed")
+                  .map((payment, i) => (
+                    <PaymentRow key={payment.id} payment={payment} index={i} />
+                  ))}
+                {unfinished(p.detail.payments)}
               </div>
             ) : (
               <EmptyState
@@ -314,4 +320,14 @@ function PaymentRow({ payment, index }: { payment: LinkPayment; index: number })
       )}
     </motion.div>
   )
+}
+
+/** "2 tries didn't finish": counted so the list stays honest, without a row each. */
+function unfinished(payments: { status: string }[]) {
+  const count = payments.filter((pay) => pay.status === "expired" || pay.status === "failed").length
+  return count > 0 ? (
+    <p className="px-3 py-2 text-detail text-muted-foreground">
+      {count === 1 ? "1 try didn't finish" : `${count} tries didn't finish`} (nothing moved)
+    </p>
+  ) : null
 }

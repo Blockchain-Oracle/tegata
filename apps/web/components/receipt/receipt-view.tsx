@@ -6,8 +6,8 @@
 import { Check, ExternalLink, Printer, Share2 } from "lucide-react"
 import Link from "next/link"
 import { useState } from "react"
-
 import { BusinessSeal, SealPress, TegataSeal } from "@/components/brand/seal"
+import { AccountLink, TxLink } from "@/components/kit/account-link"
 import { Figure, viewDollars } from "@/components/kit/figure"
 import { Stage, StageObject } from "@/components/kit/stage"
 import { RailMark } from "@/components/links/link-detail-view"
@@ -117,7 +117,23 @@ export function ReceiptView({ receipt, token }: { receipt: Receipt; token: strin
               <Row label="Paid to">
                 <Party name={receipt.receiverName} account={receipt.receiverId} />
               </Row>
-              <Row label="For">{receipt.title}</Row>
+              <Row label="For">
+                {receipt.forUrl ? (
+                  <Link
+                    href={receipt.forUrl}
+                    className="underline decoration-current/30 decoration-dotted underline-offset-[3px] hover:decoration-solid"
+                  >
+                    {receipt.title}
+                  </Link>
+                ) : (
+                  receipt.title
+                )}
+              </Row>
+              {receipt.refunded ? (
+                <Row label="Refunded">
+                  <span className="text-down">−${viewDollars(receipt.refunded).toFixed(2)}</span>
+                </Row>
+              ) : null}
               <Row label="From">
                 <Party name={receipt.payerName} account={receipt.payer ?? "A payer"} />
               </Row>
@@ -140,9 +156,7 @@ export function ReceiptView({ receipt, token }: { receipt: Receipt; token: strin
               {receipt.feeBy ? <Row label="Network fee">{FEE_WORD[receipt.feeBy]}</Row> : null}
               {receipt.txHash ? (
                 <Row label="Transaction">
-                  <span className="font-mono text-[13px]">
-                    {receipt.txHash.slice(0, 6)}…{receipt.txHash.slice(-6)}
-                  </span>
+                  <TxLink hash={receipt.txHash} network={receipt.network} className="text-[13px]" />
                 </Row>
               ) : null}
             </dl>
@@ -165,7 +179,13 @@ export function ReceiptView({ receipt, token }: { receipt: Receipt; token: strin
                   ) : (
                     <BusinessSeal
                       name={receipt.business}
-                      band={receipt.kind === "send" ? "Sent" : "Paid"}
+                      band={
+                        receipt.kind === "send"
+                          ? "Sent"
+                          : receipt.refunded && receipt.refunded === receipt.amount
+                            ? "Refunded"
+                            : "Paid"
+                      }
                       size={100}
                     />
                   )}
@@ -210,11 +230,18 @@ export function ReceiptView({ receipt, token }: { receipt: Receipt; token: strin
 
 /** A name over its NEAR account, or the account alone when that is all there is. */
 function Party({ name, account }: { name: string | null; account: string }) {
-  if (!name || name === account) return <span className="font-mono text-[13px]">{account}</span>
+  // "A payer" (no account recorded) stays plain; a real NEAR account opens on the explorer.
+  const isAccount = account.includes(".") || /^[0-9a-f]{64}$/.test(account)
+  const shown = isAccount ? (
+    <AccountLink accountId={account} className="justify-end text-[13px]" />
+  ) : (
+    <span className="font-mono text-[13px]">{account}</span>
+  )
+  if (!name || name === account) return shown
   return (
     <span className="flex flex-col items-end">
       <span>{name}</span>
-      <span className="font-mono text-[12px] font-medium text-[#666]">{account}</span>
+      <span className="text-[12px] font-medium text-[#666]">{shown}</span>
     </span>
   )
 }

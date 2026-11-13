@@ -1,0 +1,171 @@
+{
+  "schema_version": 1,
+  "campaign_id": "tegata-near-launch",
+  "project": "Tegata",
+  "account": "",
+  "status": "draft",
+  "timezone": "Africa/Lagos",
+  "max_late_minutes": 180,
+  "entries": [
+    {
+      "id": "day-01",
+      "publish_at": "2026-11-15T10:00:00+01:00",
+      "source": "README.md; DESIGN.md",
+      "parts": [
+        {
+          "text": "Tegata is a testnet Sandbox for the everyday money work of a small business: send an invoice, take USDC on NEAR, pay your team, and keep a receipt you can check on-chain. We built it for NEAR HACKATHON. What part should we walk through first?",
+          "media": [
+            {
+              "path": "assets/posts/day-01-intro.png",
+              "alt": "Tegata banner: the orange 手形 seal, the promise Get paid. Pay your team. In exact dollars, and an illustrated invoice stamped PAID."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "day-02",
+      "publish_at": "2026-11-16T10:00:00+01:00",
+      "source": "README.md, Try it on the live Sandbox; apps/docs/content/docs/guide/invoices.mdx",
+      "parts": [
+        {
+          "text": "You can try making a Tegata invoice before opening an account. Add your business, customer and items, then preview it. Sign in when you are ready to send the link. The Sandbox uses test USDC on NEAR testnet.",
+          "media": [
+            {
+              "path": "assets/posts/day-02-invoice.png",
+              "alt": "Tegata invoice preview showing a sample customer, item lines and a Review and send action."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "day-03",
+      "publish_at": "2026-11-17T10:00:00+01:00",
+      "source": "README.md, Honest limits; apps/docs/content/docs/guide/pay-page.mdx",
+      "parts": [
+        {
+          "text": "The customer opens a pay page that shows the exact USDC amount the business should receive. In today's testnet Sandbox, they can pay from a Tegata balance or a NEAR wallet. Other-chain payment is still a live-price quote, not a completed cross-chain payment.",
+          "media": [
+            {
+              "path": "assets/posts/day-03-pay-page.png",
+              "alt": "Tegata Sandbox pay page for a sample $0.25 payment, showing Tegata balance and NEAR wallet choices."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "day-04",
+      "publish_at": "2026-11-18T10:00:00+01:00",
+      "source": "README.md, How it works and Proof on NEAR",
+      "parts": [
+        {
+          "text": "The browser cannot mark its own payment Paid. Tegata waits for a final NEAR transaction, then checks the USDC transfer event, the recipient, the amount and the payment memo. Only then does the invoice get its seal and numbered receipt. Testnet, test USDC.",
+          "media": [
+            {
+              "path": "assets/posts/day-04-paid-receipt.png",
+              "alt": "Tegata sample receipt showing the paid seal, USDC amount, transaction reference and a link to inspect it on NEAR."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "day-05",
+      "publish_at": "2026-11-19T10:00:00+01:00",
+      "source": "README.md, A real one; NEAR testnet transaction links",
+      "parts": [
+        {
+          "text": "A $0.50 test invoice was paid in two parts: $0.20, then $0.30. Tegata refused an intervening $0.40 attempt because only $0.30 remained. The final testnet USDC transfer turned the invoice Paid and issued receipt No. 0003.",
+          "media": [
+            {
+              "path": "assets/posts/day-05-part-payments.png",
+              "alt": "Tegata receipt No. 0003 for the final $0.30 of a $0.50 test invoice, stamped PAID."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "day-06",
+      "publish_at": "2026-11-20T10:00:00+01:00",
+      "source": "README.md, How Tegata meets the hackathon; apps/docs/content/docs/guide/pay-links.mdx",
+      "parts": [
+        {
+          "text": "Some payments do not start with an invoice. Tegata also has pay links: a business can share a link or QR for a fixed or open amount, then see the payment and receipt in one place. The current Sandbox settles test USDC on NEAR testnet.",
+          "media": [
+            {
+              "path": "assets/posts/day-06-pay-links.png",
+              "alt": "Tegata pay-link detail screen with a shareable link, QR and payment history."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "day-07",
+      "publish_at": "2026-11-21T10:00:00+01:00",
+      "source": "README.md, Honest limits and payroll flow",
+      "parts": [
+        {
+          "text": "Payroll starts with an invitation, not a wallet address copied into a spreadsheet. Each person opens their own page and chooses a Tegata account or an existing NEAR account. Other chains and bank accounts are not live in this testnet Sandbox.",
+          "media": [
+            {
+              "path": "assets/posts/day-07-payroll-choice.png",
+              "alt": "Tegata payroll choice screen showing Tegata and NEAR account options, with other-chain and bank options marked unavailable."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "day-08",
+      "publish_at": "2026-11-22T10:00:00+01:00",
+      "source": "README.md, Proof on NEAR: payroll transaction",
+      "parts": [
+        {
+          "text": "One approval pays the team members who are ready in a single all-or-nothing NEAR testnet transaction. A person who has not chosen a destination is skipped, and each paid person gets a payslip with a transaction link. This is test USDC.",
+          "media": [
+            {
+              "path": "assets/posts/day-08-payslip.png",
+              "alt": "Tegata Sandbox payslip for a test USDC payment, with PAID seal, recipient and NEAR transaction reference."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "day-09",
+      "publish_at": "2026-11-23T10:00:00+01:00",
+      "source": "README.md, Built on NEAR and Proof on NEAR",
+      "parts": [
+        {
+          "text": "A business should not have to buy NEAR just to move its test USDC. Tegata relays signed actions and pays the network fee. We proved a transfer from a testnet account holding 0 NEAR; the transaction is linked in the README.",
+          "media": [
+            {
+              "path": "assets/posts/day-09-send.png",
+              "alt": "Tegata Sandbox send screen for a USDC transfer from a named NEAR account."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "day-10",
+      "publish_at": "2026-11-24T10:00:00+01:00",
+      "source": "README.md, Honest limits and Try it on the live Sandbox",
+      "parts": [
+        {
+          "text": "Tegata is still a Sandbox. It runs on NEAR testnet with test USDC; mainnet and bank cash-out are not built. No outside business has used it yet. If you try the invoice-to-receipt flow, tell us where you hesitate or get stuck. Specific feedback will shape what we build next.",
+          "media": [
+            {
+              "path": "assets/posts/day-10-feedback.png",
+              "alt": "Tegata Sandbox home screen with balance, payment activity and next actions."
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -6,9 +6,9 @@
 import { ArrowLeft, ArrowRight, ExternalLink, KeyRound, Radio, ReceiptText } from "lucide-react"
 import { AnimatePresence, motion, useReducedMotion } from "motion/react"
 import Link from "next/link"
-
 import { BusinessSeal, SealPress, TegataSeal } from "@/components/brand/seal"
 import { CustomerDisc } from "@/components/invoices/customer-picker"
+import { AccountLink } from "@/components/kit/account-link"
 import { Button } from "@/components/kit/button"
 import { Field } from "@/components/kit/field"
 import { Figure } from "@/components/kit/figure"
@@ -202,7 +202,7 @@ export function SendView(p: SendViewProps) {
                 <div className="mt-4 flex flex-col divide-y divide-[#ECECEC] text-[15px]">
                   <Row label="To">
                     <span className="inline-flex items-center gap-2 font-mono font-medium">
-                      <Mark id="near" size={18} /> {p.to}
+                      <Mark id="near" size={18} /> <AccountLink accountId={p.to} />
                     </span>
                   </Row>
                   <Row label="They receive">

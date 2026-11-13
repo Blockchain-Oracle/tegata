@@ -2,17 +2,21 @@
 
 // The app shell (plan 6.7; Senryo's floating rail and Kawase's dock, 21st unlumen/sidebar-001 21517 and soralabs/
 // dock-nav 19177): a floating rail on desktop with a springing active pill, a bottom dock on a phone, the mode
-// capsule, ⌘K and the account. Places appear here as their stages land, so nothing in the rail is a dead end.
+// capsule, ⌘K and the account. Places sit in groups by job with the rarely used ones at the foot (plan 6.7, re-spec
+// 2026-11-13); on a phone the dock's Menu opens every place, so each has a visible way in.
 import {
   ArrowDownLeft,
   ArrowUpRight,
   Banknote,
   BookOpen,
+  ChevronDown,
+  ChevronRight,
   Code2,
   Command as CommandIcon,
   FileText,
   Gift,
   Home,
+  LayoutGrid,
   Link2,
   ListOrdered,
   LogOut,
@@ -30,7 +34,7 @@ import { motion } from "motion/react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { DropdownMenu } from "radix-ui"
-import { useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import { BusinessSeal, Lockup, TegataSeal } from "@/components/brand/seal"
 import { fire } from "@/lib/feedback"
 import { LINKS } from "@/lib/links"
@@ -40,27 +44,77 @@ import { cn } from "@/lib/utils"
 import { CommandMenu } from "./command-menu"
 import { ModeCapsule } from "./mode-capsule"
 import { ReceiveSheet } from "./receive-sheet"
+import { Sheet } from "./sheet"
 import { ShellContext } from "./shell-context"
 
-type Place =
-  | { kind: "link"; href: string; label: string; icon: React.ReactNode }
-  | { kind: "action"; id: "receive"; label: string; icon: React.ReactNode }
+interface Place {
+  href: string
+  label: string
+  icon: React.ReactNode
+}
 
-const PLACES: Place[] = [
-  { kind: "link", href: "/app", label: "Home", icon: <Home /> },
-  { kind: "action", id: "receive", label: "Get paid", icon: <ArrowDownLeft /> },
-  { kind: "link", href: "/app/invoices", label: "Invoices", icon: <FileText /> },
-  { kind: "link", href: "/app/links", label: "Pay links", icon: <Link2 /> },
-  { kind: "link", href: "/app/customers", label: "Customers", icon: <Users /> },
-  { kind: "link", href: "/app/people", label: "People", icon: <UsersRound /> },
-  { kind: "link", href: "/app/payroll", label: "Payroll", icon: <Banknote /> },
-  { kind: "link", href: "/app/send", label: "Send", icon: <ArrowUpRight /> },
-  { kind: "link", href: "/app/activity", label: "Activity", icon: <ListOrdered /> },
-  { kind: "link", href: "/app/balance", label: "Balance", icon: <Wallet /> },
-  { kind: "link", href: "/app/counter", label: "Counter", icon: <Store /> },
-  { kind: "link", href: "/app/refer", label: "Refer", icon: <Gift /> },
-  { kind: "link", href: "/app/developers", label: "Developers", icon: <Code2 /> },
+const HOME: Place = { href: "/app", label: "Home", icon: <Home /> }
+/** The rail's groups by job (plan 6.7, re-spec 2026-11-13). */
+const GROUPS: { id: string; label: string; places: Place[] }[] = [
+  {
+    id: "get-paid",
+    label: "Get paid",
+    places: [
+      { href: "/app/invoices", label: "Invoices", icon: <FileText /> },
+      { href: "/app/links", label: "Pay links", icon: <Link2 /> },
+      { href: "/app/counter", label: "Counter", icon: <Store /> },
+      { href: "/app/customers", label: "Customers", icon: <Users /> },
+    ],
+  },
+  {
+    id: "pay",
+    label: "Pay people",
+    places: [
+      { href: "/app/send", label: "Send", icon: <ArrowUpRight /> },
+      { href: "/app/people", label: "People", icon: <UsersRound /> },
+      { href: "/app/payroll", label: "Payroll", icon: <Banknote /> },
+    ],
+  },
+  {
+    id: "money",
+    label: "Money",
+    places: [
+      { href: "/app/activity", label: "Activity", icon: <ListOrdered /> },
+      { href: "/app/balance", label: "Balance", icon: <Wallet /> },
+    ],
+  },
 ]
+/** At the foot: used now and then. */
+const FOOT: Place[] = [
+  { href: "/app/refer", label: "Refer", icon: <Gift /> },
+  { href: "/app/developers", label: "Developers", icon: <Code2 /> },
+  { href: "/app/settings", label: "Business", icon: <Settings /> },
+]
+const ALL = [HOME, ...GROUPS.flatMap((g) => g.places), ...FOOT]
+const FOLDED_KEY = "tegata.rail.folded"
+
+/** Folded groups, remembered on this device. */
+function useFolded() {
+  const [folded, setFolded] = useState<string[]>([])
+  useEffect(() => {
+    try {
+      setFolded(JSON.parse(localStorage.getItem(FOLDED_KEY) ?? "[]") as string[])
+    } catch {
+      // Storage blocked or bad: everything open.
+    }
+  }, [])
+  const toggle = (id: string) =>
+    setFolded((now) => {
+      const next = now.includes(id) ? now.filter((x) => x !== id) : [...now, id]
+      try {
+        localStorage.setItem(FOLDED_KEY, JSON.stringify(next))
+      } catch {
+        // Not remembered this time.
+      }
+      return next
+    })
+  return { folded, toggle }
+}
 
 const PILL = { type: "spring", stiffness: 500, damping: 36 } as const
 
@@ -90,9 +144,55 @@ export function AppShell({
     await navigator.clipboard.writeText(accountId)
     fire("tick", { cue: "confirmed" })
   }
-  const activeHref = PLACES.filter((p): p is Extract<Place, { kind: "link" }> => p.kind === "link")
-    .filter((p) => pathname === p.href || (p.href !== "/app" && pathname.startsWith(p.href)))
-    .map((p) => p.href)[0]
+  const activeHref = ALL.filter(
+    (p) => pathname === p.href || (p.href !== "/app" && pathname.startsWith(p.href)),
+  ).map((p) => p.href)[0]
+  const { folded, toggle } = useFolded()
+  const [menu, setMenu] = useState(false)
+  const navRef = useRef<HTMLElement>(null)
+  const [moreBelow, setMoreBelow] = useState(false)
+  const measureNav = useCallback(() => {
+    const nav = navRef.current
+    if (nav) setMoreBelow(nav.scrollTop + nav.clientHeight < nav.scrollHeight - 4)
+  }, [])
+  // biome-ignore lint/correctness/useExhaustiveDependencies: folding a group changes the list's height without resizing the box the observer watches, so measure again then.
+  useEffect(() => {
+    const nav = navRef.current
+    if (!nav) return
+    measureNav()
+    const observer = new ResizeObserver(measureNav)
+    observer.observe(nav)
+    return () => observer.disconnect()
+  }, [measureNav, folded])
+
+  const railLink = (place: Place) => {
+    const active = place.href === activeHref
+    return (
+      <Link
+        key={place.href}
+        href={place.href}
+        aria-current={active ? "page" : undefined}
+        title={place.label}
+        className={cn(
+          "press relative flex shrink-0 items-center gap-3 rounded-[14px] px-3 font-medium transition-colors max-xl:justify-center",
+          "h-10 text-[15px]",
+          active
+            ? "font-semibold text-foreground"
+            : "text-muted-foreground hover:bg-secondary/60 hover:text-foreground",
+        )}
+      >
+        {active ? (
+          <motion.span
+            layoutId="rail-pill"
+            transition={PILL}
+            className="absolute inset-0 rounded-[14px] bg-secondary"
+          />
+        ) : null}
+        <span className="relative grid size-6 place-items-center [&_svg]:size-5">{place.icon}</span>
+        <span className="relative max-xl:hidden">{place.label}</span>
+      </Link>
+    )
+  }
 
   const account = (
     <DropdownMenu.Root>
@@ -158,21 +258,17 @@ export function AppShell({
     >
       <div className="min-h-dvh bg-background lg:flex lg:gap-4 lg:p-4">
         {/* Desktop rail */}
-        <aside className="sticky top-4 hidden h-[calc(100dvh-32px)] w-[88px] shrink-0 flex-col gap-4 rounded-[24px] bg-card p-3 shadow-float lg:flex xl:w-[248px] xl:p-4">
-          <div className="flex flex-col gap-3 px-1 pt-1">
-            <Link href="/app" aria-label="Tegata home" className="max-xl:mx-auto">
-              <span className="max-xl:hidden">
-                <Lockup size={34} />
-              </span>
-              <span className="xl:hidden">
-                <TegataSeal size={40} />
-              </span>
+        <aside className="sticky top-4 hidden h-[calc(100dvh-32px)] w-[88px] shrink-0 flex-col gap-3 rounded-[24px] bg-card p-3 shadow-float lg:flex xl:w-[248px] xl:p-4">
+          {/* The seal and the Sandbox/Live switch share a row on a wide rail, stack on the icon rail. */}
+          <div className="flex flex-col gap-3 px-1 pt-1 xl:flex-row xl:items-center xl:gap-2.5">
+            <Link href="/app" aria-label="Tegata home" className="shrink-0 max-xl:mx-auto">
+              <TegataSeal size={38} />
             </Link>
             <ModeCapsule
               live={live}
               liveAvailable={liveAvailable}
               rail
-              className="max-xl:mx-auto"
+              className="max-xl:mx-auto xl:flex-1"
             />
           </div>
           <button
@@ -186,68 +282,67 @@ export function AppShell({
               <CommandIcon className="size-3" />K
             </kbd>
           </button>
-          <nav className="flex flex-col gap-1" aria-label="Places">
-            {PLACES.map((place) => {
-              const active = place.kind === "link" && place.href === activeHref
-              const inner = (
-                <>
-                  {active ? (
-                    <motion.span
-                      layoutId="rail-pill"
-                      transition={PILL}
-                      className="absolute inset-0 rounded-[14px] bg-secondary"
-                    />
-                  ) : null}
-                  <span className="relative grid size-6 place-items-center [&_svg]:size-5">
-                    {place.icon}
-                  </span>
-                  <span className="relative max-xl:hidden">{place.label}</span>
-                </>
-              )
-              const cls = cn(
-                "press relative flex h-12 items-center gap-3 rounded-[14px] px-3 text-[16px] font-medium transition-colors max-xl:justify-center",
-                active
-                  ? "font-semibold text-foreground"
-                  : "text-muted-foreground hover:bg-secondary/60 hover:text-foreground",
-              )
-              return place.kind === "link" ? (
-                <Link
-                  key={place.href}
-                  href={place.href}
-                  className={cls}
-                  aria-current={active ? "page" : undefined}
-                  title={place.label}
-                >
-                  {inner}
-                </Link>
-              ) : (
-                <button
-                  key={place.id}
-                  type="button"
-                  className={cls}
-                  onClick={() => setReceive(true)}
-                  title={place.label}
-                >
-                  {inner}
-                </button>
+          <nav
+            ref={navRef}
+            onScroll={measureNav}
+            className={cn(
+              "-mx-1 flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto px-1 [scrollbar-width:none]",
+              // More below on a short window: fade the last rows out so the list reads as one that scrolls.
+              moreBelow &&
+                "[mask-image:linear-gradient(to_bottom,black_calc(100%-40px),transparent)]",
+            )}
+            aria-label="Places"
+          >
+            {railLink(HOME)}
+            {GROUPS.map((group) => {
+              const holdsActive = group.places.some((p) => p.href === activeHref)
+              const open = holdsActive || !folded.includes(group.id)
+              return (
+                <div key={group.id} className="flex flex-col gap-0.5 pt-1.5">
+                  <button
+                    type="button"
+                    onClick={() => (holdsActive ? undefined : toggle(group.id))}
+                    aria-expanded={open}
+                    className="group flex h-6 shrink-0 items-center gap-1 px-3 text-[13px] font-semibold text-text-3 hover:text-foreground max-xl:hidden"
+                  >
+                    {group.label}
+                    {open ? (
+                      <ChevronDown className="size-3.5 opacity-0 transition-opacity group-hover:opacity-100" />
+                    ) : (
+                      <ChevronRight className="size-3.5" />
+                    )}
+                  </button>
+                  <span className="mx-auto my-1 h-px w-8 bg-border xl:hidden" aria-hidden />
+                  {open ? group.places.map((place) => railLink(place)) : null}
+                </div>
               )
             })}
           </nav>
-          <div className="flex-1" />
-          <Link
-            href="/app/settings"
-            title="Business"
-            aria-current={pathname.startsWith("/app/settings") ? "page" : undefined}
-            className={cn(
-              "press flex h-12 items-center gap-3 rounded-[14px] px-3 text-[16px] font-medium transition-colors max-xl:justify-center",
-              pathname.startsWith("/app/settings")
-                ? "bg-secondary font-semibold text-foreground"
-                : "text-muted-foreground hover:bg-secondary/60 hover:text-foreground",
-            )}
-          >
-            <Settings className="size-5" />
-            <span className="max-xl:hidden">Business</span>
-          </Link>
+          {/* Used now and then: one row of three labelled tiles on a wide rail, a short column on the icon rail. */}
+          <div className="flex shrink-0 flex-col gap-0.5 border-t border-border pt-2 xl:flex-row xl:gap-1">
+            {FOOT.map((place) => {
+              const active = place.href === activeHref
+              return (
+                <Link
+                  key={place.href}
+                  href={place.href}
+                  title={place.label}
+                  aria-current={active ? "page" : undefined}
+                  className={cn(
+                    "press flex h-10 items-center justify-center rounded-[12px] transition-colors xl:h-14 xl:flex-1 xl:flex-col xl:gap-1",
+                    active
+                      ? "bg-secondary font-semibold text-foreground"
+                      : "text-muted-foreground hover:bg-secondary/60 hover:text-foreground",
+                  )}
+                >
+                  <span className="grid place-items-center [&_svg]:size-5 xl:[&_svg]:size-[18px]">
+                    {place.icon}
+                  </span>
+                  <span className="text-[12px] font-medium max-xl:hidden">{place.label}</span>
+                </Link>
+              )
+            })}
+          </div>
           {account}
         </aside>
 
@@ -362,16 +457,60 @@ export function AppShell({
             />
             <button
               type="button"
-              aria-label="Search"
-              onClick={() => setCommand(true)}
+              aria-label="Menu: every place"
+              onClick={() => setMenu(true)}
               className="press relative grid h-11 w-[52px] place-items-center text-text-3 [&_svg]:size-6"
             >
-              <Search />
+              <LayoutGrid />
             </button>
           </div>
         </nav>
       </div>
 
+      <Sheet open={menu} onOpenChange={setMenu} title="Everything">
+        <div className="flex flex-col gap-5 px-4 pb-6">
+          <button
+            type="button"
+            onClick={() => {
+              setMenu(false)
+              setCommand(true)
+            }}
+            className="press flex h-12 items-center gap-3 rounded-[14px] bg-secondary px-4 text-[16px] text-muted-foreground"
+          >
+            <Search className="size-5" /> Search
+          </button>
+          {[
+            { id: "home", label: null, places: [HOME] },
+            ...GROUPS,
+            { id: "foot", label: "More", places: FOOT },
+          ].map((group) => (
+            <section key={group.id} className="flex flex-col gap-1">
+              {group.label ? (
+                <h3 className="px-1 text-[13px] font-semibold text-text-3">{group.label}</h3>
+              ) : null}
+              {group.places.map((place) => (
+                <Link
+                  key={place.href}
+                  href={place.href}
+                  onClick={() => setMenu(false)}
+                  aria-current={place.href === activeHref ? "page" : undefined}
+                  className={cn(
+                    "press flex h-12 items-center gap-3 rounded-[14px] px-3 text-[16px] font-medium",
+                    place.href === activeHref
+                      ? "bg-secondary font-semibold"
+                      : "hover:bg-secondary/60",
+                  )}
+                >
+                  <span className="grid size-8 place-items-center rounded-full bg-card [&_svg]:size-[18px]">
+                    {place.icon}
+                  </span>
+                  {place.label}
+                </Link>
+              ))}
+            </section>
+          ))}
+        </div>
+      </Sheet>
       <ReceiveSheet
         open={receive}
         onOpenChange={setReceive}

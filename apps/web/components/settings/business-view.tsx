@@ -5,8 +5,8 @@
 // something changed. Separate from its logic so /dev/flows can show every state.
 import { Check, Copy, ImagePlus, Trash2 } from "lucide-react"
 import { useMemo, useRef, useState } from "react"
-
 import { BusinessSeal, SealPress } from "@/components/brand/seal"
+import { AccountLink } from "@/components/kit/account-link"
 import { Button } from "@/components/kit/button"
 import { Field, type FieldStatus } from "@/components/kit/field"
 import { Paper, Stage } from "@/components/kit/stage"
@@ -302,7 +302,7 @@ export function BusinessView(p: BusinessViewProps) {
             <div className="flex items-center justify-between gap-3 py-3">
               <span className="flex min-w-0 flex-col">
                 <span className="text-detail text-muted-foreground">Pay address</span>
-                <span className="truncate font-mono text-[15px] font-medium">{p.accountId}</span>
+                <AccountLink accountId={p.accountId} className="text-[15px] font-medium" />
               </span>
               <button
                 type="button"

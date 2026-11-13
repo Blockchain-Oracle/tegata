@@ -28,6 +28,8 @@ export async function paymentReceiptView(token: string): Promise<ReceiptView | n
     feeBy: payment.rail === "manual" ? null : payment.rail === "tegata" ? "tegata" : "payer",
     txHash: payment.txHash,
     explorerUrl: payment.txHash ? explorerTx(payment.network, payment.txHash) : null,
+    forUrl: request.kind === "invoice" ? `/i/${request.token}` : `/pay/${request.token}`,
+    refunded: payment.refunded > 0n ? payment.refunded.toString() : null,
   }
 }
 

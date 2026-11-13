@@ -1,7 +1,8 @@
 "use client"
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { useState } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
+import { Suspense, useState } from "react"
 
 import { ImportSheet } from "@/components/people/import-sheet"
 import { PeopleView } from "@/components/people/people-view"
@@ -13,11 +14,26 @@ import { fire } from "@/lib/feedback"
 const message = (error: unknown, fallback: string) =>
   error ? (error instanceof ApiError ? error.message : fallback) : null
 
+// `?id=<person>` opens their sheet (names elsewhere link here); `?new=1` opens Add person (the "+" fan, ⌘K).
 export default function PeoplePage() {
+  return (
+    <Suspense>
+      <People />
+    </Suspense>
+  )
+}
+
+function People() {
   const queryClient = useQueryClient()
-  const [adding, setAdding] = useState(false)
+  const params = useSearchParams()
+  const router = useRouter()
+  const [adding, setAdding] = useState(params.get("new") === "1")
   const [importing, setImporting] = useState(false)
-  const [openId, setOpenId] = useState<string | null>(null)
+  const [openId, setOpenIdState] = useState<string | null>(params.get("id"))
+  const setOpenId = (id: string | null) => {
+    setOpenIdState(id)
+    if (!id && params.get("id")) router.replace("/app/people")
+  }
 
   const team = useQuery({
     queryKey: ["people"],

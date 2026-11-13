@@ -2,9 +2,9 @@
 
 // Customers (plan 6.8 N): everyone the business bills, with what they were billed, paid and still owe. A row opens a
 // sheet to edit them or start an invoice for them. Empty: a sora tile.
-import { FileText, Plus, Search, Users } from "lucide-react"
+import { ChevronRight, FileText, Plus, Search, Users } from "lucide-react"
 import Link from "next/link"
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 
 import { CustomerDisc } from "@/components/invoices/customer-picker"
 import { Button } from "@/components/kit/button"
@@ -25,6 +25,7 @@ export interface CustomerForm {
 const blank: CustomerForm = { name: "", email: "", address: "", taxId: "" }
 
 export function CustomersView({
+  openId = null,
   customers,
   error,
   onRetry,
@@ -38,10 +39,22 @@ export function CustomersView({
   saving: boolean
   problem: string | null
   onSave: (id: string | null, form: CustomerForm, done: () => void) => void
+  /** Open this customer's sheet once the list has loaded (`/app/customers?id=`). */
+  openId?: string | null
 }) {
   const [query, setQuery] = useState("")
   const [editing, setEditing] = useState<Customer | "new" | null>(null)
   const [form, setForm] = useState<CustomerForm>(blank)
+
+  const opened = useRef<string | null>(null)
+  useEffect(() => {
+    if (!openId || opened.current === openId) return
+    const customer = customers?.find((c) => c.id === openId)
+    if (customer) {
+      opened.current = openId
+      open(customer)
+    }
+  })
 
   const shown = useMemo(() => {
     const q = query.trim().toLowerCase()
@@ -130,6 +143,7 @@ export function CustomersView({
                     </span>
                     <span className="text-[12px] text-muted-foreground">owed</span>
                   </span>
+                  <ChevronRight className="size-4 shrink-0 text-text-3" />
                 </button>
               )
             })}
@@ -155,11 +169,21 @@ export function CustomersView({
           }}
         >
           {current ? (
-            <div className="grid grid-cols-3 gap-2 rounded-[16px] bg-secondary p-3 text-center">
-              <Stat label="Billed" units={current.invoiced ?? "0"} />
-              <Stat label="Paid" units={current.paid ?? "0"} />
-              <Stat label="Owed" units={current.outstanding ?? "0"} />
-            </div>
+            <>
+              <div className="grid grid-cols-3 gap-2 rounded-[16px] bg-secondary p-3 text-center">
+                <Stat label="Billed" units={current.invoiced ?? "0"} />
+                <Stat label="Paid" units={current.paid ?? "0"} />
+                <Stat label="Owed" units={current.outstanding ?? "0"} />
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <Link
+                  href={`/app/invoices?q=${encodeURIComponent(current.name)}`}
+                  className="press inline-flex h-10 items-center gap-1.5 rounded-full bg-secondary px-4 text-[14px] font-semibold"
+                >
+                  <FileText className="size-4" /> Their invoices <ChevronRight className="size-4" />
+                </Link>
+              </div>
+            </>
           ) : null}
           <Field
             id="cust-name"

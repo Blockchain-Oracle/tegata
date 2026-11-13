@@ -1,10 +1,11 @@
 "use client"
 
+import { BusinessSeal, SealPress } from "@/components/brand/seal"
 // The invoice as a document (plan 6.8 J–N, after Acctual's and Mercury's previews): the business header (logo or
 // seal), number and dates, From / To, the items, the totals, notes, and where it is paid. One component for the
 // builder's live preview, the invoice page, and the public page, so all three always match. A paid invoice is
 // stamped with the business's PAID seal.
-import { BusinessSeal, SealPress } from "@/components/brand/seal"
+import { AccountLink } from "@/components/kit/account-link"
 import { Figure, viewDollars } from "@/components/kit/figure"
 import { Mark, MarkStack } from "@/components/marks/mark"
 import { fire } from "@/lib/feedback"
@@ -185,8 +186,8 @@ export function InvoicePaper(p: InvoicePaperProps) {
             {p.sandbox ? " · Sandbox" : ""}
           </span>
           {p.payAddress ? (
-            <span className="inline-flex items-center gap-1.5 font-mono">
-              <Mark id="near" size={12} /> {p.payAddress}
+            <span className="inline-flex items-center gap-1.5">
+              <Mark id="near" size={12} /> <AccountLink accountId={p.payAddress} />
             </span>
           ) : null}
         </footer>

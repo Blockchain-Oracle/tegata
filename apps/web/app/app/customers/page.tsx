@@ -1,14 +1,26 @@
 "use client"
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { useSearchParams } from "next/navigation"
+import { Suspense } from "react"
 
 import { type CustomerForm, CustomersView } from "@/components/customers/customers-view"
 import { ApiError, api } from "@/lib/client/api"
 import type { Customer } from "@/lib/client/types"
 import { fire } from "@/lib/feedback"
 
+// `?id=<customer>` opens their sheet: customer names on invoices link here.
 export default function CustomersPage() {
+  return (
+    <Suspense>
+      <Customers />
+    </Suspense>
+  )
+}
+
+function Customers() {
   const queryClient = useQueryClient()
+  const openId = useSearchParams().get("id")
   const customers = useQuery({
     queryKey: ["customers"],
     queryFn: () => api<{ customers: Customer[] }>("/api/customers"),
@@ -28,6 +40,7 @@ export default function CustomersPage() {
   })
   return (
     <CustomersView
+      openId={openId}
       customers={customers.data}
       error={customers.isError && !customers.data}
       onRetry={() => void customers.refetch()}

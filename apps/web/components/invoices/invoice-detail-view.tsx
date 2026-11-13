@@ -9,6 +9,7 @@ import {
   Ban,
   Bell,
   Check,
+  ChevronRight,
   Copy,
   CopyPlus,
   ExternalLink,
@@ -23,6 +24,7 @@ import {
 } from "lucide-react"
 import Link from "next/link"
 import { useState } from "react"
+import { CustomerDisc } from "@/components/invoices/customer-picker"
 
 import { Button } from "@/components/kit/button"
 import { Field } from "@/components/kit/field"
@@ -220,6 +222,19 @@ export function InvoiceDetailView(p: InvoiceDetailViewProps) {
             </span>
           </section>
 
+          {d.customer ? (
+            <Link
+              href={`/app/customers?id=${d.customer.id}`}
+              className="press flex items-center gap-3 rounded-[16px] bg-card px-4 py-3 hover:bg-secondary"
+            >
+              <CustomerDisc name={d.customer.name} size={36} />
+              <span className="flex min-w-0 flex-1 flex-col">
+                <span className="text-detail text-muted-foreground">Billed to</span>
+                <span className="truncate text-[15px] font-semibold">{d.customer.name}</span>
+              </span>
+              <ChevronRight className="size-4 shrink-0 text-text-3" />
+            </Link>
+          ) : null}
           <section className="grid grid-cols-2 gap-2">
             <Action
               icon={copied ? <Check /> : <Copy />}
@@ -252,7 +267,7 @@ export function InvoiceDetailView(p: InvoiceDetailViewProps) {
           </section>
           {p.problem ? <p className="text-[15px] font-medium text-down">{p.problem}</p> : null}
 
-          {d.payments.length > 0 ? (
+          {d.payments.some((pay) => pay.status === "succeeded") ? (
             <section className="flex flex-col gap-2">
               <h2 className="text-section-title font-semibold">Payments</h2>
               <div className="flex flex-col rounded-[20px] bg-card p-2">

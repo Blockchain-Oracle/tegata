@@ -50,6 +50,8 @@ export async function fundedUser(operator: Operator, token: string, amount: bigi
 
 /** A fresh ed25519 key for a proof account (its secret never leaves the proof run). */
 export const newProofKey = () => KeyPair.fromRandom("ed25519")
+/** A proof key saved earlier (the demo business's wallet). */
+export const proofKeyFrom = (secret: string) => KeyPair.fromString(secret as `ed25519:${string}`)
 
 // --- a NEAR wallet, simulated (the wallet proof) ---------------------------------------------------------------------
 

@@ -196,7 +196,11 @@ export function PayrollView({
             </div>
             <div className="flex flex-col rounded-[20px] bg-card p-2">
               {people.map((person) => (
-                <div key={person.id} className="flex items-center gap-3 rounded-[14px] px-3 py-2.5">
+                <Link
+                  key={person.id}
+                  href={`/app/people?id=${person.id}`}
+                  className="press flex items-center gap-3 rounded-[14px] px-3 py-2.5 hover:bg-secondary"
+                >
                   <CustomerDisc name={person.name} size={36} />
                   <span className="min-w-0 flex-1 truncate text-[15px] font-semibold">
                     {person.name}
@@ -209,7 +213,8 @@ export function PayrollView({
                   <span className="tnum w-24 text-right text-[15px] font-semibold">
                     {money(person.amount)}
                   </span>
-                </div>
+                  <ChevronRight className="size-4 shrink-0 text-text-3" />
+                </Link>
               ))}
             </div>
           </section>

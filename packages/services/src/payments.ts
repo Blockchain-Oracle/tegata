@@ -117,6 +117,18 @@ export async function setLinkOpen(db: Db, workspaceId: string, id: string, open:
   return row
 }
 
+/** Close a one-time request nobody paid (a cancelled counter sale). A paid one is never touched. */
+export async function closeUnpaidRequest(db: Db, workspaceId: string, id: string) {
+  const [row] = await db
+    .update(requests)
+    .set({ status: "closed" })
+    .where(
+      and(eq(requests.id, id), eq(requests.workspaceId, workspaceId), eq(requests.status, "open")),
+    )
+    .returning()
+  return row
+}
+
 // --- the public pay page ------------------------------------------------------------------------------------
 
 export async function publicRequest(db: Db, token: string) {

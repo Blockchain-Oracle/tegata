@@ -2,6 +2,11 @@
 
 // ⌘K (21st 27378 on cmdk): every action and every place, typed. Opens with ⌘K / Ctrl K or the rail's search row.
 import { Command } from "cmdk"
+
+const SEARCH_DEBOUNCE_MS = 200
+
+import { useQuery } from "@tanstack/react-query"
+import type { SearchResults } from "@tegata/services"
 import {
   ArrowDownLeft,
   ArrowUpRight,
@@ -16,7 +21,6 @@ import {
   ListOrdered,
   LogOut,
   Moon,
-  Palette,
   Plus,
   Settings,
   Store,
@@ -27,7 +31,8 @@ import {
 } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { Dialog } from "radix-ui"
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
+import { api } from "@/lib/client/api"
 import { fire } from "@/lib/feedback"
 import { LINKS } from "@/lib/links"
 import { useTheme } from "@/lib/theme"
@@ -47,6 +52,23 @@ export function CommandMenu({
 }) {
   const router = useRouter()
   const { resolvedTheme, setTheme } = useTheme()
+  const [query, setQuery] = useState("")
+  const [debounced, setDebounced] = useState("")
+  useEffect(() => {
+    const t = setTimeout(() => setDebounced(query.trim()), SEARCH_DEBOUNCE_MS)
+    return () => clearTimeout(t)
+  }, [query])
+  useEffect(() => {
+    if (!open) setQuery("")
+  }, [open])
+  // Records, not just commands: invoices (by number or customer), customers, people and pay links.
+  const found = useQuery({
+    queryKey: ["search", debounced],
+    queryFn: () => api<SearchResults>(`/api/search?q=${encodeURIComponent(debounced)}`),
+    enabled: open && debounced.length >= 2,
+    placeholderData: (previous) => previous,
+  })
+  const results = debounced.length >= 2 ? found.data : undefined
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -80,13 +102,70 @@ export function CommandMenu({
           <Command label="Command menu" className="flex flex-col">
             <Command.Input
               autoFocus
-              placeholder="Type a command or search…"
+              value={query}
+              onValueChange={setQuery}
+              placeholder="Search invoices, customers, people, or type a command…"
               className="h-14 w-full border-b border-secondary bg-transparent px-5 text-[17px] outline-none placeholder:text-text-3"
             />
             <Command.List className="max-h-[50vh] overflow-y-auto p-2">
               <Command.Empty className="px-3 py-8 text-center text-[15px] text-muted-foreground">
-                Nothing matches.
+                {found.isFetching ? "Searching…" : "Nothing matches."}
               </Command.Empty>
+              {results &&
+              results.invoices.length +
+                results.customers.length +
+                results.people.length +
+                results.links.length >
+                0 ? (
+                <Group heading="Found">
+                  {results.invoices.map((inv) => (
+                    <Item
+                      key={inv.id}
+                      keywords={[debounced]}
+                      icon={<FileText />}
+                      onSelect={run(() => router.push(`/app/invoices/${inv.id}`))}
+                    >
+                      {inv.label}
+                      {inv.customer ? (
+                        <span className="text-muted-foreground">· {inv.customer}</span>
+                      ) : null}
+                    </Item>
+                  ))}
+                  {results.customers.map((c) => (
+                    <Item
+                      key={c.id}
+                      keywords={[debounced]}
+                      icon={<Users />}
+                      onSelect={run(() => router.push(`/app/customers?id=${c.id}`))}
+                    >
+                      {c.name} <span className="text-muted-foreground">· customer</span>
+                    </Item>
+                  ))}
+                  {results.people.map((person) => (
+                    <Item
+                      key={person.id}
+                      keywords={[debounced]}
+                      icon={<UsersRound />}
+                      onSelect={run(() => router.push(`/app/people?id=${person.id}`))}
+                    >
+                      {person.name}{" "}
+                      <span className="text-muted-foreground">
+                        · {person.role || "on your team"}
+                      </span>
+                    </Item>
+                  ))}
+                  {results.links.map((link) => (
+                    <Item
+                      key={link.id}
+                      keywords={[debounced]}
+                      icon={<Link2 />}
+                      onSelect={run(() => router.push(`/app/links/${link.id}`))}
+                    >
+                      {link.title} <span className="text-muted-foreground">· pay link</span>
+                    </Item>
+                  ))}
+                </Group>
+              ) : null}
               <Group heading="Money">
                 <Item icon={<ArrowDownLeft />} onSelect={run(onReceive)}>
                   Get paid
@@ -145,10 +224,7 @@ export function CommandMenu({
                   Developers: API keys and webhooks
                 </Item>
                 <Item icon={<Settings />} onSelect={run(() => router.push("/app/settings"))}>
-                  Business profile
-                </Item>
-                <Item icon={<Palette />} onSelect={run(() => router.push("/dev"))}>
-                  Design review
+                  Business
                 </Item>
                 <Item icon={<BookOpen />} onSelect={run(() => window.open(LINKS.docs, "_blank"))}>
                   Docs
@@ -188,14 +264,18 @@ function Item({
   icon,
   onSelect,
   children,
+  keywords,
 }: {
   icon: React.ReactNode
   onSelect: () => void
   children: React.ReactNode
+  /** Extra words cmdk matches on (search results always match the query that found them). */
+  keywords?: string[]
 }) {
   return (
     <Command.Item
       onSelect={onSelect}
+      keywords={keywords}
       className="flex h-12 cursor-pointer items-center gap-3 rounded-[12px] px-3 text-[16px] font-medium data-[selected=true]:bg-secondary [&_svg]:size-[18px] [&_svg]:text-muted-foreground"
     >
       {icon}

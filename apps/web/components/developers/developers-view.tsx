@@ -14,6 +14,7 @@ import { Switch } from "@/components/kit/switch"
 import { Sheet } from "@/components/shell/sheet"
 import type { DevelopersView as Data } from "@/lib/client/types"
 import { fire } from "@/lib/feedback"
+import { LINKS } from "@/lib/links"
 
 const COPIED_MS = 1500
 
@@ -136,7 +137,15 @@ if (event.type === "checkout.session.completed") fulfil(event.data.metadata.orde
         <h1 className="display text-page-title">Developers</h1>
         <p className="text-[15px] text-muted-foreground">
           Take payments from your own site: create a checkout session, send the payer to its page,
-          and get a signed webhook when NEAR settles it. Sandbox keys work on testnet.
+          and get a signed webhook when NEAR settles it. Sandbox keys work on testnet.{" "}
+          <a
+            href={`${LINKS.docs}/docs/build/developers`}
+            target="_blank"
+            rel="noreferrer"
+            className="font-semibold text-shu-ink underline-offset-[3px] hover:underline"
+          >
+            API and webhook docs ↗
+          </a>
         </p>
       </header>
 

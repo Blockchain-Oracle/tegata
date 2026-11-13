@@ -2,7 +2,7 @@
 
 // Invoices (plan 6.8 J; Kitchen.co and Square lists): what customers owe on the stage (one hero figure, two facts),
 // status tabs with counts, a search, and one row per invoice. Empty: a matcha tile that names the next action.
-import { FileText, Plus, Search } from "lucide-react"
+import { ChevronRight, FileText, Plus, Search } from "lucide-react"
 import { motion, useReducedMotion } from "motion/react"
 import Link from "next/link"
 import { useMemo, useState } from "react"
@@ -42,15 +42,18 @@ export function InvoicesView({
   error,
   onRetry,
   today,
+  initialQuery = "",
 }: {
   invoices: InvoiceRow[] | undefined
   error: boolean
   onRetry: () => void
   today: string
+  /** The search, filled in from `?q=`. */
+  initialQuery?: string
 }) {
   const reduce = useReducedMotion()
   const [tab, setTab] = useState<Tab>("all")
-  const [query, setQuery] = useState("")
+  const [query, setQuery] = useState(initialQuery)
 
   const facts = useMemo(() => {
     const rows = invoices ?? []
@@ -167,7 +170,7 @@ export function InvoicesView({
                   { value: "all", label: "All" },
                   { value: "unpaid", label: label("unpaid", "Unpaid") },
                   { value: "overdue", label: label("overdue", "Overdue") },
-                  { value: "paid", label: "Paid" },
+                  { value: "paid", label: label("paid", "Paid") },
                   { value: "drafts", label: label("drafts", "Drafts") },
                 ]}
               />
@@ -186,7 +189,15 @@ export function InvoicesView({
 
           {shown.length === 0 ? (
             <div className="rounded-[20px] bg-card px-5 py-10 text-center text-[15px] text-muted-foreground">
-              {query ? "Nothing matches that search." : "Nothing here right now."}
+              {query
+                ? "Nothing matches that search."
+                : tab === "overdue"
+                  ? "No overdue invoices. Good."
+                  : tab === "drafts"
+                    ? "No drafts."
+                    : tab === "paid"
+                      ? "No paid invoices yet."
+                      : "No unpaid invoices."}
             </div>
           ) : (
             <div className="flex flex-col rounded-[20px] bg-card p-2">
@@ -233,6 +244,7 @@ export function InvoicesView({
                         </span>
                       ) : null}
                     </span>
+                    <ChevronRight className="size-4 shrink-0 text-text-3" />
                   </Link>
                 </motion.div>
               ))}

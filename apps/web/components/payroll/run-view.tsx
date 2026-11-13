@@ -6,9 +6,9 @@
 import { ArrowLeft, ExternalLink, FileText, KeyRound, Radio } from "lucide-react"
 import { motion, useReducedMotion } from "motion/react"
 import Link from "next/link"
-
 import { BusinessSeal, SealPress } from "@/components/brand/seal"
 import { CustomerDisc } from "@/components/invoices/customer-picker"
+import { AccountLink } from "@/components/kit/account-link"
 import { Button } from "@/components/kit/button"
 import { Figure, viewDollars } from "@/components/kit/figure"
 import { HoldButton } from "@/components/kit/hold-button"
@@ -20,6 +20,7 @@ import { MarkStack } from "@/components/marks/mark"
 import { DestinationMark } from "@/components/people/destination"
 import type { PayRun, PayRunRow } from "@/lib/client/types"
 import { fire } from "@/lib/feedback"
+import { cn } from "@/lib/utils"
 import { money, paydayText, RunStatusPill } from "./payroll-view"
 
 const STEPS = [
@@ -272,21 +273,21 @@ function RowLine({
     <div className="flex items-center gap-3 rounded-[14px] px-3 py-3">
       <CustomerDisc name={row.name} size={40} />
       <span className="flex min-w-0 flex-1 flex-col">
-        <span
-          className={
-            muted
-              ? "truncate text-[16px] font-semibold text-text-3"
-              : "truncate text-[16px] font-semibold"
-          }
+        <Link
+          href={`/app/people?id=${row.personId}`}
+          className={cn(
+            "truncate text-[16px] font-semibold underline decoration-current/25 decoration-dotted underline-offset-[3px] hover:decoration-solid",
+            muted && "text-text-3",
+          )}
         >
           {row.name}
-        </span>
+        </Link>
         {row.status === "skipped" ? (
           <span className="truncate text-detail text-warn">{row.skipReason}</span>
         ) : row.accountId ? (
           <span className="flex min-w-0 items-center gap-1.5 text-detail text-muted-foreground">
             {row.destinationKind ? <DestinationMark kind={row.destinationKind} size={14} /> : null}
-            <span className="truncate font-mono text-[12px]">{row.accountId}</span>
+            <AccountLink accountId={row.accountId} className="text-[12px]" />
           </span>
         ) : null}
       </span>

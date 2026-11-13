@@ -5,8 +5,8 @@
 import { Check, Copy, ExternalLink, Mail, Share2, Trash2 } from "lucide-react"
 import Link from "next/link"
 import { useEffect, useState } from "react"
-
 import { CustomerDisc } from "@/components/invoices/customer-picker"
+import { AccountLink } from "@/components/kit/account-link"
 import { Button } from "@/components/kit/button"
 import { Field } from "@/components/kit/field"
 import { viewDollars } from "@/components/kit/figure"
@@ -222,9 +222,10 @@ export function PersonSheet({
                   {person.ready.state === "opening" ? " · getting ready" : ""}
                 </span>
                 {person.ready.accountId ? (
-                  <span className="truncate font-mono text-[13px] text-muted-foreground">
-                    {person.ready.accountId}
-                  </span>
+                  <AccountLink
+                    accountId={person.ready.accountId}
+                    className="text-[13px] text-muted-foreground"
+                  />
                 ) : null}
               </span>
             </span>

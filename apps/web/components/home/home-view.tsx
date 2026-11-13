@@ -8,6 +8,7 @@ import {
   ArrowUpRight,
   Banknote,
   Check,
+  ChevronRight,
   Copy,
   ExternalLink,
   FileText,
@@ -18,8 +19,8 @@ import {
 import { motion, useReducedMotion } from "motion/react"
 import Link from "next/link"
 import { useState } from "react"
-
 import { BusinessSeal } from "@/components/brand/seal"
+import { AccountLink } from "@/components/kit/account-link"
 import { Spinner } from "@/components/kit/button"
 import { Figure, viewDollars } from "@/components/kit/figure"
 import { Paper, Stage, StageAction, StageObject } from "@/components/kit/stage"
@@ -149,7 +150,10 @@ export function HomeView({
         <BusinessSeal name={businessName} size={52} tilt={-4} />
         <div className="flex min-w-0 flex-col">
           <h1 className="display truncate text-page-title">{businessName}</h1>
-          <span className="truncate font-mono text-detail text-muted-foreground">{accountId}</span>
+          <AccountLink
+            accountId={accountId}
+            className="text-detail text-muted-foreground hover:text-foreground"
+          />
         </div>
       </header>
 
@@ -157,9 +161,13 @@ export function HomeView({
         <div className="flex flex-col gap-8 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex flex-col gap-6">
             <div className="flex flex-col gap-1">
-              <span className="inline-flex items-center gap-2 text-[15px] font-medium text-white/85">
+              <Link
+                href="/app/balance"
+                className="inline-flex items-center gap-2 self-start text-[15px] font-medium text-white/85 hover:text-white"
+              >
                 <Mark id="usdc" chain="near" size={22} /> Balance · USDC on NEAR
-              </span>
+                <ChevronRight className="size-4" />
+              </Link>
               {balance === null ? (
                 <span
                   role="status"
@@ -189,7 +197,7 @@ export function HomeView({
               <span className="text-[13px] font-semibold text-[#666]">Your pay address</span>
               <div className="mt-2 flex items-center gap-2">
                 <Mark id="near" size={24} />
-                <span className="truncate font-mono text-[15px] font-medium">{accountId}</span>
+                <AccountLink accountId={accountId} className="text-[15px] font-medium" />
               </div>
               <div className="mt-4 flex items-center justify-between">
                 <MarkStack ids={["usdc", "near"]} size={24} />
@@ -396,6 +404,7 @@ function ActivityRow({
       {receipt ? (
         <Link href={receipt} className={cls}>
           {body}
+          <ChevronRight className="size-4 shrink-0 text-text-3" />
         </Link>
       ) : (
         <div className={cn(cls, "cursor-default hover:bg-transparent active:scale-100")}>

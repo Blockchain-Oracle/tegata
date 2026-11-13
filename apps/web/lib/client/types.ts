@@ -199,6 +199,10 @@ export interface ReceiptView {
   feeBy: "tegata" | "payer" | null
   txHash: string | null
   explorerUrl: string | null
+  /** What was paid for, when it has a public page: the invoice (`/i/…`) or the pay page (`/pay/…`). */
+  forUrl?: string | null
+  /** USDC base units refunded so far, when any. */
+  refunded?: string | null
 }
 
 export interface Customer {

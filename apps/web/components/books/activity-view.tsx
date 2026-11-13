@@ -327,16 +327,21 @@ function Row({
     "press flex min-w-0 flex-1 items-center gap-3 rounded-[14px] px-2 py-2.5 hover:bg-secondary"
   return (
     <div className="flex items-center gap-1">
+      {/* A row that opens something says so with a chevron (or ↗ for NEAR); one that opens nothing doesn't look like a link. */}
       {m.url ? (
         <Link href={m.url} className={cls}>
           {body}
+          <ChevronRight className="size-4 shrink-0 text-text-3" />
         </Link>
       ) : m.explorerUrl ? (
         <a href={m.explorerUrl} target="_blank" rel="noreferrer" className={cls}>
           {body}
+          <ArrowUpRight className="size-4 shrink-0 text-text-3" />
         </a>
       ) : (
-        <div className={cls}>{body}</div>
+        <div className={cn(cls, "cursor-default hover:bg-transparent active:scale-100")}>
+          {body}
+        </div>
       )}
       {m.refundable ? (
         <button

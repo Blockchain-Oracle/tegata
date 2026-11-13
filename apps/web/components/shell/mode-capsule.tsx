@@ -29,7 +29,7 @@ export function ModeCapsule({
 }: {
   live: boolean
   liveAvailable: boolean
-  /** In the desktop rail: full width beside the words, icons only when the rail is compact. */
+  /** In the desktop rail: the current mode in words beside the seal; icons only when the rail is compact. */
   rail?: boolean
   className?: string
 }) {
@@ -67,7 +67,9 @@ export function ModeCapsule({
               onClick={() => pick(id)}
               className={cn(
                 "relative z-10 flex h-full items-center justify-center gap-1.5 rounded-full px-3 text-[13px] font-semibold transition-colors",
-                rail && "max-xl:w-7 max-xl:px-0 xl:flex-1",
+                // In the rail the mode you're in takes the room and keeps its word; the other is its icon.
+                rail &&
+                  (on ? "max-xl:w-7 max-xl:px-0 xl:flex-1" : "max-xl:w-7 max-xl:px-0 xl:px-2.5"),
                 on
                   ? id === "live"
                     ? "text-background"
@@ -89,7 +91,11 @@ export function ModeCapsule({
               ) : null}
               <Icon className="size-3.5 shrink-0" />
               {/* On a phone the bar is tight: the mode you're in is in words, the other is its icon. */}
-              <span className={cn(rail ? "max-xl:hidden" : !on && "max-sm:hidden")}>{label}</span>
+              <span
+                className={cn(rail ? cn("max-xl:hidden", !on && "hidden") : !on && "max-sm:hidden")}
+              >
+                {label}
+              </span>
               {locked ? (
                 <Lock
                   className={cn(

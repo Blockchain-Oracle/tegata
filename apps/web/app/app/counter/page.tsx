@@ -16,7 +16,12 @@ export default function CounterPage() {
   const { profile } = useProfile()
   const [amount, setAmount] = useState("")
   const [note, setNote] = useState("")
-  const [sale, setSale] = useState<{ token: string; url: string; amount: string } | null>(null)
+  const [sale, setSale] = useState<{
+    id: string
+    token: string
+    url: string
+    amount: string
+  } | null>(null)
   const [startedAt, setStartedAt] = useState(0)
   const [busy, setBusy] = useState(false)
   const [problem, setProblem] = useState<string | null>(null)
@@ -38,9 +43,12 @@ export default function CounterPage() {
     setBusy(true)
     setProblem(null)
     try {
-      const made = await api<{ token: string; url: string; amount: string }>("/api/counter", {
-        body: { amount, note },
-      })
+      const made = await api<{ id: string; token: string; url: string; amount: string }>(
+        "/api/counter",
+        {
+          body: { amount, note },
+        },
+      )
       fire("tick", { cue: "sheetOpen" })
       setSale(made)
       setStartedAt(Date.now())
@@ -67,6 +75,8 @@ export default function CounterPage() {
       problem={problem}
       onCharge={() => void charge()}
       onNew={() => {
+        // Cancelling an unpaid sale closes it, so its QR can't be paid later; "New sale" after a payment just clears.
+        if (sale && !paid) void api(`/api/counter/${sale.id}`, { method: "DELETE" })
         setSale(null)
         setAmount("")
         setNote("")
