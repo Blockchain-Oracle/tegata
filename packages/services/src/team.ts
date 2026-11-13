@@ -352,10 +352,18 @@ export async function createTreasuryOnChain(
             TREASURY.codeHash,
             TREASURY.initGas,
           )
-    if (created.status !== "success") {
+    // The mainnet factory answers a failed `new` with `false` and a refund, so the transaction still reads as a
+    // success: the account itself is the proof (the call waited for FINAL, so every receipt has run).
+    const error =
+      created.status !== "success"
+        ? (created.error ?? "NEAR didn't create the treasury")
+        : (await accountExists(t.network, t.accountId))
+          ? null
+          : "The treasury factory refused it and refunded the deposit"
+    if (error) {
       const [failed] = await db
         .update(treasuries)
-        .set({ status: "failed", error: created.error ?? "NEAR didn't create the treasury" })
+        .set({ status: "failed", error })
         .where(eq(treasuries.id, t.id))
         .returning()
       return failed
