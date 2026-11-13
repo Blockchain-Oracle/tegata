@@ -66,10 +66,14 @@ export function Segmented({
     <div
       role="radiogroup"
       aria-label={label}
-      className={cn("relative inline-block select-none rounded-[12px] bg-secondary p-1", className)}
+      className={cn(
+        // More options than the width holds: the track scrolls rather than squeezing labels over each other.
+        "relative inline-block max-w-full select-none overflow-x-auto rounded-[12px] bg-secondary p-1 [scrollbar-width:none]",
+        className,
+      )}
     >
       <div
-        className="relative grid"
+        className="relative grid min-w-max"
         style={{ gridTemplateColumns: template, touchAction: "manipulation" }}
       >
         {options.map((option, i) => (

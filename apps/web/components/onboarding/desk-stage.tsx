@@ -11,6 +11,7 @@ import { useEffect, useRef, useState } from "react"
 import { Paper, StageObject } from "@/components/kit/stage"
 import { type TaskStep, TaskSteps } from "@/components/kit/task-steps"
 import type { HankoScene } from "@/components/landing/hanko/scene"
+import { webglAvailable } from "@/components/landing/hanko/webgl"
 import { MarkStack } from "@/components/marks/mark"
 import { fire } from "@/lib/feedback"
 import { PAYER_ROUTES } from "@/lib/routes"
@@ -19,15 +20,6 @@ import { cn } from "@/lib/utils"
 import { BillStage, type WelcomeStage } from "./bill-stage"
 
 const COINS = PAYER_ROUTES.map((r) => ({ coin: r.coin, chain: r.chainMark }))
-
-function webglAvailable() {
-  try {
-    const c = document.createElement("canvas")
-    return !!(c.getContext("webgl2") || c.getContext("webgl"))
-  } catch {
-    return false
-  }
-}
 
 export function DeskStage(p: {
   stage: WelcomeStage
@@ -81,6 +73,8 @@ export function DeskStage(p: {
         await s.init()
         if (!cancelled) setReady(true)
       } catch {
+        s.dispose()
+        if (scene.current === s) scene.current = null
         if (!cancelled) setFlat(true)
       }
     })

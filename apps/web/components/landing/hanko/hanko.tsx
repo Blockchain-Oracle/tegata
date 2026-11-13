@@ -11,15 +11,7 @@ import { fire } from "@/lib/feedback"
 import { cn } from "@/lib/utils"
 
 import type { HankoCoin, HankoScene } from "./scene"
-
-function webglAvailable() {
-  try {
-    const c = document.createElement("canvas")
-    return !!(c.getContext("webgl2") || c.getContext("webgl"))
-  } catch {
-    return false
-  }
-}
+import { webglAvailable } from "./webgl"
 
 export function Hanko({
   coins,
@@ -39,7 +31,8 @@ export function Hanko({
   useEffect(() => {
     const el = host.current
     if (!el) return
-    if (!webglAvailable()) {
+    // Reduced motion gets the still: the 3D desk breathes, orbits and leans even when it never presses.
+    if (reduce || !webglAvailable()) {
       setStill(true)
       return
     }
@@ -65,7 +58,7 @@ export function Hanko({
       scene = new HankoScene(el, {
         coins,
         fonts,
-        autoPress: !reduce,
+        autoPress: true,
         night,
         onContact: (byUser) => {
           if (byUser) fire("press", { cue: "stamp" })
@@ -75,8 +68,13 @@ export function Hanko({
         await scene.init()
         if (!cancelled) setReady(true)
       } catch {
+        scene.dispose()
+        scene = null
         if (!cancelled) setStill(true)
+        return
       }
+      // Unmounted while init() ran: the cleanup has already disposed the scene; watching <html> now would keep it alive.
+      if (cancelled) return
       theme.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] })
     })
     return () => {

@@ -186,6 +186,8 @@ function isAppleTouch(): boolean {
 function haptic(event: HapticEvent): void {
   if (!read().haptics || typeof navigator === "undefined") return
   if (typeof navigator.vibrate === "function") {
+    // Before the first tap the browser refuses (and logs an intervention), e.g. a seal pressed by a page that just opened.
+    if (navigator.userActivation && !navigator.userActivation.hasBeenActive) return
     navigator.vibrate(VIBRATE[event])
     return
   }

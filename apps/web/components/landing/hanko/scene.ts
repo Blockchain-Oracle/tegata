@@ -557,7 +557,10 @@ export class HankoScene {
   private running = false
   private disposed = false
   private paid = false
-  private press: { start: number; byUser: boolean; touched: boolean } | null = null
+  /** `start` is set by the first frame drawn after the press is asked for, so a press asked for in a hidden tab
+   * (onboarding waits seconds on NEAR) plays when the page is seen instead of passing unseen. */
+  private press: { start: number | null; byUser: boolean; touched: boolean } | null = null
+  private envTarget: THREE.WebGLRenderTarget | null = null
   private images!: { mark: HTMLImageElement; usdc: HTMLImageElement; near: HTMLImageElement }
   private stampWorld = new THREE.Vector3()
   private idlePos = new THREE.Vector3(0.95, 2.35, -0.25)
@@ -593,8 +596,11 @@ export class HankoScene {
     container.appendChild(this.renderer.domElement)
 
     const pmrem = new THREE.PMREMGenerator(this.renderer)
-    this.scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture
+    const room = new RoomEnvironment()
+    this.envTarget = pmrem.fromScene(room, 0.04)
+    this.scene.environment = this.envTarget.texture
     this.scene.environmentIntensity = 0.55
+    room.dispose()
     pmrem.dispose()
 
     this.billCanvas.width = BILL_PX_W
@@ -1017,7 +1023,7 @@ export class HankoScene {
   /** Starts a press. The first runs on its own; any click on the seal presses again. */
   pressSeal(byUser: boolean) {
     if (this.press || this.disposed) return
-    this.press = { start: this.now(), byUser, touched: false }
+    this.press = { start: null, byUser, touched: false }
     this.start()
   }
 
@@ -1044,22 +1050,23 @@ export class HankoScene {
   }
 
   private render(t: number) {
+    if (!this.visible) {
+      this.stop()
+      return
+    }
     // The resize observer can fire before init() has built the objects.
     if (!this.contact || !this.images) {
       this.renderer.render(this.scene, this.camera)
       return
     }
-    if (!this.visible) {
-      this.stop()
-      return
-    }
+    if (this.press && this.press.start === null) this.press.start = t
     // Pointer parallax: the desk leans a few degrees toward the pointer.
     this.parallax.lerp(this.pointer, 0.06)
     this.root.rotation.y = this.parallax.x * 0.07
     this.root.rotation.x = -this.parallax.y * 0.04
 
     const P = 1.6 // seconds for one press
-    const p = this.press ? (t - this.press.start) / P : -1
+    const p = this.press ? (t - (this.press.start ?? t)) / P : -1
     const hover = Math.sin(t * 1.2) * 0.07
 
     // Idle pose, breathing.
@@ -1094,16 +1101,14 @@ export class HankoScene {
       this.hanko.position.copy(pos)
       this.hanko.quaternion.copy(q)
       coinPull = p < 0.47 ? easeInOut(span(p, 0.02, 0.4)) : 1 - easeOut(span(p, 0.75, 1))
-      if (c > 0 && !this.press!.touched) {
-        this.press!.touched = true
-        this.setPaid(true)
-        this.ink.material.opacity = 0.95
-        this.ink.scale.setScalar(1.06)
-        this.options.onContact?.(this.press!.byUser)
-      }
+      if (c > 0 && !this.press!.touched) this.land(1.06)
       if (this.ink.scale.x > 1) this.ink.scale.setScalar(Math.max(1, this.ink.scale.x - 0.006))
     } else {
-      if (p > 1) this.press = null
+      if (p > 1) {
+        // The tab was hidden mid-press, so no frame fell in the contact window: the press still counts.
+        if (!this.press!.touched) this.land(1)
+        this.press = null
+      }
       this.hanko.position.copy(idlePos)
       this.hanko.quaternion.copy(idleQuat)
     }
@@ -1150,6 +1155,16 @@ export class HankoScene {
     this.renderer.render(this.scene, this.camera)
   }
 
+  /** The seal meets the paper: the bill turns Paid (or Open), the ink lands, and the caller hears it once. */
+  private land(inkScale: number) {
+    if (!this.press) return
+    this.press.touched = true
+    this.setPaid(true)
+    this.ink.material.opacity = 0.95
+    this.ink.scale.setScalar(inkScale)
+    this.options.onContact?.(this.press.byUser)
+  }
+
   dispose() {
     this.disposed = true
     this.stop()
@@ -1172,7 +1187,10 @@ export class HankoScene {
       }
     })
     this.scene.environment?.dispose()
+    this.envTarget?.dispose()
     this.renderer.dispose()
+    // dispose() alone leaves the context alive until garbage collection; browsers cap live contexts, so release it.
+    this.renderer.forceContextLoss()
     this.renderer.domElement.remove()
   }
 

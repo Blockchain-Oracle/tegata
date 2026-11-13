@@ -92,7 +92,8 @@ export function Hero() {
             <span className="size-1.5 rounded-full bg-shu" />
             手形 · a written promise to pay
           </span>
-          <h1 className="display text-[clamp(54px,12vw,94px)] leading-[0.9] tracking-[-0.015em] lg:text-[clamp(64px,6.6vw,94px)]">
+          {/* 14.5vw: "In exact dollars." (one line, 5.77em wide) fits a 320px phone with room to spare. */}
+          <h1 className="display text-[clamp(40px,14.5vw,94px)] leading-[0.9] tracking-[-0.015em] lg:text-[clamp(64px,6.6vw,94px)]">
             <span className="block overflow-hidden pb-[0.06em]">
               <Cut delay={0.05}>Get paid.</Cut>
             </span>
