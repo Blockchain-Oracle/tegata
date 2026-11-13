@@ -14,6 +14,7 @@ import {
   BookOpen,
   Code2,
   Copy,
+  CreditCard,
   FileText,
   Gift,
   Home,
@@ -226,6 +227,9 @@ export function CommandMenu({
                 </Item>
                 <Item icon={<Landmark />} onSelect={run(() => router.push("/app/bank"))}>
                   Withdraw to a bank · bank details
+                </Item>
+                <Item icon={<CreditCard />} onSelect={run(() => router.push("/app/cards"))}>
+                  Cards: top up your Gnosis Pay card
                 </Item>
                 <Item icon={<Gift />} onSelect={run(() => router.push("/app/refer"))}>
                   Refer a business

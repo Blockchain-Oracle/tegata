@@ -1,6 +1,7 @@
 import {
   BankError,
   BusinessError,
+  CardError,
   DeveloperError,
   InvoiceError,
   OnboardError,
@@ -92,6 +93,12 @@ function toResponse(error: unknown): Response {
           ? STATUS.badRequest
           : STATUS.conflict
     return Response.json({ error: { code: error.code, message: error.message } }, { status })
+  }
+  if (error instanceof CardError) {
+    return Response.json(
+      { error: { code: error.code, message: error.message } },
+      { status: error.code === "not_found" ? STATUS.notFound : STATUS.badRequest },
+    )
   }
   if (error instanceof BankError) {
     const status =

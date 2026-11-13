@@ -13,6 +13,7 @@ import {
   ChevronRight,
   Code2,
   Command as CommandIcon,
+  CreditCard,
   FileText,
   Gift,
   Home,
@@ -85,6 +86,7 @@ const GROUPS: { id: string; label: string; places: Place[] }[] = [
       { href: "/app/activity", label: "Activity", icon: <ListOrdered /> },
       { href: "/app/balance", label: "Balance", icon: <Wallet /> },
       { href: "/app/bank", label: "Bank", icon: <Landmark /> },
+      { href: "/app/cards", label: "Cards", icon: <CreditCard /> },
     ],
   },
 ]

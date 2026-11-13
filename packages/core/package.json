@@ -12,7 +12,8 @@
     "./payroll": "./src/payroll/index.ts",
     "./oneclick": "./src/oneclick/index.ts",
     "./noah": "./src/noah/index.ts",
-    "./solana": "./src/solana/index.ts"
+    "./solana": "./src/solana/index.ts",
+    "./gnosis": "./src/gnosis/index.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
