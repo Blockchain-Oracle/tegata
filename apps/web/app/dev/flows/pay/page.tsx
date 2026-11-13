@@ -62,6 +62,9 @@ export default function PayFlow() {
   const [cardUrl, setCardUrl] = useState<string | null>(null)
   const [refundTo, setRefundTo] = useState("")
   const [swap, setSwap] = useState("PENDING_DEPOSIT")
+  // ?embed=1: only the pay page, for the Checkout page's preview of what opens over a shop.
+  const [embed, setEmbed] = useState(false)
+  useEffect(() => setEmbed(new URLSearchParams(window.location.search).has("embed")), [])
 
   useEffect(() => {
     setRail(
@@ -109,8 +112,8 @@ export default function PayFlow() {
   }
 
   return (
-    <div className="flex flex-col gap-8 pt-6">
-      <div className="flex flex-col gap-3">
+    <div className={embed ? "flex flex-col" : "flex flex-col gap-8 pt-6"}>
+      <div className={embed ? "hidden" : "flex flex-col gap-3"}>
         <span className="display text-[30px]">Pay page</span>
         <Segmented
           label="Payer"
@@ -151,7 +154,7 @@ export default function PayFlow() {
           ]}
         />
       </div>
-      <div className="overflow-hidden rounded-[24px] ring-1 ring-secondary">
+      <div className={embed ? "" : "overflow-hidden rounded-[24px] ring-1 ring-secondary"}>
         <PayView
           key={replay}
           request={{
@@ -258,8 +261,8 @@ export default function PayFlow() {
         />
       </div>
 
-      <span className="display pt-8 text-[30px]">Receipts</span>
-      <div className="grid gap-4 xl:grid-cols-3">
+      <span className={embed ? "hidden" : "display pt-8 text-[30px]"}>Receipts</span>
+      <div className={embed ? "hidden" : "grid gap-4 xl:grid-cols-3"}>
         {[
           {
             label: "A customer payment (numbered)",

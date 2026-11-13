@@ -33,7 +33,7 @@ export default function CheckoutFlow() {
         onRetry={() => setState("links")}
         origin="https://tegata.xyz"
         sandbox
-        canPreview={false}
+        demoSheet="/dev/flows/pay?bare=1&embed=1"
       />
     </div>
   )
