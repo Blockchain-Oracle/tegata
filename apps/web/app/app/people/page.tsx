@@ -80,6 +80,11 @@ function People() {
     },
     onError: () => fire("fail", { cue: "error" }),
   })
+  const resend = useMutation({
+    mutationFn: () => api<{ to: string }>(`/api/people/${openId}/invite`, { method: "POST" }),
+    onSuccess: () => fire("tick", { cue: "confirmed" }),
+    onError: () => fire("fail", { cue: "error" }),
+  })
   const remove = useMutation({
     mutationFn: () => api(`/api/people/${openId}`, { method: "DELETE" }),
     onSuccess: () => {
@@ -115,6 +120,7 @@ function People() {
         onOpen={(person) => {
           save.reset()
           setAccount.reset()
+          resend.reset()
           setOpenId(person.id)
         }}
       />
@@ -145,6 +151,9 @@ function People() {
         accountProblem={message(setAccount.error, "Couldn't use that account. Try again.")}
         onRemove={() => remove.mutate()}
         removing={remove.isPending}
+        onResendInvite={() => resend.mutate()}
+        resending={resend.isPending}
+        resent={resend.data?.to ?? null}
       />
     </>
   )

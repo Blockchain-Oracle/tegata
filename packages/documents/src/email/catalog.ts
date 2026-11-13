@@ -198,6 +198,28 @@ export type EmailEvent =
   | { kind: "send.received"; data: MoveData }
   | { kind: "referral.paid"; data: MoveData & { other: string } }
   | {
+      kind: "referral.joined"
+      data: {
+        business: string
+        joined: string
+        sandbox: boolean
+        threshold: Units
+        reward: Units
+        url: string
+      }
+    }
+  | {
+      kind: "referral.qualified"
+      data: {
+        business: string
+        other: string
+        sandbox: boolean
+        reward: Units
+        payAt: string
+        url: string
+      }
+    }
+  | {
       kind: "account.welcome" | "account.live"
       data: { business: string; accountId: string; sandbox: boolean; url: string }
     }
@@ -720,6 +742,44 @@ export function compose(event: EmailEvent, assets: string): EmailContent {
           `${d.reason} The ${usd(d.amount)} is back in your balance on NEAR; nothing reached ${shortAddress(d.counterparty)}.`,
         ],
         button: d.receiptUrl ? { label: "See what happened", href: d.receiptUrl } : null,
+        audience: "owner",
+        business: d.business,
+        sandbox: d.sandbox,
+      }
+    }
+    case "referral.joined": {
+      const d = event.data
+      return {
+        ...base,
+        shape: "card",
+        subject: `${d.joined} joined Tegata with your link`,
+        preview: `When they receive ${usd(d.threshold)} from customers, you both get ${usd(d.reward)}.`,
+        brand: { name: "Tegata" },
+        label: "Refer",
+        hero: `${d.joined} joined with your link`,
+        body: [
+          `When ${d.joined} receives ${usd(d.threshold)} from their own customers, you each get ${usd(d.reward)} in USDC on NEAR.`,
+        ],
+        button: { label: "Open Refer", href: d.url },
+        audience: "owner",
+        business: d.business,
+        sandbox: d.sandbox,
+      }
+    }
+    case "referral.qualified": {
+      const d = event.data
+      return {
+        ...base,
+        shape: "card",
+        subject: `${d.other} qualified: ${usd(d.reward)} each, paid ${longDay(d.payAt)}`,
+        preview: "The reward is paid after a short hold.",
+        brand: { name: "Tegata" },
+        label: "Refer",
+        hero: `${usd(d.reward)} is on its way`,
+        body: [
+          `Your referral with ${d.other} qualified. Tegata pays you each ${usd(d.reward)} in USDC on NEAR after the hold, on ${longDay(d.payAt)}.`,
+        ],
+        button: { label: "Open Refer", href: d.url },
         audience: "owner",
         business: d.business,
         sandbox: d.sandbox,

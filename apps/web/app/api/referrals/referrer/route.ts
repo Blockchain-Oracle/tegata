@@ -1,4 +1,4 @@
-import { attachReferral, removeReferral } from "@tegata/services"
+import { attachReferral, queueReferralJoined, removeReferral } from "@tegata/services"
 import { z } from "zod"
 
 import { requireUser } from "@/lib/server/auth.ts"
@@ -14,6 +14,7 @@ export const PUT = route(async (request) => {
     .object({ handle: z.string().trim().min(2).max(64) })
     .parse(await request.json())
   const referral = await attachReferral(db(), { refereeId: user.id, handle, network: network })
+  if (referral) await queueReferralJoined(db(), referral.id)
   return { referral }
 })
 

@@ -1,4 +1,4 @@
-import { autopilotPays, draftRun, nextPaydayFor } from "@tegata/services"
+import { autopilotPays, draftRun, nextPaydayFor, queueSkippedReminders } from "@tegata/services"
 
 import { requireOwner } from "@/lib/server/auth.ts"
 import { db } from "@/lib/server/context.ts"
@@ -24,5 +24,7 @@ export const POST = route(async (request) => {
     ownerId: user.id,
     network: network,
   })
+  // Anyone left out for not choosing where pay lands is reminded, with their link.
+  await queueSkippedReminders(db(), runId)
   return { runId }
 })

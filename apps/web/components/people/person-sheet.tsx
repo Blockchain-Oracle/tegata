@@ -137,6 +137,9 @@ export function PersonSheet({
   accountProblem,
   onRemove,
   removing,
+  onResendInvite,
+  resending,
+  resent,
 }: {
   person: TeamPerson | null
   slips: PaySlipRow[] | undefined
@@ -149,6 +152,10 @@ export function PersonSheet({
   accountProblem: string | null
   onRemove: () => void
   removing: boolean
+  /** Email the invite again; `resent` names where it went. */
+  onResendInvite?: () => void
+  resending?: boolean
+  resent?: string | null
 }) {
   const [form, setForm] = useState<PersonForm>(blank)
   const [account, setAccount] = useState("")
@@ -250,8 +257,15 @@ export function PersonSheet({
                   <ExternalLink /> Open
                 </a>
               </Button>
+              {onResendInvite && person.ready.state === "none" ? (
+                <Button variant="paper" size="sm" busy={resending} onClick={onResendInvite}>
+                  {resent ? <Check /> : <Mail />}{" "}
+                  {resent ? "Invite sent" : "Email the invite again"}
+                </Button>
+              ) : null}
             </div>
           ) : null}
+          {resent ? <p className="text-detail text-muted-foreground">Sent to {resent}.</p> : null}
         </section>
 
         <form

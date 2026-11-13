@@ -1,5 +1,5 @@
 import { enqueue } from "@tegata/jobs"
-import { attachReferral, onboard, ReferralError } from "@tegata/services"
+import { attachReferral, onboard, queueReferralJoined, ReferralError } from "@tegata/services"
 import { z } from "zod"
 
 import { requireUser } from "@/lib/server/auth.ts"
@@ -35,7 +35,12 @@ export const POST = route(async (request) => {
   let referral: { ok: true } | { ok: false; problem: string } | null = null
   if (referrer) {
     try {
-      await attachReferral(db(), { refereeId: user.id, handle: referrer, network: "testnet" })
+      const row = await attachReferral(db(), {
+        refereeId: user.id,
+        handle: referrer,
+        network: "testnet",
+      })
+      if (row) await queueReferralJoined(db(), row.id)
       referral = { ok: true }
     } catch (error) {
       if (!(error instanceof ReferralError)) throw error

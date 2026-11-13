@@ -45,6 +45,7 @@ import {
   queuePayoutEmail,
   queuePayrollDue,
   queueReferralEmails,
+  queueReferralsQualified,
   queueRunEmails,
   queueSendEmails,
   queueStatements,
@@ -344,6 +345,8 @@ await boss.work(QUEUES.invoiceRepeat.name, async () => {
 /** Referrals: every five minutes, qualify the open ones and pay those past their hold, on each network. */
 const REFERRAL_CRON = "*/5 * * * *"
 async function sweepAllReferrals() {
+  // Checking runs first inside sweepReferrals; anything that qualified is told after.
+  await queueReferralsQualified(db).catch((e) => console.error("[referrals] email", e))
   for (const operator of operators.values()) {
     const { checked, paid } = await sweepReferrals(db, operator)
     for (const referralId of paid) await queueReferralEmails(db, referralId)

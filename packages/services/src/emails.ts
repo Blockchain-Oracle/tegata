@@ -1,12 +1,12 @@
 // Who gets which email, for every event (context/09-realworld-money/email-audit.md §3). Each function reads what the
 // email shows from the database, captures it as the event's data, and queues it in the outbox (notify.ts) with a
 // dedupe key, so calling it twice sends once. Links are app paths; the layout makes them absolute.
-import { NETWORKS, type NetworkId } from "@tegata/config"
+import { NETWORKS, type NetworkId, REFERRALS } from "@tegata/config"
 import { explorerTx } from "@tegata/core/near"
 import { assetLabel, type QuoteResponse } from "@tegata/core/oneclick"
 import { type Db, schema } from "@tegata/db"
 import type { MoveData, PaymentData } from "@tegata/documents"
-import { and, eq, inArray } from "drizzle-orm"
+import { and, eq, gte, inArray } from "drizzle-orm"
 
 import { monthRange, movements, totals } from "./books.ts"
 import { logoPath } from "./business.ts"
@@ -826,4 +826,109 @@ export async function queueReferralEmails(db: Db, referralId: string) {
     .from(referralPayouts)
     .where(and(eq(referralPayouts.referralId, referralId), eq(referralPayouts.status, "sent")))
   for (const payout of sent) await queueReferralEmail(db, payout.id)
+}
+
+/** People skipped from a run because they haven't chosen where pay lands get a reminder (once per run). */
+export async function queueSkippedReminders(db: Db, runId: string) {
+  const skipped = await db
+    .select({ personId: payRows.personId })
+    .from(payRows)
+    .where(and(eq(payRows.runId, runId), eq(payRows.status, "skipped")))
+  const [run] = await db.select().from(payRuns).where(eq(payRuns.id, runId))
+  const [schedule] = run
+    ? await db
+        .select({ cadence: schema.payrolls.cadence })
+        .from(schema.payrolls)
+        .where(
+          and(
+            eq(schema.payrolls.workspaceId, run.workspaceId),
+            eq(schema.payrolls.network, run.network),
+          ),
+        )
+    : []
+  for (const { personId } of skipped) {
+    const [row] = await db
+      .select({ kind: personDestinations.kind })
+      .from(personDestinations)
+      .where(eq(personDestinations.personId, personId))
+      .limit(1)
+    // Only those who have no destination at all; one still opening needs nothing from them.
+    if (!row)
+      await queueInviteEmail(db, personId, { cadence: schedule?.cadence, again: `run:${runId}` })
+  }
+}
+
+// --- referrals -----------------------------------------------------------------------------------------------------
+
+/** A business joined through someone's link: the referrer hears it, with the rule for the reward. */
+export async function queueReferralJoined(db: Db, referralId: string) {
+  const [referral] = await db.select().from(referrals).where(eq(referrals.id, referralId))
+  if (!referral) return
+  const [[referrer], [referee]] = await Promise.all([
+    db.select().from(workspaces).where(eq(workspaces.ownerId, referral.referrerId)),
+    db
+      .select({ name: workspaces.name })
+      .from(workspaces)
+      .where(eq(workspaces.ownerId, referral.refereeId)),
+  ])
+  if (!referrer) return
+  const rule = REFERRALS[referral.network]
+  await queueEmail(db, {
+    event: {
+      kind: "referral.joined",
+      data: {
+        business: referrer.name,
+        joined: referee?.name ?? "A business",
+        sandbox: sandbox(referral.network),
+        threshold: rule.threshold.toString(),
+        reward: rule.reward.toString(),
+        url: "/app/refer",
+      },
+    },
+    to: await ownerAddress(db, referrer.id),
+    dedupe: `referral.joined:${referral.id}`,
+    workspaceId: referrer.id,
+  })
+}
+
+/** Referrals that qualified in the last hour: both businesses hear the reward is coming (once each). */
+export async function queueReferralsQualified(db: Db) {
+  const recent = await db
+    .select()
+    .from(referrals)
+    .where(
+      and(
+        eq(referrals.status, "qualified"),
+        gte(referrals.qualifiedAt, new Date(Date.now() - 3_600_000)),
+      ),
+    )
+  for (const referral of recent) {
+    const sides = [
+      { me: referral.referrerId, other: referral.refereeId, side: "referrer" },
+      { me: referral.refereeId, other: referral.referrerId, side: "referee" },
+    ]
+    for (const { me, other, side } of sides) {
+      const [[mine], [theirs]] = await Promise.all([
+        db.select().from(workspaces).where(eq(workspaces.ownerId, me)),
+        db.select({ name: workspaces.name }).from(workspaces).where(eq(workspaces.ownerId, other)),
+      ])
+      if (!mine) continue
+      await queueEmail(db, {
+        event: {
+          kind: "referral.qualified",
+          data: {
+            business: mine.name,
+            other: theirs?.name ?? "your referral",
+            sandbox: sandbox(referral.network),
+            reward: REFERRALS[referral.network].reward.toString(),
+            payAt: (referral.payoutAfter ?? new Date()).toISOString(),
+            url: "/app/refer",
+          },
+        },
+        to: await ownerAddress(db, mine.id),
+        dedupe: `referral.qualified:${referral.id}:${side}`,
+        workspaceId: mine.id,
+      })
+    }
+  }
 }

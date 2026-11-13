@@ -1,4 +1,10 @@
-import { getPerson, removePerson, updatePerson } from "@tegata/services"
+import {
+  getPerson,
+  markInvited,
+  queueInviteEmail,
+  removePerson,
+  updatePerson,
+} from "@tegata/services"
 import { z } from "zod"
 
 import { requireOwner } from "@/lib/server/auth.ts"
@@ -29,6 +35,12 @@ export const PATCH = route(async (request, context: Context) => {
   const { workspace } = await requireOwner(request)
   const id = z.uuid().parse((await context.params).id)
   await updatePerson(db(), workspace.id, id, personInput(personBody.parse(await request.json())))
+  // An email added later gets the invite it never had.
+  const { member } = await getPerson(db(), workspace.id, id)
+  if (member?.person.email && !member.person.invitedAt) {
+    await queueInviteEmail(db(), id)
+    await markInvited(db(), id)
+  }
   return { ok: true }
 })
 
