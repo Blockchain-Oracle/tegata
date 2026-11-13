@@ -26,7 +26,7 @@ export interface IosRelease {
 export const IOS: IosRelease = {
   version: "1.0.0",
   build: 5,
-  testflight: null,
+  testflight: "https://testflight.apple.com/join/PUfhZYfA",
 }
 
 export const ANDROID: AndroidRelease | null = {
