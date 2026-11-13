@@ -19,7 +19,7 @@ export interface IosRelease {
   version: string
   /** The build Apple has (App Store Connect build number). */
   build: number
-  /** Apple's public TestFlight invitation (App Store Connect → TestFlight → public link), once the beta takes testers. */
+  /** Apple's public TestFlight invitation (App Store Connect → TestFlight → public link); /download always offers it. */
   testflight: string | null
 }
 
