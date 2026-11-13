@@ -3,20 +3,20 @@
 // Developers: the quickstart, API keys (the full key shown once), webhook endpoints with their signing
 // secret, a test event and Tegata's own test inbox, the delivery log with each payload, and the pay button snippet.
 // Separate from its data so /dev/flows can show every state.
-import { Check, Copy, Inbox, KeyRound, Plus, RotateCcw, Send, Trash2, Webhook } from "lucide-react"
+import { ArrowUpRight, Inbox, KeyRound, Plus, RotateCcw, Send, Trash2, Webhook } from "lucide-react"
+import Link from "next/link"
 import { useState } from "react"
 
 import { Button } from "@/components/kit/button"
+import { type CodeFile, CodeSample, SecretLine } from "@/components/kit/code-editor"
 import { Field } from "@/components/kit/field"
 import { Stage } from "@/components/kit/stage"
 import { EmptyState, ErrorState, LoadingShape, StatusPill } from "@/components/kit/states"
 import { Switch } from "@/components/kit/switch"
 import { Sheet } from "@/components/shell/sheet"
 import type { DevelopersView as Data } from "@/lib/client/types"
-import { fire } from "@/lib/feedback"
 import { LINKS } from "@/lib/links"
 
-const COPIED_MS = 1500
 /** What a webhook endpoint receives. */
 const EVENTS = [
   "checkout.session.completed",
@@ -25,28 +25,13 @@ const EVENTS = [
   "invoice.paid",
 ] as const
 
-export function Code({ text, label }: { text: string; label: string }) {
-  const [copied, setCopied] = useState(false)
-  return (
-    <div className="relative rounded-[16px] bg-black text-white/90 ring-1 ring-white/12 ring-inset">
-      <button
-        type="button"
-        aria-label={`Copy ${label}`}
-        onClick={async () => {
-          await navigator.clipboard.writeText(text)
-          fire("tick", { cue: "confirmed" })
-          setCopied(true)
-          setTimeout(() => setCopied(false), COPIED_MS)
-        }}
-        className="press absolute top-2 right-2 inline-flex h-8 items-center gap-1.5 rounded-full bg-white/10 px-3 text-[13px] font-semibold hover:bg-white/20 [&_svg]:size-3.5"
-      >
-        {copied ? <Check /> : <Copy />} {copied ? "Copied" : "Copy"}
-      </button>
-      <pre className="overflow-x-auto p-4 pr-24 font-mono text-[12.5px] leading-relaxed">
-        {text}
-      </pre>
-    </div>
-  )
+/** A delivery's payload, indented when it is JSON, as it was sent otherwise. */
+const pretty = (payload: string) => {
+  try {
+    return JSON.stringify(JSON.parse(payload), null, 2)
+  } catch {
+    return payload
+  }
 }
 
 const ago = (iso: string) => {
@@ -114,14 +99,65 @@ export function DevelopersView({
       </div>
     )
 
-  const curl = `curl ${data.appUrl}/api/v1/checkout/sessions \\
+  const sessions = `${data.appUrl}/api/v1/checkout/sessions`
+  const sessionFiles: CodeFile[] = [
+    {
+      id: "curl",
+      name: "checkout.sh",
+      code: `curl ${sessions} \\
   -H "Authorization: Bearer $TEGATA_KEY" \\
   -H "Idempotency-Key: order-1042" \\
   -H "Content-Type: application/json" \\
   -d '{"amount": "25.00", "description": "Order #1042",
        "success_url": "https://your-shop.example/thanks",
-       "metadata": {"order": "1042"}}'`
-  const verify = `import { Webhook } from "standardwebhooks"
+       "metadata": {"order": "1042"}}'`,
+    },
+    {
+      id: "node",
+      name: "checkout.mjs",
+      code: `const response = await fetch("${sessions}", {
+  method: "POST",
+  headers: {
+    Authorization: \`Bearer \${process.env.TEGATA_KEY}\`,
+    "Idempotency-Key": "order-1042",
+    "Content-Type": "application/json",
+  },
+  body: JSON.stringify({
+    amount: "25.00",
+    description: "Order #1042",
+    success_url: "https://your-shop.example/thanks",
+    metadata: { order: "1042" },
+  }),
+})
+const session = await response.json()
+// Send the customer to session.url`,
+    },
+    {
+      id: "python",
+      name: "checkout.py",
+      code: `import os, requests
+
+session = requests.post(
+    "${sessions}",
+    headers={
+        "Authorization": f"Bearer {os.environ['TEGATA_KEY']}",
+        "Idempotency-Key": "order-1042",
+    },
+    json={
+        "amount": "25.00",
+        "description": "Order #1042",
+        "success_url": "https://your-shop.example/thanks",
+        "metadata": {"order": "1042"},
+    },
+).json()
+# Send the customer to session["url"]`,
+    },
+  ]
+  const verifyFiles: CodeFile[] = [
+    {
+      id: "node",
+      name: "webhook.mjs",
+      code: `import { Webhook } from "standardwebhooks"
 
 const wh = new Webhook(process.env.TEGATA_WEBHOOK_SECRET) // whsec_…
 // In your handler, with the raw body as a string:
@@ -130,12 +166,49 @@ const event = wh.verify(rawBody, {
   "webhook-timestamp": req.headers["webhook-timestamp"],
   "webhook-signature": req.headers["webhook-signature"],
 })
-if (event.type === "checkout.session.completed") fulfil(event.data.metadata.order)`
-  const button = `<a href="${data.appUrl}/pay/YOUR_LINK_TOKEN"
-   style="display:inline-flex;align-items:center;gap:8px;padding:12px 20px;border-radius:14px;
-          background:#FF4F00;color:#fff;font:600 16px system-ui;text-decoration:none">
-  Pay with Tegata
-</a>`
+if (event.type === "checkout.session.completed") fulfil(event.data.metadata.order)`,
+    },
+    {
+      id: "python",
+      name: "webhook.py",
+      code: `import base64, hashlib, hmac, json, time
+
+def verify_tegata_webhook(raw_body: bytes, headers: dict, secret: str) -> dict:
+    msg_id = headers["webhook-id"]
+    timestamp = headers["webhook-timestamp"]
+    signatures = headers["webhook-signature"]
+    if abs(time.time() - int(timestamp)) > 5 * 60:
+        raise ValueError("Too old or too new")
+    key = base64.b64decode(secret.removeprefix("whsec_"))
+    signed = f"{msg_id}.{timestamp}.".encode() + raw_body
+    expected = base64.b64encode(hmac.new(key, signed, hashlib.sha256).digest()).decode()
+    for entry in signatures.split(" "):
+        version, _, signature = entry.partition(",")
+        if version == "v1" and hmac.compare_digest(signature, expected):
+            return json.loads(raw_body)
+    raise ValueError("Bad signature")`,
+    },
+  ]
+  const buttonFiles: CodeFile[] = [
+    {
+      id: "html",
+      name: "index.html",
+      code: `<!-- Once per page -->
+<script src="${data.appUrl}/checkout.js" defer></script>
+
+<!-- Where the button goes -->
+<button data-tegata-link="YOUR_LINK_TOKEN"></button>`,
+    },
+    {
+      id: "link",
+      name: "no-script.html",
+      code: `<!-- No JavaScript: the same button, opening the pay page -->
+<a href="${data.appUrl}/pay/YOUR_LINK_TOKEN">
+  <img src="${data.appUrl}/checkout/button.svg"
+       alt="Pay with Tegata" height="48">
+</a>`,
+    },
+  ]
   const endpointUrl = (id: string) => data.endpoints.find((e) => e.id === id)?.url ?? ""
 
   return (
@@ -158,7 +231,7 @@ if (event.type === "checkout.session.completed") fulfil(event.data.metadata.orde
       <Stage className="p-6 sm:p-8">
         <div className="flex flex-col gap-3">
           <span className="text-[15px] font-semibold text-white">Create a checkout session</span>
-          <Code text={curl} label="the curl command" />
+          <CodeSample files={sessionFiles} />
         </div>
       </Stage>
 
@@ -329,7 +402,9 @@ if (event.type === "checkout.session.completed") fulfil(event.data.metadata.orde
                 </summary>
                 <div className="mt-2 flex flex-col gap-2">
                   {d.lastError ? <p className="text-[13px] text-down">{d.lastError}</p> : null}
-                  <Code text={d.payload} label="the payload" />
+                  <CodeSample
+                    files={[{ id: "payload", name: "payload.json", code: pretty(d.payload) }]}
+                  />
                   <Button
                     variant="secondary"
                     size="sm"
@@ -346,16 +421,32 @@ if (event.type === "checkout.session.completed") fulfil(event.data.metadata.orde
       ) : null}
 
       <section className="flex flex-col gap-3">
-        <h2 className="text-section-title font-semibold">Verify a webhook (Node)</h2>
-        <Code text={verify} label="the verification code" />
+        <h2 className="text-section-title font-semibold">Verify a webhook</h2>
+        <CodeSample files={verifyFiles} />
       </section>
 
       <section className="flex flex-col gap-3">
         <h2 className="text-section-title font-semibold">A pay button</h2>
-        <p className="text-[15px] text-muted-foreground">
-          Point it at a pay link. No server needed.
-        </p>
-        <Code text={button} label="the button HTML" />
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <p className="text-[15px] text-muted-foreground">
+            Point it at a pay link. No server needed.
+          </p>
+          <Link
+            href="/app/checkout"
+            className="inline-flex items-center gap-1 text-[15px] font-semibold text-shu-ink underline-offset-[3px] hover:underline [&_svg]:size-4"
+          >
+            Choose its amount and colour on Checkout <ArrowUpRight />
+          </Link>
+        </div>
+        <div className="flex items-center justify-center rounded-[20px] bg-card px-6 py-8 shadow-object">
+          <img
+            src="/checkout/button.svg"
+            alt="Pay with Tegata"
+            height={48}
+            style={{ height: 48 }}
+          />
+        </div>
+        <CodeSample files={buttonFiles} />
       </section>
 
       <Sheet
@@ -370,7 +461,7 @@ if (event.type === "checkout.session.completed") fulfil(event.data.metadata.orde
         {newKey ? (
           <div className="flex flex-col gap-3">
             <p className="text-[15px] font-semibold">Copy it now. It's shown only once.</p>
-            <Code text={newKey} label="the key" />
+            <SecretLine value={newKey} label="the key" />
             <Button
               onClick={() => {
                 setCreating(false)
@@ -408,7 +499,7 @@ if (event.type === "checkout.session.completed") fulfil(event.data.metadata.orde
       >
         <div className="flex flex-col gap-3">
           <p className="text-[15px]">It checks each webhook's signature.</p>
-          {newSecret ? <Code text={newSecret} label="the secret" /> : null}
+          {newSecret ? <SecretLine value={newSecret} label="the secret" /> : null}
           <Button onClick={onCloseSecret}>Done</Button>
         </div>
       </Sheet>

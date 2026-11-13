@@ -57,6 +57,17 @@ const paper = face
   .replace('stroke="#fff"', `stroke="${SHU}"`)
   .replaceAll('fill="#fff"', `fill="${SHU}"`)
 png(svg(paper), "seal-paper", 96)
+// Privy's sign-in code email takes one logo by URL: PNG, 2:1 (180×90 shown), set in its dashboard. The seal, tilted
+// like a pressed stamp, centred on a transparent 2:1 canvas at twice that size; Privy writes the name under it.
+{
+  const tmp = join(out, "privy-logo.tmp.svg")
+  writeFileSync(
+    tmp,
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${VIEW * 2} ${VIEW}"><g transform="translate(${VIEW * 0.6} ${VIEW * 0.1}) scale(0.8) rotate(-4 ${VIEW / 2} ${VIEW / 2})">${face}</g></svg>`,
+  )
+  execFileSync("rsvg-convert", ["-w", "360", "-h", "180", tmp, "-o", join(out, "privy-logo.png")])
+  rmSync(tmp)
+}
 png(
   svg(`<g opacity="0.92" transform="rotate(-8 100 100) translate(14 14) scale(0.86)">${face}</g>`),
   "stamp",

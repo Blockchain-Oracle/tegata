@@ -7,9 +7,8 @@
 import { Code2, ExternalLink, Link2, Plus, X } from "lucide-react"
 import Link from "next/link"
 import { useEffect, useMemo, useState } from "react"
-
-import { CodeEditor, type CodeFile } from "@/components/checkout/code-editor"
 import { Button } from "@/components/kit/button"
+import { CodeEditor, type CodeFile } from "@/components/kit/code-editor"
 import { Field } from "@/components/kit/field"
 import { SandboxPill } from "@/components/kit/sandbox-pill"
 import { Segmented } from "@/components/kit/segmented"
