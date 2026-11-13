@@ -243,6 +243,25 @@ export const CHAIN_NAMES: Record<string, string> = {
   bera: "Berachain",
 }
 
+/** Explorers for the chains NEAR Intents delivers to, by the chain's display name (as payouts store it). */
+const DELIVERY_EXPLORERS: Record<string, string> = {
+  Ethereum: "https://etherscan.io/tx/",
+  Base: "https://basescan.org/tx/",
+  Arbitrum: "https://arbiscan.io/tx/",
+  "BNB Chain": "https://bscscan.com/tx/",
+  Polygon: "https://polygonscan.com/tx/",
+  Gnosis: "https://gnosisscan.io/tx/",
+  Solana: "https://solscan.io/tx/",
+  Bitcoin: "https://mempool.space/tx/",
+  Tron: "https://tronscan.org/#/transaction/",
+}
+
+/** The delivery transaction on its own chain's explorer ("Tron", hash), or null for a chain without one here. */
+export function deliveryTxUrl(chain: string, hash: string): string | null {
+  const base = DELIVERY_EXPLORERS[chain]
+  return base ? `${base}${hash}` : null
+}
+
 const TOKENS_TTL_MS = 10 * 60_000
 let tokenCache: {
   at: number

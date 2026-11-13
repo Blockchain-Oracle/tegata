@@ -9,6 +9,7 @@ import { migrateDb } from "@tegata/db/migrate"
 import {
   type EmailEvent,
   renderInvoicePdf,
+  renderPayslipPdf,
   renderStatementPdf,
   resendMailer,
 } from "@tegata/documents"
@@ -42,6 +43,7 @@ import {
   ownerAddress,
   paymentsToVerify,
   payoutsToPoll,
+  payslipDocument,
   pendingDeliveries,
   pollBankPayout,
   pollCardPayment,
@@ -560,6 +562,16 @@ async function attachmentsFor(event: EmailEvent, email: { workspaceId: string | 
     if (docs)
       return [
         { filename: `${docs.document.number}.pdf`, content: await renderInvoicePdf(docs.document) },
+      ]
+  }
+  if (event.kind === "payroll.paid" && event.data.rowId) {
+    const doc = await payslipDocument(db, event.data.rowId, env.APP_URL)
+    if (doc)
+      return [
+        {
+          filename: `Payslip-${doc.payDate.slice(0, 7)}-${doc.person.name.replace(/[^A-Za-z0-9]+/g, "-")}.pdf`,
+          content: await renderPayslipPdf(doc),
+        },
       ]
   }
   if (event.kind === "statement.monthly") {

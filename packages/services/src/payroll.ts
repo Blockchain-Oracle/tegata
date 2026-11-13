@@ -6,13 +6,14 @@ import { localToday } from "@tegata/core/invoices"
 import {
   accountExists,
   type DelegateDraft,
+  explorerTx,
   ftTransfer,
   isRegistered,
   matchingTransfer,
   type Operator,
   readUsdcTransfers,
 } from "@tegata/core/near"
-import { routeAsset } from "@tegata/core/oneclick"
+import { deliveryTxUrl, routeAsset } from "@tegata/core/oneclick"
 import {
   anchorDayFor,
   batches,
@@ -23,8 +24,9 @@ import {
   periodLabel,
 } from "@tegata/core/payroll"
 import { type Db, schema } from "@tegata/db"
-import { and, asc, count, desc, eq, gt, inArray, ne, sql } from "drizzle-orm"
+import { and, asc, count, desc, eq, gt, inArray, lte, ne, sql } from "drizzle-orm"
 
+import { businessLogo } from "./business.ts"
 import { BUSINESS_HEADER, headerLogo, publicToken } from "./payments.ts"
 import {
   failDraftedPayouts,
@@ -1312,6 +1314,112 @@ export async function payslip(db: Db, rowId: string) {
     business: row.business,
     logo: headerLogo(row),
     label: periodLabel({ from: row.run.periodFrom, to: row.run.periodTo }),
+  }
+}
+
+const CADENCE_WORD = { weekly: "Weekly", fortnightly: "Fortnightly", monthly: "Monthly" } as const
+
+/**
+ * Everything the payslip PDF shows, from a paid row: the business's header, the person (masked email), the period
+ * and pay date, gross to net with this year's pay to date, and how the money moved (the NEAR transaction, and what
+ * NEAR Intents delivered on another chain). Built on demand from the paid row, so every paid row has one.
+ */
+export async function payslipDocument(db: Db, rowId: string, appUrl: string) {
+  const slip = await payslip(db, rowId)
+  if (!slip?.row.paidAt) return undefined
+  const { row, run, payout } = slip
+  const paidAt = slip.row.paidAt
+  const [[business], [person], [schedule], logo] = await Promise.all([
+    db.select().from(workspaces).where(eq(workspaces.id, run.workspaceId)),
+    db.select().from(people).where(eq(people.id, row.personId)),
+    db
+      .select({ cadence: payrolls.cadence })
+      .from(payrolls)
+      .where(and(eq(payrolls.workspaceId, run.workspaceId), eq(payrolls.network, run.network))),
+    businessLogo(db, run.workspaceId),
+  ])
+  if (!business) return undefined
+  const timezone = business.timezone
+  const year = Number(
+    new Intl.DateTimeFormat("en-GB", { year: "numeric", timeZone: timezone }).format(paidAt),
+  )
+  const [ytd] = await db
+    .select({ total: sql<string>`coalesce(sum(${payRows.amount}), 0)` })
+    .from(payRows)
+    .where(
+      and(
+        eq(payRows.personId, row.personId),
+        eq(payRows.status, "paid"),
+        sql`extract(year from ${payRows.paidAt} at time zone ${timezone}) = ${year}`,
+        lte(payRows.paidAt, paidAt),
+      ),
+    )
+  const when = (date: Date) =>
+    new Intl.DateTimeFormat("en-GB", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      timeZone: timezone,
+    }).format(date)
+  const chain = payout ? `${payout.symbol} on ${payout.chain}` : null
+  return {
+    kind: "payslip" as const,
+    reference: `PS-${row.id.slice(0, 8).toUpperCase()}`,
+    business: {
+      name: business.name,
+      address: business.address,
+      taxId: business.taxId,
+      email: business.email,
+      logo:
+        logo && (logo.type === "image/png" || logo.type === "image/jpeg")
+          ? `data:${logo.type};base64,${logo.bytes.toString("base64")}`
+          : null,
+      accountId: run.senderId,
+    },
+    person: {
+      name: row.name,
+      role: row.role,
+      reference: `P-${row.personId.slice(0, 6).toUpperCase()}`,
+      email: person?.email ? maskEmail(person.email) : null,
+    },
+    periodLabel: slip.label,
+    periodFrom: run.periodFrom,
+    periodTo: run.periodTo,
+    payDate: run.payday,
+    paidAt: when(paidAt),
+    timezone,
+    frequency: schedule ? CADENCE_WORD[schedule.cadence] : null,
+    gross: row.amount.toString(),
+    net: row.amount.toString(),
+    yearToDate: BigInt(ytd?.total ?? row.amount).toString(),
+    year,
+    how: {
+      paidIn: chain ? `${chain}, converted by NEAR Intents` : "USDC on NEAR, issued by Circle",
+      to: payout ? payout.recipient : (row.accountId ?? ""),
+      toKind: payout
+        ? `Address on ${payout.chain}`
+        : row.destinationKind === "near"
+          ? "NEAR account"
+          : "Tegata account",
+      delivered:
+        payout?.amountOutFormatted && payout.symbol
+          ? `${Number(payout.amountOutFormatted).toLocaleString("en-US", { maximumFractionDigits: 6 })} ${payout.symbol}`
+          : null,
+      deliveryTx: payout?.destinationTx ?? null,
+      deliveryTxUrl:
+        payout?.destinationTx && payout.chain
+          ? deliveryTxUrl(payout.chain, payout.destinationTx)
+          : null,
+      nearTx: row.txHash,
+      nearTxUrl: row.txHash ? explorerTx(run.network, row.txHash) : null,
+      memo: payrollMemo(row.id),
+      autopilot: run.source === "autopilot",
+    },
+    checkUrl: `${appUrl.replace(/\/$/, "")}/r/slip/${row.id}`,
+    sandbox: run.network === "testnet",
+    madeAt: when(new Date()),
   }
 }
 
