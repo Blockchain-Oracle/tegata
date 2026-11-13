@@ -339,8 +339,8 @@ Everything else in this repository was written during the hackathon.
 
 ## Honest limits
 
-- **Live isn't built yet.** Everything runs on NEAR testnet with test USDC. Live needs Tegata's `tegata.near`
-  operator and the mainnet side of the app.
+- **Live isn't built yet.** Everything runs on NEAR testnet with test USDC. Tegata's mainnet operator `tegata.near`
+  exists; the mainnet side of the app doesn't yet.
 - **Paying from another chain stops at the quote.** NEAR Intents has no testnet, so the deposit address that
   turns a payer's coin into USDC on NEAR is part of Live and not built yet; today customers pay in USDC on NEAR.
 - **Emails are switched off on the live site** until a sending domain is set up, so invoice and reminder emails
