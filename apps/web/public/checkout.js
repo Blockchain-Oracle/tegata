@@ -110,16 +110,25 @@
     frame.focus()
   }
 
-  const dollars = (value) =>
-    Number(value).toLocaleString("en-US", { style: "currency", currency: "USD" })
+  const THEMES = { shu: "shu", ink: "ink", washi: "washi", dark: "ink", light: "washi" }
+  const SIZES = { s: 40, m: 48, l: 56 }
 
-  /** Tegata's own button, in Shadow DOM so the page's CSS can't change it. */
+  /**
+   * Tegata's own button: one image drawn by tegata.xyz (the seal, the amount in Archivo, the coins you can pay with),
+   * so it looks the same on every site. In Shadow DOM so the page's CSS can't change it.
+   */
   function drawButton(el) {
     if (el.shadowRoot || el.childElementCount || el.textContent.trim()) return
-    const dark = el.getAttribute("data-tegata-theme") === "dark"
+    const theme = THEMES[el.getAttribute("data-tegata-theme") || "shu"] || "shu"
+    const size = SIZES[el.getAttribute("data-tegata-size")]
+      ? el.getAttribute("data-tegata-size")
+      : "m"
     const amount = el.getAttribute("data-tegata-amount")
-    const label =
-      el.getAttribute("data-tegata-label") || (amount ? `Pay ${dollars(amount)}` : "Pay")
+    const src = new URL("/checkout/button.svg", ORIGIN)
+    src.searchParams.set("theme", theme)
+    src.searchParams.set("size", size)
+    if (amount && /^\d{1,9}(\.\d{1,2})?$/.test(amount)) src.searchParams.set("amount", amount)
+    if (el.getAttribute("data-tegata-coins") === "off") src.searchParams.set("coins", "0")
     // A <button> can't hold a shadow root, so the drawing lives in a span inside it; the element itself loses only
     // the browser's default button look.
     Object.assign(el.style, { background: "none", border: "0", padding: "0", cursor: "pointer" })
@@ -128,18 +137,16 @@
     const shadow = host.attachShadow({ mode: "open" })
     shadow.innerHTML = `
       <style>
-        :host { all: initial; display: inline-block; cursor: pointer; }
-        .b { display: inline-flex; flex-direction: column; align-items: center; gap: 2px; padding: 12px 22px;
-             border-radius: 14px; font: 600 16px/1.2 system-ui, -apple-system, "Segoe UI", sans-serif;
-             background: ${dark ? "#f3efe6" : "#16130f"}; color: ${dark ? "#16130f" : "#f3efe6"};
-             transition: transform 100ms ease-out; }
-        :host(:active) .b { transform: scale(0.97); }
-        .s { font-weight: 500; font-size: 12px; opacity: 0.75; }
-        .s i { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #FF4F00;
-               margin-right: 6px; vertical-align: 1px; }
+        :host { all: initial; display: inline-block; cursor: pointer; line-height: 0; }
+        img { height: ${SIZES[size]}px; width: auto; border-radius: ${Math.round(SIZES[size] * 0.28)}px;
+              transition: transform 100ms ease-out, filter 150ms ease-out; }
+        :host(:hover) img { filter: brightness(1.05) saturate(1.05); }
+        :host(:active) img { transform: scale(0.97); }
       </style>
-      <span class="b" part="button"><span></span><span class="s"><i></i>Any wallet · any chain</span></span>`
-    shadow.querySelector(".b > span").textContent = label
+      <img alt="" draggable="false">`
+    const img = shadow.querySelector("img")
+    img.alt = amount ? `Pay ${amount} with Tegata` : "Pay with Tegata"
+    img.src = src.toString()
   }
 
   function wire(el) {
