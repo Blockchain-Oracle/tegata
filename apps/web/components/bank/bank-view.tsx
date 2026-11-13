@@ -1,18 +1,18 @@
 "use client"
 
-// Bank (plan 6.8 AC): withdraw dollars to a bank account (Nigeria in naira first), and bank details whose deposits
-// arrive as dollars in the balance. Noah is the licensed partner that pays the bank; the money leaves NEAR as USDC.
-// Separate from its logic so /dev/flows can show every state.
+// Bank (plan 6.8 AC′): withdraw dollars to a bank account in naira, cedi or rand, and euro bank details whose
+// deposits arrive as dollars. Noah is the licensed partner that pays the bank; the money leaves NEAR as USDC. Separate
+// from its logic so /dev/flows can show every state.
 import {
   ArrowLeft,
   Check,
-  Clock3,
-  Copy,
+  ChevronDown,
   ExternalLink,
   KeyRound,
-  Landmark,
+  Lock,
   Plus,
   RefreshCw,
+  Share2,
 } from "lucide-react"
 import { AnimatePresence, motion, useReducedMotion } from "motion/react"
 import Link from "next/link"
@@ -20,7 +20,6 @@ import { type ReactNode, useState } from "react"
 
 import { BusinessSeal, SealPress, TegataSeal } from "@/components/brand/seal"
 import { Button } from "@/components/kit/button"
-import { Field } from "@/components/kit/field"
 import { Figure, viewDollars } from "@/components/kit/figure"
 import { HoldButton } from "@/components/kit/hold-button"
 import { Segmented } from "@/components/kit/segmented"
@@ -28,10 +27,16 @@ import { Paper, Stage } from "@/components/kit/stage"
 import { ErrorState, StatusPill, TextShimmer } from "@/components/kit/states"
 import { TaskSteps } from "@/components/kit/task-steps"
 import { Mark } from "@/components/marks/mark"
+import { Sheet } from "@/components/shell/sheet"
 import { fire } from "@/lib/feedback"
+import { FIAT_NAME, fiatMoney, groupNumber, lastFour, titleCase } from "@/lib/fiat"
 import { cn } from "@/lib/utils"
 
+import { BankDisc, CopyLine, Flag } from "./parts"
+import { type NewRecipient, RecipientSheet } from "./recipient-sheet"
+
 export type BankStep = "form" | "review" | "sending" | "paid" | "failed"
+export type BankTab = "withdraw" | "receive"
 
 export interface BankQuoteView {
   channelId: string
@@ -53,6 +58,7 @@ export interface BankPayoutView {
   rate: string
   fee: string
   account: string
+  holder?: string | null
   nearTx: string | null
   hopTx: string | null
   error: string | null
@@ -80,6 +86,14 @@ export interface BankDepositView {
   createdAt: string
 }
 
+export interface SavedRecipient {
+  id: string
+  country: string
+  fiat: string
+  label: string
+  holder: string | null
+}
+
 /** A JSON Schema as Noah sends a bank's form: objects, strings, enums. */
 export interface FormSchema {
   type?: string
@@ -91,22 +105,28 @@ export interface FormSchema {
   maxLength?: number
 }
 
+export type { NewRecipient }
+
 export interface BankViewProps {
   available: boolean
   businessName: string
   balance: number
+  tab: BankTab
+  onTab: (tab: BankTab) => void
   countries: readonly { code: string; fiat: string; name: string }[]
   country: string
   onCountry: (code: string) => void
   amount: string
   onAmount: (value: string) => void
-  saved: { id: string; country: string; fiat: string; label: string }[]
-  /** A saved account, or null for a new one. */
+  saved: SavedRecipient[]
+  /** A recipient filled in just now, saved with the first withdrawal. */
+  fresh: NewRecipient | null
+  onFresh: (recipient: NewRecipient) => void
+  /** A saved recipient, or null for the fresh one. */
   accountId: string | null
   onAccount: (id: string | null) => void
   schema: FormSchema | null | undefined
-  form: Record<string, unknown>
-  onForm: (form: Record<string, unknown>) => void
+  checkHolder: (form: Record<string, unknown>) => Promise<string | null>
   quote: { data?: BankQuoteView; error?: string | null; loading: boolean }
   step: BankStep
   payout: BankPayoutView | null
@@ -131,110 +151,63 @@ export interface BankViewProps {
   recent: BankPayoutView[]
 }
 
-const FLAG: Record<string, string> = { NG: "🇳🇬", GH: "🇬🇭", ZA: "🇿🇦" }
-const money = (fiat: string, amount: string) =>
-  `${Number(amount).toLocaleString("en-US", { maximumFractionDigits: 2 })} ${fiat}`
+const bankOf = (label: string) => label.replace(/\s*••\s*\d*$/, "")
+const arrives = (seconds: number) =>
+  seconds < 90 ? "about a minute" : `about ${Math.round(seconds / 60)} minutes`
+const DATE = new Intl.DateTimeFormat("en-GB", {
+  day: "numeric",
+  month: "short",
+  hour: "2-digit",
+  minute: "2-digit",
+})
+/** "13 Nov, 13:18": one fixed format, so the server and the browser draw the same text. */
+const when = (iso: string) => DATE.format(new Date(iso))
 
-/** Whether a filled form has everything Noah's schema requires. */
-export function formComplete(
-  schema: FormSchema | null | undefined,
-  form: Record<string, unknown>,
-): boolean {
-  if (!schema?.properties) return false
-  return (schema.required ?? []).every((key) => {
-    const field = schema.properties?.[key]
-    const value = form[key]
-    if (field?.type === "object")
-      return formComplete(field, (value as Record<string, unknown>) ?? {})
-    return typeof value === "string" && value.trim().length >= (field?.minLength ?? 1)
-  })
-}
-
-/** Renders Noah's form for a bank: a searchable list for an enum, a field for text, nested groups flattened. */
-function SchemaForm({
-  schema,
-  value,
-  onChange,
-  prefix = "",
+/** A recipient as a row: their bank's disc, who holds it, the bank and the last four digits. */
+function RecipientRow({
+  label,
+  holder,
+  selected,
+  onClick,
+  tag,
 }: {
-  schema: FormSchema
-  value: Record<string, unknown>
-  onChange: (value: Record<string, unknown>) => void
-  prefix?: string
+  label: string
+  holder: string | null
+  selected: boolean
+  onClick: () => void
+  tag?: string
 }) {
-  return (
-    <>
-      {Object.entries(schema.properties ?? {}).map(([key, field]) => {
-        const id = `bank-${prefix}${key}`
-        const required = schema.required?.includes(key)
-        if (field.type === "object")
-          return (
-            <SchemaForm
-              key={key}
-              schema={field}
-              prefix={`${prefix}${key}-`}
-              value={(value[key] as Record<string, unknown>) ?? {}}
-              onChange={(next) => onChange({ ...value, [key]: next })}
-            />
-          )
-        const label = `${field.title ?? key}${required ? "" : " (optional)"}`
-        if (field.enum)
-          return (
-            <div key={key} className="flex flex-col gap-1.5">
-              <label htmlFor={id} className="text-detail font-medium text-muted-foreground">
-                {label}
-              </label>
-              <input
-                id={id}
-                list={`${id}-list`}
-                value={(value[key] as string) ?? ""}
-                onChange={(e) => onChange({ ...value, [key]: e.target.value })}
-                placeholder="Start typing to search"
-                className="h-14 w-full rounded-[14px] bg-input px-4 text-[17px] font-medium outline-none focus:bg-card focus:shadow-[0_0_0_2px_var(--shu)]"
-              />
-              <datalist id={`${id}-list`}>
-                {field.enum.map((option) => (
-                  <option key={option} value={option} />
-                ))}
-              </datalist>
-            </div>
-          )
-        return (
-          <Field
-            key={key}
-            id={id}
-            label={label}
-            value={(value[key] as string) ?? ""}
-            onChange={(e) => onChange({ ...value, [key]: e.target.value })}
-            maxLength={field.maxLength}
-            inputMode={/account/i.test(key) ? "numeric" : undefined}
-            className={/account/i.test(key) ? "font-mono" : undefined}
-          />
-        )
-      })}
-    </>
-  )
-}
-
-function CopyRow({ label, value }: { label: string; value: string }) {
-  const [copied, setCopied] = useState(false)
+  const bank = titleCase(bankOf(label))
   return (
     <button
       type="button"
-      onClick={async () => {
-        await navigator.clipboard.writeText(value)
-        fire("tick", { cue: "confirmed" })
-        setCopied(true)
-        setTimeout(() => setCopied(false), 1400)
-      }}
-      className="press flex w-full items-center gap-3 rounded-[14px] bg-secondary px-4 py-3 text-left"
+      onClick={onClick}
+      aria-pressed={selected}
+      className={cn(
+        "press flex items-center gap-3 rounded-[16px] bg-card px-3 py-3 text-left shadow-[0_0_0_1px_var(--border)]",
+        selected && "shadow-[0_0_0_2px_var(--shu)]",
+      )}
     >
+      <BankDisc name={bank} size={40} />
       <span className="flex min-w-0 flex-1 flex-col">
-        <span className="text-detail text-muted-foreground">{label}</span>
-        <span className="break-all font-mono text-[15px] font-medium">{value}</span>
+        <span className="truncate text-[16px] font-semibold">{holder ?? bank}</span>
+        <span className="truncate text-[13px] text-muted-foreground">
+          {holder ? `${bank} · ` : ""}
+          <span className="font-mono">•• {lastFour(label)}</span>
+        </span>
       </span>
-      <span className="grid size-9 shrink-0 place-items-center rounded-full bg-card [&_svg]:size-4">
-        {copied ? <Check /> : <Copy />}
+      {tag ? (
+        <span className="rounded-full bg-shu-wash px-2.5 py-1 text-[12px] font-semibold text-shu-ink">
+          {tag}
+        </span>
+      ) : null}
+      <span
+        className={cn(
+          "grid size-6 shrink-0 place-items-center rounded-full border-2",
+          selected ? "border-shu bg-shu text-white" : "border-border",
+        )}
+      >
+        {selected ? <Check className="size-3.5" strokeWidth={3} /> : null}
       </span>
     </button>
   )
@@ -242,63 +215,64 @@ function CopyRow({ label, value }: { label: string; value: string }) {
 
 function Row({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <div className="flex items-center justify-between gap-4 py-3">
-      <span className="text-[#666]">{label}</span>
-      <span className="text-right font-semibold">{children}</span>
+    <div className="flex items-center justify-between gap-4 py-2.5 text-[15px]">
+      <span className="text-[#6E6E6E]">{label}</span>
+      <span className="text-right font-semibold text-black">{children}</span>
     </div>
   )
 }
 
 export function BankView(p: BankViewProps) {
   const reduce = useReducedMotion()
+  const [picking, setPicking] = useState(false)
+  const [adding, setAdding] = useState(false)
   const value = Number.parseFloat(p.amount || "0") || 0
   const over = value > p.balance
   const country = p.countries.find((c) => c.code === p.country) ?? p.countries[0]
   const savedHere = p.saved.filter((a) => a.country === p.country)
-  const ready =
-    value > 0 &&
-    !over &&
-    Boolean(p.quote.data) &&
-    (p.accountId !== null || formComplete(p.schema, p.form))
+  const q = p.quote.data
+  const low = q && value > 0 && value < Number(q.min)
+  const chosen = p.accountId
+    ? savedHere.find((a) => a.id === p.accountId)
+    : p.fresh
+      ? { label: p.fresh.label, holder: p.fresh.holder }
+      : null
+  const ready = value > 0 && !over && !low && Boolean(q) && Boolean(chosen)
   const slide = {
     initial: reduce ? { opacity: 0 } : { opacity: 0, y: 12 },
     animate: { opacity: 1, y: 0 },
     exit: reduce ? { opacity: 0 } : { opacity: 0, y: -8 },
     transition: { duration: 0.26, ease: [0.2, 0.8, 0.2, 1] as const },
   }
-  const account =
-    p.payout?.account || savedHere.find((a) => a.id === p.accountId)?.label || "your bank account"
+  const toName = p.payout?.holder ?? chosen?.holder ?? null
+  const toLabel = p.payout?.account || chosen?.label || ""
+  const toBank = titleCase(bankOf(toLabel))
   const steps = [
-    {
-      id: "sign",
-      label: "Approved with your key",
-      detail: "signed on this device",
-      icon: <KeyRound />,
-    },
+    { id: "sign", label: "Approved", detail: "with your key, on this device", icon: <KeyRound /> },
     {
       id: "near",
-      label: "Sent from your balance",
-      detail: "on NEAR · fee paid by Tegata",
+      label: "Left your balance",
+      detail: "on NEAR, fee paid by Tegata",
       mark: "near" as const,
     },
     {
       id: "hop",
       label: "On its way to Noah",
-      detail: "as USDC on Solana (Sandbox: Tegata's test wallet)",
+      detail: p.available ? "as USDC on Solana" : "through NEAR Intents",
       icon: <Mark id="sol" size={20} />,
     },
     {
       id: "bank",
-      label: `Paid to ${account}`,
-      detail: "by Noah, a licensed partner",
-      icon: <Landmark />,
+      label: `Paid to ${toName ?? toBank}`,
+      detail: `${toBank} •• ${lastFour(toLabel)}`,
+      icon: <BankDisc name={toBank || "Bank"} size={20} />,
     },
   ]
 
   if (!country) return null
   return (
     <div className="mx-auto flex w-full max-w-[640px] flex-col gap-6">
-      <div className="flex items-center gap-3">
+      <div className="flex flex-wrap items-center gap-3">
         {p.step === "review" ? (
           <button
             type="button"
@@ -310,28 +284,38 @@ export function BankView(p: BankViewProps) {
           </button>
         ) : null}
         <h1 className="display text-page-title">Bank</h1>
+        {p.available ? (
+          <span className="ml-auto rounded-full border border-dashed border-border px-3 py-1 text-[13px] font-medium text-muted-foreground">
+            Sandbox · Noah's test bank
+          </span>
+        ) : null}
       </div>
 
       {!p.available ? (
-        <div className="flex items-start gap-3 rounded-[20px] bg-kin/70 p-5 text-black">
-          <Landmark className="mt-0.5 size-6 shrink-0" />
+        <div className="flex items-center gap-3 rounded-[16px] bg-kin px-4 py-3 text-black">
+          <Lock className="size-5 shrink-0" />
           <p className="text-[15px] font-medium">
-            Bank payouts in Live open once Noah's business review is done. Switch to the Sandbox to
-            withdraw to a test bank account and get bank details now: the same screens, on Noah's
-            test bank network.
+            Live bank payouts open after Noah's business review. Try it in the Sandbox.
           </p>
         </div>
-      ) : (
-        <p className="text-detail text-muted-foreground">
-          Sandbox: Noah's test bank network; no real money moves. The hop to Noah runs through
-          Tegata's test wallet on Solana, where Live uses NEAR Intents.
-        </p>
-      )}
+      ) : null}
+
+      {p.step === "form" ? (
+        <Segmented
+          label="Bank"
+          value={p.tab}
+          onValueChange={(v) => p.onTab(v as BankTab)}
+          options={[
+            { value: "withdraw", label: "Withdraw" },
+            { value: "receive", label: "Receive" },
+          ]}
+        />
+      ) : null}
 
       <AnimatePresence mode="wait" initial={false}>
-        {p.step === "form" ? (
+        {p.step === "form" && p.tab === "withdraw" ? (
           <motion.form
-            key="form"
+            key="withdraw"
             className="flex flex-col gap-5"
             onSubmit={(e) => {
               e.preventDefault()
@@ -339,186 +323,277 @@ export function BankView(p: BankViewProps) {
             }}
             {...slide}
           >
-            <Stage className="px-5 py-9">
-              <div className="flex flex-col items-center gap-2">
-                <label htmlFor="bank-amount" className="text-[15px] font-medium text-white/85">
-                  Withdraw
-                </label>
-                <div className="flex items-baseline justify-center">
-                  <span
-                    className={cn("figure text-[56px]", value > 0 ? "text-white" : "text-white/55")}
-                  >
-                    $
+            {/* The converter: what leaves your balance, what reaches their bank. */}
+            <Stage className="p-3 sm:p-6">
+              <Paper className="overflow-hidden">
+                <div className="flex flex-col gap-1 px-5 pt-5 pb-4">
+                  <label htmlFor="bank-amount" className="text-[14px] font-medium text-[#6E6E6E]">
+                    You send
+                  </label>
+                  <div className="flex items-center gap-3">
+                    <span className="flex min-w-0 flex-1 items-baseline">
+                      <span
+                        className={cn(
+                          "figure text-[48px] leading-none",
+                          value > 0 ? "text-black" : "text-[#B8B8B8]",
+                        )}
+                      >
+                        $
+                      </span>
+                      <input
+                        id="bank-amount"
+                        inputMode="decimal"
+                        placeholder="0"
+                        autoComplete="off"
+                        value={p.amount}
+                        onChange={(e) =>
+                          p.onAmount(
+                            e.target.value.replace(/[^0-9.]/g, "").replace(/(\..*)\./g, "$1"),
+                          )
+                        }
+                        className="figure w-full min-w-0 bg-transparent text-[48px] leading-none text-black caret-shu outline-none placeholder:text-[#B8B8B8]"
+                      />
+                    </span>
+                    <span className="inline-flex shrink-0 items-center gap-2 rounded-full bg-[#F1F1F1] py-1.5 pr-3.5 pl-1.5 text-[15px] font-semibold text-black">
+                      <Mark id="usdc" size={26} /> USDC
+                    </span>
+                  </div>
+                  <span className="text-[13px] text-[#6E6E6E]">
+                    {over ? (
+                      <span className="font-semibold text-[#C8283F]">
+                        More than your ${p.balance.toFixed(2)}
+                      </span>
+                    ) : (
+                      <>
+                        Balance ${p.balance.toFixed(2)} ·{" "}
+                        <button
+                          type="button"
+                          onClick={() => p.onAmount(p.balance.toFixed(2))}
+                          className="font-semibold text-[#B23700] hover:underline"
+                        >
+                          Use all
+                        </button>
+                      </>
+                    )}
                   </span>
-                  <input
-                    id="bank-amount"
-                    inputMode="decimal"
-                    placeholder="0"
-                    value={p.amount}
-                    onChange={(e) =>
-                      p.onAmount(e.target.value.replace(/[^0-9.]/g, "").replace(/(\..*)\./g, "$1"))
-                    }
-                    size={Math.max(1, p.amount.length || 1)}
-                    className="figure min-w-[1ch] bg-transparent text-center text-[80px] text-white caret-white outline-none placeholder:text-white/55 focus-visible:outline-none"
-                  />
                 </div>
-                <span className="rounded-full bg-white/18 px-3 py-1 text-[14px] text-white">
-                  {over ? "More than your " : "You have "}${p.balance.toFixed(2)}
-                </span>
-              </div>
-            </Stage>
 
-            <Segmented
-              label="Country"
-              value={p.country}
-              onValueChange={p.onCountry}
-              options={p.countries.map((c) => ({
-                value: c.code,
-                label: `${FLAG[c.code] ?? ""} ${c.name}`,
-              }))}
-            />
-
-            <fieldset className="flex flex-col gap-2">
-              <legend className="mb-2 text-[15px] font-semibold">Pay to</legend>
-              {savedHere.map((a) => (
-                <button
-                  key={a.id}
-                  type="button"
-                  onClick={() => p.onAccount(a.id)}
-                  aria-pressed={p.accountId === a.id}
-                  className={cn(
-                    "press flex items-center gap-3 rounded-[14px] bg-secondary px-4 py-3 text-left",
-                    p.accountId === a.id && "bg-card shadow-[0_0_0_2px_var(--shu)]",
+                <ul className="relative mx-5 flex flex-col gap-2 border-l-2 border-dotted border-[#D9D9D9] py-1 pl-5 text-[14px] text-[#444]">
+                  {q ? (
+                    <>
+                      <li className="tnum">
+                        1 USD = <span className="font-semibold">{fiatMoney(q.fiat, q.rate)}</span>
+                      </li>
+                      <li className="tnum">
+                        Noah's fee{" "}
+                        <span className="font-semibold">
+                          {value > 0 ? fiatMoney(q.fiat, q.fee) : "—"}
+                        </span>
+                      </li>
+                      <li className={cn(low && "font-semibold text-[#8A5800]")}>
+                        {low
+                          ? `At least $${Number(q.min).toFixed(2)} to this bank`
+                          : `Arrives in ${arrives(q.seconds)}`}
+                      </li>
+                    </>
+                  ) : p.quote.error ? (
+                    <li className="font-semibold text-[#8A5800]">{p.quote.error}</li>
+                  ) : (
+                    <li>
+                      <TextShimmer className="text-[14px]">Getting Noah's rate…</TextShimmer>
+                    </li>
                   )}
-                >
-                  <Landmark className="size-5 shrink-0" />
-                  <span className="flex-1 text-[15px] font-semibold">{a.label}</span>
-                  <span className="text-detail text-muted-foreground">{a.fiat}</span>
-                </button>
-              ))}
-              <button
-                type="button"
-                onClick={() => p.onAccount(null)}
-                aria-pressed={p.accountId === null}
-                className={cn(
-                  "press flex items-center gap-3 rounded-[14px] bg-secondary px-4 py-3 text-left",
-                  p.accountId === null && "bg-card shadow-[0_0_0_2px_var(--shu)]",
-                )}
-              >
-                <Plus className="size-5 shrink-0" />
-                <span className="flex-1 text-[15px] font-semibold">
-                  A new bank account in {country.name}
-                </span>
-              </button>
-            </fieldset>
+                </ul>
 
-            {p.accountId === null ? (
-              p.schema ? (
-                <div className="flex flex-col gap-3 rounded-[20px] bg-card p-4 shadow-[0_0_0_1px_var(--border)]">
-                  {p.available && p.country === "NG" ? (
+                <div className="mt-4 flex flex-col gap-1 bg-[#F6F6F6] px-5 pt-4 pb-5">
+                  <span className="text-[14px] font-medium text-[#6E6E6E]">They get</span>
+                  <div className="flex items-center gap-3">
+                    <span
+                      className={cn(
+                        "figure min-w-0 flex-1 truncate text-[48px] leading-none tnum",
+                        q && value > 0 ? "text-black" : "text-[#B8B8B8]",
+                      )}
+                      aria-live="polite"
+                    >
+                      {q && value > 0
+                        ? fiatMoney(q.fiat, q.fiatAmount)
+                        : fiatMoney(country.fiat, 0)}
+                    </span>
                     <button
                       type="button"
-                      onClick={() =>
-                        p.onForm({
-                          BankDetails: { Bank: "Access Bank", AccountNumber: "0690000031" },
-                          PaymentPurpose: "Salary payment",
-                        })
-                      }
-                      className="press self-start rounded-full bg-secondary px-3 py-1.5 text-[13px] font-semibold"
+                      onClick={() => setPicking(true)}
+                      className="press inline-flex shrink-0 items-center gap-2 rounded-full bg-white py-1.5 pr-2.5 pl-1.5 text-[15px] font-semibold text-black shadow-[0_0_0_1px_#E2E2E2]"
+                      aria-label={`Currency: ${FIAT_NAME[country.fiat] ?? country.fiat}. Change country`}
                     >
-                      Use Noah's test account (Access Bank 0690000031)
+                      <Flag code={country.code} size={26} />
+                      {country.fiat}
+                      <ChevronDown className="size-4 text-[#6E6E6E]" />
                     </button>
-                  ) : null}
-                  <SchemaForm schema={p.schema} value={p.form} onChange={p.onForm} />
-                  <p className="text-detail text-muted-foreground">
-                    The bank's own form, from Noah. Saved for next time.
-                  </p>
+                  </div>
                 </div>
-              ) : p.schema === null ? null : (
-                <TextShimmer className="text-[15px]">{`Asking Noah for ${country.name}'s bank form…`}</TextShimmer>
-              )
-            ) : null}
+              </Paper>
+            </Stage>
 
-            <div className="flex flex-col gap-1 rounded-[14px] bg-secondary px-4 py-3">
-              <span className="flex items-center justify-between text-detail text-muted-foreground">
-                <span>They get</span>
-                <span className="inline-flex items-center gap-1.5">
-                  <Landmark className="size-3.5" /> Live rate from Noah
-                </span>
-              </span>
-              {value <= 0 ? (
-                <span className="text-[17px] font-semibold text-text-3">Enter an amount</span>
-              ) : p.quote.data ? (
-                <>
-                  <span className="flex items-center justify-between gap-3">
-                    <span className="tnum text-[20px] font-semibold">
-                      {money(p.quote.data.fiat, p.quote.data.fiatAmount)}
-                    </span>
-                    <span className="inline-flex items-center gap-1 text-detail text-muted-foreground">
-                      <Clock3 className="size-3.5" /> about{" "}
-                      {Math.max(1, Math.round(p.quote.data.seconds / 60))} min
-                    </span>
+            <section className="flex flex-col gap-2">
+              <div className="flex items-center justify-between">
+                <h2 className="text-[17px] font-semibold">To</h2>
+                <button
+                  type="button"
+                  onClick={() => setAdding(true)}
+                  className="press inline-flex items-center gap-1.5 rounded-full bg-secondary px-3 py-1.5 text-[14px] font-semibold"
+                >
+                  <Plus className="size-4" /> New recipient
+                </button>
+              </div>
+              {p.fresh ? (
+                <RecipientRow
+                  label={p.fresh.label}
+                  holder={p.fresh.holder}
+                  selected={p.accountId === null}
+                  onClick={() => p.onAccount(null)}
+                  tag="New"
+                />
+              ) : null}
+              {savedHere.map((a) => (
+                <RecipientRow
+                  key={a.id}
+                  label={a.label}
+                  holder={a.holder}
+                  selected={p.accountId === a.id}
+                  onClick={() => p.onAccount(a.id)}
+                />
+              ))}
+              {!p.fresh && savedHere.length === 0 ? (
+                <button
+                  type="button"
+                  onClick={() => setAdding(true)}
+                  className="press flex items-center gap-3 rounded-[16px] border-2 border-dashed border-border px-3 py-3 text-left"
+                >
+                  <Flag code={country.code} size={40} />
+                  <span className="flex-1 text-[15px] font-semibold">
+                    Add a bank account in {country.name}
                   </span>
-                  <span className="text-detail text-muted-foreground">
-                    {Number(p.quote.data.rate).toLocaleString("en-US")} {p.quote.data.fiat} per
-                    dollar · Noah's fee {money(p.quote.data.fiat, p.quote.data.fee)} · at least $
-                    {Number(p.quote.data.min).toFixed(2)}
-                  </span>
-                </>
-              ) : p.quote.error ? (
-                <span className="text-[15px] font-medium text-warn">{p.quote.error}</span>
-              ) : (
-                <TextShimmer className="text-[17px]">Asking Noah…</TextShimmer>
-              )}
-            </div>
+                  <Plus className="size-5 text-muted-foreground" />
+                </button>
+              ) : null}
+            </section>
+
             {p.problem ? <p className="text-[15px] font-medium text-down">{p.problem}</p> : null}
             {p.holder ? (
-              <div className="flex flex-col gap-3 rounded-[20px] bg-card p-5 shadow-[0_0_0_2px_var(--shu)]">
-                <span className="text-detail font-medium text-muted-foreground">
-                  Noah checked the account with the bank
-                </span>
-                <span className="text-[17px]">
-                  It belongs to <span className="font-semibold">{p.holder}</span>. Is that who
-                  you're paying?
+              <div className="flex flex-col gap-3 rounded-[20px] bg-card p-4 shadow-[0_0_0_2px_var(--shu)]">
+                <span className="flex items-center gap-3">
+                  <BankDisc name={toBank} size={40} />
+                  <span className="flex flex-col">
+                    <span className="text-[13px] text-muted-foreground">The bank says it's</span>
+                    <span className="text-[17px] font-bold uppercase">{p.holder}</span>
+                  </span>
                 </span>
                 <div className="grid grid-cols-2 gap-2">
                   <Button variant="secondary" type="button" onClick={p.onRejectHolder}>
-                    No, change it
+                    Not them
                   </Button>
                   <Button type="button" busy={p.busy} onClick={p.onConfirmHolder}>
-                    Yes, continue
+                    Pay them
                   </Button>
                 </div>
               </div>
             ) : (
               <Button type="submit" busy={p.busy} disabled={!ready || !p.available}>
-                {value > 0 ? `Review $${value.toFixed(2)}` : "Enter an amount"}
+                {!chosen && value > 0 ? "Choose who to pay" : "Continue"}
               </Button>
             )}
+
+            {p.recent.length ? (
+              <section className="flex flex-col gap-2">
+                <h2 className="text-[17px] font-semibold">Recent</h2>
+                <ul className="flex flex-col divide-y divide-border rounded-[16px] bg-card px-3">
+                  {p.recent.map((r) => {
+                    const bank = titleCase(bankOf(r.account))
+                    return (
+                      <li key={r.id} className="flex items-center gap-3 py-3">
+                        <BankDisc name={bank} size={36} />
+                        <span className="flex min-w-0 flex-1 flex-col">
+                          <span className="truncate text-[15px] font-semibold">
+                            {r.holder ?? bank}
+                          </span>
+                          <span className="truncate text-[13px] text-muted-foreground">
+                            {when(r.createdAt)} · ${viewDollars(r.amount).toFixed(2)}
+                          </span>
+                        </span>
+                        <span className="flex flex-col items-end gap-1">
+                          <span className="tnum text-[15px] font-semibold">
+                            {fiatMoney(r.fiat, r.fiatAmount)}
+                          </span>
+                          <StatusPill
+                            tone={
+                              r.status === "paid"
+                                ? "up"
+                                : r.status === "failed"
+                                  ? "down"
+                                  : r.status === "drafted"
+                                    ? "quiet"
+                                    : "wait"
+                            }
+                          >
+                            {r.status === "paid"
+                              ? "Paid"
+                              : r.status === "failed"
+                                ? "Returned"
+                                : r.status === "drafted"
+                                  ? "Not approved"
+                                  : "On its way"}
+                          </StatusPill>
+                        </span>
+                      </li>
+                    )
+                  })}
+                </ul>
+              </section>
+            ) : null}
           </motion.form>
+        ) : p.step === "form" && p.tab === "receive" ? (
+          <motion.div key="receive" className="flex flex-col gap-5" {...slide}>
+            <Receive {...p} />
+          </motion.div>
         ) : p.step === "review" && p.payout ? (
           <motion.div key="review" className="flex flex-col gap-5" {...slide}>
-            <Stage className="p-4 sm:p-6">
-              <Paper className="flex flex-col gap-1 p-6">
-                <span className="text-detail font-medium text-[#666]">You withdraw</span>
-                <Figure value={viewDollars(p.payout.amount)} className="text-[64px]" />
-                <div className="mt-4 flex flex-col divide-y divide-[#ECECEC] text-[15px]">
-                  <Row label="To">{p.payout.account || account}</Row>
-                  <Row label="They get">{money(p.payout.fiat, p.payout.fiatAmount)}</Row>
+            <Stage className="p-3 sm:p-6">
+              <Paper className="flex flex-col gap-4 p-5">
+                <span className="flex flex-col gap-1">
+                  <span className="text-[14px] font-medium text-[#6E6E6E]">You withdraw</span>
+                  <Figure value={viewDollars(p.payout.amount)} className="text-[56px] text-black" />
+                </span>
+                <div className="flex items-center gap-3 rounded-[16px] bg-[#F6F6F6] p-3">
+                  <BankDisc name={toBank} size={44} />
+                  <span className="flex min-w-0 flex-col">
+                    <span className="truncate text-[17px] font-semibold text-black">
+                      {toName ?? toBank}
+                    </span>
+                    <span className="truncate text-[13px] text-[#6E6E6E]">
+                      {toBank} · <span className="font-mono">•• {lastFour(toLabel)}</span>
+                    </span>
+                  </span>
+                  <Flag code={p.payout.fiat} size={24} className="ml-auto" />
+                </div>
+                <div className="flex flex-col divide-y divide-[#ECECEC] rounded-[16px] bg-[#F6F6F6] px-4">
+                  <Row label="They get">
+                    <span className="tnum text-[17px]">
+                      {fiatMoney(p.payout.fiat, p.payout.fiatAmount)}
+                    </span>
+                  </Row>
                   <Row label="Rate">
-                    {Number(p.payout.rate).toLocaleString("en-US")} {p.payout.fiat} per dollar
+                    <span className="tnum">1 USD = {fiatMoney(p.payout.fiat, p.payout.rate)}</span>
+                  </Row>
+                  <Row label="Noah's fee">
+                    <span className="tnum">{fiatMoney(p.payout.fiat, p.payout.fee)}</span>
                   </Row>
                   <Row label="Network fee">
                     <span className="inline-flex items-center gap-1.5">
                       <TegataSeal size={18} textured={false} /> Paid by Tegata
                     </span>
                   </Row>
+                  <Row label="Arrives">{q ? `In ${arrives(q.seconds)}` : "In minutes"}</Row>
                 </div>
-                <p className="mt-3 flex items-start gap-2 text-[13px] text-[#666]">
-                  <Landmark className="mt-0.5 size-4 shrink-0" />
-                  Paid out by Noah, a licensed partner. If the bank can't be paid, the dollars come
-                  back to your balance.
-                </p>
               </Paper>
             </Stage>
             {p.problem ? <p className="text-[15px] font-medium text-down">{p.problem}</p> : null}
@@ -530,15 +605,18 @@ export function BankView(p: BankViewProps) {
           </motion.div>
         ) : p.step === "sending" ? (
           <motion.div key="sending" className="flex flex-col gap-5" {...slide}>
-            <div className="flex flex-col items-center gap-1 rounded-[24px] bg-card p-6 text-center">
-              <span className="text-detail font-medium text-muted-foreground">
-                Withdrawing to {account}
+            <Stage className="px-5 py-8" inner="flex flex-col items-center gap-2 text-center">
+              <span className="flex items-center gap-2 text-[15px] font-medium text-white/90">
+                <Flag code={p.payout?.fiat ?? country.fiat} size={22} />
+                To {toName ?? toBank}
               </span>
-              <Figure
-                value={value || viewDollars(p.payout?.amount ?? "0")}
-                className="text-[56px]"
-              />
-            </div>
+              <span className="figure tnum text-[52px] leading-none text-white">
+                {p.payout ? fiatMoney(p.payout.fiat, p.payout.fiatAmount) : "—"}
+              </span>
+              <span className="rounded-full bg-white/18 px-3 py-1 text-[14px] text-white">
+                ${(value || viewDollars(p.payout?.amount ?? "0")).toFixed(2)} from your balance
+              </span>
+            </Stage>
             <div className="rounded-[20px] bg-secondary p-2">
               <TaskSteps steps={steps} current={p.progress} />
             </div>
@@ -552,25 +630,33 @@ export function BankView(p: BankViewProps) {
         ) : p.step === "paid" && p.payout ? (
           <motion.div key="paid" className="flex flex-col gap-5" {...slide}>
             <div className="relative rounded-[20px] bg-white text-black shadow-receipt">
-              <div className="p-6 pb-4">
-                <span className="flex items-center gap-2 text-[13px] font-semibold text-[#666]">
-                  <TegataSeal size={20} textured={false} /> Receipt · Paid to a bank
+              <div className="flex flex-col gap-1 p-6 pb-4">
+                <span className="flex items-center gap-2 text-[13px] font-semibold text-[#6E6E6E]">
+                  <TegataSeal size={20} textured={false} /> Paid to a bank
                 </span>
-                <Figure value={viewDollars(p.payout.amount)} className="mt-3 flex text-[56px]" />
-                <div className="mt-2 flex items-center gap-2 text-[15px] font-semibold">
-                  <Landmark className="size-5" /> {p.payout.account}
-                </div>
+                <span className="figure tnum mt-2 text-[52px] leading-none">
+                  {fiatMoney(p.payout.fiat, p.payout.fiatAmount)}
+                </span>
+                <span className="text-[14px] text-[#6E6E6E]">
+                  ${viewDollars(p.payout.amount).toFixed(2)} from {p.businessName}
+                </span>
               </div>
               <div className="relative h-4">
                 <span className="absolute top-1/2 -left-2 size-4 -translate-y-1/2 rounded-full bg-background" />
                 <span className="absolute top-1/2 -right-2 size-4 -translate-y-1/2 rounded-full bg-background" />
                 <span className="absolute inset-x-4 top-1/2 border-t-2 border-dashed border-[#E2E2E2]" />
               </div>
-              <div className="flex flex-col gap-2.5 p-6 pt-3 text-[14px]">
-                <Row label="They received">{money(p.payout.fiat, p.payout.fiatAmount)}</Row>
-                <Row label="Paid out by">Noah</Row>
-                <Row label="From">{p.businessName}</Row>
-                <span className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-2">
+              <div className="flex flex-col gap-3 p-6 pt-3">
+                <span className="flex items-center gap-3">
+                  <BankDisc name={toBank} size={40} />
+                  <span className="flex min-w-0 flex-col">
+                    <span className="truncate text-[16px] font-semibold">{toName ?? toBank}</span>
+                    <span className="truncate text-[13px] text-[#6E6E6E]">
+                      {toBank} · <span className="font-mono">•• {lastFour(toLabel)}</span>
+                    </span>
+                  </span>
+                </span>
+                <span className="flex flex-wrap items-center gap-x-4 gap-y-2 text-[14px]">
                   {p.payout.nearTx ? (
                     <a
                       href={`https://testnet.nearblocks.io/txns/${p.payout.nearTx}`}
@@ -578,7 +664,7 @@ export function BankView(p: BankViewProps) {
                       rel="noreferrer"
                       className="inline-flex items-center gap-1.5 font-semibold text-[#B23700] hover:underline"
                     >
-                      On NEAR <ExternalLink className="size-3.5" />
+                      <Mark id="near" size={16} /> On NEAR <ExternalLink className="size-3.5" />
                     </a>
                   ) : null}
                   {p.payout.hopTx ? (
@@ -588,7 +674,7 @@ export function BankView(p: BankViewProps) {
                       rel="noreferrer"
                       className="inline-flex items-center gap-1.5 font-semibold text-[#B23700] hover:underline"
                     >
-                      To Noah, on Solana <ExternalLink className="size-3.5" />
+                      <Mark id="sol" size={16} /> To Noah <ExternalLink className="size-3.5" />
                     </a>
                   ) : null}
                 </span>
@@ -627,158 +713,239 @@ export function BankView(p: BankViewProps) {
         )}
       </AnimatePresence>
 
-      <section className="flex flex-col gap-4 rounded-[24px] bg-card p-5 sm:p-6">
-        <div className="flex items-center gap-2">
-          <Landmark className="size-5" />
-          <h2 className="text-[17px] font-semibold">Your bank details</h2>
-        </div>
-        {p.details ? (
-          <>
-            <p className="text-[15px] text-muted-foreground">
-              Customers can pay you by bank transfer. What arrives turns into dollars in your
-              balance on NEAR.
-            </p>
-            <div className="flex flex-col gap-2">
-              <CopyRow label="Account holder" value={p.details.holder} />
-              <CopyRow
-                label={p.details.rail === "BankSepa" ? "IBAN (SEPA, euros)" : "Account number"}
-                value={p.details.number}
-              />
-              {p.details.code ? <CopyRow label="BIC / bank code" value={p.details.code} /> : null}
-              <CopyRow label="Bank" value={p.details.bank} />
-            </div>
-            {p.available ? (
-              <SimulateDeposit
-                fiat={p.details.fiat}
-                onSimulate={p.onSimulate}
-                busy={p.simulating}
-                done={p.simulated}
-              />
-            ) : null}
-            {p.deposits.length ? (
-              <ul className="flex flex-col divide-y divide-secondary rounded-[16px] bg-secondary/60 px-4">
-                {p.deposits.map((d) => (
-                  <li key={d.id} className="flex items-center justify-between gap-3 py-2.5">
-                    <span className="flex flex-col">
-                      <span className="text-[14px] font-semibold">
-                        {money(d.fiat, d.fiatAmount)} → ${viewDollars(d.amount).toFixed(2)}
-                      </span>
-                      <span className="text-detail text-muted-foreground">
-                        {new Date(d.createdAt).toLocaleString(undefined, {
-                          day: "numeric",
-                          month: "short",
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })}
-                        {d.error ? ` · ${d.error}` : ""}
-                      </span>
-                    </span>
-                    <StatusPill
-                      tone={
-                        d.status === "credited" ? "up" : d.status === "failed" ? "down" : "wait"
-                      }
-                    >
-                      {d.status === "credited"
-                        ? "In your balance"
-                        : d.status === "failed"
-                          ? "Not credited"
-                          : "Arriving"}
-                    </StatusPill>
-                  </li>
-                ))}
-              </ul>
-            ) : null}
-          </>
-        ) : (
-          <>
-            <p className="text-[15px] text-muted-foreground">
-              Get an account number customers can pay by bank transfer. Deposits turn into dollars
-              in your balance.
-              {p.available ? " In the Sandbox it's a euro IBAN on Noah's test network." : ""}
-            </p>
-            <Button
-              variant="secondary"
-              busy={p.gettingDetails}
-              disabled={!p.available}
-              onClick={p.onGetDetails}
-            >
-              <Landmark /> Get bank details
-            </Button>
-          </>
-        )}
-      </section>
-
-      {p.recent.length ? (
-        <section className="flex flex-col gap-2">
-          <span className="text-detail font-medium text-muted-foreground">Withdrawals</span>
-          <ul className="flex flex-col divide-y divide-secondary rounded-[16px] bg-card px-4">
-            {p.recent.map((r) => (
-              <li key={r.id} className="flex items-center justify-between gap-3 py-3">
-                <span className="flex min-w-0 flex-col">
-                  <span className="truncate text-[15px] font-semibold">{r.account}</span>
-                  <span className="text-detail text-muted-foreground">
-                    ${viewDollars(r.amount).toFixed(2)} → {money(r.fiat, r.fiatAmount)}
+      <Sheet open={picking} onOpenChange={setPicking} title="Send to">
+        <ul className="flex flex-col gap-2">
+          {p.countries.map((c) => (
+            <li key={c.code}>
+              <button
+                type="button"
+                onClick={() => {
+                  p.onCountry(c.code)
+                  setPicking(false)
+                  fire("tick", { cue: "step" })
+                }}
+                aria-pressed={c.code === p.country}
+                className={cn(
+                  "press flex w-full items-center gap-3 rounded-[16px] bg-secondary px-3 py-3 text-left",
+                  c.code === p.country && "bg-card shadow-[0_0_0_2px_var(--shu)]",
+                )}
+              >
+                <Flag code={c.code} size={36} />
+                <span className="flex flex-1 flex-col">
+                  <span className="text-[16px] font-semibold">{c.name}</span>
+                  <span className="text-[13px] text-muted-foreground">
+                    {FIAT_NAME[c.fiat] ?? c.fiat} · {c.fiat}
                   </span>
                 </span>
-                <StatusPill
-                  tone={
-                    r.status === "paid"
-                      ? "up"
-                      : r.status === "failed"
-                        ? "down"
-                        : r.status === "drafted"
-                          ? "quiet"
-                          : "wait"
-                  }
+                {c.code === p.country ? <Check className="size-5 text-shu" /> : null}
+              </button>
+            </li>
+          ))}
+        </ul>
+      </Sheet>
+
+      <RecipientSheet
+        open={adding}
+        onOpenChange={setAdding}
+        country={country}
+        schema={p.schema}
+        sandbox={p.available}
+        checkHolder={p.checkHolder}
+        onDone={(r) => {
+          p.onFresh(r)
+          setAdding(false)
+        }}
+      />
+    </div>
+  )
+}
+
+/** Receive by bank transfer: the euro account card on the stage, a test transfer in the Sandbox, and what arrived. */
+function Receive(p: BankViewProps) {
+  const [test, setTest] = useState("5")
+  const [shared, setShared] = useState(false)
+  const d = p.details
+  const all = d
+    ? [
+        `Account holder: ${d.holder}`,
+        `${d.rail === "BankSepa" ? "IBAN" : "Account number"}: ${d.number}`,
+        d.code ? `BIC: ${d.code}` : null,
+        `Bank: ${titleCase(d.bank)}`,
+      ]
+        .filter(Boolean)
+        .join("\n")
+    : ""
+  return (
+    <>
+      <Stage className="p-3 sm:p-6">
+        <Paper className="flex flex-col p-5">
+          <div className="flex items-center gap-3 pb-2">
+            <Flag code={d?.fiat ?? "EUR"} size={40} />
+            <span className="flex flex-col">
+              <span className="text-[17px] font-bold text-black">
+                {FIAT_NAME[d?.fiat ?? "EUR"] ?? "Euro"} account
+              </span>
+              <span className="text-[13px] text-[#6E6E6E]">
+                {d?.rail === "BankSepa" || !d ? "IBAN · SEPA transfers" : d.rail}
+              </span>
+            </span>
+            {d ? (
+              <span className="ml-auto rounded-full bg-[#E9F7D4] px-2.5 py-1 text-[12px] font-semibold text-[#2F7A00]">
+                Active
+              </span>
+            ) : null}
+          </div>
+          {d ? (
+            <>
+              <div className="flex flex-col divide-y divide-[#ECECEC]">
+                <CopyLine label="Account holder" value={d.holder} mono={false} />
+                <CopyLine
+                  label={d.rail === "BankSepa" ? "IBAN" : "Account number"}
+                  value={d.number}
+                  shown={groupNumber(d.number)}
+                />
+                {d.code ? <CopyLine label="BIC" value={d.code} /> : null}
+                <CopyLine label="Bank" value={titleCase(d.bank)} mono={false} />
+              </div>
+              <div className="mt-3 grid grid-cols-2 gap-2">
+                <Button
+                  variant="secondary"
+                  className="bg-[#F1F1F1] text-black hover:bg-[#E6E6E6]"
+                  onClick={async () => {
+                    await navigator.clipboard.writeText(all)
+                    fire("tick", { cue: "confirmed" })
+                    setShared(true)
+                    setTimeout(() => setShared(false), 1400)
+                  }}
                 >
-                  {r.status === "paid"
-                    ? "Paid"
-                    : r.status === "failed"
-                      ? "Returned"
-                      : r.status === "drafted"
-                        ? "Not approved"
-                        : "On its way"}
-                </StatusPill>
+                  {shared ? <Check /> : null} {shared ? "Copied" : "Copy all"}
+                </Button>
+                <Button
+                  className="bg-black text-white hover:bg-black/85"
+                  onClick={async () => {
+                    if (navigator.share) {
+                      try {
+                        await navigator.share({
+                          title: `${p.businessName} bank details`,
+                          text: all,
+                        })
+                      } catch {
+                        // Closed without sharing.
+                      }
+                    } else {
+                      await navigator.clipboard.writeText(all)
+                      fire("tick", { cue: "confirmed" })
+                    }
+                  }}
+                >
+                  <Share2 /> Share
+                </Button>
+              </div>
+            </>
+          ) : (
+            <div className="flex flex-col gap-3 pt-2">
+              {["Account holder", "IBAN", "BIC"].map((label) => (
+                <span key={label} className="flex flex-col gap-1.5 border-t border-[#ECECEC] pt-3">
+                  <span className="text-[13px] font-medium text-[#6E6E6E]">{label}</span>
+                  <span className="h-4 w-3/5 rounded-full bg-[#F1F1F1]" />
+                </span>
+              ))}
+              <Button
+                className="mt-2 bg-black text-white hover:bg-black/85"
+                busy={p.gettingDetails}
+                disabled={!p.available}
+                onClick={p.onGetDetails}
+              >
+                Get euro bank details
+              </Button>
+            </div>
+          )}
+        </Paper>
+      </Stage>
+
+      <p className="flex items-center gap-2 text-[15px] text-muted-foreground">
+        <Mark id="usdc" size={20} /> Euro transfers arrive as dollars in your balance.
+      </p>
+
+      <div className="flex items-center gap-3 rounded-[16px] bg-card px-3 py-3 opacity-80 shadow-[0_0_0_1px_var(--border)]">
+        <Flag code="USD" size={36} />
+        <span className="flex flex-1 flex-col">
+          <span className="text-[15px] font-semibold">US dollar account</span>
+          <span className="text-[13px] text-muted-foreground">ACH and wire</span>
+        </span>
+        <span className="inline-flex items-center gap-1 rounded-full bg-secondary px-2.5 py-1 text-[12px] font-semibold">
+          <Lock className="size-3" /> Live
+        </span>
+      </div>
+
+      {d && p.available ? (
+        <div className="flex flex-col gap-3 rounded-[20px] bg-sora p-4 text-black">
+          <span className="text-[15px] font-semibold">Send a test transfer</span>
+          <div className="flex flex-wrap items-center gap-2">
+            {["2", "5", "10"].map((v) => (
+              <button
+                key={v}
+                type="button"
+                onClick={() => setTest(v)}
+                aria-pressed={test === v}
+                className={cn(
+                  "press rounded-full px-4 py-2 text-[15px] font-semibold",
+                  test === v ? "bg-black text-white" : "bg-white/70",
+                )}
+              >
+                {fiatMoney(d.fiat, v).replace(/\.00$/, "")}
+              </button>
+            ))}
+            <Button
+              size="sm"
+              className="ml-auto bg-black text-white hover:bg-black/85"
+              busy={p.simulating}
+              onClick={() => p.onSimulate(test)}
+            >
+              {p.simulated ? <Check /> : null} {p.simulated ? "Sent" : "Send"}
+            </Button>
+          </div>
+        </div>
+      ) : null}
+
+      {p.deposits.length ? (
+        <section className="flex flex-col gap-2">
+          <h2 className="text-[17px] font-semibold">Arrived</h2>
+          <ul className="flex flex-col divide-y divide-border rounded-[16px] bg-card px-3">
+            {p.deposits.map((dep) => (
+              <li key={dep.id} className="flex items-center gap-3 py-3">
+                <Flag code={dep.fiat} size={36} />
+                <span className="flex min-w-0 flex-1 flex-col">
+                  <span className="text-[15px] font-semibold">
+                    {fiatMoney(dep.fiat, dep.fiatAmount)}
+                  </span>
+                  <span className="truncate text-[13px] text-muted-foreground">
+                    {when(dep.createdAt)}
+                    {dep.error ? ` · ${dep.error}` : ""}
+                  </span>
+                </span>
+                <span className="flex flex-col items-end gap-1">
+                  <span className="inline-flex items-center gap-1.5 tnum text-[15px] font-semibold text-up">
+                    <Mark id="usdc" size={16} />
+                    +${viewDollars(dep.amount).toFixed(2)}
+                  </span>
+                  <StatusPill
+                    tone={
+                      dep.status === "credited" ? "up" : dep.status === "failed" ? "down" : "wait"
+                    }
+                  >
+                    {dep.status === "credited"
+                      ? "In your balance"
+                      : dep.status === "failed"
+                        ? "Not credited"
+                        : "Arriving"}
+                  </StatusPill>
+                </span>
               </li>
             ))}
           </ul>
         </section>
       ) : null}
-    </div>
-  )
-}
-
-function SimulateDeposit({
-  fiat,
-  onSimulate,
-  busy,
-  done,
-}: {
-  fiat: string
-  onSimulate: (amount: string) => void
-  busy: boolean
-  done: boolean
-}) {
-  const [amount, setAmount] = useState("5")
-  return (
-    <div className="flex flex-col gap-2 rounded-[16px] bg-secondary/60 p-4">
-      <span className="text-[15px] font-semibold">Try it: simulate a bank transfer</span>
-      <span className="text-detail text-muted-foreground">
-        Noah's sandbox sends a test transfer to this account; it arrives in your balance in about a
-        minute.
-      </span>
-      <div className="flex gap-2">
-        <Field
-          id="simulate-amount"
-          label={`Amount (${fiat}, 1 to 20)`}
-          inputMode="decimal"
-          value={amount}
-          onChange={(e) => setAmount(e.target.value.replace(/[^0-9.]/g, ""))}
-        />
-        <Button className="self-end" busy={busy} onClick={() => onSimulate(amount)}>
-          {done ? <Check /> : null} {done ? "Sent" : "Simulate"}
-        </Button>
-      </div>
-    </div>
+    </>
   )
 }

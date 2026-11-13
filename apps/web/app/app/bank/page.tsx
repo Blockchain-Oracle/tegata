@@ -8,7 +8,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { NETWORKS } from "@tegata/config"
 import { toUnits } from "@tegata/core/money"
 import type { DelegateDraft } from "@tegata/core/near"
-import { useEffect, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 
 import {
   type BankDepositView,
@@ -16,8 +16,11 @@ import {
   type BankPayoutView,
   type BankQuoteView,
   type BankStep,
+  type BankTab,
   BankView,
   type FormSchema,
+  type NewRecipient,
+  type SavedRecipient,
 } from "@/components/bank/bank-view"
 import { viewDollars } from "@/components/kit/figure"
 import { Skeleton } from "@/components/kit/states"
@@ -33,7 +36,7 @@ interface Overview {
   network: "testnet" | "mainnet"
   available: boolean
   countries: { code: string; fiat: string; name: string }[]
-  saved: { id: string; country: string; fiat: string; label: string }[]
+  saved: SavedRecipient[]
   payouts: BankPayoutView[]
   details: BankDetailsView | null
   deposits: BankDepositView[]
@@ -59,7 +62,9 @@ export default function BankPage() {
   const [country, setCountry] = useState("NG")
   const [amount, setAmount] = useState("")
   const [accountId, setAccountId] = useState<string | null>(null)
-  const [form, setForm] = useState<Record<string, unknown>>({})
+  const [tab, setTab] = useState<BankTab>("withdraw")
+  /** A recipient filled in just now; saved with its first withdrawal. */
+  const [fresh, setFresh] = useState<NewRecipient | null>(null)
   const [step, setStep] = useState<BankStep>("form")
   const [busy, setBusy] = useState(false)
   const [problem, setProblem] = useState<string | null>(null)
@@ -84,7 +89,11 @@ export default function BankPage() {
   // biome-ignore lint/correctness/useExhaustiveDependencies: re-pick only when the country or the saved list changes.
   useEffect(() => {
     setAccountId((current) =>
-      current && savedHere.some((a) => a.id === current) ? current : (savedHere[0]?.id ?? null),
+      current && savedHere.some((a) => a.id === current)
+        ? current
+        : fresh
+          ? null
+          : (savedHere[0]?.id ?? null),
     )
   }, [country, savedHere.length])
 
@@ -105,7 +114,7 @@ export default function BankPage() {
     queryKey: ["bank-form", channel],
     queryFn: () =>
       api<{ schema: FormSchema }>(`/api/bank/form?channel=${encodeURIComponent(channel ?? "")}`),
-    enabled: Boolean(channel) && accountId === null,
+    enabled: Boolean(channel),
     staleTime: 10 * 60_000,
     select: (d) => d.schema,
   })
@@ -150,9 +159,12 @@ export default function BankPage() {
     onError: () => fire("fail", { cue: "error" }),
   })
 
-  async function review(confirmName?: string) {
+  async function review(confirm?: string) {
     setProblem(null)
     setBusy(true)
+    const saved = overview.data?.saved.find((a) => a.id === accountId)
+    // The name the bank already gave (or the form names) goes along, so Noah's check doesn't stop to ask again.
+    const confirmName = confirm ?? (saved ? saved.holder : fresh?.holder) ?? undefined
     try {
       const res = await api<{
         payout: BankPayoutView
@@ -163,18 +175,15 @@ export default function BankPage() {
         body: {
           country,
           amount: amount.trim(),
-          ...(accountId ? { payoutAccountId: accountId } : { form }),
+          ...(accountId ? { payoutAccountId: accountId } : { form: fresh?.form }),
           ...(confirmName ? { confirmName } : {}),
         },
       })
-      const label =
-        overview.data?.saved.find((a) => a.id === accountId)?.label ??
-        (() => {
-          const d = (form as { BankDetails?: { Bank?: string; AccountNumber?: string } })
-            .BankDetails
-          return `${d?.Bank ?? "Bank account"} ••${(d?.AccountNumber ?? "").slice(-4)}`
-        })()
-      setCommitted({ ...res, payout: { ...res.payout, account: label } })
+      const label = saved?.label ?? fresh?.label ?? "Bank account"
+      setCommitted({
+        ...res,
+        payout: { ...res.payout, account: label, holder: confirm ?? confirmName ?? null },
+      })
       setHolder(null)
       setStep("review")
     } catch (error) {
@@ -221,6 +230,13 @@ export default function BankPage() {
   }
 
   const account = profile?.accounts.find((entry) => entry.network === network)
+  // Stable per country: the recipient sheet asks again only when the bank or number changes.
+  const checkHolder = useCallback(
+    async (form: Record<string, unknown>) =>
+      (await api<{ holder: string | null }>("/api/bank/holder", { body: { country, form } }))
+        .holder,
+    [country],
+  )
   if (!overview.data)
     return (
       <div
@@ -238,12 +254,14 @@ export default function BankPage() {
       available={available}
       businessName={profile?.workspace?.name ?? "Your business"}
       balance={viewDollars(account?.balance ?? "0")}
+      tab={tab}
+      onTab={setTab}
       countries={overview.data.countries}
       country={country}
       onCountry={(c) => {
         setHolder(null)
         setCountry(c)
-        setForm({})
+        setFresh(null)
         setProblem(null)
       }}
       amount={amount}
@@ -252,11 +270,20 @@ export default function BankPage() {
         setProblem(null)
       }}
       saved={overview.data.saved}
+      fresh={fresh}
+      onFresh={(r) => {
+        setFresh(r)
+        setAccountId(null)
+        setHolder(null)
+        setProblem(null)
+      }}
       accountId={accountId}
-      onAccount={setAccountId}
-      schema={accountId === null ? (schema.isError ? null : schema.data) : null}
-      form={form}
-      onForm={setForm}
+      onAccount={(id) => {
+        setAccountId(id)
+        setHolder(null)
+      }}
+      schema={schema.isError ? null : schema.data}
+      checkHolder={checkHolder}
       quote={{
         data: quote.data,
         error: quote.error ? message(quote.error, "Noah has no price right now") : null,
@@ -274,8 +301,8 @@ export default function BankPage() {
       }}
       onRejectHolder={() => {
         setHolder(null)
+        setFresh(null)
         setAccountId(null)
-        setForm({})
       }}
       onApprove={approve}
       onEdit={() => {
@@ -284,6 +311,7 @@ export default function BankPage() {
       }}
       onAgain={() => {
         setCommitted(null)
+        setFresh(null)
         setAmount("")
         setStep("form")
       }}

@@ -214,6 +214,47 @@ export async function bankForm(noah: NoahClient, channelId: string) {
   }
 }
 
+/**
+ * Noah's beneficiary check before review: given a bank and an account number, the bank answers with who holds it
+ * (Nigeria's banks do; Ghana and South Africa name the holder in the form instead, so this returns null there).
+ */
+export async function checkBankHolder(
+  db: Db,
+  noah: NoahClient,
+  input: { userId: string; network: NetworkId; country: string; form: unknown },
+): Promise<string | null> {
+  assertBankNetwork(input.network)
+  const quote = await bankQuote(noah, { country: input.country, amount: 0n })
+  const customerId = await ensureBankCustomer(db, noah, {
+    userId: input.userId,
+    network: input.network,
+  })
+  const form = input.form as Record<string, unknown>
+  try {
+    const prepared = await prepareSell(noah, {
+      channelId: quote.channelId,
+      customerId,
+      // The least the channel takes: a check, nothing is committed.
+      cryptoAmount: (Math.ceil(Number(quote.min) * 100) / 100).toFixed(2),
+      form: { ...form, PaymentPurpose: form.PaymentPurpose || "Payment" },
+    })
+    return beneficiaryName(prepared.NextStep)
+  } catch (error) {
+    if (error instanceof NoahError && error.httpStatus < 500)
+      throw new BankError("bad_input", "The bank didn't find this account. Check the number.")
+    throw noahError(error)
+  }
+}
+
+/** The holder named in a filled form (Ghana and South Africa ask for it): "Ama Mensah" or a business name. */
+export function formHolder(form: unknown): string | null {
+  const name = (form as { AccountHolderName?: { Name?: unknown } })?.AccountHolderName?.Name
+  if (typeof name === "string") return name.trim() || null
+  const parts = name as { FirstName?: string; LastName?: string } | undefined
+  const full = [parts?.FirstName, parts?.LastName].filter(Boolean).join(" ").trim()
+  return full || null
+}
+
 /** "Access Bank ••3456" from a filled form. */
 function accountLabel(form: unknown) {
   const details = (form as { BankDetails?: { Bank?: string; AccountNumber?: string } }).BankDetails
@@ -339,6 +380,7 @@ export async function createBankPayout(
         country: quote.country,
         fiat: quote.fiat,
         label: accountLabel(form),
+        holder: input.confirmName ?? formHolder(form),
         form,
       })
       .returning()
@@ -753,7 +795,11 @@ export async function bankOverview(db: Db, workspaceId: string, network: Network
       )
       .orderBy(desc(bankPayoutAccounts.createdAt)),
     db
-      .select({ payout: bankPayouts, label: bankPayoutAccounts.label })
+      .select({
+        payout: bankPayouts,
+        label: bankPayoutAccounts.label,
+        holder: bankPayoutAccounts.holder,
+      })
       .from(bankPayouts)
       .innerJoin(bankPayoutAccounts, eq(bankPayoutAccounts.id, bankPayouts.payoutAccountId))
       .where(and(eq(bankPayouts.workspaceId, workspaceId), eq(bankPayouts.network, network)))
@@ -775,7 +821,11 @@ export async function bankOverview(db: Db, workspaceId: string, network: Network
 
 export async function getBankPayout(db: Db, workspaceId: string, id: string) {
   const [row] = await db
-    .select({ payout: bankPayouts, label: bankPayoutAccounts.label })
+    .select({
+      payout: bankPayouts,
+      label: bankPayoutAccounts.label,
+      holder: bankPayoutAccounts.holder,
+    })
     .from(bankPayouts)
     .innerJoin(bankPayoutAccounts, eq(bankPayoutAccounts.id, bankPayouts.payoutAccountId))
     .where(and(eq(bankPayouts.id, id), eq(bankPayouts.workspaceId, workspaceId)))

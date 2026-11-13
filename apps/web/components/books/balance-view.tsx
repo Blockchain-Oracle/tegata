@@ -11,6 +11,7 @@ import {
   ExternalLink,
   Landmark,
   Plus,
+  Repeat2,
   Scale,
 } from "lucide-react"
 import Link from "next/link"
@@ -32,6 +33,7 @@ export function BalanceView({
   reconcileError,
   onReconcile,
   onReceive,
+  onAddFromChain,
   onTestDollars,
   live = false,
 }: {
@@ -44,6 +46,8 @@ export function BalanceView({
   reconcileError: string | null
   onReconcile: () => void
   onReceive: () => void
+  /** Live: add money from a coin on another chain, through NEAR Intents. */
+  onAddFromChain?: () => void
   onTestDollars?: () => void
   /** Live: moving out reaches any chain through NEAR Intents. */
   live?: boolean
@@ -74,6 +78,9 @@ export function BalanceView({
           </div>
           <div className="flex gap-6">
             <StageAction label="Add" icon={<ArrowDownLeft />} onClick={onReceive} />
+            {live && onAddFromChain ? (
+              <StageAction label="From a chain" icon={<Repeat2 />} onClick={onAddFromChain} />
+            ) : null}
             <StageAction
               label="Move out"
               icon={<ArrowUpRight />}
@@ -91,7 +98,7 @@ export function BalanceView({
       </Stage>
       <p className="text-detail text-muted-foreground">
         {live
-          ? "Move out sends your dollars to any chain, converted by NEAR Intents."
+          ? "Add from or move out to any chain: NEAR Intents converts it on the way."
           : "Adding from or moving to another chain comes with Live: NEAR Intents has no testnet."}
       </p>
 

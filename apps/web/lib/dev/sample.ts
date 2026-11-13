@@ -1100,3 +1100,212 @@ export const EMAIL_SAMPLES = [
     },
   },
 ] as const
+
+// --- bank (/dev/flows/bank) ---------------------------------------------------------------------------------------
+
+const BANK_PAYOUT = {
+  id: "dev-bank-payout",
+  amount: "20000000",
+  fiat: "NGN",
+  fiatAmount: "26765.50",
+  rate: "1351.8",
+  fee: "270.5",
+  account: "Access Bank ••0031",
+  holder: "Forrest Green",
+  nearTx: "CGQr6SEf3P5spDqohfH91PGCMABGjA1RGDpiYyczHe6F",
+  hopTx: "3Hu2PYu6gKeLLDbSKv4rzJ5Ee7thY955KjDqAgFmviY8YFdpZT7KvHp7bcZh3yYz6EBSmWrWp8KXYrVBGiPP79K1",
+  error: null,
+  paidAt: "2026-11-13T12:20:00.000Z",
+  createdAt: "2026-11-13T12:18:00.000Z",
+}
+
+export const SAMPLE_BANK = {
+  countries: [
+    { code: "NG", fiat: "NGN", name: "Nigeria" },
+    { code: "GH", fiat: "GHS", name: "Ghana" },
+    { code: "ZA", fiat: "ZAR", name: "South Africa" },
+  ],
+  saved: [
+    {
+      id: "dev-acct",
+      country: "NG",
+      fiat: "NGN",
+      label: "Access Bank ••0031",
+      holder: "Forrest Green",
+    },
+    {
+      id: "dev-acct-2",
+      country: "NG",
+      fiat: "NGN",
+      label: "Moniepoint Microfinance Bank ••4417",
+      holder: "Adaeze Okafor",
+    },
+  ],
+  /** Nigeria's form as Noah sends it (trimmed bank list). */
+  schema: {
+    type: "object",
+    required: ["BankDetails", "PaymentPurpose"],
+    properties: {
+      BankDetails: {
+        type: "object",
+        title: "Bank details",
+        required: ["AccountNumber", "Bank"],
+        properties: {
+          AccountNumber: { type: "string", title: "Account number", minLength: 5, maxLength: 30 },
+          Bank: {
+            type: "string",
+            title: "Bank",
+            enum: [
+              "Access Bank",
+              "Guaranty Trust Bank (GTBank)",
+              "Zenith bank PLC",
+              "First Bank PLC",
+              "United Bank for Africa (UBA)",
+              "Opay",
+              "Moniepoint Microfinance Bank",
+              "PalmPay",
+              "Kuda",
+              "Wema Bank PLC",
+              "Abbey Mortgage Bank",
+            ],
+          },
+        },
+      },
+      PaymentPurpose: { type: "string", title: "Payment purpose" },
+      Reference: { type: "string", title: "Reference", maxLength: 180 },
+    },
+  },
+  /** Ghana's form: the holder's name sits in an allOf/if block; South Africa adds contact details. */
+  schemaGH: {
+    type: "object",
+    required: ["BankDetails", "AccountHolderName", "PaymentPurpose"],
+    properties: {
+      BankDetails: {
+        type: "object",
+        required: ["AccountNumber", "Bank"],
+        properties: {
+          AccountNumber: { type: "string", title: "Account number", minLength: 5, maxLength: 30 },
+          Bank: {
+            type: "string",
+            title: "Bank",
+            enum: [
+              "GCB Bank Limited",
+              "Ecobank Ghana (GH130100)",
+              "Stanbic Bank Ghana Limited",
+              "Fidelity Bank Ghana Ltd.",
+              "UNITED BANK FOR AFRICA (GHANA) LTD",
+              "OMNIBANK GHANA LIMITED",
+            ],
+          },
+        },
+      },
+      AccountHolderName: { type: "object", title: "Account holder name" },
+      PaymentPurpose: { type: "string", title: "Payment purpose" },
+      Reference: { type: "string", title: "Reference", maxLength: 180 },
+    },
+  },
+  schemaZA: {
+    type: "object",
+    properties: {
+      BankDetails: {
+        type: "object",
+        properties: {
+          AccountNumber: { type: "string" },
+          Bank: {
+            type: "string",
+            enum: [
+              "Capitec Bank",
+              "First National Bank",
+              "Standard Bank",
+              "ABSA",
+              "Nedbank Limited",
+              "TYME",
+            ],
+          },
+        },
+      },
+      AccountHolderName: { type: "object" },
+      Email: { type: "string" },
+      PhoneNumber: { type: "string" },
+      AccountHolderAddress: { type: "object" },
+      PaymentPurpose: { type: "string" },
+      Reference: { type: "string" },
+    },
+  },
+  quotes: {
+    GH: {
+      channelId: "dev-gh",
+      fiat: "GHS",
+      rate: "15.26",
+      fiatAmount: "302.15",
+      fee: "3.05",
+      min: "3.07",
+      max: "3571.73",
+      seconds: 60,
+    },
+    ZA: {
+      channelId: "dev-za",
+      fiat: "ZAR",
+      rate: "15.63",
+      fiatAmount: "309.48",
+      fee: "3.12",
+      min: "3.07",
+      max: "3571.73",
+      seconds: 60,
+    },
+  },
+  quote: {
+    channelId: "dev-channel",
+    fiat: "NGN",
+    rate: "1351.8",
+    fiatAmount: "26765.50",
+    fee: "270.5",
+    min: "1.10",
+    max: "3508.52",
+    seconds: 50,
+  },
+  payout: (state: string) => ({
+    ...BANK_PAYOUT,
+    status:
+      state === "paid"
+        ? ("paid" as const)
+        : state === "failed"
+          ? ("failed" as const)
+          : state === "sending"
+            ? ("paying" as const)
+            : ("drafted" as const),
+    error:
+      state === "failed" ? "Returned to your balance: Noah couldn't pay the bank account" : null,
+  }),
+  details: {
+    fiat: "EUR",
+    holder: "Studio Kaze",
+    number: "MT89CFTE19870000000090010363160",
+    bank: "OPENPAYD FINANCIAL SERVICES MALTA LTD",
+    code: "CFTEMTM1XXX",
+    rail: "BankSepa",
+  },
+  deposits: [
+    {
+      id: "dev-dep-1",
+      fiat: "EUR",
+      fiatAmount: "2",
+      amount: "1162283",
+      status: "credited",
+      creditTx: "CGQr6SEf3P5spDqohfH91PGCMABGjA1RGDpiYyczHe6F",
+      error: null,
+      createdAt: "2026-11-13T11:41:00.000Z",
+    },
+  ],
+  recent: [
+    { ...BANK_PAYOUT, status: "paid" as const },
+    {
+      ...BANK_PAYOUT,
+      id: "dev-bank-2",
+      amount: "5000000",
+      fiatAmount: "6488.50",
+      status: "paying" as const,
+      paidAt: null,
+    },
+  ],
+}

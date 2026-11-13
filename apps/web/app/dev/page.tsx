@@ -109,6 +109,18 @@ const CARDS = [
     field: "bg-sora",
   },
   {
+    href: "/dev/flows/bank",
+    title: "Bank",
+    note: "Withdraw to a bank (form, Noah's name check, steps, paid), bank details and deposits",
+    field: "bg-sora",
+  },
+  {
+    href: "/dev/flows/scan",
+    title: "Scan",
+    note: "Real QR codes of every kind, read by both readers, and the scanner",
+    field: "bg-matcha",
+  },
+  {
     href: "/dev/flows/books",
     title: "Books",
     note: "Activity by month, CSV and statement, refunds, Balance and reconciliation",

@@ -119,6 +119,10 @@ export function PayClient({
   const network = initial.network
 
   const [rail, setRail] = useState<PaymentRail | null>(network === "testnet" ? "tegata" : null)
+  // "Add money from another chain" (Balance) opens this page with the chain option already chosen.
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get("rail") === "chain") setRail("oneclick")
+  }, [])
   const [amount, setAmount] = useState(() =>
     initial.invoice?.allowPartial ? viewDollars(initial.invoice.remaining).toFixed(2) : "",
   )

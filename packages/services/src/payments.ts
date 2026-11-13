@@ -421,7 +421,8 @@ export async function applyPayment(
       data: paymentObject(row),
       dedupe: `payment.succeeded:${row.id}`,
     })
-    if (request.kind === "session" && full) {
+    // A top-up to one's own balance isn't a sale: no checkout event for the business's webhooks.
+    if (request.kind === "session" && full && request.metadata?.source !== "topup") {
       await emitEvent(tx, {
         ...base,
         type: "checkout.session.completed",

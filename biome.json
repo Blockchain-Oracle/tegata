@@ -19,6 +19,7 @@
       "!**/next-env.d.ts",
       "!apps/web/public/logos",
       "!apps/web/public/marks",
+      "!apps/web/public/flags",
       "!apps/web/lib/brand/glyphs.ts",
       "!**/.next-build",
       "!apps/web/app/icon.svg",

@@ -113,6 +113,13 @@
       "when": 1794570946875,
       "tag": "0015_cards",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1794572167560,
+      "tag": "0016_bank_holder",
+      "breakpoints": true
     }
   ]
 }

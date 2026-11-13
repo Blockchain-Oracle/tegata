@@ -19,7 +19,11 @@ export function hopAddress() {
 
 type Overview = Awaited<ReturnType<typeof bankOverview>>
 
-export function bankPayoutView(row: Overview["payouts"][number]) {
+export function bankPayoutView(row: {
+  payout: Overview["payouts"][number]["payout"]
+  label: string
+  holder?: string | null
+}) {
   const { payout, label } = row
   return {
     id: payout.id,
@@ -30,6 +34,7 @@ export function bankPayoutView(row: Overview["payouts"][number]) {
     rate: payout.rate,
     fee: payout.fee,
     account: label,
+    holder: row.holder ?? null,
     nearTx: payout.nearTx,
     hopTx: payout.hopTx && payout.hopTx !== "sending" ? payout.hopTx : null,
     error: payout.error,
@@ -40,7 +45,13 @@ export function bankPayoutView(row: Overview["payouts"][number]) {
 
 export function bankOverviewView(o: Overview) {
   return {
-    saved: o.saved.map((a) => ({ id: a.id, country: a.country, fiat: a.fiat, label: a.label })),
+    saved: o.saved.map((a) => ({
+      id: a.id,
+      country: a.country,
+      fiat: a.fiat,
+      label: a.label,
+      holder: a.holder,
+    })),
     payouts: o.payouts.map(bankPayoutView),
     details: o.details
       ? { fiat: o.details.fiat, ...o.details.details, createdAt: o.details.createdAt.toISOString() }

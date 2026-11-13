@@ -43,6 +43,8 @@ export const bankPayoutAccounts = pgTable(
     fiat: text().notNull(),
     /** e.g. "Access Bank ••3456". */
     label: text().notNull(),
+    /** Who holds the account: the bank's own answer in Nigeria (Noah's beneficiary check), the form elsewhere. */
+    holder: text(),
     form: jsonb().notNull(),
     createdAt: createdAt(),
   },
