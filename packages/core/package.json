@@ -11,7 +11,8 @@
     "./invoices": "./src/invoices/index.ts",
     "./payroll": "./src/payroll/index.ts",
     "./oneclick": "./src/oneclick/index.ts",
-    "./noah": "./src/noah/index.ts"
+    "./noah": "./src/noah/index.ts",
+    "./solana": "./src/solana/index.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
@@ -20,6 +21,8 @@
   "dependencies": {
     "@noble/hashes": "catalog:",
     "@scure/base": "catalog:",
+    "@solana-program/token": "0.18.0",
+    "@solana/kit": "8.6.0",
     "@tegata/config": "workspace:*",
     "near-api-js": "catalog:",
     "zod": "catalog:"

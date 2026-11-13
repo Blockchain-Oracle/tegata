@@ -54,6 +54,12 @@ const serverSchema = z.object({
 
   /** Optional 1Click partner key; without it 1Click adds its own small fee. */
   ONECLICK_API_KEY: optional(z.string()),
+  /** Noah (bank payouts and bank details). The Sandbox uses Noah's sandbox key. */
+  NOAH_API_KEY: optional(z.string()),
+  /** Tegata's Solana devnet wallet: Sandbox bank payouts hand Noah's test USDC to Noah from it. The secret is the
+   * worker's only. */
+  SOLANA_DEVNET_ADDRESS: optional(z.string()),
+  SOLANA_DEVNET_SECRET: optional(z.string()),
   /** Development only: let webhook endpoints be http://localhost (production always requires public https). */
   ALLOW_LOCAL_WEBHOOKS: optional(z.enum(["true", "false"])),
 })
