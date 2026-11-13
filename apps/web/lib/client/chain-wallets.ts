@@ -52,6 +52,13 @@ const EVM_CHAINS: Record<
     rpc: "https://rpc.gnosischain.com",
     explorer: "https://gnosisscan.io",
   },
+  avax: {
+    id: 43114,
+    name: "Avalanche C-Chain",
+    currency: "AVAX",
+    rpc: "https://api.avax.network/ext/bc/C/rpc",
+    explorer: "https://snowtrace.io",
+  },
 }
 
 interface Eip1193 {

@@ -32,6 +32,7 @@ export function BalanceView({
   onReconcile,
   onAddMoney,
   live = false,
+  pots,
 }: {
   /** USDC base units on NEAR, or null while loading. */
   balance: string | null
@@ -45,6 +46,8 @@ export function BalanceView({
   onAddMoney: () => void
   /** Live (mainnet): moving out reaches any chain through NEAR Intents. */
   live?: boolean
+  /** The Pots card (split money in), under the stage. */
+  pots?: React.ReactNode
 }) {
   const network = live ? "mainnet" : "testnet"
   const hold = (balance === null ? 0n : BigInt(balance)) + BigInt(setAside)
@@ -102,12 +105,14 @@ export function BalanceView({
         </div>
       </Stage>
 
+      {pots}
+
       <section className="flex flex-col gap-3 rounded-[24px] bg-card p-5">
-        <div className="flex items-center justify-between gap-3">
-          <span className="inline-flex items-center gap-2 text-[17px] font-semibold">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <span className="inline-flex items-center gap-2 whitespace-nowrap text-[17px] font-semibold">
             <Mark id="near" size={24} /> Books against NEAR
           </span>
-          <span className="flex items-center gap-1.5">
+          <span className="ml-auto flex items-center gap-1.5">
             {accountId ? (
               <Button variant="ghost" size="iconSm" asChild>
                 <a

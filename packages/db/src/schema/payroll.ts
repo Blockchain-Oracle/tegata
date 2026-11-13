@@ -16,7 +16,16 @@ import { createdAt, id, money, updatedAt } from "./columns.ts"
 import { network, relays, users, workspaces } from "./identity.ts"
 import { payouts } from "./payouts.ts"
 
+/** A bonus, reimbursement or deduction on one row of one run, as stored. */
+export interface StoredPayLine {
+  kind: "bonus" | "reimbursement" | "deduction"
+  label: string
+  amount: string
+}
+
 export const personStatus = pgEnum("person_status", ["active", "removed"])
+/** How someone is paid: an employee gets a payslip, a contractor a payment receipt. */
+export const personKind = pgEnum("person_kind", ["employee", "contractor"])
 
 /**
  * Someone a business pays. Kept per network, like Stripe's test mode keeps its own customers: a Sandbox
@@ -36,6 +45,7 @@ export const people = pgTable(
     role: text(),
     /** Pay per run, in USDC base units. */
     amount: money().notNull(),
+    kind: personKind().notNull().default("employee"),
     /** The public, unguessable part of `/p/<token>`. */
     token: text().notNull(),
     /** The Tegata user who signed in with the invited email. */
@@ -243,7 +253,14 @@ export const payRows = pgTable(
     /** For a row paid to another chain: the route, and the NEAR Intents payout that carries it there. */
     route: text(),
     payoutId: uuid().references(() => payouts.id),
+    /** What is paid: this run's pay plus its lines (bonuses and reimbursements in, deductions out). */
     amount: money().notNull(),
+    /** How they were paid in this run, kept so a later change never rewrites an old payslip or receipt. */
+    kind: personKind().notNull().default("employee"),
+    /** This run's pay when the owner changed it; null means the person's usual pay. */
+    basePay: money(),
+    /** One-off lines for this run only, amounts in USDC base units as strings. */
+    lines: jsonb().$type<StoredPayLine[]>().notNull().default(sql`'[]'::jsonb`),
     status: payRowStatus().notNull(),
     skipReason: text(),
     /** Which all-or-nothing batch carried it (1-based), and that batch's relay. */

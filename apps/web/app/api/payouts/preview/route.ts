@@ -1,7 +1,7 @@
 import { toUnits } from "@tegata/core/money"
 import { serverEnv } from "@tegata/env"
 import { accountFor, previewPayout } from "@tegata/services"
-
+import { isStable } from "@/lib/routes"
 import { requireUser } from "@/lib/server/auth.ts"
 import { db } from "@/lib/server/context.ts"
 import { badRequest, route } from "@/lib/server/http.ts"
@@ -32,7 +32,7 @@ export const GET = route(async (request) => {
       amount,
       destinationAsset: found.token.assetId,
       recipient: to,
-      stable: found.route.symbol === "USDC" || found.route.symbol === "USDT",
+      stable: isStable(found.route.symbol),
     },
     serverEnv().ONECLICK_API_KEY,
   )

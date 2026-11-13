@@ -4,6 +4,8 @@ import { enqueue } from "@tegata/jobs"
 import { oneClickView, startOneClickPayment } from "@tegata/services"
 import { z } from "zod"
 
+import { isStable } from "@/lib/routes"
+
 import { boss, db } from "@/lib/server/context.ts"
 import { badRequest, route } from "@/lib/server/http.ts"
 import { payUri, routeToken } from "@/lib/server/oneclick.ts"
@@ -35,7 +37,7 @@ export const POST = route(async (request, context: { params: Promise<{ token: st
   const { payment, quote } = await startOneClickPayment(db(), {
     token,
     originAsset: found.token.assetId,
-    stable: found.route.symbol === "USDC" || found.route.symbol === "USDT",
+    stable: isStable(found.route.symbol),
     refundTo: input.refundTo,
     amount,
     payerEmail: input.email || undefined,

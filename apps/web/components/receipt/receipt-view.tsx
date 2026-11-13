@@ -47,7 +47,9 @@ export function ReceiptView({ receipt, token }: { receipt: Receipt; token: strin
       : receipt.kind === "send"
         ? "Sent"
         : receipt.kind === "payslip"
-          ? "Payslip"
+          ? receipt.contractor
+            ? "Payment receipt"
+            : "Payslip"
           : "Reward"
   const tegata = receipt.kind === "reward"
   const settled = receipt.settledAt
@@ -70,7 +72,7 @@ export function ReceiptView({ receipt, token }: { receipt: Receipt; token: strin
     if (navigator.share) {
       await navigator
         .share({
-          title: `${receipt.kind === "payslip" ? "Payslip" : `Receipt ${number}`} · ${receipt.business}`,
+          title: `${receipt.kind === "payslip" ? (receipt.contractor ? "Payment receipt" : "Payslip") : `Receipt ${number}`} · ${receipt.business}`,
           url,
         })
         .catch(() => undefined)
@@ -101,7 +103,7 @@ export function ReceiptView({ receipt, token }: { receipt: Receipt; token: strin
           </span>
           <span className="flex flex-col">
             <span className="text-[14px] font-medium text-white/85">
-              {receipt.kind === "payslip" ? "Payslip from" : "Receipt from"}
+              {receipt.kind === "payslip" && !receipt.contractor ? "Payslip from" : "Receipt from"}
             </span>
             <span className="text-[18px] font-semibold text-white">{receipt.business}</span>
           </span>
@@ -109,7 +111,13 @@ export function ReceiptView({ receipt, token }: { receipt: Receipt; token: strin
 
         <StageObject className="w-full max-w-[440px]" from={{ y: 28, rotate: -2 }} drift={false}>
           <ReceiptSlip
-            label={receipt.kind === "payslip" ? "Payslip" : `Receipt · ${number}`}
+            label={
+              receipt.kind === "payslip"
+                ? receipt.contractor
+                  ? "Payment receipt"
+                  : "Payslip"
+                : `Receipt · ${number}`
+            }
             amount={viewDollars(receipt.amount)}
             sub={
               <>
@@ -157,6 +165,15 @@ export function ReceiptView({ receipt, token }: { receipt: Receipt; token: strin
                 receipt.title
               )}
             </Row>
+            {receipt.lines?.map((line, i) => (
+              // biome-ignore lint/suspicious/noArrayIndexKey: a paid payslip's lines are fixed and never reorder
+              <Row key={`${line.label}${i}`} label={line.label}>
+                <span className={line.deduction ? "tnum text-down" : "tnum"}>
+                  {line.deduction ? "−" : i === 0 ? "" : "+"}
+                  {usdUnits(line.amount)}
+                </span>
+              </Row>
+            ))}
             {receipt.refunded ? (
               <Row label="Refunded">
                 <span className="tnum text-down">−{usdUnits(receipt.refunded)}</span>

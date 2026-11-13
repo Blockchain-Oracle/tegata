@@ -15,7 +15,7 @@ export async function GET(_request: Request, context: { params: Promise<{ id: st
   return new Response(new Uint8Array(pdf), {
     headers: {
       "content-type": "application/pdf",
-      "content-disposition": `inline; filename="Payslip-${safe(doc.business.name)}-${month}-${safe(doc.person.name)}.pdf"`,
+      "content-disposition": `inline; filename="${doc.kind === "receipt" ? "Payment-receipt" : "Payslip"}-${safe(doc.business.name)}-${month}-${safe(doc.person.name)}.pdf"`,
       "cache-control": "private, no-store",
       "x-robots-tag": "noindex",
     },

@@ -11,6 +11,7 @@ import {
 import { requireUser, workspaceOf } from "@/lib/server/auth.ts"
 import { db } from "@/lib/server/context.ts"
 import { route } from "@/lib/server/http.ts"
+import { requestNetwork } from "@/lib/server/mode.ts"
 
 const LATEST = 20
 
@@ -112,6 +113,9 @@ export const GET = route(async (request) => {
       at: (slip.paidAt ?? new Date()).toISOString(),
     })),
   ]
-  items.sort((a, b) => b.at.localeCompare(a.at))
-  return { items: items.slice(0, LATEST) }
+  // Only the mode on screen: Sandbox never shows Live money, and Live never shows test dollars.
+  const network = requestNetwork(request)
+  const shown = items.filter((item) => item.network === network)
+  shown.sort((a, b) => b.at.localeCompare(a.at))
+  return { items: shown.slice(0, LATEST) }
 })

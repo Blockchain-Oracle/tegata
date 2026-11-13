@@ -17,4 +17,5 @@ export function createDb(url: string) {
 }
 
 export type Db = ReturnType<typeof createDb>["db"]
+export type { StoredPayLine } from "./schema/payroll.ts"
 export { schema }

@@ -148,6 +148,34 @@
       "when": 1794582873661,
       "tag": "0020_pay_row_sending",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1794586784323,
+      "tag": "0021_pots",
+      "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1794587903858,
+      "tag": "0022_pay_row_lines",
+      "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1794589062577,
+      "tag": "0023_person_kind",
+      "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1794589799865,
+      "tag": "0024_user_seen",
+      "breakpoints": true
     }
   ]
 }

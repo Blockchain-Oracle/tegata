@@ -19,11 +19,15 @@ import {
   batches,
   PAYROLL_LIMITS,
   type PayCadence,
+  type PayLine,
   paydayAfter,
+  payLinesProblem,
   payPeriod,
   periodLabel,
+  rowBreakdown,
+  rowTotal,
 } from "@tegata/core/payroll"
-import { type Db, schema } from "@tegata/db"
+import { type Db, type StoredPayLine, schema } from "@tegata/db"
 import { and, asc, count, desc, eq, gt, inArray, lte, ne, sql } from "drizzle-orm"
 
 import { businessLogo } from "./business.ts"
@@ -35,6 +39,7 @@ import {
   quotePayout,
   registerDepositAddresses,
 } from "./payouts.ts"
+import { applySplitToAccount } from "./pots.ts"
 import { type Approval, approvalMatches, createRelayDraft, submitRelaySignature } from "./relays.ts"
 
 const {
@@ -73,6 +78,22 @@ export class PayrollError extends Error {
   }
 }
 
+/** A row's one-off lines as stored (amounts as strings) and as the maths takes them (bigint). */
+export const payLines = (stored: readonly StoredPayLine[] | null | undefined): PayLine[] =>
+  (stored ?? []).map((line) => ({ ...line, amount: BigInt(line.amount) }))
+const storeLines = (lines: readonly PayLine[]): StoredPayLine[] =>
+  lines.map((line) => ({ kind: line.kind, label: line.label, amount: line.amount.toString() }))
+
+/** A paid row's pay before its lines: the pay set for that run, else what the lines leave of the amount. */
+export function rowBasePay(row: {
+  amount: bigint
+  basePay: bigint | null
+  lines: StoredPayLine[]
+}) {
+  if (row.basePay !== null) return row.basePay
+  return row.amount - rowTotal(0n, payLines(row.lines))
+}
+
 /** The memo that ties one payroll transfer to one row (and so to its payslip). */
 export const payrollMemo = (rowId: string) => `tegata:payroll:${rowId}`
 
@@ -90,6 +111,8 @@ export interface PersonInput {
   role?: string | null
   /** USDC base units per run. */
   amount: bigint
+  /** Employee (a payslip) or contractor (a payment receipt); employee when not given. */
+  kind?: "employee" | "contractor"
 }
 
 function cleanPerson(input: PersonInput) {
@@ -106,7 +129,8 @@ function cleanPerson(input: PersonInput) {
   if (input.amount <= 0n) throw new PayrollError("bad_input", "Pay must be above zero")
   if (input.amount > PAYROLL_LIMITS.maxPay)
     throw new PayrollError("bad_input", "That pay is too large")
-  return { name, email, role, amount: input.amount }
+  // Kind only when given: an edit that leaves it out never turns a contractor back into an employee.
+  return { name, email, role, amount: input.amount, ...(input.kind ? { kind: input.kind } : {}) }
 }
 
 async function activeCount(db: Db, workspaceId: string, network: NetworkId) {
@@ -721,12 +745,19 @@ export async function draftRun(
       const before = byPerson.get(person.id)
       // Paid, or on its way to another chain: never drafted again.
       if (before?.status === "paid" || before?.status === "sending") continue
+      // This run's edits survive a fresh draft: a pay set by hand stays, a usual pay follows the person, lines stay.
+      const basePay = before?.basePay ?? null
+      const lines = before?.lines ?? []
+      const amount = rowTotal(basePay ?? person.amount, payLines(lines))
       const row: RunRow = {
         runId: run.id,
         personId: person.id,
         name: person.name,
         role: person.role,
-        amount: person.amount,
+        kind: person.kind,
+        amount: amount > 0n ? amount : 0n,
+        basePay,
+        lines,
         destinationKind: ready.state === "none" ? null : ready.kind,
         accountId: ready.state === "ready" ? ready.accountId : null,
         route: ready.state === "ready" && ready.kind === "chain" ? (ready.route ?? null) : null,
@@ -734,7 +765,8 @@ export async function draftRun(
         status:
           ready.state !== "ready"
             ? "skipped"
-            : before?.status === "excluded"
+            : before?.status === "excluded" ||
+                payLinesProblem(basePay ?? person.amount, payLines(lines))
               ? "excluded"
               : "included",
         skipReason:
@@ -818,6 +850,50 @@ export async function setRowIncluded(
         inArray(payRows.status, ["included", "excluded"]),
       ),
     )
+  await db
+    .update(payRuns)
+    .set({ total: await includedTotal(db, run.id) })
+    .where(eq(payRuns.id, run.id))
+}
+
+/**
+ * This run's pay for one person and its one-off lines (bonus, reimbursement, deduction), while the run is a draft.
+ * `pay` null means their usual pay. The row's amount becomes what is paid; the person's usual pay is unchanged.
+ */
+export async function setRowPay(
+  db: Db,
+  input: {
+    workspaceId: string
+    runId: string
+    rowId: string
+    pay: bigint | null
+    lines: PayLine[]
+  },
+) {
+  const run = await ownRun(db, input.workspaceId, input.runId)
+  if (run.status !== "draft")
+    throw new PayrollError("wrong_state", "This run is already on its way")
+  const [found] = await db
+    .select({ row: payRows, usual: people.amount })
+    .from(payRows)
+    .innerJoin(people, eq(people.id, payRows.personId))
+    .where(and(eq(payRows.id, input.rowId), eq(payRows.runId, run.id)))
+  if (!found) throw new PayrollError("not_found", "No such row")
+  if (found.row.status !== "included" && found.row.status !== "excluded")
+    throw new PayrollError("wrong_state", "Only people in this run can have their pay changed")
+  const lines = input.lines.map((line) => ({ ...line, label: line.label.trim() }))
+  const pay = input.pay ?? found.usual
+  const problem = payLinesProblem(pay, lines)
+  if (problem) throw new PayrollError("bad_input", problem)
+  await db
+    .update(payRows)
+    .set({
+      amount: rowTotal(pay, lines),
+      // The usual pay typed back in is the usual pay: it follows the person again.
+      basePay: input.pay === null || input.pay === found.usual ? null : input.pay,
+      lines: storeLines(lines),
+    })
+    .where(eq(payRows.id, found.row.id))
   await db
     .update(payRuns)
     .set({ total: await includedTotal(db, run.id) })
@@ -1128,6 +1204,15 @@ export async function settleRunRelay(
                 : { status: "paid", txHash: relay.txHash, paidAt: new Date() },
           )
           .where(eq(payRows.id, row.id))
+        // Pay that landed in a person's own Tegata account: their own split rule sets their share aside.
+        if (hit && !row.payoutId && row.destinationKind === "tegata" && row.accountId)
+          await applySplitToAccount(db, {
+            accountId: row.accountId,
+            network: relay.network,
+            amount: row.amount,
+            sourceType: "payslip",
+            sourceId: row.id,
+          })
       }
     } else {
       return "pending"
@@ -1237,9 +1322,10 @@ export async function listRuns(db: Db, workspaceId: string, network: NetworkId) 
 export async function getRun(db: Db, workspaceId: string, runId: string) {
   const run = await ownRun(db, workspaceId, runId)
   const rows = await db
-    .select({ row: payRows, relayStatus: relays.status })
+    .select({ row: payRows, relayStatus: relays.status, usual: people.amount })
     .from(payRows)
     .leftJoin(relays, eq(relays.id, payRows.relayId))
+    .leftJoin(people, eq(people.id, payRows.personId))
     .where(eq(payRows.runId, run.id))
     .orderBy(asc(payRows.name))
   return { run, rows, label: periodLabel({ from: run.periodFrom, to: run.periodTo }) }
@@ -1368,6 +1454,11 @@ export async function payslip(db: Db, rowId: string) {
 }
 
 const CADENCE_WORD = { weekly: "Weekly", fortnightly: "Fortnightly", monthly: "Monthly" } as const
+const LINE_WORD = {
+  bonus: "Bonus",
+  reimbursement: "Reimbursement",
+  deduction: "Deduction",
+} as const
 
 /**
  * Everything the payslip PDF shows, from a paid row: the business's header, the person (masked email), the period
@@ -1393,8 +1484,10 @@ export async function payslipDocument(db: Db, rowId: string, appUrl: string) {
   const year = Number(
     new Intl.DateTimeFormat("en-GB", { year: "numeric", timeZone: timezone }).format(paidAt),
   )
-  const [ytd] = await db
-    .select({ total: sql<string>`coalesce(sum(${payRows.amount}), 0)` })
+  // Year to date: this person's paid rows from this business this calendar year, this one included, as gross pay
+  // (pay and additions) and as pay alone.
+  const yearRows = await db
+    .select({ amount: payRows.amount, basePay: payRows.basePay, lines: payRows.lines })
     .from(payRows)
     .where(
       and(
@@ -1404,6 +1497,18 @@ export async function payslipDocument(db: Db, rowId: string, appUrl: string) {
         lte(payRows.paidAt, paidAt),
       ),
     )
+  const ytd = yearRows.reduce(
+    (sum, r) => {
+      const base = rowBasePay(r)
+      return { pay: sum.pay + base, gross: sum.gross + rowBreakdown(base, payLines(r.lines)).gross }
+    },
+    { pay: 0n, gross: 0n },
+  )
+  const lines = payLines(row.lines)
+  const base = rowBasePay(row)
+  const figures = rowBreakdown(base, lines)
+  const lineLabel = (line: PayLine) =>
+    line.label ? `${LINE_WORD[line.kind]} · ${line.label}` : LINE_WORD[line.kind]
   const when = (date: Date) =>
     new Intl.DateTimeFormat("en-GB", {
       day: "numeric",
@@ -1415,7 +1520,7 @@ export async function payslipDocument(db: Db, rowId: string, appUrl: string) {
     }).format(date)
   const chain = payout ? `${payout.symbol} on ${payout.chain}` : null
   return {
-    kind: "payslip" as const,
+    kind: row.kind === "contractor" ? ("receipt" as const) : ("payslip" as const),
     reference: `PS-${row.id.slice(0, 8).toUpperCase()}`,
     business: {
       name: business.name,
@@ -1441,9 +1546,27 @@ export async function payslipDocument(db: Db, rowId: string, appUrl: string) {
     paidAt: when(paidAt),
     timezone,
     frequency: schedule ? CADENCE_WORD[schedule.cadence] : null,
-    gross: row.amount.toString(),
+    gross: figures.gross.toString(),
+    deductions: figures.deductions.toString(),
     net: row.amount.toString(),
-    yearToDate: BigInt(ytd?.total ?? row.amount).toString(),
+    yearToDate: (ytd.gross || figures.gross).toString(),
+    earnings: [
+      {
+        label: row.role ? `Pay · ${row.role}` : "Pay",
+        amount: base.toString(),
+        yearToDate: (ytd.pay || base).toString(),
+      },
+      ...lines
+        .filter((line) => line.kind !== "deduction")
+        .map((line) => ({
+          label: lineLabel(line),
+          amount: line.amount.toString(),
+          yearToDate: null,
+        })),
+    ],
+    deductionLines: lines
+      .filter((line) => line.kind === "deduction")
+      .map((line) => ({ label: lineLabel(line), amount: line.amount.toString() })),
     year,
     how: {
       paidIn: chain ? `${chain}, converted by NEAR Intents` : "USDC on NEAR, issued by Circle",

@@ -1,5 +1,5 @@
 // A real quote (DESIGN.md "The landing page" §6): the landing calculator on the lit stage, asking NEAR Intents for a
-// dry EXACT_OUTPUT quote, with the 11 routes in orbit around it (Magic UI orbiting circles).
+// dry EXACT_OUTPUT quote, with every route in orbit around it (Magic UI orbiting circles).
 import { Stage } from "@/components/kit/stage"
 import { Calculator } from "@/components/landing/calculator"
 import { Mark } from "@/components/marks/mark"

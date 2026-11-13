@@ -1,10 +1,16 @@
 import { type PayslipDocument, renderPayslipPdf } from "@tegata/documents"
 
-/** /dev: the payslip PDF on sample data, for design review. `?chain=1` shows a row paid to another chain. */
+/**
+ * /dev: the payslip PDF on sample data, for design review. `?chain=1` shows a row paid to another chain; `?lines=1`
+ * a run with a bonus, a reimbursement and a deduction; `?contractor=1` a contractor's payment receipt.
+ */
 export async function GET(request: Request) {
-  const chain = new URL(request.url).searchParams.has("chain")
+  const params = new URL(request.url).searchParams
+  const chain = params.has("chain")
+  const withLines = params.has("lines")
+  const contractor = params.has("contractor")
   const doc: PayslipDocument = {
-    kind: "payslip",
+    kind: contractor ? "receipt" : "payslip",
     reference: "PS-7C1E09A4",
     business: {
       name: "Studio Kaze",
@@ -27,9 +33,20 @@ export async function GET(request: Request) {
     paidAt: "28 Nov 2026, 09:02",
     timezone: "Africa/Lagos",
     frequency: "Monthly",
-    gross: "2400000000",
-    net: "2400000000",
-    yearToDate: "26400000000",
+    gross: withLines ? "2692500000" : "2400000000",
+    deductions: withLines ? "100000000" : "0",
+    net: withLines ? "2592500000" : "2400000000",
+    yearToDate: withLines ? "26692500000" : "26400000000",
+    earnings: [
+      { label: "Pay · Product designer", amount: "2400000000", yearToDate: "26400000000" },
+      ...(withLines
+        ? [
+            { label: "Bonus · Q4 target", amount: "250000000", yearToDate: null },
+            { label: "Reimbursement · Train to Abuja", amount: "42500000", yearToDate: null },
+          ]
+        : []),
+    ],
+    deductionLines: withLines ? [{ label: "Deduction · Laptop advance", amount: "100000000" }] : [],
     year: 2026,
     how: chain
       ? {

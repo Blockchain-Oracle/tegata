@@ -1,7 +1,9 @@
 // NEAR Intents 1Click: coins and chains are read
 // from /v0/tokens at run time; prices for the landing calculator are dry EXACT_OUTPUT quotes (the business receives
 // exactly the amount; the payer's side carries the route cost). A dry quote never creates a deposit address.
+
 import { NETWORKS } from "@tegata/config"
+import { quoteProblem } from "@tegata/core/oneclick"
 
 import { PAYER_ROUTES, type PayerRoute } from "@/lib/routes"
 
@@ -85,13 +87,8 @@ export async function dryQuote(route: PayerRoute, units: bigint): Promise<DryQuo
     }
   }
   if (!response.ok || !body.quote) {
-    // NEAR Intents words a route's floor as "Temporary swap limits: minimum swap amount is $100".
-    const floor = body.message?.match(/minimum[^$\d]*\$?\s*([\d,.]+)/i)?.[1]
-    throw new QuoteRefused(
-      floor
-        ? `${route.symbol} on ${route.chain} needs at least $${floor} right now`
-        : (body.message ?? "No route for that amount right now"),
-    )
+    // The amount quoted is USDC on NEAR (EXACT_OUTPUT), so a floor in base units has 6 decimals.
+    throw new QuoteRefused(quoteProblem(body.message, `${route.symbol} on ${route.chain}`))
   }
   const quote: DryQuote = {
     route: route.id,
@@ -114,6 +111,7 @@ const EVM_CHAIN_ID: Record<string, number> = {
   bsc: 56,
   pol: 137,
   gnosis: 100,
+  avax: 43114,
 }
 
 /**

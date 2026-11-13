@@ -125,6 +125,8 @@ export interface PayslipData extends Settled {
   account: string
   url: string
   autopilot: boolean
+  /** Paid as a contractor: the email and its attachment are a payment receipt, not a payslip. */
+  contractor?: boolean
 }
 
 export interface MoveData extends Settled {
@@ -579,11 +581,11 @@ export function compose(event: EmailEvent, assets: string): EmailContent {
         subject: `You've been paid ${usd(d.amount)} by ${d.business}`,
         preview: `${d.period}${d.autopilot ? " · paid by autopilot" : ""}`,
         brand: { name: d.business, logo: d.logo },
-        label: "Payslip",
+        label: d.contractor ? "Payment receipt" : "Payslip",
         hero: usd(d.amount),
         tone: "in",
         sub: sub(d.sandbox),
-        stamp: "Payslip",
+        stamp: d.contractor ? "Receipt" : "Payslip",
         rows: [
           { label: "For", value: d.period },
           { label: "From", value: d.business },
@@ -595,7 +597,10 @@ export function compose(event: EmailEvent, assets: string): EmailContent {
           },
           ...usdcRows(d),
         ],
-        button: { label: "Open your payslip", href: d.url },
+        button: {
+          label: d.contractor ? "Open your payment receipt" : "Open your payslip",
+          href: d.url,
+        },
         audience: "person",
         business: d.business,
         sandbox: d.sandbox,

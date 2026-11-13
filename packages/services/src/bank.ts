@@ -104,10 +104,7 @@ const noahError = (error: unknown) => {
     )
   // Noah opens bank details per customer; one it hasn't cleared for euros gets "no allowed channels".
   if (error instanceof NoahError && /no allowed channels/i.test(error.message))
-    return new BankError(
-      "no_channel",
-      "Noah hasn't opened euro bank details for this account yet.",
-    )
+    return new BankError("no_channel", "Noah hasn't opened euro bank details for this account yet.")
   return new BankError(
     "noah",
     error instanceof NoahError

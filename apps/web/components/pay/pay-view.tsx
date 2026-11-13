@@ -34,6 +34,7 @@ import { TaskSteps } from "@/components/kit/task-steps"
 import { Mark, MarkStack } from "@/components/marks/mark"
 import { CardNetworksMark, PaidWithMark, paidVia } from "@/components/marks/paid-with"
 import { DepositPanel } from "@/components/pay/deposit-panel"
+import { RoutePicker } from "@/components/pay/route-picker"
 import { WalletRows } from "@/components/pay/wallet-rows"
 import { ReceiptSlip, SlipRow } from "@/components/receipt/receipt-slip"
 import type { TestDollars } from "@/hooks/use-test-dollars"
@@ -781,29 +782,7 @@ function ChainPanel(p: PanelProps) {
   const route = p.routes.find((r) => r.id === p.routeId) ?? p.routes[0]
   return (
     <>
-      <div className="grid grid-cols-3 gap-2">
-        {p.routes.map((r) => (
-          <button
-            key={r.id}
-            type="button"
-            onClick={() => {
-              fire("tick")
-              p.onRoute(r.id)
-            }}
-            aria-pressed={r.id === p.routeId}
-            className={cn(
-              "press flex flex-col items-center gap-1.5 rounded-[14px] bg-secondary px-2 py-3 text-center",
-              r.id === p.routeId && "bg-card shadow-[0_0_0_2px_var(--shu)]",
-            )}
-          >
-            <Mark id={r.coin} chain={r.chainMark} size={30} />
-            <span className="text-[13px] font-semibold leading-tight">
-              {r.symbol}
-              <span className="block font-medium text-muted-foreground">{r.chain}</span>
-            </span>
-          </button>
-        ))}
-      </div>
+      <RoutePicker routes={p.routes} value={p.routeId} onChange={p.onRoute} />
       {route ? (
         <div className="flex flex-col gap-1 rounded-[14px] bg-secondary px-4 py-3">
           <span className="flex items-center justify-between text-detail text-muted-foreground">

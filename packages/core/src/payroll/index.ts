@@ -21,7 +21,60 @@ export const PAYROLL_LIMITS = {
   rowsPerBatch: LIMITS.maxRowsPerBatch,
   /** A person's change of where pay lands waits this long (Kawase's address-change cooldown). */
   destinationCooldownMs: 24 * 60 * 60 * 1000,
+  /** One-off lines (bonus, reimbursement, deduction) on one person's row in one run. */
+  linesPerRow: 10,
+  lineLabel: 60,
 } as const
+
+export type PayLineKind = "bonus" | "reimbursement" | "deduction"
+export const PAY_LINE_KINDS: readonly PayLineKind[] = ["bonus", "reimbursement", "deduction"]
+
+/** A one-off line on a row for this run only. Amounts are USDC base units, always positive. */
+export interface PayLine {
+  kind: PayLineKind
+  label: string
+  amount: bigint
+}
+
+/** One cent in USDC base units: the smallest line, and the smallest row Tegata pays. */
+const MIN_LINE = 10_000n
+
+/** What a row pays: this run's pay plus bonuses and reimbursements, less deductions. */
+export function rowTotal(pay: bigint, lines: readonly PayLine[]): bigint {
+  return lines.reduce(
+    (sum, line) => (line.kind === "deduction" ? sum - line.amount : sum + line.amount),
+    pay,
+  )
+}
+
+/** Gross (pay and additions) and deductions, for a payslip. */
+export function rowBreakdown(pay: bigint, lines: readonly PayLine[]) {
+  let additions = 0n
+  let deductions = 0n
+  for (const line of lines)
+    if (line.kind === "deduction") deductions += line.amount
+    else additions += line.amount
+  return { gross: pay + additions, deductions, net: pay + additions - deductions }
+}
+
+/** Why this run's pay and lines can't be saved, or null. One cent is the smallest row Tegata pays. */
+export function payLinesProblem(pay: bigint, lines: readonly PayLine[]): string | null {
+  if (pay < 0n || pay > PAYROLL_LIMITS.maxPay) return "Pay has to be between $0 and $1,000,000"
+  if (lines.length > PAYROLL_LIMITS.linesPerRow)
+    return `Up to ${PAYROLL_LIMITS.linesPerRow} lines for one person in a run`
+  for (const line of lines) {
+    if (!PAY_LINE_KINDS.includes(line.kind))
+      return "Each line is a bonus, a reimbursement or a deduction"
+    if (line.label.length > PAYROLL_LIMITS.lineLabel)
+      return `Keep each line's label under ${PAYROLL_LIMITS.lineLabel} characters`
+    if (line.amount < MIN_LINE || line.amount > PAYROLL_LIMITS.maxPay)
+      return "Each line has to be between $0.01 and $1,000,000"
+  }
+  const total = rowTotal(pay, lines)
+  if (total < MIN_LINE) return "Deductions can't be more than the pay and additions"
+  if (total > PAYROLL_LIMITS.maxPay) return "One person's pay in a run can be at most $1,000,000"
+  return null
+}
 
 const DAY_MS = 86_400_000
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
@@ -106,6 +159,17 @@ export interface PersonRow {
   email: string | null
   role: string | null
   amount: bigint
+  kind: PersonKind
+}
+
+/** An employee gets a payslip; a contractor gets a payment receipt. */
+export type PersonKind = "employee" | "contractor"
+
+/** "Contractor", "freelancer", "1099": a contractor; anything else, or nothing, an employee. */
+export function personKindOf(text: string | null | undefined): PersonKind {
+  return /^(contractor|freelancer|freelance|1099|consultant)/i.test((text ?? "").trim())
+    ? "contractor"
+    : "employee"
 }
 
 export interface CsvProblem {
@@ -141,10 +205,12 @@ const COLUMNS = {
   email: ["email", "e-mail", "email address"],
   role: ["role", "title", "job title"],
   amount: ["amount", "pay", "salary", "pay per run", "usd"],
+  kind: ["type", "kind", "paid as", "employment type"],
 } as const
 
 /**
- * The people CSV: a header row naming `name`, `email`, `role` and `amount` (any order, a few common spellings), then
+ * The people CSV: a header row naming `name`, `email`, `role`, `amount` and optionally `type` (employee or contractor;
+ * any order, a few common spellings), then
  * one person per line. Good rows come back ready to save; every bad row comes back with what to fix, so one typo
  * never blocks the rest.
  */
@@ -157,6 +223,7 @@ export function parsePeopleCsv(text: string): { rows: PersonRow[]; problems: Csv
     email: index(COLUMNS.email),
     role: index(COLUMNS.role),
     amount: index(COLUMNS.amount),
+    kind: index(COLUMNS.kind),
   }
   const problems: CsvProblem[] = []
   if (at.name < 0 || at.amount < 0) {
@@ -196,6 +263,7 @@ export function parsePeopleCsv(text: string): { rows: PersonRow[]; problems: Csv
         email: email || null,
         role: role.slice(0, PAYROLL_LIMITS.role) || null,
         amount,
+        kind: personKindOf(at.kind >= 0 ? cells[at.kind] : null),
       })
     }
   }

@@ -447,6 +447,7 @@ export async function queueRunEmails(db: Db, runId: string) {
           url: `/r/slip/${row.id}`,
           rowId: row.id,
           autopilot,
+          contractor: row.kind === "contractor",
         },
       },
       to: email,

@@ -8,6 +8,7 @@ import {
   OneClickError,
   type QuoteRequest,
   type QuoteResponse,
+  quoteProblem,
   requestQuote,
   submitDeposit,
   swapStatus,
@@ -65,14 +66,9 @@ function payoutRequest(input: {
   }
 }
 
-function friendly(error: unknown): string {
-  const text = (error instanceof Error ? error.message : "").toLowerCase()
-  if (text.includes("recipient") || text.includes("not valid"))
-    return "That address doesn't look right for this chain."
-  if (text.includes("low") || text.includes("minimum") || text.includes("amount"))
-    return "That amount is below this route's minimum. Send a little more."
-  return "NEAR Intents can't price that route right now. Try another coin or chain."
-}
+/** 1Click's refusal of a payout, for the person sending it. */
+const friendly = (error: unknown) =>
+  quoteProblem(error instanceof Error ? error.message : null, "This coin and chain")
 
 /** What arrives, before anything is committed (a dry quote: no deposit address). */
 export async function previewPayout(

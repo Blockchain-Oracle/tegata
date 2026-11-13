@@ -2,13 +2,16 @@
 
 // Payroll in every state: the payroll page (scheduled, setting the schedule, no team yet, loading,
 // error) and a run (review, paying, paid with its seal, failed with nothing moved), on sample data only.
+import { parseDollars } from "@tegata/core/invoices"
+import { rowTotal } from "@tegata/core/payroll"
 import { useState } from "react"
 
 import { Segmented } from "@/components/kit/segmented"
 import { AutopilotCard, AutopilotSheet } from "@/components/payroll/autopilot-card"
 import { PayrollView } from "@/components/payroll/payroll-view"
+import { RowPaySheet } from "@/components/payroll/row-pay-sheet"
 import { RunView } from "@/components/payroll/run-view"
-import type { PayRun } from "@/lib/client/types"
+import type { PayRun, PayRunRow } from "@/lib/client/types"
 import {
   SAMPLE_AUTOPILOT,
   SAMPLE_AUTOPILOT_PREVIEW,
@@ -74,6 +77,17 @@ function runIn(state: RunState): PayRun {
 export default function PayrollFlow() {
   const [page, setPage] = useState<PageState>("scheduled")
   const [run, setRun] = useState<RunState>("review")
+  const [editing, setEditing] = useState<PayRunRow | null>(null)
+  const [edits, setEdits] = useState<Record<string, Partial<PayRunRow>>>({})
+  // A run with the sheet's edits applied, its total from the included rows.
+  const edited = (shown: PayRun): PayRun => {
+    if (shown.status !== "draft" || !Object.keys(edits).length) return shown
+    const rows = shown.rows.map((row) => ({ ...row, ...edits[row.id] }))
+    const total = rows
+      .filter((row) => row.status === "included")
+      .reduce((sum, row) => sum + BigInt(row.amount), 0n)
+    return { ...shown, rows, total: total.toString() }
+  }
   const [autopilot, setAutopilot] = useState<AutopilotState>("on")
   const [sheet, setSheet] = useState(false)
   const [count, setCount] = useState(3)
@@ -177,7 +191,7 @@ export default function PayrollFlow() {
           />
         </div>
         <RunView
-          run={runIn(run)}
+          run={edited(runIn(run))}
           error={false}
           onReload={() => undefined}
           business={SAMPLE_BUSINESS}
@@ -185,8 +199,33 @@ export default function PayrollFlow() {
           busy={false}
           problem={null}
           onToggle={() => undefined}
+          onEdit={setEditing}
           onPay={() => setRun("paying")}
           onRetry={() => setRun("review")}
+        />
+        <RowPaySheet
+          row={editing}
+          period={SAMPLE_RUN.label}
+          busy={false}
+          problem={null}
+          onOpenChange={(open) => !open && setEditing(null)}
+          onSave={(row, input) => {
+            // The sample run takes the edit as the server would: pay (or usual) plus lines.
+            const lines = input.lines.map((line) => ({
+              ...line,
+              amount: (parseDollars(line.amount) ?? 0n).toString(),
+            }))
+            const pay = input.pay === null ? null : (parseDollars(input.pay) ?? 0n)
+            const amount = rowTotal(
+              pay ?? BigInt(row.usual ?? row.amount),
+              lines.map((line) => ({ ...line, amount: BigInt(line.amount) })),
+            )
+            setEdits((all) => ({
+              ...all,
+              [row.id]: { pay: pay?.toString() ?? null, lines, amount: amount.toString() },
+            }))
+            setEditing(null)
+          }}
         />
       </section>
     </div>

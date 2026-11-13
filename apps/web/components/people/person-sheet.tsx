@@ -11,6 +11,7 @@ import { AccountLink } from "@/components/kit/account-link"
 import { Button } from "@/components/kit/button"
 import { Field } from "@/components/kit/field"
 import { viewDollars } from "@/components/kit/figure"
+import { Segmented } from "@/components/kit/segmented"
 import { Skeleton, StatusPill } from "@/components/kit/states"
 import { ChainPicker } from "@/components/people/chain-picker"
 import {
@@ -31,15 +32,17 @@ export interface PersonForm {
   email: string
   role: string
   amount: string
+  kind: "employee" | "contractor"
 }
 
-const blank: PersonForm = { name: "", email: "", role: "", amount: "" }
+const blank: PersonForm = { name: "", email: "", role: "", amount: "", kind: "employee" }
 
 const formOf = (person: TeamPerson): PersonForm => ({
   name: person.name,
   email: person.email ?? "",
   role: person.role ?? "",
   amount: viewDollars(person.amount).toFixed(2),
+  kind: person.kind ?? "employee",
 })
 
 export function AddPersonSheet({
@@ -129,6 +132,23 @@ function PersonFields({ form, onForm }: { form: PersonForm; onForm: (form: Perso
           placeholder="2,400"
           onChange={(e) => onForm({ ...form, amount: e.target.value })}
         />
+      </div>
+      <div className="flex flex-col gap-2">
+        <span className="text-[15px] font-semibold">Paid as</span>
+        <Segmented
+          label="Paid as"
+          value={form.kind}
+          onValueChange={(kind) => onForm({ ...form, kind: kind as PersonForm["kind"] })}
+          options={[
+            { value: "employee", label: "Employee" },
+            { value: "contractor", label: "Contractor" },
+          ]}
+        />
+        <span className="text-detail text-muted-foreground">
+          {form.kind === "contractor"
+            ? "Gets a payment receipt each payday, not a payslip."
+            : "Gets a payslip each payday."}
+        </span>
       </div>
     </>
   )

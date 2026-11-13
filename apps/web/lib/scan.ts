@@ -34,6 +34,7 @@ const EVM_ROUTE: Record<number, string> = {
   56: "usdt-bsc",
   137: "usdc-pol",
   100: "usdc-gnosis",
+  43114: "usdc-avax",
 }
 const NEAR_ACCOUNT =
   /^(?=.{2,64}$)(([a-z\d]+[-_])*[a-z\d]+\.)*([a-z\d]+[-_])*[a-z\d]+\.(near|testnet)$/

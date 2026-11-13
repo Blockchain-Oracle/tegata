@@ -53,9 +53,37 @@ async function accountOf(db: Db, userId: string, network: NetworkId) {
 }
 
 /** Record who referred a business. It can change until the business is first paid, then it is locked. */
+/** Note the hashed IP and device a person signed in from (for the referral review flag only). */
+export async function noteSeen(
+  db: Db,
+  userId: string,
+  seen: { ipHash: string | null; deviceHash: string | null },
+) {
+  if (!seen.ipHash && !seen.deviceHash) return
+  await db.update(users).set(seen).where(eq(users.id, userId))
+}
+
+/** Same device or same network as the referrer: worth a human look, never a reason to refuse. */
+function reviewFlag(
+  referrer: { ipHash: string | null; deviceHash: string | null } | undefined,
+  referee: { ipHash: string | null; deviceHash: string | null } | undefined,
+): string | null {
+  if (!referrer || !referee) return null
+  if (referrer.deviceHash && referrer.deviceHash === referee.deviceHash)
+    return "Same device as the referrer"
+  if (referrer.ipHash && referrer.ipHash === referee.ipHash) return "Same network as the referrer"
+  return null
+}
+
 export async function attachReferral(
   db: Db,
-  input: { refereeId: string; handle: string; network: NetworkId },
+  input: {
+    refereeId: string
+    handle: string
+    network: NetworkId
+    /** Where the referee is signing in from, hashed (see `noteSeen`). */
+    seen?: { ipHash: string | null; deviceHash: string | null }
+  },
 ) {
   const referrer = await referrerByHandle(db, input.handle)
   if (!referrer) throw new ReferralError("not_found", "No business uses that handle")
@@ -63,11 +91,20 @@ export async function attachReferral(
     throw new ReferralError("self", "You can't refer your own business")
   const [both] = await Promise.all([
     db
-      .select({ id: users.id, email: users.email })
+      .select({
+        id: users.id,
+        email: users.email,
+        ipHash: users.ipHash,
+        deviceHash: users.deviceHash,
+      })
       .from(users)
       .where(inArray(users.id, [referrer.userId, input.refereeId])),
   ])
   const emails = both.map((u) => sameInbox(u.email))
+  const flag = reviewFlag(
+    both.find((u) => u.id === referrer.userId),
+    input.seen ?? both.find((u) => u.id === input.refereeId),
+  )
   if (emails.length === 2 && emails[0] && emails[0] === emails[1])
     throw new ReferralError("self", "That business uses your own email")
   const [referrerAccount, refereeAccount] = await Promise.all([
@@ -86,7 +123,7 @@ export async function attachReferral(
       throw new ReferralError("locked", "Your referrer is set once you've been paid")
     const [row] = await db
       .update(referrals)
-      .set({ referrerId: referrer.userId, referrerAccount })
+      .set({ referrerId: referrer.userId, referrerAccount, flag })
       .where(and(eq(referrals.id, existing.id), isNull(referrals.lockedAt)))
       .returning()
     return row
@@ -100,6 +137,7 @@ export async function attachReferral(
       referrerAccount,
       refereeAccount,
       received: 0n,
+      flag,
     })
     .returning()
   return row

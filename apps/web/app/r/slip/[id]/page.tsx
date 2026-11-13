@@ -13,7 +13,8 @@ type Props = { params: Promise<{ id: string }> }
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const slip = await payslipView((await params).id)
   if (!slip) return { title: "Payslip not found", robots: { index: false } }
-  return { title: `Payslip · ${slip.business}`, robots: { index: false, follow: false } }
+  const word = slip.contractor ? "Payment receipt" : "Payslip"
+  return { title: `${word} · ${slip.business}`, robots: { index: false, follow: false } }
 }
 
 export default async function PayslipPage({ params }: Props) {

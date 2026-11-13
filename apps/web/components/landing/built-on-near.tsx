@@ -8,6 +8,7 @@ import { useRef } from "react"
 import { TegataSeal } from "@/components/brand/seal"
 import { Mark } from "@/components/marks/mark"
 import { AnimatedBeam } from "@/components/ui/animated-beam"
+import { ROUTE_COUNT } from "@/lib/routes"
 import { cn } from "@/lib/utils"
 
 import { Rise, RunningHead, SectionTitle } from "./section"
@@ -45,7 +46,7 @@ const PIECES = [
   {
     key: "intents",
     label: "NEAR Intents",
-    sub: "1Click, in and out of 11 routes",
+    sub: `1Click, in and out of ${ROUTE_COUNT} routes`,
     icon: <Mark id="intents" size={30} />,
   },
   { key: "connect", label: "NEAR Connect", sub: "wallet sign-in and approvals", icon: <Wallet /> },

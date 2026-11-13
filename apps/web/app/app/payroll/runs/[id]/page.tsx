@@ -6,6 +6,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { use, useState } from "react"
 
+import { type RowPayInput, RowPaySheet } from "@/components/payroll/row-pay-sheet"
 import { RunView } from "@/components/payroll/run-view"
 import { useNetwork } from "@/hooks/use-network"
 import { useProfile } from "@/hooks/use-profile"
@@ -39,6 +40,17 @@ export default function RunPage({ params }: { params: Promise<{ id: string }> })
     void queryClient.invalidateQueries({ queryKey: ["activity"] })
   }
 
+  const [editing, setEditing] = useState<PayRunRow | null>(null)
+  const savePay = useMutation({
+    mutationFn: ({ row, input }: { row: PayRunRow; input: RowPayInput }) =>
+      api(`/api/payroll/runs/${id}/rows/${row.id}`, { method: "PUT", body: input }),
+    onSuccess: () => {
+      fire("tick", { cue: "confirmed" })
+      setEditing(null)
+      refresh()
+    },
+    onError: () => fire("fail", { cue: "error" }),
+  })
   const toggle = useMutation({
     mutationFn: ({ row, included }: { row: PayRunRow; included: boolean }) =>
       api(`/api/payroll/runs/${id}/rows/${row.id}`, { method: "PATCH", body: { included } }),
@@ -121,17 +133,37 @@ export default function RunPage({ params }: { params: Promise<{ id: string }> })
   })
 
   return (
-    <RunView
-      run={run.data}
-      error={run.isError && !run.data}
-      onReload={() => void run.refetch()}
-      business={profile?.workspace?.name ?? "Your business"}
-      balance={account?.balance ?? null}
-      busy={busy || !signer.ready || retry.isPending}
-      problem={problem}
-      onToggle={(row, included) => toggle.mutate({ row, included })}
-      onPay={pay}
-      onRetry={() => retry.mutate()}
-    />
+    <>
+      <RunView
+        run={run.data}
+        error={run.isError && !run.data}
+        onReload={() => void run.refetch()}
+        business={profile?.workspace?.name ?? "Your business"}
+        balance={account?.balance ?? null}
+        busy={busy || !signer.ready || retry.isPending}
+        problem={problem}
+        onToggle={(row, included) => toggle.mutate({ row, included })}
+        onEdit={(row) => {
+          savePay.reset()
+          setEditing(row)
+        }}
+        onPay={pay}
+        onRetry={() => retry.mutate()}
+      />
+      <RowPaySheet
+        row={editing}
+        period={run.data?.label ?? ""}
+        busy={savePay.isPending}
+        problem={
+          savePay.error
+            ? savePay.error instanceof ApiError
+              ? savePay.error.message
+              : "That didn't save. Try again."
+            : null
+        }
+        onOpenChange={(open) => !open && setEditing(null)}
+        onSave={(row, input) => savePay.mutate({ row, input })}
+      />
+    </>
   )
 }

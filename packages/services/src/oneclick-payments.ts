@@ -9,6 +9,7 @@ import {
   isTerminal,
   OneClickError,
   type QuoteResponse,
+  quoteProblem,
   requestQuote,
   type StatusResponse,
   swapStatus,
@@ -92,7 +93,7 @@ export async function startOneClickPayment(
       .update(payments)
       .set({ status: "failed", error: message.slice(0, 300) })
       .where(eq(payments.id, payment.id))
-    throw new PaymentError("no_route", friendly(message))
+    throw new PaymentError("no_route", quoteProblem(message, "This coin and chain"))
   }
   // Only a quote 1Click signed, for this business, this amount and USDC on NEAR, ever reaches the payer.
   const echo = response.quoteRequest
@@ -128,15 +129,6 @@ export async function startOneClickPayment(
 }
 
 /** 1Click's refusals, in the payer's words. */
-function friendly(message: string): string {
-  const text = message.toLowerCase()
-  if (text.includes("too low") || text.includes("minimum") || text.includes("amount"))
-    return "That amount is below this route's minimum. Try a larger amount or another coin."
-  if (text.includes("refundto") || text.includes("not valid"))
-    return "That refund address doesn't look right for this chain."
-  return "NEAR Intents can't price that route right now. Try another coin or chain."
-}
-
 /** Live pay-ins still waiting on 1Click (the worker polls each). */
 export function oneClickToPoll(db: Db) {
   return db
