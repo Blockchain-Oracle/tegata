@@ -203,6 +203,8 @@ export const TREASURY = {
   /** k can't be 1: one person approving alone is what payroll does without a treasury. */
   minThreshold: 2,
   maxApprovers: 10,
+  /** An approver's invite link closes if it isn't taken up within this many days; the owner sends a new one. */
+  inviteDays: 14,
 } as const
 
 /** Gas for a vote that may be the one that pays: every row's transfer, the callback, and the vote itself. */

@@ -681,7 +681,7 @@ export interface ChainTransfer {
   other: string
 }
 
-const NEARBLOCKS = {
+export const NEARBLOCKS = {
   mainnet: "https://api.nearblocks.io",
   testnet: "https://api-testnet.nearblocks.io",
 } as const

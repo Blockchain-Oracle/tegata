@@ -29,8 +29,9 @@ import {
 } from "@tegata/core/near"
 import { periodLabel } from "@tegata/core/payroll"
 import { type Db, schema } from "@tegata/db"
-import { and, asc, desc, eq, inArray, ne } from "drizzle-orm"
+import { and, asc, desc, eq, gt, inArray, ne, or } from "drizzle-orm"
 
+import { NEARBLOCKS } from "./books.ts"
 import { BUSINESS_HEADER, headerLogo, publicToken } from "./payments.ts"
 import { closeRun, maskEmail, payrollMemo } from "./payroll.ts"
 import { applySplitToAccount } from "./pots.ts"
@@ -43,6 +44,16 @@ const TOKEN_LENGTH = 14
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 const NS_PER_MS = 1_000_000n
+const INVITE_MS = TREASURY.inviteDays * 24 * 60 * 60 * 1000
+
+/** An invite nobody took up within the invite window: its link no longer joins, and the owner can send a new one. */
+export function inviteExpired(member: { status: string; invitedAt: Date | null }): boolean {
+  return (
+    member.status === "invited" &&
+    member.invitedAt !== null &&
+    Date.now() - member.invitedAt.getTime() > INVITE_MS
+  )
+}
 
 export class TeamError extends Error {
   constructor(
@@ -150,9 +161,10 @@ export async function inviteApprover(
       and(eq(teamMembers.workspaceId, input.workspaceId), eq(teamMembers.network, input.network)),
     )
   const existing = current.find((m) => m.email === email)
-  if (existing && existing.status !== "removed")
+  if (existing && existing.status !== "removed" && !inviteExpired(existing))
     throw new TeamError("duplicate", `${existing.name} is already invited with ${email}`)
-  if (current.filter((m) => m.status !== "removed").length + 1 >= TREASURY.maxApprovers)
+  const others = current.filter((m) => m.status !== "removed" && m.id !== existing?.id)
+  if (others.length + 1 >= TREASURY.maxApprovers)
     throw new TeamError("limit", `A treasury can have up to ${TREASURY.maxApprovers} approvers`)
   if (existing) {
     const [back] = await db
@@ -164,6 +176,8 @@ export async function inviteApprover(
         accountId: null,
         joinedAt: null,
         invitedAt: new Date(),
+        // A fresh link each time: an old one (expired, or sent before a removal) never joins again.
+        token: publicToken(TOKEN_LENGTH),
       })
       .where(eq(teamMembers.id, existing.id))
       .returning()
@@ -215,6 +229,7 @@ export async function teamInvite(db: Db, token: string) {
     business: row.business,
     logo: headerLogo(row),
     joined: row.member.status === "active",
+    expired: inviteExpired(row.member),
     accountId: row.member.accountId,
   }
 }
@@ -226,6 +241,11 @@ export async function joinTeam(db: Db, token: string, user: { id: string; email:
     .from(teamMembers)
     .where(and(eq(teamMembers.token, token), ne(teamMembers.status, "removed")))
   if (!member) throw new TeamError("not_found", "This invite has closed")
+  if (inviteExpired(member))
+    throw new TeamError(
+      "wrong_state",
+      "This invite has expired. Ask the owner to send you a new one.",
+    )
   if (member.userId && member.userId !== user.id)
     throw new TeamError("forbidden", "Someone else already joined with this invite")
   if (user.email?.toLowerCase() !== member.email)
@@ -712,23 +732,27 @@ export async function submitVote(
 }
 
 /**
- * Bring a run in line with its proposal on NEAR. Approved with the paying transaction known: rows are paid from the
- * treasury's USDC events (memo per row), then the run closes as any run does. Failed: the batch didn't land, nothing
- * moved. Rejected: declined. Past its period while still open: expired. Votes cast elsewhere (Trezu) are recorded.
+ * Bring a run in line with its proposal on NEAR. Approved: rows are paid from the treasury's USDC events (memo per
+ * row) in the paying transaction, then the run closes as any run does. That transaction is the relayed vote or retry
+ * when Tegata sent it, and otherwise (the deciding vote or a retry made in Trezu or a wallet) found on NEAR. Failed:
+ * the batch didn't land, nothing moved. Rejected: declined. Past its period while still open: expired. Votes cast
+ * elsewhere are recorded. A Failed run moves again only if its proposal was retried and paid.
  */
 export async function syncTreasuryRun(
   db: Db,
   runId: string,
   operatorId: string,
-  paidIn?: { txHash: string },
+  paidIn?: { txHash: string; signer?: string },
 ): Promise<"paid" | "failed" | "declined" | "expired" | "pending" | "ignored"> {
   const [run] = await db.select().from(payRuns).where(eq(payRuns.id, runId))
   if (!run?.treasuryId || run.proposalId === null) return "ignored"
-  if (run.status !== "proposed" && run.status !== "approved") return "ignored"
+  if (run.status !== "proposed" && run.status !== "approved" && run.status !== "failed")
+    return "ignored"
   const [t] = await db.select().from(treasuries).where(eq(treasuries.id, run.treasuryId))
   if (!t) return "ignored"
   const proposal = await treasuryProposal(run.network, t.accountId, run.proposalId)
   if (!proposal) return "pending"
+  if (run.status === "failed" && proposal.status !== "Approved") return "ignored"
   for (const [account, vote] of Object.entries(proposal.votes)) {
     if (vote !== "Approve" && vote !== "Reject") continue
     await db
@@ -740,11 +764,21 @@ export async function syncTreasuryRun(
       })
       .onConflictDoNothing()
   }
-  if (proposal.status === "Approved" && paidIn) {
-    const read = await readUsdcTransfers(run.network, paidIn.txHash, operatorId)
+  if (proposal.status === "Approved") {
+    const rows = await runRows(db, run.id)
+    const filed = new Date(Number(BigInt(proposal.submission_time) / NS_PER_MS))
+    const paying =
+      paidIn ??
+      (await payingTx(
+        run.network,
+        t.accountId,
+        rows.flatMap((row) => (row.accountId ? [row.accountId] : [])),
+        filed,
+      ))
+    if (!paying) return "pending"
+    const read = await readUsdcTransfers(run.network, paying.txHash, paying.signer ?? operatorId)
     if (read.state === "pending") return "pending"
     const fromTreasury = read.transfers.filter((transfer) => transfer.from === t.accountId)
-    const rows = await runRows(db, run.id)
     await db
       .update(payRuns)
       .set({ status: "approved", approvedAt: new Date() })
@@ -761,7 +795,7 @@ export async function syncTreasuryRun(
         .update(payRows)
         .set(
           hit
-            ? { status: "paid", txHash: paidIn.txHash, paidAt: new Date() }
+            ? { status: "paid", txHash: paying.txHash, paidAt: new Date() }
             : { status: "failed" },
         )
         .where(eq(payRows.id, row.id))
@@ -797,6 +831,51 @@ export async function syncTreasuryRun(
   return "pending"
 }
 
+/**
+ * The transaction that paid an approved proposal when Tegata didn't relay the deciding call: the treasury's newest USDC
+ * transfer out to one of the run's people since the proposal was filed, as NearBlocks indexes it, with its signer
+ * (needed to read its receipts). Not indexed yet: null, and the keeper looks again next minute.
+ */
+async function payingTx(
+  network: NetworkId,
+  treasury: string,
+  accountIds: readonly string[],
+  since: Date,
+): Promise<{ txHash: string; signer: string } | null> {
+  const headers = { "user-agent": "tegata" }
+  try {
+    const url = new URL(`${NEARBLOCKS[network]}/v3/accounts/${treasury}/ft-txns`)
+    url.searchParams.set("limit", "50")
+    const list = await fetch(url, { headers })
+    if (!list.ok) return null
+    const body = (await list.json()) as {
+      data?: {
+        transaction_hash?: string
+        block_timestamp: string
+        delta_amount: string
+        involved_account_id: string | null
+        contract_account_id: string
+      }[]
+    }
+    const hit = (body.data ?? []).find(
+      (row) =>
+        row.contract_account_id === NETWORKS[network].usdc &&
+        Boolean(row.transaction_hash) &&
+        BigInt(row.delta_amount) < 0n &&
+        accountIds.includes(row.involved_account_id ?? "") &&
+        Number(BigInt(row.block_timestamp) / NS_PER_MS) >= since.getTime(),
+    )
+    if (!hit?.transaction_hash) return null
+    const tx = await fetch(`${NEARBLOCKS[network]}/v3/txns/${hit.transaction_hash}`, { headers })
+    if (!tx.ok) return null
+    const signer = ((await tx.json()) as { data?: { signer_account_id?: string } }).data
+      ?.signer_account_id
+    return signer ? { txHash: hit.transaction_hash, signer } : null
+  } catch {
+    return null
+  }
+}
+
 /** Declined or expired: the same rows go back to review, to be sent again as a fresh proposal. */
 export async function reopenTreasuryRun(db: Db, workspaceId: string, runId: string) {
   const [run] = await db
@@ -829,7 +908,9 @@ export async function reopenTreasuryRun(db: Db, workspaceId: string, runId: stri
       if (Date.now() < ends)
         throw new TeamError(
           "wrong_state",
-          `Its proposal on NEAR could still pay until ${new Date(ends).toISOString().slice(0, 16).replace("T", " ")} UTC. Send it again after that.`,
+          proposal.status === "Failed"
+            ? `Its proposal on NEAR can still be retried until ${new Date(ends).toISOString().slice(0, 16).replace("T", " ")} UTC: add money to the treasury and use Try again, or send it again after that.`
+            : `Its proposal on NEAR could still pay until ${new Date(ends).toISOString().slice(0, 16).replace("T", " ")} UTC. Send it again after that.`,
         )
     }
   }
@@ -842,6 +923,103 @@ export async function reopenTreasuryRun(db: Db, workspaceId: string, runId: stri
     .update(payRows)
     .set({ status: "included" })
     .where(and(eq(payRows.runId, run.id), eq(payRows.status, "failed")))
+}
+
+/**
+ * Try again: a Failed batch (the treasury was short, say) is retried as it stands. The owner, an approver, finalizes the
+ * same proposal; NEAR re-checks its votes and, inside its voting period, pays every row if the treasury now holds
+ * enough. No second proposal, so nothing can be paid twice.
+ */
+export async function prepareTreasuryRetry(
+  db: Db,
+  input: { workspaceId: string; userId: string; publicKey: string; runId: string },
+) {
+  if (!UUID.test(input.runId)) throw new TeamError("not_found", "No such run")
+  const [run] = await db
+    .select()
+    .from(payRuns)
+    .where(and(eq(payRuns.id, input.runId), eq(payRuns.workspaceId, input.workspaceId)))
+  if (!run?.treasuryId || run.proposalId === null || run.source !== "treasury")
+    throw new TeamError("not_found", "No such run")
+  if (run.status !== "failed")
+    throw new TeamError("wrong_state", "Only a failed payroll can be tried again")
+  const [t] = await db.select().from(treasuries).where(eq(treasuries.id, run.treasuryId))
+  if (!t) throw new TeamError("not_found", "No such treasury")
+  const owner = await ownerAccount(db, input.userId, run.network)
+  const [proposal, policy] = await Promise.all([
+    treasuryProposal(run.network, t.accountId, run.proposalId),
+    treasuryPolicy(run.network, t.accountId),
+  ])
+  if (!proposal)
+    throw new TeamError("not_found", "NEAR couldn't be read just now. Try again in a minute.")
+  if (proposal.status !== "Failed")
+    throw new TeamError("wrong_state", "This payroll's proposal isn't waiting for a retry")
+  const periodNs = BigInt(policy?.proposal_period ?? TREASURY.periodNs)
+  if (Date.now() > Number((BigInt(proposal.submission_time) + periodNs) / NS_PER_MS))
+    throw new TeamError("wrong_state", "Its voting period is over: send it again instead")
+  const rows = await runRows(db, run.id)
+  if (!sameKind(proposal.kind, payrollKind(run.network, transfersOf(rows))))
+    throw new TeamError("forbidden", "The proposal on NEAR doesn't match this payroll")
+  const total = rows.reduce((sum, row) => sum + row.amount, 0n)
+  const held = await usdcBalance(run.network, t.accountId)
+  if (held < total)
+    throw new TeamError(
+      "not_ready",
+      `The treasury holds $${(Number(held) / 1e6).toFixed(2)}: add $${(Number(total - held) / 1e6).toFixed(2)} first`,
+    )
+  const draft = await createRelayDraft(db, {
+    userId: input.userId,
+    network: run.network,
+    purpose: `treasury-retry:${run.id}:${crypto.randomUUID().slice(0, 8)}`,
+    senderId: owner.accountId,
+    receiverId: t.accountId,
+    publicKey: input.publicKey,
+    calls: [
+      actProposal(
+        run.proposalId,
+        "Finalize",
+        proposal.kind as ProposalKind,
+        rows.length,
+        `tegata:run:${run.id.slice(0, 8)}`,
+      ),
+    ],
+  })
+  return {
+    ...draft,
+    proposalId: run.proposalId,
+    treasury: t.accountId,
+    usdc: NETWORKS[run.network].usdc,
+    rows: rows.map((row) => ({
+      id: row.id,
+      accountId: row.accountId,
+      amount: row.amount.toString(),
+    })),
+  }
+}
+
+/** The owner signed the retry: stored, then relayed by the worker, which settles the run from what it paid. */
+export async function submitTreasuryRetry(
+  db: Db,
+  input: { workspaceId: string; userId: string; runId: string; approval: Approval },
+) {
+  const [run] = await db
+    .select()
+    .from(payRuns)
+    .where(and(eq(payRuns.id, input.runId), eq(payRuns.workspaceId, input.workspaceId)))
+  if (run?.status !== "failed")
+    throw new TeamError("wrong_state", "Only a failed payroll can be tried again")
+  const relay = await submitRelaySignature(db, {
+    ...input.approval,
+    userId: input.userId,
+    purposes: [`treasury-retry:${run.id}:`],
+  })
+  if (
+    draftedAction(relay.draft) !== "Finalize" ||
+    draftedProposalId(relay.draft) !== run.proposalId
+  )
+    throw new TeamError("forbidden", "That approval is for something else")
+  await db.update(payRuns).set({ error: null }).where(eq(payRuns.id, run.id))
+  return relay.id
 }
 
 /**
@@ -912,10 +1090,24 @@ export async function settleTreasuryRelay(db: Db, relayId: string, operatorId: s
     }
     return relay.status === "success" ? syncTreasuryRun(db, id, operatorId) : "pending"
   }
+  if (kind === "treasury-retry" && id) {
+    if (relay.status === "failed" || relay.status === "expired") {
+      await db
+        .update(payRuns)
+        .set({ error: relay.error ?? "The retry didn't go through. Nothing moved." })
+        .where(eq(payRuns.id, id))
+      return "retry-failed"
+    }
+    if (relay.status !== "success" || !relay.txHash) return "pending"
+    return syncTreasuryRun(db, id, operatorId, { txHash: relay.txHash })
+  }
   if (kind === "treasury-vote" && id) {
     if (relay.status === "failed" || relay.status === "expired") {
       await db.delete(runVotes).where(eq(runVotes.relayId, relay.id))
-      return "vote-failed"
+      // A vote can land and still read as failed: the batch it set off failed (the treasury was short), or its
+      // outcome was never seen. NEAR decides: its votes are recorded again and a Failed proposal fails the run.
+      const synced = await syncTreasuryRun(db, id, operatorId)
+      return synced === "pending" || synced === "ignored" ? "vote-failed" : synced
     }
     if (relay.status !== "success" || !relay.txHash) return "pending"
     await db.update(runVotes).set({ txHash: relay.txHash }).where(eq(runVotes.relayId, relay.id))
@@ -924,12 +1116,25 @@ export async function settleTreasuryRelay(db: Db, relayId: string, operatorId: s
   return null
 }
 
-/** Worker, every minute: open treasury payrolls read from NEAR (votes in Trezu, declines, expiry). */
+/**
+ * Worker, every minute: open treasury payrolls read from NEAR (votes in Trezu, declines, expiry, a payout Tegata didn't
+ * relay), and Failed ones still inside their voting period, which any approver can retry in Trezu.
+ */
 export async function syncTreasuryRuns(db: Db, network: NetworkId, operatorId: string) {
+  const retryable = new Date(Date.now() - Number(TREASURY.periodNs / NS_PER_MS) - CLOCK_MARGIN_MS)
   const open = await db
     .select({ id: payRuns.id })
     .from(payRuns)
-    .where(and(eq(payRuns.network, network), eq(payRuns.status, "proposed")))
+    .where(
+      and(
+        eq(payRuns.network, network),
+        eq(payRuns.source, "treasury"),
+        or(
+          eq(payRuns.status, "proposed"),
+          and(eq(payRuns.status, "failed"), gt(payRuns.updatedAt, retryable)),
+        ),
+      ),
+    )
   const out: { id: string; state: string }[] = []
   for (const run of open)
     out.push({ id: run.id, state: await syncTreasuryRun(db, run.id, operatorId) })
@@ -1013,6 +1218,17 @@ export async function approvalsFor(db: Db, userId: string, network: NetworkId) {
 }
 
 /** One payroll for an approver: its rows (read only), who voted, the treasury and the proposal. */
+/** Until when a Failed proposal can be retried (finalized again): its filing time plus the treasury's period. */
+async function retryEnds(network: NetworkId, treasury: string, id: number): Promise<Date | null> {
+  const [proposal, policy] = await Promise.all([
+    treasuryProposal(network, treasury, id),
+    treasuryPolicy(network, treasury),
+  ])
+  if (proposal?.status !== "Failed") return null
+  const periodNs = BigInt(policy?.proposal_period ?? TREASURY.periodNs)
+  return new Date(Number((BigInt(proposal.submission_time) + periodNs) / NS_PER_MS))
+}
+
 export async function approvalDetail(db: Db, userId: string, runId: string) {
   if (!UUID.test(runId)) return null
   const [row] = await db
@@ -1041,6 +1257,10 @@ export async function approvalDetail(db: Db, userId: string, runId: string) {
         ),
       ),
   ])
+  const retryUntil =
+    row.run.status === "failed" && row.run.proposalId !== null
+      ? await retryEnds(row.run.network, row.treasury.accountId, row.run.proposalId)
+      : null
   const nameOf = (account: string) =>
     account === row.treasury.approvers[0]
       ? row.business
@@ -1053,6 +1273,7 @@ export async function approvalDetail(db: Db, userId: string, runId: string) {
     label: periodLabel({ from: row.run.periodFrom, to: row.run.periodTo }),
     rows,
     me: voter,
+    retryUntil,
     approvers: row.treasury.approvers.map((account) => ({
       account,
       name: nameOf(account),

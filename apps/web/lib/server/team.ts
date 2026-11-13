@@ -1,7 +1,7 @@
 // Team approvals as the screens see them: base units as strings, dates as ISO strings.
 import type { NetworkId } from "@tegata/config"
 import { explorerAccount, explorerTx } from "@tegata/core/near"
-import { approvalDetail, approvalsFor, teamView } from "@tegata/services"
+import { approvalDetail, approvalsFor, inviteExpired, teamView } from "@tegata/services"
 
 import { db } from "./context.ts"
 
@@ -20,6 +20,7 @@ export async function teamPageView(workspaceId: string, ownerId: string, network
       token: m.token,
       invitedAt: iso(m.invitedAt),
       joinedAt: iso(m.joinedAt),
+      expired: inviteExpired(m),
     })),
     treasury: view.treasury && {
       id: view.treasury.id,
@@ -61,6 +62,7 @@ export async function approvalDetailView(userId: string, runId: string) {
     threshold: d.treasury.threshold,
     me: d.me,
     error: d.run.error,
+    retryUntil: iso(d.retryUntil),
     rows: d.rows.map((r) => ({
       id: r.id,
       name: r.name,

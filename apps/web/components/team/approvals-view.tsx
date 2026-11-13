@@ -39,6 +39,8 @@ export interface ApprovalDetail {
   treasury: string
   treasuryUrl: string
   proposalId: number | null
+  /** A failed run: until when Try again (the same proposal, finalized) can still pay it. */
+  retryUntil?: string | null
   threshold: number
   me: string
   error: string | null
@@ -159,6 +161,8 @@ export function ApprovalDetailView({
   problem,
   onVote,
   onSendAgain,
+  onTryAgain,
+  retrying = false,
 }: {
   detail: ApprovalDetail | undefined
   error: boolean
@@ -168,6 +172,10 @@ export function ApprovalDetailView({
   onVote: (vote: "approve" | "reject") => void
   /** The owner's way back from declined or expired. */
   onSendAgain?: () => void
+  /** The owner's retry of a failed batch: the same proposal, finalized again on NEAR. */
+  onTryAgain?: () => void
+  /** A retry is signed and on its way. */
+  retrying?: boolean
 }) {
   const back = (
     <Link
@@ -197,6 +205,11 @@ export function ApprovalDetailView({
       </div>
     )
   const approvals = detail.approvers.filter((a) => a.vote === "approve").length
+  // A failed batch can be retried until its voting period ends; after that it goes back to review.
+  const retryOpen = !detail.retryUntil || Date.now() < Date.parse(detail.retryUntil)
+  const until = detail.retryUntil
+    ? new Date(detail.retryUntil).toLocaleDateString("en-GB", { day: "numeric", month: "short" })
+    : null
   const myVote = detail.approvers.find((a) => a.account === detail.me)?.vote ?? null
   const open = detail.status === "proposed"
   const paid = detail.status === "paid"
@@ -331,7 +344,24 @@ export function ApprovalDetailView({
           {detail.threshold - approvals} more.
         </p>
       ) : (detail.status === "declined" || detail.status === "expired") && onSendAgain ? (
-        <Button variant="secondary" onClick={onSendAgain}>
+        <Button variant="secondary" disabled={busy} onClick={onSendAgain}>
+          Back to review, to send again
+        </Button>
+      ) : detail.status === "failed" && onTryAgain && retryOpen ? (
+        <div className="flex flex-col gap-2">
+          <p className="rounded-[14px] bg-secondary px-4 py-3 text-[15px]">
+            {retrying
+              ? "Trying again on NEAR. This page updates when it lands."
+              : `Add money to the treasury if it was short, then try again${until ? ` by ${until}` : ""}: the same approvals pay everyone, all or nobody.`}
+          </p>
+          <HoldButton
+            label={`Hold to try again · ${money(detail.total)}`}
+            busy={busy || retrying}
+            onConfirm={onTryAgain}
+          />
+        </div>
+      ) : detail.status === "failed" && onSendAgain ? (
+        <Button variant="secondary" disabled={busy} onClick={onSendAgain}>
           Back to review, to send again
         </Button>
       ) : null}

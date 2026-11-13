@@ -15,8 +15,8 @@ import {
   SAMPLE_TREASURY,
 } from "@/lib/dev/sample"
 
-type TeamState = "alone" | "invited" | "joined" | "creating" | "sealing" | "ready"
-type VoteState = "needs" | "voted" | "paid" | "declined"
+type TeamState = "alone" | "invited" | "expired" | "joined" | "creating" | "sealing" | "ready"
+type VoteState = "needs" | "voted" | "paid" | "declined" | "failed"
 
 const noop = () => undefined
 
@@ -29,6 +29,12 @@ function teamFor(state: TeamState): TeamData {
   if (state === "alone") return { ownerAccount: SAMPLE_ACCOUNT, members: [], treasury: null }
   if (state === "invited")
     return { ownerAccount: SAMPLE_ACCOUNT, members: SAMPLE_TEAM_MEMBERS, treasury: null }
+  if (state === "expired")
+    return {
+      ownerAccount: SAMPLE_ACCOUNT,
+      members: SAMPLE_TEAM_MEMBERS.map((m, i) => (i === 1 ? { ...m, expired: true } : m)),
+      treasury: null,
+    }
   if (state === "joined") return { ownerAccount: SAMPLE_ACCOUNT, members: joined, treasury: null }
   return {
     ownerAccount: SAMPLE_ACCOUNT,
@@ -59,6 +65,14 @@ function approvalFor(state: VoteState) {
         txUrl: "#",
       })),
     }
+  if (state === "failed")
+    return {
+      ...SAMPLE_APPROVAL,
+      status: "failed",
+      approvers: voted,
+      error: "The treasury's batch didn't land, so nothing moved.",
+      retryUntil: "2026-11-20T20:27:00.000Z",
+    }
   if (state === "declined")
     return {
       ...SAMPLE_APPROVAL,
@@ -85,6 +99,7 @@ export default function TeamFlow() {
             options={[
               { value: "alone", label: "Just you" },
               { value: "invited", label: "Invited" },
+              { value: "expired", label: "Invite expired" },
               { value: "joined", label: "Ready to open" },
               { value: "creating", label: "Opening" },
               { value: "sealing", label: "Sealing" },
@@ -127,6 +142,7 @@ export default function TeamFlow() {
               { value: "voted", label: "You voted" },
               { value: "paid", label: "Paid" },
               { value: "declined", label: "Declined" },
+              { value: "failed", label: "Failed" },
             ]}
           />
         </div>
@@ -138,6 +154,7 @@ export default function TeamFlow() {
           problem={null}
           onVote={() => setVote("paid")}
           onSendAgain={noop}
+          onTryAgain={() => setVote("paid")}
         />
       </section>
 

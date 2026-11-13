@@ -164,7 +164,11 @@ await boss.work(QUEUES.relaySend.name, async ([job]) => {
     .select({ purpose: schema.relays.purpose, receiverId: schema.relays.receiverId })
     .from(schema.relays)
     .where(eq(schema.relays.id, relayId))
-  if (ahead?.purpose.startsWith("treasury-propose:") || ahead?.purpose.startsWith("treasury-vote:"))
+  if (
+    ahead?.purpose.startsWith("treasury-propose:") ||
+    ahead?.purpose.startsWith("treasury-vote:") ||
+    ahead?.purpose.startsWith("treasury-retry:")
+  )
     await topUpTreasury(operator, ahead.receiverId)
   const relay = await processRelay(db, operator, relayId)
   if (relay) console.log(`[relay] ${relay.purpose} ${relay.status} ${relay.txHash ?? ""}`)

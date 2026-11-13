@@ -13,6 +13,8 @@ in the treasury's rules at all: it can't propose a payment, vote, or move what t
 
 1. **Business → Team → Add an approver.** Their name and email. They get an email with a link to `/team/<token>`,
    sign in with that email (their own Tegata account opens if they don't have one) and press **Join as an approver**.
+   An invite stays open for two weeks. After that its link says it has expired, and Team shows **Expired** with
+   **Send again**, which emails them a fresh link (the old one never works again).
 2. **Pick the rule.** "Payroll needs **2** of **3** approvals". You count as one of them. At least 2.
 3. **Open the team treasury** once everyone has joined. Tegata creates it on NEAR and registers it for USDC
    (Tegata pays both), then you **hold to seal it**: one action that switches off code updates and locks the rule,
@@ -32,11 +34,14 @@ running the same contract code.
 - The vote that reaches *k* makes the treasury pay everyone in one batch: every row lands or none does. Rows turn paid
   only from USDC's own transfer events in that transaction, the same rule as every payment in Tegata, and payslips go
   out as usual.
+- Votes cast in Trezu count the same. If the deciding one is cast there, Tegata finds the payout on NEAR within a
+  minute or so and marks the run paid, from the same USDC events.
 - Enough declines end it as **Declined**; a proposal left open for 7 days **Expires**. Nothing moves either way, and
   the owner can send it again.
 - If the approved batch itself fails on NEAR (the treasury was short, say), nothing moves and the run shows
-  **Failed**. Any approver can still retry that same proposal on NEAR until its 7 days end, so Tegata sends it again
-  only after that: a second proposal for the same rows could otherwise pay everyone twice.
+  **Failed**. Add money to the treasury and **hold to try again**: the same proposal is finalized again, so the same
+  approvals pay everyone, all or nobody. That works until its 7 days end; after that it can be sent again as a fresh
+  proposal. Tegata never files a second proposal while the first can still pay, so nobody is paid twice.
 
 Before anyone signs, their browser re-reads the action: the payroll's transfers must be exactly the rows on screen, on
 the USDC contract, on this business's treasury. A vote also names the exact proposal it approves, so it can't land on

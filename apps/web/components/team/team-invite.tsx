@@ -23,6 +23,8 @@ export interface TeamInviteView {
   network: "testnet" | "mainnet"
   business: string
   joined: boolean
+  /** Not taken up in time: it no longer joins, and the owner sends a new link. */
+  expired?: boolean
   accountId: string | null
 }
 
@@ -66,7 +68,17 @@ export function TeamInvitePage({ invite }: { invite: TeamInviteView }) {
           </span>
         </div>
       </Stage>
-      {done ? (
+      {invite.expired && !done ? (
+        <div className="flex flex-col gap-3 rounded-[20px] bg-card p-5">
+          <span className="inline-flex items-center gap-2 text-[17px] font-semibold">
+            <ShieldCheck className="size-5" /> This invite has expired
+          </span>
+          <span className="text-[15px] text-muted-foreground">
+            Invites stay open for two weeks. Ask {invite.business} to send you a new one: it comes
+            with a fresh link.
+          </span>
+        </div>
+      ) : done ? (
         <div className="flex flex-col gap-3 rounded-[20px] bg-card p-5">
           <span className="inline-flex items-center gap-2 text-[17px] font-semibold">
             <Check className="size-5 text-up" /> You approve {invite.business}'s payroll

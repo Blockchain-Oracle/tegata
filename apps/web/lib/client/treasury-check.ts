@@ -78,6 +78,30 @@ export function proposeDraftMatches(
   )
 }
 
+/** Try again: one Finalize on this treasury, on this same proposal, whose transfers are the rows on screen. */
+export function retryDraftMatches(
+  draft: DelegateDraft,
+  treasury: string,
+  usdc: string,
+  proposalId: number,
+  rows: readonly ScreenRow[],
+): boolean {
+  const [call] = draft.calls
+  if (draft.receiverId !== treasury || draft.calls.length !== 1 || call?.method !== "act_proposal")
+    return false
+  if (call.deposit !== "0") return false
+  try {
+    const args = JSON.parse(call.argsJson) as { id?: number; action?: string; proposal?: unknown }
+    return (
+      args.id === proposalId &&
+      args.action === "Finalize" &&
+      payrollKindMatches(args.proposal, usdc, rows)
+    )
+  } catch {
+    return false
+  }
+}
+
 /** An approver's vote: one call on this treasury, on this proposal, whose transfers are the rows on screen. */
 export function voteDraftMatches(
   draft: DelegateDraft,

@@ -10,6 +10,7 @@ import {
   Landmark,
   Minus,
   Plus,
+  Send,
   ShieldCheck,
   Trash2,
   UserPlus,
@@ -38,6 +39,8 @@ export interface TeamMemberView {
   status: "invited" | "active" | "removed"
   accountId: string | null
   token: string
+  /** Not taken up within the invite window: its link no longer joins. */
+  expired?: boolean
 }
 
 export interface TreasuryView {
@@ -294,6 +297,17 @@ export function TeamView({
               </span>
               {m.status === "active" ? (
                 <StatusPill tone="up">Joined</StatusPill>
+              ) : m.expired ? (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => onInvite({ name: m.name, email: m.email })}
+                    className="press inline-flex h-9 items-center gap-1.5 rounded-full bg-secondary px-3 text-[13px] font-semibold [&_svg]:size-4"
+                  >
+                    <Send /> Send again
+                  </button>
+                  <StatusPill tone="quiet">Expired</StatusPill>
+                </>
               ) : (
                 <>
                   <button
