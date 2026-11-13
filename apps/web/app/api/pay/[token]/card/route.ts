@@ -59,8 +59,11 @@ export const POST = route(async (request, context: Params) => {
     userIp: clientIp(request),
   })
   // Followed at once if the queue answers; the worker's sweep picks up any open card payment either way.
-  await enqueue(await boss(), "cardPayPoll", { paymentId: payment.id }, `card-pay:${payment.id}`).catch(
-    () => undefined,
-  )
+  await enqueue(
+    await boss(),
+    "cardPayPoll",
+    { paymentId: payment.id },
+    `card-pay:${payment.id}`,
+  ).catch(() => undefined)
   return { paymentId: payment.id, widgetUrl }
 })

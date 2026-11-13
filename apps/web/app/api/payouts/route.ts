@@ -4,6 +4,8 @@ import { serverEnv } from "@tegata/env"
 import { accountFor, createPayout } from "@tegata/services"
 import { z } from "zod"
 
+import { isStable } from "@/lib/routes"
+
 import { requireOwner } from "@/lib/server/auth.ts"
 import { db } from "@/lib/server/context.ts"
 import { badRequest, route } from "@/lib/server/http.ts"
@@ -50,7 +52,7 @@ export const POST = route(async (request) => {
       symbol: found.route.symbol,
       chain: found.route.chain,
       recipient: input.to,
-      stable: found.route.symbol === "USDC" || found.route.symbol === "USDT",
+      stable: isStable(found.route.symbol),
     },
     serverEnv().ONECLICK_API_KEY,
   )

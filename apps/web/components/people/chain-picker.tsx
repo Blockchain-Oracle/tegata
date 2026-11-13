@@ -1,15 +1,14 @@
 "use client"
 
-// Pay to another chain (payroll): pick the coin and chain from real marks, then paste the address there.
+// Pay to another chain (payroll): pick the coin, then the chain, from real marks; then paste the address there.
 // The address is checked for that chain's format as it's typed. Live only: NEAR Intents has no testnet.
-import { Check } from "lucide-react"
 import { useState } from "react"
 
 import { Button } from "@/components/kit/button"
 import { Field } from "@/components/kit/field"
 import { Mark } from "@/components/marks/mark"
+import { RoutePicker } from "@/components/pay/route-picker"
 import { ADDRESS_HINT, addressLooksRight, PAYER_ROUTES } from "@/lib/routes"
-import { cn } from "@/lib/utils"
 
 export function ChainPicker({
   busy,
@@ -32,33 +31,7 @@ export function ChainPicker({
         if (ok && found) onPick({ route, address: address.trim() })
       }}
     >
-      <div
-        className="grid grid-cols-3 gap-2 sm:grid-cols-4"
-        role="radiogroup"
-        aria-label="Coin and chain"
-      >
-        {PAYER_ROUTES.map((r) => (
-          <button
-            key={r.id}
-            type="button"
-            aria-pressed={route === r.id}
-            onClick={() => setRoute(r.id)}
-            className={cn(
-              "press relative flex flex-col items-center gap-1.5 rounded-[14px] bg-card px-2 py-3 text-center shadow-[0_0_0_1px_var(--border)]",
-              route === r.id && "shadow-[0_0_0_2px_var(--shu)]",
-            )}
-          >
-            <Mark id={r.coin} chain={r.chainMark} size={32} />
-            <span className="text-[13px] leading-tight font-semibold">{r.symbol}</span>
-            <span className="text-[12px] leading-tight text-muted-foreground">{r.chain}</span>
-            {route === r.id ? (
-              <span className="absolute top-1.5 right-1.5 grid size-4 place-items-center rounded-full bg-shu text-white">
-                <Check className="size-3" strokeWidth={3} />
-              </span>
-            ) : null}
-          </button>
-        ))}
-      </div>
+      <RoutePicker routes={PAYER_ROUTES} value={route} onChange={setRoute} tone="card" />
       <Field
         id="chain-address"
         label={found ? `Address on ${found.chain}` : "Address"}

@@ -22,6 +22,7 @@ import { Paper, Stage } from "@/components/kit/stage"
 import { ErrorState, TextShimmer } from "@/components/kit/states"
 import { TaskSteps } from "@/components/kit/task-steps"
 import { Mark } from "@/components/marks/mark"
+import { RoutePicker } from "@/components/pay/route-picker"
 import { ReceiptSlip, SlipRow } from "@/components/receipt/receipt-slip"
 import type { PayoutPreview, PayoutView } from "@/lib/client/types"
 import { fire } from "@/lib/feedback"
@@ -198,29 +199,7 @@ export function ChainSendView(p: ChainSendViewProps) {
 
             <fieldset className="flex flex-col gap-2">
               <legend className="mb-2 text-[15px] font-semibold">They receive</legend>
-              <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
-                {p.routes.map((r) => (
-                  <button
-                    key={r.id}
-                    type="button"
-                    onClick={() => {
-                      fire("tick")
-                      p.onRoute(r.id)
-                    }}
-                    aria-pressed={r.id === p.routeId}
-                    className={cn(
-                      "press flex flex-col items-center gap-1.5 rounded-[14px] bg-secondary px-2 py-3 text-center",
-                      r.id === p.routeId && "bg-card shadow-[0_0_0_2px_var(--shu)]",
-                    )}
-                  >
-                    <Mark id={r.coin} chain={r.chainMark} size={30} />
-                    <span className="text-[13px] font-semibold leading-tight">
-                      {r.symbol}
-                      <span className="block font-medium text-muted-foreground">{r.chain}</span>
-                    </span>
-                  </button>
-                ))}
-              </div>
+              <RoutePicker routes={p.routes} value={p.routeId} onChange={p.onRoute} />
             </fieldset>
 
             <Field

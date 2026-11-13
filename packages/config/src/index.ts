@@ -167,3 +167,8 @@ export const TIMEOUTS = {
   relayFinalityMs: 60_000,
   relayPollMs: 1_000,
 } as const
+
+/** Dollar coins, including USDT0 (Tether's omnichain USDT): a quote between them can be tight, and a payout in one
+ * arrives at an exact amount. */
+export const isStableSymbol = (symbol: string) =>
+  symbol === "USDC" || symbol === "USDT" || symbol === "USDT0"

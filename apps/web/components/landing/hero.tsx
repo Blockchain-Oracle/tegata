@@ -7,7 +7,7 @@ import Link from "next/link"
 import { buttonVariants } from "@/components/kit/button-variants"
 import { GRAIN } from "@/components/kit/stage"
 import { fire } from "@/lib/feedback"
-import { PAYER_ROUTES } from "@/lib/routes"
+import { PAYER_ROUTES, ROUTE_COUNT } from "@/lib/routes"
 import { cn } from "@/lib/utils"
 
 import { Hanko } from "./hanko/hanko"
@@ -138,7 +138,7 @@ export function Hero() {
           <dl className="grid max-w-[520px] grid-cols-3 gap-3 pt-2">
             {[
               ["0", "NEAR to hold. Sign in with email."],
-              ["11", "coins and chains a client can pay from"],
+              [String(ROUTE_COUNT), "coins and chains a client can pay from"],
               ["1", "approval pays your whole team"],
             ].map(([n, label]) => (
               <div key={label} className="flex flex-col gap-1 border-t border-rule pt-3">

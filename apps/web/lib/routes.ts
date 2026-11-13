@@ -104,12 +104,98 @@ export const PAYER_ROUTES = [
     coin: "usdc",
     chainMark: "gnosis",
   },
+  {
+    id: "usdc-eth",
+    assetId: "nep141:eth-0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48.omft.near",
+    symbol: "USDC",
+    blockchain: "eth",
+    chain: "Ethereum",
+    coin: "usdc",
+    chainMark: "eth",
+  },
+  {
+    id: "usdc-bsc",
+    assetId: "nep141:bnb-0x8ac76a51cc950d9822d68b83fe1ad97b32cd580d.omdep.near",
+    symbol: "USDC",
+    blockchain: "bsc",
+    chain: "BNB Chain",
+    coin: "usdc",
+    chainMark: "bnb",
+  },
+  {
+    id: "usdc-avax",
+    assetId: "nep141:avax-0xb97ef9ef8734c71904d8002f8b6bc66dd9c48a6e.omdep.near",
+    symbol: "USDC",
+    blockchain: "avax",
+    chain: "Avalanche",
+    coin: "usdc",
+    chainMark: "avax",
+  },
+  {
+    id: "usdc-sui",
+    assetId: "nep141:sui-c1b81ecaf27933252d31a963bc5e9458f13c18ce.omft.near",
+    symbol: "USDC",
+    blockchain: "sui",
+    chain: "Sui",
+    coin: "usdc",
+    chainMark: "sui",
+  },
+  {
+    id: "usdt-sol",
+    assetId: "nep141:sol-c800a4bd850783ccb82c2b2c7e84175443606352.omft.near",
+    symbol: "USDT",
+    blockchain: "sol",
+    chain: "Solana",
+    coin: "usdt",
+    chainMark: "sol",
+  },
+  {
+    id: "usdt-pol",
+    assetId: "nep141:pol-0xc2132d05d31c914a87c6611c10748aeb04b58e8f.omdep.near",
+    symbol: "USDT",
+    blockchain: "pol",
+    chain: "Polygon",
+    coin: "usdt",
+    chainMark: "pol",
+  },
+  // USDT0: Tether's own USDT on Arbitrum (the omnichain version), the one Arbitrum wallets hold today.
+  {
+    id: "usdt0-arb",
+    assetId: "nep141:arb-0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9.omft.near",
+    symbol: "USDT0",
+    blockchain: "arb",
+    chain: "Arbitrum",
+    coin: "usdt",
+    chainMark: "arb",
+  },
+  {
+    id: "usdt-avax",
+    assetId: "nep141:avax-0x9702230a8ea53601f5cd2dc00fdbc13d4df4a8c7.omdep.near",
+    symbol: "USDT",
+    blockchain: "avax",
+    chain: "Avalanche",
+    coin: "usdt",
+    chainMark: "avax",
+  },
+  {
+    id: "usdt-gnosis",
+    assetId: "nep141:gnosis-0x4ecaba5870353805a9f068101a40e0f32ed605c6.omft.near",
+    symbol: "USDT",
+    blockchain: "gnosis",
+    chain: "Gnosis",
+    coin: "usdt",
+    chainMark: "gnosis",
+  },
 ] as const
 
 export type PayerRoute = (typeof PAYER_ROUTES)[number]
 
-/** Dollar coins: a quote between them can use a tight slippage. */
-export const isStable = (symbol: string) => symbol === "USDC" || symbol === "USDT"
+/** How many routes and chains, for copy that counts them (never typed by hand). */
+export const ROUTE_COUNT = PAYER_ROUTES.length
+export const CHAIN_COUNT = new Set(PAYER_ROUTES.map((r) => r.chainMark)).size
+
+/** Dollar coins: a quote between them can use a tight slippage, and a payout in one arrives at an exact amount. */
+export { isStableSymbol as isStable } from "@tegata/config"
 
 /** The route for a payout already made (stored by coin and chain name). */
 export const routeOf = (symbol: string | null, chain: string | null) =>
@@ -123,6 +209,8 @@ export const ADDRESS_HINT: Record<string, string> = {
   bnb: "0x…",
   pol: "0x…",
   gnosis: "0x… (a Gnosis Pay card account works)",
+  avax: "0x…",
+  sui: "0x… (64 characters)",
   sol: "Their Solana address",
   btc: "bc1…",
   tron: "T…",
@@ -144,7 +232,10 @@ export function addressLooksRight(chainMark: string, value: string): boolean {
     case "bnb":
     case "pol":
     case "gnosis":
+    case "avax":
       return EVM.test(v)
+    case "sui":
+      return /^0x[0-9a-fA-F]{64}$/.test(v)
     case "sol":
       return v.length >= 32 && v.length <= 44 && BASE58.test(v)
     case "tron":
@@ -165,6 +256,8 @@ export function chainTxUrl(chainMark: string, hash: string): string | null {
     bnb: "https://bscscan.com/tx/",
     pol: "https://polygonscan.com/tx/",
     gnosis: "https://gnosisscan.io/tx/",
+    avax: "https://snowtrace.io/tx/",
+    sui: "https://suiscan.xyz/mainnet/tx/",
     sol: "https://solscan.io/tx/",
     btc: "https://mempool.space/tx/",
     tron: "https://tronscan.org/#/transaction/",

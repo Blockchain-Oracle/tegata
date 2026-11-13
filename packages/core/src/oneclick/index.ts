@@ -3,6 +3,7 @@
 // No SDK: the SDK pulls in axios; the signature check is a few lines, mirrored from its `quote-signature.ts`.
 import { sha256 } from "@noble/hashes/sha2.js"
 import { base58 } from "@scure/base"
+import { isStableSymbol } from "@tegata/config"
 import { PublicKey } from "near-api-js"
 
 export const ONECLICK_BASE = "https://1click.chaindefuser.com"
@@ -81,6 +82,33 @@ export interface StatusResponse {
 /** Terminal: nothing more will happen. Anything else (including a status we don't know) keeps being polled. */
 export const isTerminal = (status: string) =>
   status === "SUCCESS" || status === "REFUNDED" || status === "FAILED"
+
+/**
+ * 1Click's refusal in words a person reads. Its two wordings of a floor become dollars: "minimum swap amount is $100",
+ * and "try at least 149983" (base units of the quoted amount's coin, `decimals` places). Then a bad refund address, a
+ * bad address, and otherwise "can't price it". `route` names it: "USDT on Tron".
+ */
+export function quoteProblem(
+  message: string | null | undefined,
+  route: string,
+  decimals = 6,
+): string {
+  const text = message ?? ""
+  const dollars = text.match(/minimum[^$\d]*\$?\s*([\d,.]+)/i)?.[1]
+  if (dollars) return `${route} needs at least $${dollars} right now`
+  const units = text.match(/try at least (\d+)/i)?.[1]
+  if (units) {
+    const scale = 10n ** BigInt(Math.max(decimals - 2, 0))
+    const cents = (BigInt(units) + scale - 1n) / scale
+    return `${route} needs at least $${(Number(cents) / 100).toFixed(2)} right now`
+  }
+  if (/refundto/i.test(text)) return "That refund address doesn't look right for this chain."
+  if (/recipient|not valid|invalid address/i.test(text))
+    return "That address doesn't look right for this chain."
+  if (/too low|minimum|amount/i.test(text))
+    return `That amount is below ${route}'s minimum right now.`
+  return `NEAR Intents can't price ${route} right now. Try another coin or chain.`
+}
 
 export class OneClickError extends Error {
   constructor(
@@ -262,6 +290,8 @@ const DELIVERY_EXPLORERS: Record<string, string> = {
   "BNB Chain": "https://bscscan.com/tx/",
   Polygon: "https://polygonscan.com/tx/",
   Gnosis: "https://gnosisscan.io/tx/",
+  Avalanche: "https://snowtrace.io/tx/",
+  Sui: "https://suiscan.xyz/mainnet/tx/",
   Solana: "https://solscan.io/tx/",
   Bitcoin: "https://mempool.space/tx/",
   Tron: "https://tronscan.org/#/transaction/",
@@ -316,7 +346,7 @@ export async function routeAsset(routeId: string) {
         symbol,
         blockchain,
         chain: CHAIN_NAMES[blockchain] ?? blockchain,
-        stable: symbol === "USDC" || symbol === "USDT",
+        stable: isStableSymbol(symbol),
         decimals: token.decimals ?? null,
       }
     : null
