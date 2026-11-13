@@ -121,14 +121,19 @@ export default function Home() {
   })
   const grantStatus = useQuery({
     queryKey: ["test-dollars", grant],
-    queryFn: () => api<{ status: "queued" | "sent" | "failed" }>(`/api/test-dollars/${grant}`),
+    queryFn: () =>
+      api<{ status: "queued" | "sent" | "failed"; error: string | null }>(
+        `/api/test-dollars/${grant}`,
+      ),
     enabled: Boolean(grant),
     refetchInterval: (q) => (q.state.data && q.state.data.status !== "queued" ? false : 1500),
   })
   useEffect(() => {
     if (grantStatus.data?.status === "sent")
       void queryClient.invalidateQueries({ queryKey: ["me"] })
-  }, [grantStatus.data?.status])
+    else if (grantStatus.data?.status === "failed")
+      fire("fail", { cue: "error", identity: `grant-${grant}` })
+  }, [grantStatus.data?.status, grant])
 
   const opening = account && !account.readyAt
   const refreshing = activity.isRefetching
@@ -251,11 +256,20 @@ export default function Home() {
             testDollars.error instanceof ApiError
               ? testDollars.error.message
               : grantStatus.data?.status === "failed"
-                ? "That didn't go through. Try again tomorrow."
+                ? `${(grantStatus.data.error ?? "The test dollars didn't arrive").replace(/\.$/, "")}. Nothing moved.`
                 : "$5.00 of test USDC, once a day."
           }
-          action={grant ? undefined : "Add"}
-          onPress={grant || testDollars.isPending ? undefined : () => testDollars.mutate()}
+          action={
+            grant && grantStatus.data?.status !== "failed" ? undefined : grant ? "Retry" : "Add"
+          }
+          onPress={
+            testDollars.isPending || (grant && grantStatus.data?.status !== "failed")
+              ? undefined
+              : () => {
+                  setGrant(null)
+                  testDollars.mutate()
+                }
+          }
         />
       ) : null}
 

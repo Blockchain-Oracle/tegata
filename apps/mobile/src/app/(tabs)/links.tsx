@@ -13,6 +13,7 @@ import { usd } from "@/lib/money"
 import { PAPER, usePalette } from "@/theme/tokens"
 import { Button } from "@/ui/button"
 import { Card, Chip, Header, Problem, Row, Screen, StoryTile } from "@/ui/layout"
+import { MarkStack } from "@/ui/mark"
 import { Skeleton } from "@/ui/shimmer"
 import { T } from "@/ui/text"
 
@@ -27,6 +28,19 @@ export default function Links() {
   return (
     <Screen dock refreshing={links.isRefetching} onRefresh={() => void links.refetch()}>
       <Header title="Pay links" back={false} />
+      <View style={{ backgroundColor: p.sora, borderRadius: 20, padding: 16, gap: 12 }}>
+        <T role="rowTitle" color={p.fieldInk}>
+          Payers use any coin on any chain
+        </T>
+        <MarkStack
+          ids={["eth", "base", "sol", "btc", "tron", "arb", "bnb", "pol"]}
+          size={30}
+          ring={p.sora}
+        />
+        <T role="detailMedium" color={`${p.fieldInk}B3`}>
+          You get exact dollars as USDC on NEAR
+        </T>
+      </View>
       <Button
         label="New pay link"
         icon={<Plus size={20} color={p.onPrimary} />}

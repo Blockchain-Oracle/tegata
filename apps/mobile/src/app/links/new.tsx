@@ -11,12 +11,14 @@ import { queryClient, useSession } from "@/auth/session"
 import { LinkCard } from "@/features/links/link-card"
 import { fire } from "@/feedback/fire"
 import { amountOk, typedAmount } from "@/lib/money"
-import { FONT, RADIUS, usePalette } from "@/theme/tokens"
+import { FONT, ON_STAGE, PAPER, RADIUS, usePalette } from "@/theme/tokens"
 import { Button } from "@/ui/button"
 import { Figure } from "@/ui/figure"
 import { Keypad } from "@/ui/keypad"
 import { Header, Screen } from "@/ui/layout"
+import { Mark } from "@/ui/mark"
 import { Press } from "@/ui/press"
+import { Stage } from "@/ui/stage"
 import { T } from "@/ui/text"
 
 export default function NewLink() {
@@ -79,16 +81,39 @@ export default function NewLink() {
                 justifyContent: "space-between",
               }}
             >
-              {open ? (
-                <T role="price">Any amount</T>
-              ) : (
-                <Figure text={`$${typedAmount(amount)}`} size={40} color={p.ink} />
-              )}
-              <Press haptic="tick" onPress={() => setStep("amount")}>
-                <T role="bodyMedium" tone="seal">
-                  Change
-                </T>
-              </Press>
+              <Stage
+                style={{
+                  flex: 1,
+                  flexDirection: "row",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  paddingHorizontal: 18,
+                  paddingVertical: 14,
+                }}
+              >
+                {open ? (
+                  <T role="price" color={ON_STAGE.ink}>
+                    Any amount
+                  </T>
+                ) : (
+                  <Figure text={`$${typedAmount(amount)}`} size={40} color={ON_STAGE.ink} />
+                )}
+                <Press
+                  haptic="tick"
+                  onPress={() => setStep("amount")}
+                  style={{
+                    backgroundColor: ON_STAGE.veil,
+                    borderRadius: 999,
+                    paddingHorizontal: 14,
+                    height: 34,
+                    justifyContent: "center",
+                  }}
+                >
+                  <T role="detailMedium" color={ON_STAGE.ink}>
+                    Change
+                  </T>
+                </Press>
+              </Stage>
             </View>
             <TextInput
               value={title}
@@ -151,13 +176,25 @@ export default function NewLink() {
         exiting={FadeOutUp.duration(160)}
         style={{ flex: 1, justifyContent: "space-between" }}
       >
-        <View style={{ alignItems: "center", gap: 14, paddingTop: 24 }}>
+        <Stage
+          style={{ alignItems: "center", gap: 14, paddingVertical: 26, paddingHorizontal: 20 }}
+        >
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+            <Mark id="usdc" chain="near" size={20} />
+            <T role="detailMedium" color={ON_STAGE.soft}>
+              Paid to you in USDC on NEAR
+            </T>
+          </View>
           {open ? (
-            <T role="hero" center>
+            <T role="hero" center color={ON_STAGE.ink}>
               Any amount
             </T>
           ) : (
-            <Figure text={`$${typedAmount(amount)}`} size={72} color={amount ? p.ink : p.text3} />
+            <Figure
+              text={`$${typedAmount(amount)}`}
+              size={72}
+              color={amount ? ON_STAGE.ink : ON_STAGE.faint}
+            />
           )}
           <Press
             haptic="tick"
@@ -167,14 +204,14 @@ export default function NewLink() {
               paddingHorizontal: 14,
               height: 34,
               justifyContent: "center",
-              backgroundColor: open ? p.sealWash : p.plate,
+              backgroundColor: open ? PAPER.face : ON_STAGE.veil,
             }}
           >
-            <T role="detailMedium" tone={open ? "seal" : "text2"}>
+            <T role="detailMedium" color={open ? PAPER.ink : ON_STAGE.ink}>
               {open ? "The payer types the amount" : "Let the payer choose"}
             </T>
           </Press>
-        </View>
+        </Stage>
         <View style={{ gap: 12 }}>
           {open ? null : <Keypad value={amount} onChange={setAmount} />}
           <Button

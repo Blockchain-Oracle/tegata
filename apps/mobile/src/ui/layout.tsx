@@ -10,7 +10,6 @@ import { fire } from "@/feedback/fire"
 import { PAPER, RADIUS, usePalette } from "@/theme/tokens"
 
 import { Press } from "./press"
-import { useStatusBar } from "./status-bar"
 import { T } from "./text"
 
 /** Room under the content so the floating dock never covers the last row. */
@@ -36,7 +35,6 @@ export function Screen({
 }) {
   const p = usePalette()
   const insets = useSafeAreaInsets()
-  useStatusBar("page")
   const content: ViewStyle = {
     paddingTop: insets.top + 8,
     paddingBottom: (dock ? DOCK_CLEARANCE : 32) + insets.bottom,
@@ -49,6 +47,9 @@ export function Screen({
     <ScrollView
       style={{ flex: 1, backgroundColor: p.page }}
       contentContainerStyle={[content, style]}
+      // The safe area is ours (paddingTop above); iOS adding its own inset as well pushed every page down.
+      contentInsetAdjustmentBehavior="never"
+      automaticallyAdjustContentInsets={false}
       keyboardShouldPersistTaps="handled"
       refreshControl={
         onRefresh ? (

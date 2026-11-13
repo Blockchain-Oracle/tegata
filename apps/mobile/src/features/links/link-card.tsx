@@ -48,13 +48,11 @@ export function LinkCard({
   }
   return (
     <Stage
-      style={{ padding: 20, paddingTop: 28, paddingBottom: 24, gap: 18, alignItems: "center" }}
+      style={{ padding: 20, paddingTop: 34, paddingBottom: 24, gap: 18, alignItems: "center" }}
     >
       <StageObject from={{ y: 24, rotate: -2 }}>
         <Paper style={{ width: 300, padding: 18, gap: 12 }}>
-          <View
-            style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}
-          >
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
             <T role="detailMedium" color={PAPER.text2}>
               Pay link
             </T>
@@ -89,7 +87,7 @@ export function LinkCard({
               {url.replace(/^https?:\/\//, "")}
             </T>
           </View>
-          <View style={{ position: "absolute", right: -22, top: -26 }}>
+          <View style={{ position: "absolute", right: -12, top: -20 }}>
             <SealPress
               play={Boolean(fresh)}
               delay={350}

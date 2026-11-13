@@ -29,7 +29,6 @@ import { Press } from "@/ui/press"
 import { TegataSeal } from "@/ui/seal"
 import { SealPress } from "@/ui/seal-press"
 import { StageField } from "@/ui/stage"
-import { useStatusBar } from "@/ui/status-bar"
 import { T } from "@/ui/text"
 
 const RESEND_S = 30
@@ -49,7 +48,6 @@ export default function SignIn() {
   const insets = useSafeAreaInsets()
   const { height } = useWindowDimensions()
   const { sendCode, loginWithCode, authenticated } = useSession()
-  useStatusBar("stage")
   const [step, setStep] = useState<"email" | "code" | "done">("email")
   const [email, setEmail] = useState("")
   const [code, setCode] = useState("")

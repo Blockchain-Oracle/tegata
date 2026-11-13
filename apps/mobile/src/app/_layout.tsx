@@ -4,6 +4,7 @@
 import { Stack } from "expo-router"
 import * as SplashScreen from "expo-splash-screen"
 import { useEffect } from "react"
+import { useColorScheme } from "react-native"
 import { GestureHandlerRootView } from "react-native-gesture-handler"
 import { SafeAreaProvider } from "react-native-safe-area-context"
 
@@ -15,6 +16,7 @@ void SplashScreen.preventAutoHideAsync().catch(() => undefined)
 
 export default function RootLayout() {
   const p = usePalette()
+  const scheme = useColorScheme()
   useEffect(() => {
     warmFeedback()
   }, [])
@@ -27,11 +29,18 @@ export default function RootLayout() {
               headerShown: false,
               contentStyle: { backgroundColor: p.page },
               animation: "default",
+              statusBarStyle: scheme === "dark" ? "light" : "dark",
             }}
           >
             <Stack.Screen name="index" options={{ animation: "none" }} />
-            <Stack.Screen name="sign-in" options={{ animation: "fade", gestureEnabled: false }} />
-            <Stack.Screen name="welcome" options={{ animation: "fade", gestureEnabled: false }} />
+            <Stack.Screen
+              name="sign-in"
+              options={{ animation: "fade", gestureEnabled: false, statusBarStyle: "light" }}
+            />
+            <Stack.Screen
+              name="welcome"
+              options={{ animation: "fade", gestureEnabled: false, statusBarStyle: "light" }}
+            />
             <Stack.Screen name="(tabs)" options={{ animation: "fade", gestureEnabled: false }} />
             <Stack.Screen
               name="get-paid"
@@ -45,7 +54,11 @@ export default function RootLayout() {
             />
             <Stack.Screen
               name="scan"
-              options={{ presentation: "fullScreenModal", animation: "fade" }}
+              options={{
+                presentation: "fullScreenModal",
+                animation: "fade",
+                statusBarStyle: "light",
+              }}
             />
             <Stack.Screen name="send" options={{ gestureEnabled: true }} />
           </Stack>

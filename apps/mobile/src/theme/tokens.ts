@@ -89,6 +89,14 @@ export const STAGE = {
   edge: "#FF3A00",
 } as const
 
+/** Text and quiet plates on a lit stage (shu or lacquer): white figures, a veil for small controls. */
+export const ON_STAGE = {
+  ink: "#FFFFFF",
+  soft: "#FFFFFFD9",
+  faint: "#FFFFFF99",
+  veil: "#FFFFFF2E",
+} as const
+
 /** The lacquer stage: sumi lit by one vermilion glow rising from below (sign-in, onboarding, big surfaces). */
 export const LACQUER = {
   base: "#120D0A",

@@ -53,34 +53,74 @@ const FLAGS = {
   za: require("../../assets/flags/za.svg"),
 } as const
 
+/** Marks drawn edge to edge in a square need a rounded-square crop; the rest are cropped round (as on the web). */
+const SQUARE: ReadonlySet<string> = new Set(["near", "intents", "google", "circle"])
+const crop = (id: string, size: number) => (SQUARE.has(id) ? size * 0.28 : size / 2)
+
 export function Mark({ id, chain, size = 24 }: { id: string; chain?: string; size?: number }) {
   const p = usePalette()
-  const source = MARKS[isMark(id) ? id : "unknown"]
-  const badge = chain && chain !== id ? MARKS[isMark(chain) ? chain : "unknown"] : null
-  const b = Math.round(size * 0.48)
+  const known = isMark(id) ? id : "unknown"
+  const badge = chain && chain !== id ? (isMark(chain) ? chain : "unknown") : null
+  const b = Math.round(size * 0.44)
   return (
     <View
       style={{ width: size, height: size }}
       accessibilityLabel={chain ? `${id} on ${chain}` : id}
     >
-      <Image source={source} style={{ width: size, height: size }} contentFit="contain" />
+      <View
+        style={{ width: size, height: size, borderRadius: crop(known, size), overflow: "hidden" }}
+      >
+        <Image source={MARKS[known]} style={{ width: size, height: size }} contentFit="cover" />
+      </View>
       {badge ? (
         <View
           style={{
             position: "absolute",
-            right: -b * 0.2,
-            bottom: -b * 0.2,
-            width: b + 3,
-            height: b + 3,
-            borderRadius: b,
+            right: -2,
+            bottom: -2,
+            width: b + 4,
+            height: b + 4,
+            borderRadius: crop(badge, b + 4),
             backgroundColor: p.card,
             alignItems: "center",
             justifyContent: "center",
           }}
         >
-          <Image source={badge} style={{ width: b, height: b }} contentFit="contain" />
+          <View style={{ width: b, height: b, borderRadius: crop(badge, b), overflow: "hidden" }}>
+            <Image source={MARKS[badge]} style={{ width: b, height: b }} contentFit="cover" />
+          </View>
         </View>
       ) : null}
+    </View>
+  )
+}
+
+/** Overlapping marks ("pay from any of these"), each over the last, ringed in the surface colour. */
+export function MarkStack({
+  ids,
+  size = 28,
+  ring,
+}: {
+  ids: readonly string[]
+  size?: number
+  ring?: string
+}) {
+  const p = usePalette()
+  return (
+    <View style={{ flexDirection: "row", alignItems: "center" }}>
+      {ids.map((id, i) => (
+        <View
+          key={id}
+          style={{
+            marginLeft: i === 0 ? 0 : -size * 0.28,
+            padding: 2,
+            borderRadius: crop(id, size + 4),
+            backgroundColor: ring ?? p.card,
+          }}
+        >
+          <Mark id={id} size={size} />
+        </View>
+      ))}
     </View>
   )
 }

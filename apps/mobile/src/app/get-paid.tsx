@@ -47,7 +47,7 @@ export default function GetPaid() {
           ) : (
             <Skeleton width={232} height={232} />
           )}
-          <View style={{ position: "absolute", right: -26, bottom: -26 }}>
+          <View style={{ position: "absolute", right: -30, top: -30 }}>
             <SealPress delay={200} identity={`get-paid-${account?.accountId}`} cue={null}>
               <BusinessSeal name={name} size={80} />
             </SealPress>
@@ -56,7 +56,12 @@ export default function GetPaid() {
         <View style={{ alignItems: "center", gap: 8 }}>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
             <Mark id="near" size={22} />
-            <T role="mono" style={{ fontSize: 17 }}>
+            <T
+              role="mono"
+              style={{ fontSize: 15, flexShrink: 1 }}
+              numberOfLines={1}
+              adjustsFontSizeToFit
+            >
               {account?.accountId ?? " "}
             </T>
           </View>
@@ -66,7 +71,11 @@ export default function GetPaid() {
               USDC on NEAR
             </T>
           </View>
-          {network === "testnet" ? <SandboxPill /> : null}
+          {network === "testnet" ? (
+            <View style={{ alignSelf: "center" }}>
+              <SandboxPill />
+            </View>
+          ) : null}
         </View>
       </View>
       <View style={{ flexDirection: "row", gap: 10 }}>

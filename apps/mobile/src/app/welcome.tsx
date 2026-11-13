@@ -22,7 +22,6 @@ import { Button } from "@/ui/button"
 import { BusinessSeal } from "@/ui/seal"
 import { SealPress } from "@/ui/seal-press"
 import { StageField, StageObject } from "@/ui/stage"
-import { useStatusBar } from "@/ui/status-bar"
 import { TaskSteps } from "@/ui/task-steps"
 import { T } from "@/ui/text"
 
@@ -54,7 +53,6 @@ export default function Welcome() {
   const p = usePalette()
   const insets = useSafeAreaInsets()
   const { profile, refetchProfile, network } = useSession()
-  useStatusBar("stage")
   const [step, setStep] = useState<0 | 1 | 2>(profile?.workspace ? 2 : 0)
   const [business, setBusiness] = useState("")
   const [handle, setHandle] = useState("")

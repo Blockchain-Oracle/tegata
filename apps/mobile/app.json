@@ -8,13 +8,14 @@
     "icon": "./assets/brand/icon.png",
     "scheme": "tegata",
     "userInterfaceStyle": "automatic",
-    "backgroundColor": "#F5F5F5",
+    "backgroundColor": "#F3EFE6",
     "ios": {
       "bundleIdentifier": "xyz.tegata.app",
       "supportsTablet": false,
       "icon": "./assets/brand/icon.png",
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "UIViewControllerBasedStatusBarAppearance": true
       },
       "config": {
         "usesNonExemptEncryption": false
@@ -45,11 +46,11 @@
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#F5F5F5",
+          "backgroundColor": "#F3EFE6",
           "image": "./assets/brand/splash.png",
           "imageWidth": 120,
           "dark": {
-            "backgroundColor": "#111111",
+            "backgroundColor": "#0E0C0A",
             "image": "./assets/brand/splash.png"
           }
         }

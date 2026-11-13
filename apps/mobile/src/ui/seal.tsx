@@ -161,8 +161,9 @@ export function BusinessSeal({
     size < 64 ? 0 : 60,
     (x, y) => (x - c) ** 2 + (y - c) ** 2 < 96 ** 2,
   )
-  // Letter-spacing that fills the ring evenly for any length of name (Archivo Bold caps and spaces average ~0.86 em as react-native-svg lays them on a path).
-  const fontSize = 17
+  // Archivo Bold caps and spaces average ~0.86 em as react-native-svg lays them on a path. Long names set smaller so
+  // the ring never overlaps itself; short ones are spaced out to fill it evenly.
+  const fontSize = Math.min(17, (circumference - 10) / (ringText.length * 0.86))
   const spacing = Math.max(
     0.5,
     (circumference - 6 - ringText.length * fontSize * 0.86) / ringText.length,
