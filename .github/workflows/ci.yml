@@ -26,5 +26,9 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - name: Lint and format (Biome)
         run: pnpm biome ci .
-      - name: Type-check, test and build
-        run: pnpm turbo typecheck test build
+      # Type-check before building: run together, a package's `next typegen` and `next build` share one .next folder,
+      # and the build wipes the route types the type check is writing (ENOENT on routes.d.ts, by chance).
+      - name: Type-check and test
+        run: pnpm turbo typecheck test
+      - name: Build
+        run: pnpm turbo build

@@ -12,7 +12,7 @@
     "check": "biome check .",
     "check:fix": "biome check --write .",
     "check:contrast": "node scripts/check-contrast.mjs",
-    "ci": "biome ci . && turbo typecheck test build",
+    "ci": "biome ci . && turbo typecheck test && turbo build",
     "db:generate": "pnpm --filter @tegata/db generate",
     "db:migrate": "pnpm --filter @tegata/db migrate",
     "services:up": "docker compose -f infra/compose.yaml --env-file .env up -d --wait",
