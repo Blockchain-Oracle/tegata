@@ -10,9 +10,10 @@ icon: TriangleExclamationPoint
 - **Wallet sign-in is testnet only.** A NEAR-wallet owner can use the Sandbox but can't open Live until a mainnet
   wallet can sign in; email owners can. Wallet sign-in itself is proved by a script playing the wallet (a real testnet
   account signing with its own key, as NEAR Connect's wallets do).
-- **Autopilot is Sandbox-only.** Its contract is `pay.tegata.testnet`; on mainnet the Payroll page says it opens when
-  the contract is deployed there. Autopilot pays Tegata and NEAR accounts only: a payout to another chain needs a
-  fresh NEAR Intents quote, which can't be fetched with nobody online.
+- **Autopilot is deployed on both networks, but its recorded payday proof is on testnet.** Its contracts are
+  `pay.tegata.testnet` and `pay.tegata.near`; the [mainnet deployment](https://nearblocks.io/txns/7fMpaZ85y8zTYMqFg6van8VYB3xpj3GhMXiyWL3unEy5)
+  is recorded, but no Live payroll payout has been recorded. Autopilot pays Tegata and NEAR accounts only: a payout
+  to another chain needs a fresh NEAR Intents quote, which can't be fetched with nobody online.
 - **Bank runs in the Sandbox, on Noah's sandbox.** A withdrawal reaches Noah's last step and stops there, before any
   money moves, until Noah switches payouts on for Tegata's sandbox account; the page says so. In the Sandbox the USDC
   reaches Noah through Tegata's own Solana devnet wallet, where Live would use NEAR Intents. A person can't yet choose
@@ -23,8 +24,8 @@ icon: TriangleExclamationPoint
 - **A card reserve and a bank hop hold money for minutes.** Money on its way to a card or a bank passes through
   Tegata's operator account; everywhere else it moves from the business's own account
   ([Bank and cards](/docs/how-money-moves/bank-and-cards)).
-- **The autopilot contract has no upgrade method, but its account does.** `pay.tegata.testnet`'s only key is the
-  operator's, so during the hackathon Tegata can redeploy it.
+- **The autopilot contract has no upgrade method, but its accounts do.** The only key on `pay.tegata.testnet` and
+  `pay.tegata.near` is the operator's, so during the hackathon Tegata can redeploy them.
 - **A wallet owner gets no emails** unless the business sets a billing email: Tegata has no other address for them.
 - **The Sandbox stash is shared.** Add test dollars and euro deposits in the Sandbox draw from Tegata's own test USDC
   and can run dry; Circle's faucet is the fallback for test dollars.
