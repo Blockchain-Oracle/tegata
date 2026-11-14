@@ -4,7 +4,6 @@
 import { ArrowRight, ArrowUpRight, Play } from "lucide-react"
 import type { Metadata } from "next"
 import Link from "next/link"
-import { Suspense } from "react"
 
 import { DemoPlayer } from "@/components/demo/player"
 import { buttonVariants } from "@/components/kit/button-variants"
@@ -15,6 +14,9 @@ import { Rise, RunningHead, SectionTitle } from "@/components/landing/section"
 import { Mark } from "@/components/marks/mark"
 import { DEMO_LENGTH, FILM_LEDGER, MOMENTS } from "@/lib/demo"
 import { cn } from "@/lib/utils"
+
+/** The film is 2:15; a start past its end plays from the top. */
+const FILM_SECONDS = 135
 
 const DESCRIPTION =
   "Watch Tegata work in two minutes: an invoice paid and sealed, payroll in one hold, team approvals, autopilot, the bank and the books. Then open the NEAR transactions the film made."
@@ -50,7 +52,9 @@ function LedgerRow({ what, tx, delay }: { what: string; tx: string; delay: numbe
   )
 }
 
-export default function Demo() {
+export default async function Demo({ searchParams }: { searchParams: Promise<{ t?: string }> }) {
+  const asked = Number((await searchParams).t)
+  const start = Number.isInteger(asked) && asked > 0 && asked < FILM_SECONDS ? asked : null
   return (
     <div className="landing min-h-dvh overflow-x-clip bg-background text-foreground">
       <LandingNav />
@@ -83,11 +87,7 @@ export default function Demo() {
             </div>
           </div>
           <div id="film" className="mt-10 scroll-mt-24 lg:mt-14">
-            <Suspense
-              fallback={<div className="aspect-video w-full rounded-[32px] bg-[#120d0a]" />}
-            >
-              <DemoPlayer />
-            </Suspense>
+            <DemoPlayer start={start} />
           </div>
         </section>
 

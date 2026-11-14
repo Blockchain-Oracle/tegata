@@ -1,10 +1,10 @@
 "use client"
 
 // The film on /demo: YouTube plays it on the page (the no-cookie player, so nothing is set until Play), and the
-// chapters beside it are links (/demo?t=67), so a moment can be shared and the player starts there.
+// chapters beside it are links (/demo?t=67), so a moment can be shared and the player starts there. The page reads
+// `t` on the server, so the player is in the HTML it sends.
 import { ArrowUpRight, Play } from "lucide-react"
 import Link from "next/link"
-import { useSearchParams } from "next/navigation"
 
 import { Stage } from "@/components/kit/stage"
 import { CHAPTERS, DEMO_LENGTH, DEMO_VIDEO_ID } from "@/lib/demo"
@@ -15,9 +15,8 @@ import { cn } from "@/lib/utils"
 const clock = (seconds: number) =>
   `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`
 
-export function DemoPlayer() {
-  const asked = Number(useSearchParams().get("t"))
-  const start = Number.isInteger(asked) && asked > 0 && asked < 135 ? asked : null
+/** `start` is the second the visitor asked for (/demo?t=67), read by the page on the server; null plays from the top. */
+export function DemoPlayer({ start }: { start: number | null }) {
   const playing = CHAPTERS.findLast((chapter) => start !== null && chapter.at <= start)
   const src = `https://www.youtube-nocookie.com/embed/${DEMO_VIDEO_ID}?rel=0${
     start === null ? "" : `&start=${start}&autoplay=1`
