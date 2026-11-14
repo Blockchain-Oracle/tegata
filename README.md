@@ -13,7 +13,7 @@
 
 <p align="center">
   <b><a href="https://tegata.xyz">Open the app</a></b> ·
-  <b><a href="https://youtu.be/6ZTyneTfEqk">Demo video</a></b> ·
+  <b><a href="https://tegata.xyz/demo">Demo video</a></b> ·
   <b><a href="https://docs.tegata.xyz">Docs</a></b> ·
   <b><a href="#proof-on-near">Proof on NEAR</a></b>
 </p>
@@ -111,8 +111,8 @@ USDC, BTC, ETH or SOL on their own chains. Only use money you mean to move.
   </a>
 </p>
 
-Watch the demo on YouTube: **[youtu.be/6ZTyneTfEqk](https://youtu.be/6ZTyneTfEqk)** (2:15); [tegata.xyz/video](https://tegata.xyz/video)
-goes to the same place. It follows one invoice from sending it to the PAID seal and its transaction on NEAR, then
+Watch the demo at **[tegata.xyz/demo](https://tegata.xyz/demo)** (2:15), where it plays above the NEAR transactions it
+made, or on YouTube: [youtu.be/6ZTyneTfEqk](https://youtu.be/6ZTyneTfEqk). It follows one invoice from sending it to the PAID seal and its transaction on NEAR, then
 payroll, team approvals, autopilot, the bank, the books and the developer API. Everything in it was recorded from the
 app on the Sandbox (NEAR testnet); the $1,250 invoice in its opening is an example, marked as one.
 

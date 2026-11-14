@@ -22,11 +22,12 @@ import { LINKS } from "@/lib/links"
 import { useTheme } from "@/lib/theme"
 import { cn } from "@/lib/utils"
 
+/** Anchors carry the landing's path, so the same bar works on /demo. */
 const ITEMS = [
-  { name: "How it works", link: "#how" },
-  { name: "Payroll", link: "#payroll" },
-  { name: "Proof", link: "#proof" },
-  { name: "Demo", link: LINKS.demoVideo },
+  { name: "How it works", link: "/#how" },
+  { name: "Payroll", link: "/#payroll" },
+  { name: "Proof", link: "/#proof" },
+  { name: "Demo", link: "/demo" },
   { name: "Docs", link: LINKS.docs },
 ]
 

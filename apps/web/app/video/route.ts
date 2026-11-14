@@ -1,6 +1,4 @@
-import { LINKS } from "@/lib/links"
-
-/** tegata.xyz/video: the short address for the demo video, which lives on YouTube. */
+/** tegata.xyz/video: the short address for the demo, which plays on /demo. */
 export function GET() {
-  return Response.redirect(LINKS.demoVideo, 307)
+  return new Response(null, { status: 307, headers: { Location: "/demo" } })
 }

@@ -140,21 +140,24 @@ export function Footer() {
         </div>
         <div className="flex flex-col gap-2 text-[15px]">
           <span className="text-[13px] font-semibold text-text-3">Product</span>
-          <a href="#how" className="hover:underline">
+          <a href="/#how" className="hover:underline">
             How it works
           </a>
-          <a href="#payroll" className="hover:underline">
+          <a href="/#payroll" className="hover:underline">
             Payroll
           </a>
-          <a href="#borders" className="hover:underline">
+          <a href="/#borders" className="hover:underline">
             Across borders
           </a>
-          <a href="#features" className="hover:underline">
+          <a href="/#features" className="hover:underline">
             Everything else
           </a>
         </div>
         <div className="flex flex-col gap-2 text-[15px]">
           <span className="text-[13px] font-semibold text-text-3">Learn</span>
+          <Link href="/demo" className="hover:underline">
+            Demo
+          </Link>
           <a href={LINKS.docs} className="hover:underline">
             Docs
           </a>
@@ -164,7 +167,7 @@ export function Footer() {
           <a href={`${LINKS.docs}/docs/build/developers`} className="hover:underline">
             API and webhooks
           </a>
-          <a href="#proof" className="hover:underline">
+          <a href="/#proof" className="hover:underline">
             Proof on NEAR
           </a>
         </div>

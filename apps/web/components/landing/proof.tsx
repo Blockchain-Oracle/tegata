@@ -7,9 +7,10 @@ import { TextReveal } from "@/components/ui/text-reveal"
 
 import { Rise, RunningHead } from "./section"
 
-const TX = "https://testnet.nearblocks.io/txns/"
+export const TX = "https://testnet.nearblocks.io/txns/"
 
-const LEDGER = [
+/** Real testnet transactions from the README; /demo lists them under the ones its film made. */
+export const LEDGER = [
   {
     what: "An account holding 0 NEAR moved a token; Tegata's operator paid the 0.00029 NEAR fee",
     tx: "8oDoAfrPgHFRKW7jKKGzHmURxmErFTHYLVhByrzp9Bxk",
