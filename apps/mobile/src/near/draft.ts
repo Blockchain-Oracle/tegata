@@ -4,7 +4,7 @@
 // it says, or whose call isn't the one on screen, is refused. `scripts/check-draft.ts` proves parity with
 // `@tegata/core/near` `delegateHash` on real drafts.
 import { sha256 } from "@noble/hashes/sha2.js"
-import { base58 } from "@scure/base"
+import { base58, hex } from "@scure/base"
 
 export type NetworkId = "mainnet" | "testnet"
 
@@ -66,6 +66,11 @@ class Writer {
 }
 
 const utf8 = (text: string) => new TextEncoder().encode(text)
+
+/** A Privy NEAR wallet's address is its 32-byte public key in hex; NEAR writes the same key as "ed25519:" + base58. */
+export function nearPublicKey(address: string): string {
+  return `ed25519:${base58.encode(hex.decode(address.replace(/^0x/, "").toLowerCase()))}`
+}
 
 function publicKeyBytes(key: string): Uint8Array {
   const [type, data] = key.split(":")

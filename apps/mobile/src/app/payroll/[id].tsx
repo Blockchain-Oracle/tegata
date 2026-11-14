@@ -111,7 +111,7 @@ export default function Run() {
       checkBatches(batches, data, NETWORKS[data.network].usdc)
       const signatures = []
       for (const batch of batches)
-        signatures.push({ relayId: batch.relayId, signature: await sign(batch.draft.hash) })
+        signatures.push({ relayId: batch.relayId, signature: await sign(batch.draft) })
       await api(`/api/payroll/runs/${id}/approve`, { body: { signatures } })
       fire("confirm")
       refresh()

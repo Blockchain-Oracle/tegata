@@ -120,7 +120,7 @@ export default function Send() {
         to: recipient,
         amount: units.toString(),
       })
-      const signature = await sign(send.draft.hash)
+      const signature = await sign(send.draft)
       await api("/api/relay/sign", { body: { relayId: send.relayId, signature } })
       setStep("sending")
     } catch (error) {
