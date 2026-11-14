@@ -34,26 +34,27 @@ Try it at https://tegata.xyz: the README's eight steps run on the free Sandbox (
 
 ## Demo post on X
 
-Post from @TegataNEAR with the demo video attached. The organiser asks for one complete moment (a real action to a
-visible result), the words NEAR HACKATHON, @NEARProtocol and #NEARHackathon, and links to the demo and the repository.
-279 of 280 characters as X counts them (each link counts as 23).
+Post from @TegataNEAR with the demo video attached (the same film is on YouTube: https://youtu.be/6ZTyneTfEqk). The organiser asks for the
+user problem first, one complete moment (a real action to a visible result), what NEAR does, a next step, the words
+NEAR HACKATHON, @NEARProtocol and #NEARHackathon. 279 of 280 characters as X counts them (each link counts as 23).
 
 ```text
-Built at NEAR HACKATHON: Tegata 手形
+Bill a client abroad $1,250 by card and about $68 never arrives.
 
-Send an invoice. Your client pays from any chain. You get exactly what you billed, in USDC on NEAR, with a sealed receipt. Email sign-in, no wallet.
+Tegata: send an invoice, they pay from any chain, you get the exact amount in USDC on NEAR. No wallet, no gas.
 
-Try it: https://tegata.xyz
-Code: https://github.com/Blockchain-Oracle/tegata
+Built at NEAR HACKATHON @NEARProtocol #NEARHackathon
 
-@NEARProtocol #NEARHackathon
+https://tegata.xyz
+https://github.com/Blockchain-Oracle/tegata
 ```
 
 ## Before submitting
 
 - [ ] The repository is public, with the LICENSE (MIT) at its root.
 - [ ] The README's eight "Try it" steps run on https://tegata.xyz.
-- [ ] The demo video is recorded and attached to the X post, and the post is live.
+- [x] The demo video is recorded (https://youtu.be/6ZTyneTfEqk).
+- [ ] The video is attached to the X post, and the post is live.
 - [ ] One real Live payment is made, so the README can add its mainnet transaction.
 - [ ] No keys or secrets in the history (gitleaks finds 14 matches: sample tokens, a storage key name, a public token
   address and a character set; none is a secret).

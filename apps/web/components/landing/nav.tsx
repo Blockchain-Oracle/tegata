@@ -26,6 +26,7 @@ const ITEMS = [
   { name: "How it works", link: "#how" },
   { name: "Payroll", link: "#payroll" },
   { name: "Proof", link: "#proof" },
+  { name: "Demo", link: LINKS.demoVideo },
   { name: "Docs", link: LINKS.docs },
 ]
 
