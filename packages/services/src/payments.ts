@@ -93,11 +93,18 @@ export async function createLink(
   return row
 }
 
-export function listLinks(db: Db, workspaceId: string) {
+/** The business's pay links on one network: Live never lists a Sandbox link. */
+export function listLinks(db: Db, workspaceId: string, network: NetworkId) {
   return db
     .select()
     .from(requests)
-    .where(and(eq(requests.workspaceId, workspaceId), eq(requests.kind, "link")))
+    .where(
+      and(
+        eq(requests.workspaceId, workspaceId),
+        eq(requests.network, network),
+        eq(requests.kind, "link"),
+      ),
+    )
     .orderBy(desc(requests.createdAt))
 }
 

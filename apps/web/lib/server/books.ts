@@ -168,7 +168,9 @@ export function booksCsv(list: readonly Movement[], timezone: string, appUrl: st
       m.direction === "out" ? dollars(m.amount) : "",
       "USD",
       m.status === "done" ? "Settled" : m.status === "pending" ? "Pending" : "Failed",
-      m.url && !m.url.startsWith("/app") ? `${appUrl}${m.url}` : "",
+      // A public receipt where there is one; otherwise the movement's own page in the app (a payroll run, autopilot,
+      // a bank deposit), so every row links to its detail.
+      m.url ? `${appUrl}${m.url}` : "",
       m.txHash ? explorerTx(m.network, m.txHash) : "",
     ]
   })

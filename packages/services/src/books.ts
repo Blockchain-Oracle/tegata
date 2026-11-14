@@ -5,7 +5,7 @@ import { atLocal } from "@tegata/core/invoices"
 import { type DelegateDraft, ftTransfer, usdcBalance } from "@tegata/core/near"
 import { periodLabel } from "@tegata/core/payroll"
 import { type Db, schema } from "@tegata/db"
-import { and, eq, gte, inArray, like, lt, or, sql } from "drizzle-orm"
+import { and, eq, gte, inArray, like, lt, ne, or, sql } from "drizzle-orm"
 import type { AnyPgColumn } from "drizzle-orm/pg-core"
 
 import { businessLogo } from "./business.ts"
@@ -136,150 +136,177 @@ export async function movements(
   const { userId, workspaceId, network, from, to } = input
   const inRange = (column: AnyPgColumn) => and(gte(column, from), lt(column, to))
   const operator = NETWORKS[network].operator
-  const [paidIn, paidOut, ownRelays, rewards, grants, runs, slips, chainPayouts, bankOut, bankIn] =
-    await Promise.all([
-      db
-        .select({ payment: payments, title: requests.title, receiptToken: receipts.token })
-        .from(payments)
-        .innerJoin(requests, eq(requests.id, payments.requestId))
-        .leftJoin(receipts, eq(receipts.paymentId, payments.id))
-        .where(
-          and(
-            eq(requests.workspaceId, workspaceId),
-            eq(payments.network, network),
-            inArray(payments.status, ["succeeded", "refunded"]),
-            inRange(payments.settledAt),
+  const [
+    paidIn,
+    paidOut,
+    ownRelays,
+    rewards,
+    grants,
+    runs,
+    slips,
+    chainPayouts,
+    bankOut,
+    bankIn,
+    sentToMe,
+  ] = await Promise.all([
+    db
+      .select({ payment: payments, title: requests.title, receiptToken: receipts.token })
+      .from(payments)
+      .innerJoin(requests, eq(requests.id, payments.requestId))
+      .leftJoin(receipts, eq(receipts.paymentId, payments.id))
+      .where(
+        and(
+          eq(requests.workspaceId, workspaceId),
+          eq(payments.network, network),
+          inArray(payments.status, ["succeeded", "refunded"]),
+          inRange(payments.settledAt),
+        ),
+      ),
+    db
+      .select({
+        payment: payments,
+        title: requests.title,
+        business: workspaces.name,
+        receiptToken: receipts.token,
+      })
+      .from(payments)
+      .innerJoin(relays, eq(relays.id, payments.relayId))
+      .innerJoin(requests, eq(requests.id, payments.requestId))
+      .innerJoin(workspaces, eq(workspaces.id, requests.workspaceId))
+      .leftJoin(receipts, eq(receipts.paymentId, payments.id))
+      .where(
+        and(
+          eq(relays.userId, userId),
+          eq(payments.network, network),
+          inArray(payments.status, ["detected", "settling", "succeeded", "refunded", "failed"]),
+          inRange(payments.createdAt),
+        ),
+      ),
+    db
+      .select()
+      .from(relays)
+      .where(
+        and(
+          eq(relays.userId, userId),
+          eq(relays.network, network),
+          inArray(relays.status, [...SPONSORED, "failed"]),
+          inRange(relays.createdAt),
+          or(
+            like(relays.purpose, "send:%"),
+            like(relays.purpose, "refund:%"),
+            like(relays.purpose, "autopilot:%"),
           ),
         ),
-      db
-        .select({
-          payment: payments,
-          title: requests.title,
-          business: workspaces.name,
-          receiptToken: receipts.token,
-        })
-        .from(payments)
-        .innerJoin(relays, eq(relays.id, payments.relayId))
-        .innerJoin(requests, eq(requests.id, payments.requestId))
-        .innerJoin(workspaces, eq(workspaces.id, requests.workspaceId))
-        .leftJoin(receipts, eq(receipts.paymentId, payments.id))
-        .where(
-          and(
-            eq(relays.userId, userId),
-            eq(payments.network, network),
-            inArray(payments.status, ["detected", "settling", "succeeded", "refunded", "failed"]),
-            inRange(payments.createdAt),
-          ),
+      ),
+    db
+      .select({ payout: referralPayouts, network: referrals.network })
+      .from(referralPayouts)
+      .innerJoin(referrals, eq(referrals.id, referralPayouts.referralId))
+      .innerJoin(accounts, eq(accounts.accountId, referralPayouts.accountId))
+      .where(
+        and(
+          eq(accounts.userId, userId),
+          eq(referrals.network, network),
+          eq(referralPayouts.status, "sent"),
+          inRange(referralPayouts.updatedAt),
         ),
-      db
-        .select()
-        .from(relays)
-        .where(
-          and(
-            eq(relays.userId, userId),
-            eq(relays.network, network),
-            inArray(relays.status, [...SPONSORED, "failed"]),
-            inRange(relays.createdAt),
-            or(
-              like(relays.purpose, "send:%"),
-              like(relays.purpose, "refund:%"),
-              like(relays.purpose, "autopilot:%"),
+      ),
+    network === "testnet"
+      ? db
+          .select()
+          .from(testDollars)
+          .where(
+            and(
+              eq(testDollars.userId, userId),
+              eq(testDollars.status, "sent"),
+              inRange(testDollars.updatedAt),
             ),
-          ),
+          )
+      : Promise.resolve([]),
+    db
+      .select({
+        run: payRuns,
+        paid: sql<string>`coalesce(sum(${payRows.amount}) filter (where ${payRows.status} = 'paid'), 0)`,
+        people: sql<number>`count(*) filter (where ${payRows.status} = 'paid')`,
+      })
+      .from(payRuns)
+      .leftJoin(payRows, eq(payRows.runId, payRuns.id))
+      .where(
+        and(
+          eq(payRuns.workspaceId, workspaceId),
+          eq(payRuns.network, network),
+          inArray(payRuns.status, ["approved", "paid", "failed"]),
+          inRange(payRuns.approvedAt),
         ),
-      db
-        .select({ payout: referralPayouts, network: referrals.network })
-        .from(referralPayouts)
-        .innerJoin(referrals, eq(referrals.id, referralPayouts.referralId))
-        .innerJoin(accounts, eq(accounts.accountId, referralPayouts.accountId))
-        .where(
-          and(
-            eq(accounts.userId, userId),
-            eq(referrals.network, network),
-            eq(referralPayouts.status, "sent"),
-            inRange(referralPayouts.updatedAt),
-          ),
+      )
+      .groupBy(payRuns.id),
+    db
+      .select({ row: payRows, run: payRuns, business: workspaces.name })
+      .from(payRows)
+      .innerJoin(people, eq(people.id, payRows.personId))
+      .innerJoin(payRuns, eq(payRuns.id, payRows.runId))
+      .innerJoin(workspaces, eq(workspaces.id, payRuns.workspaceId))
+      .where(
+        and(
+          eq(people.userId, userId),
+          eq(payRuns.network, network),
+          eq(payRows.status, "paid"),
+          inRange(payRows.paidAt),
         ),
-      network === "testnet"
-        ? db
-            .select()
-            .from(testDollars)
-            .where(
-              and(
-                eq(testDollars.userId, userId),
-                eq(testDollars.status, "sent"),
-                inRange(testDollars.updatedAt),
-              ),
-            )
-        : Promise.resolve([]),
-      db
-        .select({
-          run: payRuns,
-          paid: sql<string>`coalesce(sum(${payRows.amount}) filter (where ${payRows.status} = 'paid'), 0)`,
-          people: sql<number>`count(*) filter (where ${payRows.status} = 'paid')`,
-        })
-        .from(payRuns)
-        .leftJoin(payRows, eq(payRows.runId, payRuns.id))
-        .where(
-          and(
-            eq(payRuns.workspaceId, workspaceId),
-            eq(payRuns.network, network),
-            inArray(payRuns.status, ["approved", "paid", "failed"]),
-            inRange(payRuns.approvedAt),
-          ),
-        )
-        .groupBy(payRuns.id),
-      db
-        .select({ row: payRows, run: payRuns, business: workspaces.name })
-        .from(payRows)
-        .innerJoin(people, eq(people.id, payRows.personId))
-        .innerJoin(payRuns, eq(payRuns.id, payRows.runId))
-        .innerJoin(workspaces, eq(workspaces.id, payRuns.workspaceId))
-        .where(
-          and(
-            eq(people.userId, userId),
-            eq(payRuns.network, network),
-            eq(payRows.status, "paid"),
-            inRange(payRows.paidAt),
-          ),
+      ),
+    // Live: sends and refunds to another chain (NEAR Intents), once the business approved them.
+    db
+      .select({ payout: payouts })
+      .from(payouts)
+      .innerJoin(relays, eq(relays.id, payouts.relayId))
+      .where(
+        and(
+          eq(payouts.workspaceId, workspaceId),
+          eq(payouts.network, network),
+          inArray(relays.status, [...SPONSORED, "failed"]),
+          inRange(payouts.createdAt),
         ),
-      // Live: sends and refunds to another chain (NEAR Intents), once the business approved them.
-      db
-        .select({ payout: payouts })
-        .from(payouts)
-        .innerJoin(relays, eq(relays.id, payouts.relayId))
-        .where(
-          and(
-            eq(payouts.workspaceId, workspaceId),
-            eq(payouts.network, network),
-            inArray(relays.status, [...SPONSORED, "failed"]),
-            inRange(payouts.createdAt),
-          ),
+      ),
+    // Withdrawals to a bank once approved, and bank transfers that arrived.
+    db
+      .select({ payout: bankPayouts, label: bankPayoutAccounts.label })
+      .from(bankPayouts)
+      .innerJoin(bankPayoutAccounts, eq(bankPayoutAccounts.id, bankPayouts.payoutAccountId))
+      .where(
+        and(
+          eq(bankPayouts.workspaceId, workspaceId),
+          eq(bankPayouts.network, network),
+          inArray(bankPayouts.status, ["sending", "converting", "paying", "paid", "failed"]),
+          inRange(bankPayouts.createdAt),
         ),
-      // Withdrawals to a bank once approved, and bank transfers that arrived.
-      db
-        .select({ payout: bankPayouts, label: bankPayoutAccounts.label })
-        .from(bankPayouts)
-        .innerJoin(bankPayoutAccounts, eq(bankPayoutAccounts.id, bankPayouts.payoutAccountId))
-        .where(
-          and(
-            eq(bankPayouts.workspaceId, workspaceId),
-            eq(bankPayouts.network, network),
-            inArray(bankPayouts.status, ["sending", "converting", "paying", "paid", "failed"]),
-            inRange(bankPayouts.createdAt),
-          ),
+      ),
+    db
+      .select()
+      .from(bankDeposits)
+      .where(
+        and(
+          eq(bankDeposits.workspaceId, workspaceId),
+          eq(bankDeposits.network, network),
+          inRange(bankDeposits.createdAt),
         ),
-      db
-        .select()
-        .from(bankDeposits)
-        .where(
-          and(
-            eq(bankDeposits.workspaceId, workspaceId),
-            eq(bankDeposits.network, network),
-            inRange(bankDeposits.createdAt),
-          ),
+      ),
+    // Sends and refunds another Tegata user made to this person's account: the other side of their Send.
+    db
+      .select({ relay: relays, from: workspaces.name })
+      .from(relays)
+      .innerJoin(accounts, and(eq(accounts.userId, userId), eq(accounts.network, network)))
+      .leftJoin(workspaces, eq(workspaces.ownerId, relays.userId))
+      .where(
+        and(
+          eq(relays.network, network),
+          eq(relays.status, "success"),
+          ne(relays.userId, userId),
+          inRange(relays.createdAt),
+          or(like(relays.purpose, "send:%"), like(relays.purpose, "refund:%")),
+          sql`${relays.draft}->'calls'->0->>'argsJson' like '%"receiver_id":"' || ${accounts.accountId} || '"%'`,
         ),
-    ])
+      ),
+  ])
 
   const list: Movement[] = []
   const base = { network, counted: true, refundable: null, refunded: 0n }
@@ -354,6 +381,25 @@ export async function movements(
       status: payout.status === "paid" ? "done" : payout.status === "failed" ? "failed" : "pending",
       txHash: payout.nearTx,
       url: "/app/bank",
+    })
+  }
+  for (const { relay, from } of sentToMe) {
+    const transfer = transferOf(relay.draft)
+    if (!transfer) continue
+    const refund = relay.purpose.startsWith("refund:")
+    list.push({
+      ...base,
+      id: `in:${relay.id}`,
+      kind: refund ? "refund" : "send",
+      direction: "in",
+      at: relay.createdAt,
+      amount: transfer.amount,
+      title: refund ? "Refund received" : "Payment received",
+      counterparty: from,
+      counterpartyAccount: relay.senderId,
+      status: "done",
+      txHash: relay.txHash,
+      url: `/r/send/${relay.id}`,
     })
   }
   for (const deposit of bankIn) {

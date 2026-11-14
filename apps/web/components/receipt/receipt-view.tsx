@@ -120,11 +120,16 @@ export function ReceiptView({ receipt, token }: { receipt: Receipt; token: strin
             }
             amount={viewDollars(receipt.amount)}
             sub={
-              <>
-                <Mark id="usdc" chain="near" size={18} /> USDC on NEAR
-                {sandbox ? <SandboxPill className={PAPER_PILL}>Sandbox</SandboxPill> : null}
-              </>
+              receipt.method === "manual" ? (
+                "Paid by hand"
+              ) : (
+                <>
+                  <Mark id="usdc" chain="near" size={18} /> USDC on NEAR
+                  {sandbox ? <SandboxPill className={PAPER_PILL}>Sandbox</SandboxPill> : null}
+                </>
+              )
             }
+            offChain={receipt.method === "manual"}
             seal={
               receipt.settledAt ? (
                 <SealPress

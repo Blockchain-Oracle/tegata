@@ -157,15 +157,20 @@ export function PublicInvoice({
         ) : null}
 
         <footer className="flex flex-col items-center gap-2 pt-2 text-meta text-muted-foreground">
-          <span className="inline-flex flex-wrap items-center justify-center gap-x-2 gap-y-1">
-            <span className="inline-flex items-center gap-1.5">
-              <Mark id="near" size={16} /> Settled on NEAR
+          {data.receipts.length > 0 && data.receipts.every((r) => r.rail === "manual") ? (
+            // Paid only by hand: nothing about it moved on NEAR, so the footer doesn't say it settled there.
+            <span>Paid by hand · recorded by the business, not on NEAR</span>
+          ) : (
+            <span className="inline-flex flex-wrap items-center justify-center gap-x-2 gap-y-1">
+              <span className="inline-flex items-center gap-1.5">
+                <Mark id="near" size={16} /> Settled on NEAR
+              </span>
+              <span aria-hidden>·</span>
+              <span className="inline-flex items-center gap-1.5">
+                <Mark id="intents" size={16} /> Powered by NEAR Intents
+              </span>
             </span>
-            <span aria-hidden>·</span>
-            <span className="inline-flex items-center gap-1.5">
-              <Mark id="intents" size={16} /> Powered by NEAR Intents
-            </span>
-          </span>
+          )}
           <Link
             href="/"
             className="inline-flex items-center gap-1.5 font-semibold hover:text-foreground"

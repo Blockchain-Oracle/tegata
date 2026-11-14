@@ -543,7 +543,8 @@ export async function logInvoiceEvent(
 
 // --- reading ----------------------------------------------------------------------------------------------
 
-export async function listInvoices(db: Db, workspaceId: string) {
+/** The business's invoices on one network, so Live's totals are Live money only. */
+export async function listInvoices(db: Db, workspaceId: string, network: NetworkId) {
   const [business] = await db
     .select({ timezone: workspaces.timezone })
     .from(workspaces)
@@ -559,7 +560,7 @@ export async function listInvoices(db: Db, workspaceId: string) {
     .from(invoices)
     .leftJoin(requests, eq(requests.id, invoices.requestId))
     .leftJoin(customers, eq(customers.id, invoices.customerId))
-    .where(eq(invoices.workspaceId, workspaceId))
+    .where(and(eq(invoices.workspaceId, workspaceId), eq(invoices.network, network)))
     .orderBy(desc(invoices.createdAt))
   return rows.map(({ invoice, paidTotal, token, customerName }) => {
     const paid = paidTotal ?? 0n
@@ -899,8 +900,8 @@ export async function updateCustomer(
   return row
 }
 
-/** Customers with what they were billed, paid and still owe (sent invoices only). */
-export async function listCustomers(db: Db, workspaceId: string) {
+/** Customers with what they were billed, paid and still owe on one network (sent invoices only). */
+export async function listCustomers(db: Db, workspaceId: string, network: NetworkId) {
   const [rows, billed] = await Promise.all([
     db
       .select()
@@ -917,7 +918,11 @@ export async function listCustomers(db: Db, workspaceId: string) {
       .from(invoices)
       .innerJoin(requests, eq(requests.id, invoices.requestId))
       .where(
-        and(eq(invoices.workspaceId, workspaceId), inArray(invoices.status, ["open", "paid"])),
+        and(
+          eq(invoices.workspaceId, workspaceId),
+          eq(invoices.network, network),
+          inArray(invoices.status, ["open", "paid"]),
+        ),
       ),
   ])
   return rows.map((customer) => {
@@ -985,6 +990,8 @@ export async function invoiceDocuments(db: Db, token: string, appUrl: string) {
       payUrl: url,
       payAddress: found.receiverId,
       sandbox: invoice.network === "testnet",
+      // Paid only by hand (cash, a wire): the footer says so instead of naming the NEAR pay address.
+      byHand: found.receipts.length > 0 && found.receipts.every((r) => r.rail === "manual"),
     },
     email: {
       business: from.name,

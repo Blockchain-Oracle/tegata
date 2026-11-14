@@ -13,9 +13,9 @@ import {
   WalletDelegateError,
 } from "@tegata/core/near"
 import { type Db, schema } from "@tegata/db"
-import { and, count, desc, eq, gte, inArray, like } from "drizzle-orm"
+import { and, count, desc, eq, gte, inArray, like, ne, or, sql } from "drizzle-orm"
 
-const { relays } = schema
+const { relays, accounts, workspaces } = schema
 
 const HOUR_MS = 3_600_000
 const DAY_MS = 86_400_000
@@ -256,6 +256,40 @@ export interface SendRow {
 }
 
 /** The person's one-off sends, newest first, read from the transfer each relay carries. */
+/** Sends and refunds other Tegata users made to this person's accounts, newest first: the receiving side of Send. */
+export async function listSendsIn(db: Db, userId: string, limit = 20) {
+  const rows = await db
+    .select({ relay: relays, from: workspaces.name })
+    .from(relays)
+    .innerJoin(accounts, and(eq(accounts.userId, userId), eq(accounts.network, relays.network)))
+    .leftJoin(workspaces, eq(workspaces.ownerId, relays.userId))
+    .where(
+      and(
+        eq(relays.status, "success"),
+        ne(relays.userId, userId),
+        or(like(relays.purpose, "send:%"), like(relays.purpose, "refund:%")),
+        sql`${relays.draft}->'calls'->0->>'argsJson' like '%"receiver_id":"' || ${accounts.accountId} || '"%'`,
+      ),
+    )
+    .orderBy(desc(relays.createdAt))
+    .limit(limit)
+  return rows.flatMap(({ relay, from }) => {
+    const call = (relay.draft as DelegateDraft).calls[0]
+    if (call?.method !== "ft_transfer") return []
+    const args = JSON.parse(call.argsJson) as { amount: string }
+    return [
+      {
+        id: relay.id,
+        network: relay.network,
+        from: from ?? relay.senderId,
+        refund: relay.purpose.startsWith("refund:"),
+        amount: BigInt(args.amount),
+        createdAt: relay.createdAt,
+      },
+    ]
+  })
+}
+
 export async function listSends(db: Db, userId: string, limit = 20): Promise<SendRow[]> {
   const rows = await db
     .select()

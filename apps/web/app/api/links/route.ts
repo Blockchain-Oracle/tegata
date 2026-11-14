@@ -17,7 +17,7 @@ const body = z.object({
 /** The business's pay links, newest first. */
 export const GET = route(async (request) => {
   const { workspace } = await requireOwner(request)
-  return { links: await listLinks(db(), workspace.id) }
+  return { links: await listLinks(db(), workspace.id, requestNetwork(request)) }
 })
 
 /** Create a pay link (Sandbox today; Live joins when the operator is funded). */

@@ -3,7 +3,7 @@
 // A new invoice. `?customer=<id>` starts it for that customer (from Customers). `?from=guest` picks up an invoice
 // built before signing in: its customer is added to the account and the same invoice opens, ready to send.
 import { localToday } from "@tegata/core/invoices"
-import { useSearchParams } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { Suspense, useEffect, useState } from "react"
 
 import { BuilderPage } from "@/components/invoices/builder-page"
@@ -22,20 +22,25 @@ export default function NewInvoicePage() {
   )
 }
 
+/** One restore per page load: a second run would file the guest's invoice twice. */
+let restoring = false
+
 function NewInvoice() {
   const params = useSearchParams()
+  const router = useRouter()
   const { profile } = useProfile()
   const tz = profile?.workspace?.timezone
   const fromGuest = params.get("from") === "guest"
   const [guest, setGuest] = useState<DraftForm | null | undefined>(fromGuest ? undefined : null)
 
   useEffect(() => {
-    if (!fromGuest || !tz) return
+    if (!fromGuest || !tz || restoring) return
     const saved = loadGuestDraft()
     if (!saved) {
       setGuest(null)
       return
     }
+    restoring = true
     void (async () => {
       let customerId: string | null = null
       if (saved.customer?.name.trim()) {
@@ -49,10 +54,19 @@ function NewInvoice() {
         }).catch(() => ({ customer: null as Customer | null }))
         customerId = customer?.id ?? null
       }
+      // Saved on the server before the device copy goes, so a navigation can never lose it: then the draft opens.
+      const { invoice } = await api<{ invoice: { id: string } }>("/api/invoices", {
+        body: { ...saved.form, customerId, notes: saved.form.notes || null },
+      }).catch(() => ({ invoice: null as { id: string } | null }))
+      restoring = false
+      if (!invoice) {
+        setGuest({ ...saved.form, customerId })
+        return
+      }
       clearGuestDraft()
-      setGuest({ ...saved.form, customerId })
+      router.replace(`/app/invoices/${invoice.id}/edit`)
     })()
-  }, [fromGuest, tz])
+  }, [fromGuest, tz, router])
 
   // The builder's dates start from today in the business's own time zone.
   if (!tz || guest === undefined)

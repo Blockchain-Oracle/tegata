@@ -27,6 +27,7 @@ export const GET = route(async (request) => {
     .where(
       and(
         eq(schema.requests.workspaceId, workspace.id),
+        eq(schema.requests.network, requestNetwork(request)),
         eq(schema.requests.kind, "session"),
         sql`${schema.requests.metadata}->>'source' = 'counter'`,
         gte(schema.requests.createdAt, from),

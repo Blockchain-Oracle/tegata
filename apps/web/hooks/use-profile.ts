@@ -47,8 +47,10 @@ export function useProfile() {
     staleTime: Number.POSITIVE_INFINITY,
   })
 
+  // Keyed by who is signed in, so signing into another account never shows the last one's business first.
+  const identity = wallet.active ? "wallet" : (privy.user?.id ?? "signed-out")
   const profile = useQuery({
-    queryKey: ["me"],
+    queryKey: ["me", identity],
     queryFn: () => api<Profile>("/api/me"),
     enabled: wallet.active || (viaPrivy && session.isSuccess),
     retry: (count, error) =>

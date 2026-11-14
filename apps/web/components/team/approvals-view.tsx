@@ -11,6 +11,7 @@ import { AccountLink } from "@/components/kit/account-link"
 import { Button } from "@/components/kit/button"
 import { Figure, viewDollars } from "@/components/kit/figure"
 import { HoldButton } from "@/components/kit/hold-button"
+import { SandboxPill } from "@/components/kit/sandbox-pill"
 import { Stage } from "@/components/kit/stage"
 import { EmptyState, ErrorState, LoadingShape, StatusPill } from "@/components/kit/states"
 import { money } from "@/components/payroll/payroll-view"
@@ -219,6 +220,7 @@ export function ApprovalDetailView({
       <header className="flex items-center gap-3">
         {back}
         <h1 className="display min-w-0 flex-1 truncate text-page-title">{detail.label}</h1>
+        {detail.network === "testnet" ? <SandboxPill>Sandbox</SandboxPill> : null}
       </header>
 
       <Stage className="p-6 sm:p-8">

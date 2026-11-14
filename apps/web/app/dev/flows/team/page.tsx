@@ -126,7 +126,7 @@ export default function TeamFlow() {
           onSeal={noop}
           funding={false}
           fundProblem={null}
-          onFund={noop}
+          onFund={async () => undefined}
         />
       </section>
 

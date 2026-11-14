@@ -63,6 +63,8 @@ export interface InvoiceDocument {
   payUrl: string
   payAddress: string
   sandbox: boolean
+  /** Paid only by hand: nothing moved on NEAR. */
+  byHand?: boolean
 }
 
 const usd = (units: string) =>
@@ -309,7 +311,9 @@ export function InvoicePdf({ doc }: { doc: InvoiceDocument }) {
           ) : null}
           <View style={s.between}>
             <Text style={{ color: GREY, fontSize: 8.5 }}>
-              USDC on NEAR{doc.sandbox ? " · Sandbox (testnet)" : ""} · {doc.payAddress}
+              {doc.byHand
+                ? `Paid by hand · recorded by ${doc.from.name}, not on NEAR`
+                : `USDC on NEAR${doc.sandbox ? " · Sandbox (testnet)" : ""} · ${doc.payAddress}`}
             </Text>
             <Text style={{ color: GREY, fontSize: 8.5 }}>Made with Tegata</Text>
           </View>

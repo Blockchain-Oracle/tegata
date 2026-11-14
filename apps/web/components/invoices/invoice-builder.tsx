@@ -174,7 +174,7 @@ export function InvoiceBuilder({
 
   const payPreview = (
     <div
-      className="pointer-events-none mx-auto h-[640px] w-[390px] max-w-full overflow-hidden rounded-[28px] bg-background shadow-object"
+      className="pointer-events-none mx-auto h-[640px] w-full max-w-[390px] overflow-hidden rounded-[28px] bg-background shadow-object"
       aria-hidden
     >
       <PayView
@@ -533,7 +533,7 @@ export function InvoiceBuilder({
 
         <div
           className={cn(
-            "flex flex-col gap-3 lg:sticky lg:top-6",
+            "flex min-w-0 flex-col gap-3 lg:sticky lg:top-6",
             phoneView === "edit" && "max-lg:hidden",
           )}
         >

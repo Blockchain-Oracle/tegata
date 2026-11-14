@@ -63,17 +63,20 @@ export async function approvalDetailView(userId: string, runId: string) {
     me: d.me,
     error: d.run.error,
     retryUntil: iso(d.retryUntil),
-    rows: d.rows.map((r) => ({
-      id: r.id,
-      name: r.name,
-      role: r.role,
-      accountId: r.accountId,
-      destinationKind: r.destinationKind,
-      amount: r.amount.toString(),
-      status: r.status,
-      txHash: r.txHash,
-      txUrl: r.txHash ? explorerTx(d.run.network, r.txHash) : null,
-    })),
+    // Who the vote pays: a person left out or skipped (no destination yet) isn't in the proposal on NEAR.
+    rows: d.rows
+      .filter((r) => r.status !== "skipped" && r.status !== "excluded")
+      .map((r) => ({
+        id: r.id,
+        name: r.name,
+        role: r.role,
+        accountId: r.accountId,
+        destinationKind: r.destinationKind,
+        amount: r.amount.toString(),
+        status: r.status,
+        txHash: r.txHash,
+        txUrl: r.txHash ? explorerTx(d.run.network, r.txHash) : null,
+      })),
     approvers: d.approvers.map((a) => ({ ...a, at: iso(a.at) })),
   }
 }

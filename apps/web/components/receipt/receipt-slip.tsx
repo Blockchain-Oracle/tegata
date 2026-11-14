@@ -15,6 +15,7 @@ export function ReceiptSlip({
   children,
   seal,
   notch = "bg-stage print:bg-white",
+  offChain = false,
   className,
 }: {
   /** "Receipt · No. 0007", "Paid", "Payslip". */
@@ -29,6 +30,8 @@ export function ReceiptSlip({
   seal?: React.ReactNode
   /** The colour behind the slip, for the perforation's notches. */
   notch?: string
+  /** Money recorded by hand (cash, a wire): the footer says so instead of claiming NEAR. */
+  offChain?: boolean
   className?: string
 }) {
   return (
@@ -57,12 +60,18 @@ export function ReceiptSlip({
       </div>
       <dl className="flex flex-col gap-3 p-6 pt-3 text-[14px]">{children}</dl>
       <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 border-t border-paper-rule px-6 py-4 text-[12px] font-medium text-paper-text-2">
-        <span className="inline-flex items-center gap-1.5">
-          <Mark id="near" size={14} /> Settled on NEAR
-        </span>
-        <span className="inline-flex items-center gap-1.5">
-          <Mark id="intents" size={14} /> Powered by NEAR Intents
-        </span>
+        {offChain ? (
+          <span>Recorded by the business · this payment didn't move on NEAR</span>
+        ) : (
+          <>
+            <span className="inline-flex items-center gap-1.5">
+              <Mark id="near" size={14} /> Settled on NEAR
+            </span>
+            <span className="inline-flex items-center gap-1.5">
+              <Mark id="intents" size={14} /> Powered by NEAR Intents
+            </span>
+          </>
+        )}
       </div>
       {seal ? <div className="absolute top-4 right-4">{seal}</div> : null}
     </article>

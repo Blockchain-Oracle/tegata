@@ -4,7 +4,7 @@
 // form tells the story; when the code is accepted the cells turn vermilion and the Tegata seal presses on the stage.
 import { useLoginWithEmail, usePrivy } from "@privy-io/react-auth"
 import { useRouter } from "next/navigation"
-import { useEffect, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 
 import { type SignInStep, SignInView } from "@/components/auth/sign-in-view"
 import type { CodeState } from "@/components/kit/code-field"
@@ -45,11 +45,20 @@ export default function SignInPage() {
     if (next) rememberNext(next)
   }, [])
 
+  // Leave once: Privy turning `authenticated` on and the code step's timer both lead here, and the remembered path
+  // can only be taken once (the second taker used to find it gone and send people Home).
+  const left = useRef(false)
+  const goNext = useCallback(() => {
+    if (left.current) return
+    left.current = true
+    router.replace(takeNext())
+  }, [router])
+
   // Already signed in (a returning visit, by email or with a wallet): go straight in.
   useEffect(() => {
     if (sealed) return
-    if ((ready && authenticated) || hasWalletSession()) router.replace(takeNext())
-  }, [ready, authenticated, sealed, router])
+    if ((ready && authenticated) || hasWalletSession()) goNext()
+  }, [ready, authenticated, sealed, goNext])
 
   async function signInWithWallet() {
     setWalletState("waiting")
@@ -60,7 +69,7 @@ export default function SignInPage() {
       setWalletState("done")
       fire("filled", { cue: "confirmed" })
       setSealed(true)
-      setTimeout(() => router.replace(takeNext()), AFTER_SEAL_MS)
+      setTimeout(() => goNext(), AFTER_SEAL_MS)
     } catch (error) {
       setWalletState("idle")
       fire("fail", { cue: "error" })
@@ -113,7 +122,7 @@ export default function SignInPage() {
       setCodeState("accepted")
       fire("filled", { cue: "confirmed" })
       setSealed(true)
-      setTimeout(() => router.replace(takeNext()), AFTER_SEAL_MS)
+      setTimeout(() => goNext(), AFTER_SEAL_MS)
     } catch (error) {
       setCodeState("wrong")
       fire("fail", { cue: "error" })

@@ -38,7 +38,9 @@ export default function SettingsPage() {
       }),
     onSuccess: ({ workspace }) => {
       fire("filled", { cue: "confirmed" })
-      queryClient.setQueryData<Profile>(["me"], (old) => (old ? { ...old, workspace } : old))
+      queryClient.setQueriesData<Profile>({ queryKey: ["me"] }, (old) =>
+        old ? { ...old, workspace } : old,
+      )
     },
     onError: () => fire("fail", { cue: "error" }),
   })

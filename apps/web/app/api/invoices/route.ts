@@ -9,7 +9,7 @@ import { requestNetwork } from "@/lib/server/mode.ts"
 /** Every invoice, newest first, with its status worked out now (sent, viewed, partly paid, overdue…). */
 export const GET = route(async (request) => {
   const { workspace } = await requireOwner(request)
-  return { invoices: await listInvoices(db(), workspace.id) }
+  return { invoices: await listInvoices(db(), workspace.id, requestNetwork(request)) }
 })
 
 /** Save a new draft (Sandbox today). */

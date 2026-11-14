@@ -3,6 +3,7 @@ import {
   listPaymentsIn,
   listPaymentsOut,
   listSends,
+  listSendsIn,
   payslipsFor,
   rewardsFor,
   runsOut,
@@ -26,8 +27,9 @@ const SEND_HAS_RECEIPT = new Set(["signed", "sent", "unknown", "success"])
 export const GET = route(async (request) => {
   const user = await requireUser(request)
   const workspace = await workspaceOf(user.id)
-  const [sends, paidOut, paidIn, rewards, runs, slips] = await Promise.all([
+  const [sends, sendsIn, paidOut, paidIn, rewards, runs, slips] = await Promise.all([
     listSends(db(), user.id),
+    listSendsIn(db(), user.id),
     listPaymentsOut(db(), user.id),
     workspace ? listPaymentsIn(db(), workspace.id) : Promise.resolve([]),
     rewardsFor(db(), user.id),
@@ -44,6 +46,20 @@ export const GET = route(async (request) => {
       amount: send.amount,
       status: send.status,
       receiptUrl: SEND_HAS_RECEIPT.has(send.status) ? `/r/send/${send.id}` : null,
+      at: send.createdAt.toISOString(),
+    })),
+    // Money another Tegata user sent this person: the receiving side of their Send, with its receipt.
+    ...sendsIn.map((send) => ({
+      id: `in:${send.id}`,
+      kind: "received" as const,
+      network: send.network,
+      counterparty: send.from,
+      title: send.refund ? "Refund" : "Payment",
+      amount: send.amount,
+      status: "success" as const,
+      rail: "tegata" as const,
+      assetIn: null,
+      receiptUrl: `/r/send/${send.id}`,
       at: send.createdAt.toISOString(),
     })),
     ...paidOut.map(({ payment, title, business, receiptToken }) => ({

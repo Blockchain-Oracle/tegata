@@ -27,7 +27,10 @@ export function useSigner() {
       }
       const approvals: Approval[] = []
       for (const relay of relays) {
-        approvals.push({ relayId: relay.relayId, signature: await key.sign(relay.draft.hash) })
+        approvals.push({
+          relayId: relay.relayId,
+          signature: await key.sign(relay.draft.hash, relay.draft.publicKey),
+        })
       }
       return approvals
     },

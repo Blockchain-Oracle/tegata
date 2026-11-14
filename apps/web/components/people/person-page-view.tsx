@@ -6,7 +6,7 @@
 // is coming, so it's shown locked. Once chosen: "You're set", any change waiting out its 24 hours, and their payslips.
 import { ChevronRight, Download, Lock } from "lucide-react"
 import Link from "next/link"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Flag } from "@/components/bank/parts"
 import { BusinessSeal, TegataSeal } from "@/components/brand/seal"
 import { Button } from "@/components/kit/button"
@@ -48,6 +48,14 @@ export function PersonPageView({
   onChain: (choice: { route: string; address: string }) => void
 }) {
   const [choosing, setChoosing] = useState(page.ready.state === "none")
+  // A choice that saved comes back as a new pending change (or a new destination): close the chooser to show it.
+  const savedKey = `${page.pending?.activatesAt ?? ""}|${page.pending?.accountId ?? ""}|${page.ready.state === "none" ? "" : (page.ready.accountId ?? "")}`
+  const [lastSaved, setLastSaved] = useState(savedKey)
+  useEffect(() => {
+    if (savedKey === lastSaved) return
+    setLastSaved(savedKey)
+    setChoosing(false)
+  }, [savedKey, lastSaved])
   const [near, setNear] = useState("")
   const [nearOpen, setNearOpen] = useState(false)
   const [chainOpen, setChainOpen] = useState(false)
@@ -127,10 +135,28 @@ export function PersonPageView({
               </div>
             ) : null}
             {page.pending ? (
-              <StatusPill tone="warn" className="self-start">
-                {destinationWord(page.pending.kind, page.pending.route)} from{" "}
-                {changesOn(page.pending.activatesAt)}
-              </StatusPill>
+              <div className="flex flex-col gap-1.5 rounded-[16px] bg-secondary p-3.5">
+                <StatusPill tone="warn" className="self-start">
+                  Changes {changesOn(page.pending.activatesAt)}
+                </StatusPill>
+                <span className="text-[14px]">
+                  {page.pending.kind === "tegata" ? (
+                    "From then your pay lands in your Tegata account."
+                  ) : (
+                    <>
+                      {page.pending.kind === "chain"
+                        ? `From then your pay arrives as ${destinationWord("chain", page.pending.route)} at `
+                        : "From then your pay lands in the NEAR account "}
+                      <span className="break-all font-mono text-[13px]">
+                        {page.pending.kind === "chain"
+                          ? shortAddress(page.pending.accountId ?? "")
+                          : page.pending.accountId}
+                      </span>
+                      .
+                    </>
+                  )}
+                </span>
+              </div>
             ) : null}
             <div className="flex flex-wrap gap-2">
               {page.ready.state !== "none" && page.ready.kind === "tegata" ? (

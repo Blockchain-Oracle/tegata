@@ -154,7 +154,7 @@ export default function TeamPage() {
       onSeal={() => seal.mutate()}
       funding={fund.isPending}
       fundProblem={fund.error ? problemOf(fund.error, "That didn't go through") : null}
-      onFund={(amount) => fund.mutate(amount)}
+      onFund={(amount) => fund.mutateAsync(amount)}
     />
   )
 }

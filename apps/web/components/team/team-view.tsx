@@ -117,13 +117,16 @@ export function TeamView({
   onSeal: () => void
   funding: boolean
   fundProblem: string | null
-  onFund: (amount: string) => void
+  /** Moves the money; resolves once the transfer is approved and on its way. */
+  onFund: (amount: string) => Promise<unknown>
 }) {
   const [inviteOpen, setInviteOpen] = useState(false)
   const [fundOpen, setFundOpen] = useState(false)
   const [name, setName] = useState("")
   const [email, setEmail] = useState("")
   const [amount, setAmount] = useState("")
+  /** What was just moved in, shown on the card until the treasury's balance changes. */
+  const [moving, setMoving] = useState<{ amount: string; from: string } | null>(null)
   const [threshold, setThreshold] = useState(2)
   const [copied, setCopied] = useState<string | null>(null)
 
@@ -192,6 +195,11 @@ export function TeamView({
                 value={viewDollars(t.balance)}
                 className="text-[56px] text-white sm:text-[72px]"
               />
+              {moving && moving.from === t.balance ? (
+                <span className="text-[14px] font-semibold text-white">
+                  +${moving.amount} on its way · it shows here in a few seconds
+                </span>
+              ) : null}
               <span className="inline-flex items-center gap-2 text-[14px] text-white/85">
                 <Mark id="near" size={18} />
                 <span className="truncate font-mono">{t.accountId}</span>
@@ -473,7 +481,17 @@ export function TeamView({
             }
             ready={/^\d+(\.\d{1,2})?$/.test(amount) && Number(amount) > 0}
             busy={funding}
-            onConfirm={() => onFund(amount)}
+            onConfirm={() => {
+              const moved = amount
+              // One approval moves the money once: the sheet closes, so the same hold can't send it again.
+              void onFund(moved)
+                .then(() => {
+                  setFundOpen(false)
+                  setAmount("")
+                  if (t) setMoving({ amount: moved, from: t.balance })
+                })
+                .catch(() => undefined)
+            }}
           />
         </div>
       </Sheet>

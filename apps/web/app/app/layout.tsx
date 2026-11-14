@@ -1,6 +1,7 @@
 "use client"
 
 import { usePrivy } from "@privy-io/react-auth"
+import { useQueryClient } from "@tanstack/react-query"
 import { useRouter } from "next/navigation"
 import { useEffect } from "react"
 
@@ -15,6 +16,7 @@ import { signOutNearWallet } from "@/lib/client/near-account"
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter()
   const { logout } = usePrivy()
+  const queryClient = useQueryClient()
   const { ready, authenticated, profile, viaWallet, refetch } = useProfile()
 
   // Welcome is for a business with no account ready yet. A Live account opened later shows its steps in the app.
@@ -43,7 +45,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       liveAvailable={profile.networks.includes("mainnet")}
       onSignOut={() =>
         (viaWallet ? signOutNearWallet(profile.user.walletNetwork ?? "testnet") : logout()).then(
-          () => router.replace("/signin"),
+          () => {
+            // Nothing of this person's stays in memory for whoever signs in next on this device.
+            queryClient.clear()
+            router.replace("/signin")
+          },
         )
       }
     >
