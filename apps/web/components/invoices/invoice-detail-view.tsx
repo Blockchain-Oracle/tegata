@@ -609,7 +609,7 @@ function TimelineItem({
         </span>
       )}
       <span className="flex min-w-0 flex-col pt-1">
-        <span className="text-[15px] font-medium">{meta.text(event)}</span>
+        <span className="text-[15px] font-medium [overflow-wrap:anywhere]">{meta.text(event)}</span>
         <span className="text-detail text-muted-foreground">
           {new Date(event.createdAt).toLocaleString("en-GB", {
             day: "numeric",

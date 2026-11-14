@@ -402,7 +402,7 @@ export function TeamView({
         !inviteProblem &&
         lastInvite.email === email.trim().toLowerCase() ? (
           <div className="flex flex-col gap-4">
-            <p className="text-[15px]">
+            <p className="text-[15px] [overflow-wrap:anywhere]">
               Send {lastInvite.name} this link. They sign in with {lastInvite.email} and join as an
               approver.
             </p>

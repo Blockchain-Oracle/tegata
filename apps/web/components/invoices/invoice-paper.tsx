@@ -214,13 +214,15 @@ function Block({ label, children }: { label: string; children: React.ReactNode }
 
 function PartyLines({ party }: { party: Party }) {
   return (
-    <span className="flex flex-col">
+    <span className="flex min-w-0 flex-col">
       <span className="font-semibold">{party.name}</span>
       {party.address ? (
         <span className="whitespace-pre-line text-paper-text-2">{party.address}</span>
       ) : null}
       {party.taxId ? <span className="text-paper-text-2">Tax ID {party.taxId}</span> : null}
-      {party.email ? <span className="text-paper-text-2">{party.email}</span> : null}
+      {party.email ? (
+        <span className="text-paper-text-2 [overflow-wrap:anywhere]">{party.email}</span>
+      ) : null}
     </span>
   )
 }
